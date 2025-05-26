@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Platform Jumper</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            background: #87CEEB;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 800;
+        canvas.height = 400;
+        
+        const player = {
+            x: 50,
+            y: 200,
+            width: 30,
+            height: 30,
+            speed: 5,
+            jumpForce: -12,
+            velocityY: 0,
+            isJumping: false
+        };
+        
+        const platforms = [
+            { x: 0, y: 350, width: 800, height: 50 },
+            { x: 300, y: 250, width: 100, height: 20 },
+            { x: 500, y: 150, width: 100, height: 20 }
+        ];
+        
+        const coins = [
+            { x: 320, y: 200, width: 20, height: 20, collected: false },
+            { x: 520, y: 100, width: 20, height: 20, collected: false }
+        ];
+        
+        let score = 0;
+        const gravity = 0.5;
+        const keys = {};
+        
+        function update() {
+            // Player movement
+            if (keys['ArrowLeft']) player.x -= player.speed;
+            if (keys['ArrowRight']) player.x += player.speed;
+            
+            // Apply gravity
+            player.velocityY += gravity;
+            player.y += player.velocityY;
+            
+            // Platform collision
+            platforms.forEach(platform => {
+                if (collision(player, platform)) {
+                    if (player.velocityY > 0) {
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0;
+                        player.isJumping = false;
+                    }
+                }
+            });
+            
+            // Coin collection
+            coins.forEach(coin => {
+                if (!coin.collected && collision(player, coin)) {
+                    coin.collected = true;
+                    score += 10;
+                }
+            });
+            
+            // Keep player in bounds
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+        }
+        
+        function collision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw player
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw platforms
+            ctx.fillStyle = 'green';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+            
+            // Draw coins
+            ctx.fillStyle = 'gold';
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    ctx.beginPath();
+                    ctx.arc(coin.x + coin.width/2, coin.y + coin.height/2, 
+                           coin.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Draw score
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + score, 10, 30);
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'ArrowUp' && !player.isJumping) {
+                player.velocityY = player.jumpForce;
+                player.isJumping = true;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Toilet Paper Adventure</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            backgroundColor: '#87CEEB',
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 300 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        const game = new Phaser.Game(config);
+        let player;
+        let cursors;
+        let obstacles;
+        let score = 0;
+        let scoreText;
+        let gameOver = false;
+
+        function preload() {
+            // Load assets
+            this.load.image('toilet', 'https://i.imgur.com/8QZQZQZ.png');
+            this.load.image('obstacle', 'https://i.imgur.com/8QZQZQZ.png');
+        }
+
+        function create() {
+            // Create player (toilet paper roll)
+            player = this.physics.add.sprite(100, 300, 'toilet');
+            player.setScale(0.5);
+            player.setCollideWorldBounds(true);
+
+            // Create obstacles group
+            obstacles = this.physics.add.group();
+
+            // Create initial obstacles
+            createObstacle(this);
+
+            // Set up controls
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Create score text
+            scoreText = this.add.text(16, 16, 'Score: 0', {
+                fontSize: '32px',
+                fill: '#000'
+            });
+
+            // Set up collision
+            this.physics.add.collider(player, obstacles, hitObstacle, null, this);
+
+            // Create obstacle timer
+            this.time.addEvent({
+                delay: 2000,
+                callback: createObstacle,
+                callbackScope: this,
+                loop: true
+            });
+        }
+
+        function createObstacle(scene) {
+            if (gameOver) return;
+
+            const obstacle = obstacles.create(800, 550, 'obstacle');
+            obstacle.setScale(0.3);
+            obstacle.setTint(0x8B4513); // Brown color
+            obstacle.setVelocityX(-200);
+            obstacle.setImmovable(true);
+        }
+
+        function hitObstacle() {
+            if (gameOver) return;
+
+            gameOver = true;
+            this.physics.pause();
+            this.add.text(300, 250, 'Game Over!', {
+                fontSize: '64px',
+                fill: '#ff0000'
+            });
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            // Player movement
+            if (cursors.up.isDown) {
+                player.setVelocityY(-300);
+            }
+
+            // Update score
+            obstacles.getChildren().forEach(obstacle => {
+                if (obstacle.x < player.x && !obstacle.scored) {
+                    obstacle.scored = true;
+                    score += 10;
+                    scoreText.setText('Score: ' + score);
+                }
+            });
+
+            // Remove obstacles that are off screen
+            obstacles.getChildren().forEach(obstacle => {
+                if (obstacle.x < -50) {
+                    obstacle.destroy();
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

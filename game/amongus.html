@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Among Us</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            backgroundColor: '#1a1a1a',
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        const game = new Phaser.Game(config);
+        let player;
+        let cursors;
+        let tasks = [];
+        let taskProgress = 0;
+
+        function preload() {
+            // Load player sprite
+            this.load.spritesheet('player', 'https://i.imgur.com/8QZQZQZ.png', {
+                frameWidth: 32,
+                frameHeight: 32
+            });
+        }
+
+        function create() {
+            // Create map boundaries
+            this.physics.world.setBounds(0, 0, 800, 600);
+
+            // Create player
+            player = this.physics.add.sprite(400, 300, 'player');
+            player.setCollideWorldBounds(true);
+            player.setScale(2);
+
+            // Create tasks
+            createTasks(this);
+
+            // Set up controls
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Create task progress bar
+            const progressBar = this.add.graphics();
+            progressBar.fillStyle(0x222222);
+            progressBar.fillRect(10, 10, 200, 20);
+        }
+
+        function createTasks(scene) {
+            // Create some sample tasks
+            const taskPositions = [
+                { x: 200, y: 200 },
+                { x: 600, y: 200 },
+                { x: 200, y: 400 },
+                { x: 600, y: 400 }
+            ];
+
+            taskPositions.forEach(pos => {
+                const task = scene.add.rectangle(pos.x, pos.y, 40, 40, 0x00ff00);
+                tasks.push({
+                    sprite: task,
+                    completed: false
+                });
+            });
+        }
+
+        function update() {
+            // Player movement
+            const speed = 200;
+            player.setVelocity(0);
+
+            if (cursors.left.isDown) {
+                player.setVelocityX(-speed);
+                player.setFlipX(true);
+            } else if (cursors.right.isDown) {
+                player.setVelocityX(speed);
+                player.setFlipX(false);
+            }
+
+            if (cursors.up.isDown) {
+                player.setVelocityY(-speed);
+            } else if (cursors.down.isDown) {
+                player.setVelocityY(speed);
+            }
+
+            // Check for task completion
+            tasks.forEach(task => {
+                if (!task.completed) {
+                    const distance = Phaser.Math.Distance.Between(
+                        player.x, player.y,
+                        task.sprite.x, task.sprite.y
+                    );
+
+                    if (distance < 50 && Phaser.Input.Keyboard.JustDown(cursors.space)) {
+                        task.completed = true;
+                        task.sprite.setFillStyle(0xff0000);
+                        taskProgress += 25;
+                        
+                        // Update progress bar
+                        const progressBar = this.add.graphics();
+                        progressBar.clear();
+                        progressBar.fillStyle(0x222222);
+                        progressBar.fillRect(10, 10, 200, 20);
+                        progressBar.fillStyle(0x00ff00);
+                        progressBar.fillRect(10, 10, taskProgress * 2, 20);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

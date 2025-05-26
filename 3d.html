@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Runner Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const buildings = [
+            { id: 'cursor', name: 'Cursor', baseCost: 15, cps: 0.1, count: 0 },
+            { id: 'grandma', name: 'Grandma', baseCost: 100, cps: 1, count: 0 },
+            { id: 'farm', name: 'Farm', baseCost: 1100, cps: 8, count: 0 },
+            { id: 'mine', name: 'Mine', baseCost: 12000, cps: 47, count: 0 },
+            { id: 'factory', name: 'Factory', baseCost: 130000, cps: 260, count: 0 },
+            { id: 'bank', name: 'Bank', baseCost: 1400000, cps: 1400, count: 0 },
+            { id: 'temple', name: 'Temple', baseCost: 20000000, cps: 7800, count: 0 },
+            { id: 'wizardTower', name: 'Wizard Tower', baseCost: 330000000, cps: 44000, count: 0 },
+            { id: 'shipment', name: 'Shipment', baseCost: 5000000000, cps: 260000, count: 0 },
+            { id: 'alchemyLab', name: 'Alchemy Lab', baseCost: 75000000000, cps: 1600000, count: 0 },
+            { id: 'portal', name: 'Portal', baseCost: 1250000000000, cps: 11000000, count: 0 },
+            { id: 'timeMachine', name: 'Time Machine', baseCost: 20000000000000, cps: 75000000, count: 0 },
+            { id: 'antimatterCondenser', name: 'Antimatter Condenser', baseCost: 350000000000000, cps: 500000000, count: 0 },
+            { id: 'prism', name: 'Prism', baseCost: 6000000000000000, cps: 3500000000, count: 0 },
+            { id: 'cookie', name: 'GOD', baseCost: 10000000000000000, cps: 100000000000, count: 0 }
+        ];
+
+        let scene, camera, renderer, player, obstacles = [], platforms = [];
+        let gameOver = false;
+        let score = 0;
+        let isJumping = false;
+        let jumpVelocity = 0;
+        const GRAVITY = -0.02;  // Increased gravity
+        const JUMP_POWER = 0.3;  // Reduced jump power
+        const DOUBLE_JUMP_POWER = 0.25;  // Reduced double jump power
+        let canDoubleJump = false;
+        let spawnInterval = 2000; // Start with 2 seconds between spawns
+        let obstacleTimer;
+
+        // Initialize the game
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            
+            // Set up camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+            camera.position.y = 2;
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create player
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+            player = new THREE.Mesh(geometry, material);
+            player.position.z = 0;
+            scene.add(player);
+
+            // Create floor
+            const floorGeometry = new THREE.PlaneGeometry(10, 1000);
+            const floorMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -0.5;
+            scene.add(floor);
+
+            // Add lights
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(0, 10, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            // Replace fixed interval with dynamic spawn system
+            obstacleTimer = setInterval(updateObstacleSpawn, 100); // Check every 100ms
+            setInterval(createPlatform, 3000);
+
+            // Start game loop
+            animate();
+        }
+
+        // New function to handle dynamic obstacle spawning
+        function updateObstacleSpawn() {
+            if (gameOver) return;
+
+            // Calculate new spawn interval based on score
+            // As score increases, interval decreases (faster spawning)
+            spawnInterval = Math.max(400, 2000 - (score * 2));
+            
+            // Random chance to spawn based on interval
+            if (Math.random() < 100 / spawnInterval) {
+                createObstacle();
+            }
+        }
+
+        // Create new obstacle
+        function createObstacle() {
+            if (gameOver) return;
+            
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            const obstacle = new THREE.Mesh(geometry, material);
+            
+            obstacle.position.z = -50;
+            obstacle.position.y = 0;
+            // Increased spawn range for more variety
+            obstacle.position.x = Math.random() * 8 - 4; // Random position between -4 and 4
+            
+            scene.add(obstacle);
+            obstacles.push(obstacle);
+        }
+
+        // Create platform
+        function createPlatform() {
+            if (gameOver) return;
+            
+            const geometry = new THREE.BoxGeometry(2, 0.5, 2);
+            const material = new THREE.MeshPhongMaterial({ color: 0x0088ff });
+            const platform = new THREE.Mesh(geometry, material);
+            
+            platform.position.z = -50;
+            platform.position.y = 2;  // Platforms appear higher
+            platform.position.x = Math.random() * 6 - 3; // Random position between -3 and 3
+            
+            scene.add(platform);
+            platforms.push(platform);
+        }
+
+        // Game loop
+        function animate() {
+            if (!gameOver) {
+                requestAnimationFrame(animate);
+                
+                // Apply gravity and jumping physics
+                if (isJumping) {
+                    player.position.y += jumpVelocity;
+                    jumpVelocity += GRAVITY;
+                }
+
+                // Check if landed on ground
+                if (player.position.y <= 0) {
+                    player.position.y = 0;
+                    isJumping = false;
+                    jumpVelocity = 0;
+                    canDoubleJump = false;  // Reset double jump when landing
+                }
+
+                // Move obstacles
+                obstacles.forEach((obstacle, index) => {
+                    obstacle.position.z += 0.2;
+                    
+                    // Check collision with adjusted hitbox
+                    if (Math.abs(obstacle.position.x - player.position.x) < 0.8 &&
+                        Math.abs(obstacle.position.z - player.position.z) < 0.8 &&
+                        Math.abs(obstacle.position.y - player.position.y) < 0.8) {
+                        // Only die if hitting from the sides or bottom
+                        if (player.position.y < obstacle.position.y + 0.8 &&
+                            player.position.y > obstacle.position.y - 0.2) {
+                            gameOver = true;
+                            alert('Game Over! Score: ' + score);
+                        } else if (player.position.y > obstacle.position.y) {
+                            // Landing on top of obstacle
+                            player.position.y = obstacle.position.y + 1;
+                            isJumping = false;
+                            jumpVelocity = 0;
+                            canDoubleJump = false;
+                        }
+                    }
+                    
+                    // Remove obstacles that passed the player
+                    if (obstacle.position.z > 5) {
+                        scene.remove(obstacle);
+                        obstacles.splice(index, 1);
+                        score += 10;
+                        document.getElementById('score').innerHTML = 'Score: ' + score;
+                    }
+                });
+                
+                renderer.render(scene, camera);
+            }
+        }
+
+        // Handle keyboard input
+        document.addEventListener('keydown', (event) => {
+            if (gameOver) return;
+            
+            switch(event.key) {
+                case 'ArrowLeft':
+                    if (player.position.x > -4) {
+                        player.position.x -= 0.5;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (player.position.x < 4) {
+                        player.position.x += 0.5;
+                    }
+                    break;
+                case ' ':  // Space bar
+                    // First jump
+                    if (!isJumping) {
+                        isJumping = true;
+                        jumpVelocity = JUMP_POWER;
+                        canDoubleJump = true;
+                    }
+                    // Double jump
+                    else if (canDoubleJump) {
+                        jumpVelocity = DOUBLE_JUMP_POWER;
+                        canDoubleJump = false;
+                    }
+                    break;
+            }
+        });
+
+        // Add touch support for mobile
+        document.addEventListener('touchstart', (event) => {
+            if (gameOver) return;
+            
+            // Get touch position
+            const touch = event.touches[0];
+            const touchX = touch.clientX;
+            const screenMiddle = window.innerWidth / 2;
+            
+            // Left side of screen = move left
+            if (touchX < screenMiddle && player.position.x > -4) {
+                player.position.x -= 0.5;
+            }
+            // Right side of screen = move right
+            else if (touchX >= screenMiddle && player.position.x < 4) {
+                player.position.x += 0.5;
+            }
+            
+            // Jump on any touch
+            if (!isJumping) {
+                isJumping = true;
+                jumpVelocity = JUMP_POWER;
+                canDoubleJump = true;
+            }
+            else if (canDoubleJump) {
+                jumpVelocity = DOUBLE_JUMP_POWER;
+                canDoubleJump = false;
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

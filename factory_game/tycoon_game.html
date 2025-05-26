@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puppy Tycoon</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            width: 1200px;
+            height: 800px;
+        }
+        #gameCanvas {
+            background-color: #ffffff;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 100%;
+        }
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+        <div id="uiOverlay"></div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            money: 1000,
+            puppies: [],
+            facilities: [],
+            selectedTool: null,
+            player: {
+                x: 600,
+                y: 400,
+                width: 40,
+                height: 40,
+                speed: 4,
+                direction: 'down' // 'up', 'down', 'left', 'right'
+            },
+            room: {
+                x: 900,
+                y: 0,
+                width: 300,
+                height: 200,
+                wallThickness: 20
+            }
+        };
+
+        // Input handling
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+
+        // Event listeners for keyboard input
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+            }
+        });
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Collision detection
+        function checkWallCollision(newX, newY) {
+            const player = gameState.player;
+            const room = gameState.room;
+            
+            // Only check for collisions if player is near the room
+            if (newX + player.width < room.x || newX > room.x + room.width ||
+                newY + player.height < room.y || newY > room.y + room.height) {
+                return false;
+            }
+            
+            // Check if player is trying to move through walls
+            if (newX < room.x + room.wallThickness && 
+                newY + player.height > room.y && 
+                newY < room.y + room.height) {
+                return true; // Left wall collision
+            }
+            if (newX + player.width > room.x + room.width - room.wallThickness && 
+                newY + player.height > room.y && 
+                newY < room.y + room.height) {
+                return true; // Right wall collision
+            }
+            if (newY < room.y + room.wallThickness && 
+                newX + player.width > room.x && 
+                newX < room.x + room.width) {
+                return true; // Top wall collision
+            }
+            if (newY + player.height > room.y + room.height - room.wallThickness && 
+                newX + player.width > room.x && 
+                newX < room.x + room.width) {
+                // Check if player is trying to go through the door
+                const doorX = room.x + room.width/2 - 30; // Door is 60 pixels wide
+                if (newX + player.width > doorX && newX < doorX + 60) {
+                    return false; // Allow movement through door
+                }
+                return true; // Bottom wall collision (except at door)
+            }
+            return false;
+        }
+
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update game state
+            updateGame();
+
+            // Draw game elements
+            drawGame();
+
+            // Request next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateGame() {
+            const player = gameState.player;
+            let newX = player.x;
+            let newY = player.y;
+
+            // Calculate new position
+            if (keys.ArrowUp) {
+                newY = Math.max(0, player.y - player.speed);
+                player.direction = 'up';
+            }
+            if (keys.ArrowDown) {
+                newY = Math.min(canvas.height - player.height, player.y + player.speed);
+                player.direction = 'down';
+            }
+            if (keys.ArrowLeft) {
+                newX = Math.max(0, player.x - player.speed);
+                player.direction = 'left';
+            }
+            if (keys.ArrowRight) {
+                newX = Math.min(canvas.width - player.width, player.x + player.speed);
+                player.direction = 'right';
+            }
+
+            // Check for wall collisions
+            if (!checkWallCollision(newX, newY)) {
+                player.x = newX;
+                player.y = newY;
+            }
+        }
+
+        function drawGame() {
+            // Draw background
+            ctx.fillStyle = '#e8f5e9';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            drawGrid();
+
+            // Draw room
+            drawRoom();
+
+            // Draw player puppy
+            drawPlayer();
+
+            // Draw facilities
+            drawFacilities();
+
+            // Draw other puppies
+            drawPuppies();
+        }
+
+        function drawRoom() {
+            const room = gameState.room;
+            
+            // Draw room floor
+            ctx.fillStyle = '#f5f5dc'; // Light beige color for the floor
+            ctx.fillRect(room.x, room.y, room.width, room.height);
+            
+            // Draw walls
+            ctx.fillStyle = '#8B4513'; // Brown color for walls
+            // Top wall
+            ctx.fillRect(room.x, room.y, room.width, room.wallThickness);
+            // Bottom wall (with door)
+            const doorX = room.x + room.width/2 - 30; // Door is 60 pixels wide
+            ctx.fillRect(room.x, room.y + room.height - room.wallThickness, doorX - room.x, room.wallThickness);
+            ctx.fillRect(doorX + 60, room.y + room.height - room.wallThickness, room.width - (doorX - room.x + 60), room.wallThickness);
+            // Left wall
+            ctx.fillRect(room.x, room.y, room.wallThickness, room.height);
+            // Right wall
+            ctx.fillRect(room.x + room.width - room.wallThickness, room.y, room.wallThickness, room.height);
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+
+            // Draw vertical lines
+            for (let x = 0; x < canvas.width; x += 75) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal lines
+            for (let y = 0; y < canvas.height; y += 75) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawPlayer() {
+            const player = gameState.player;
+            
+            // Draw puppy body
+            ctx.fillStyle = '#8B4513'; // Brown color for the puppy
+            ctx.beginPath();
+            ctx.ellipse(
+                player.x + player.width/2,
+                player.y + player.height/2,
+                player.width/2,
+                player.height/2,
+                0, 0, Math.PI * 2
+            );
+            ctx.fill();
+
+            // Draw puppy face based on direction
+            ctx.fillStyle = '#000000';
+            switch(player.direction) {
+                case 'up':
+                    // Eyes
+                    ctx.fillRect(player.x + player.width/4, player.y + player.height/3, 5, 5);
+                    ctx.fillRect(player.x + player.width*3/4 - 5, player.y + player.height/3, 5, 5);
+                    break;
+                case 'down':
+                    // Eyes
+                    ctx.fillRect(player.x + player.width/4, player.y + player.height*2/3, 5, 5);
+                    ctx.fillRect(player.x + player.width*3/4 - 5, player.y + player.height*2/3, 5, 5);
+                    break;
+                case 'left':
+                    // Eyes
+                    ctx.fillRect(player.x + player.width/3, player.y + player.height/3, 5, 5);
+                    ctx.fillRect(player.x + player.width/3, player.y + player.height*2/3, 5, 5);
+                    break;
+                case 'right':
+                    // Eyes
+                    ctx.fillRect(player.x + player.width*2/3, player.y + player.height/3, 5, 5);
+                    ctx.fillRect(player.x + player.width*2/3, player.y + player.height*2/3, 5, 5);
+                    break;
+            }
+        }
+
+        function drawFacilities() {
+            // Will be implemented when we add facilities
+        }
+
+        function drawPuppies() {
+            // Will be implemented when we add other puppies
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>

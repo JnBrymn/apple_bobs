@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>2D Minecraft</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+        
+        // Game constants
+        const BLOCK_SIZE = 32;
+        const GRAVITY = 0.5;
+        const JUMP_FORCE = -10;
+        
+        // Block types
+        const BLOCKS = {
+            DIRT: '#8B4513',
+            GRASS: '#228B22',
+            STONE: '#808080',
+            SKY: '#87CEEB'
+        };
+        
+        // Player object
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: BLOCK_SIZE,
+            height: BLOCK_SIZE * 2,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 5,
+            isJumping: false
+        };
+        
+        // World generation
+        const world = [];
+        const WORLD_WIDTH = Math.ceil(canvas.width / BLOCK_SIZE);
+        const WORLD_HEIGHT = Math.ceil(canvas.height / BLOCK_SIZE);
+        
+        function generateWorld() {
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                world[x] = [];
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    if (y > WORLD_HEIGHT * 0.6) {
+                        world[x][y] = 'DIRT';
+                    } else if (y === Math.floor(WORLD_HEIGHT * 0.6)) {
+                        world[x][y] = 'GRASS';
+                    } else {
+                        world[x][y] = 'SKY';
+                    }
+                }
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function update() {
+            // Player movement
+            if (keys['ArrowLeft']) player.velocityX = -player.speed;
+            else if (keys['ArrowRight']) player.velocityX = player.speed;
+            else player.velocityX = 0;
+            
+            // Apply gravity
+            player.velocityY += GRAVITY;
+            
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Basic collision detection
+            const bottomBlock = world[Math.floor(player.x / BLOCK_SIZE)][Math.floor((player.y + player.height) / BLOCK_SIZE)];
+            if (bottomBlock !== 'SKY' && player.velocityY > 0) {
+                player.y = Math.floor((player.y + player.height) / BLOCK_SIZE) * BLOCK_SIZE - player.height;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = BLOCKS.SKY;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw world
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    if (world[x][y] !== 'SKY') {
+                        ctx.fillStyle = BLOCKS[world[x][y]];
+                        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                }
+            }
+            
+            // Draw player
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'ArrowUp' && !player.isJumping) {
+                player.velocityY = JUMP_FORCE;
+                player.isJumping = true;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Mouse interaction
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / BLOCK_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / BLOCK_SIZE);
+            
+            if (world[x][y] !== 'SKY') {
+                world[x][y] = 'SKY'; // Break block
+            } else {
+                world[x][y] = 'DIRT'; // Place block
+            }
+        });
+        
+        // Start the game
+        generateWorld();
+        gameLoop();
+    </script>
+</body>
+</html> 

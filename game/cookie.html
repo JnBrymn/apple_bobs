@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f0d9b5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stats h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stats h2 {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .cookie-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #cookie {
+            width: 200px;
+            height: 200px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            background: #d4a76a;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        #cookie:active {
+            transform: scale(0.95);
+        }
+
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .upgrade {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .upgrade h3 {
+            margin-bottom: 5px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upgrade-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .upgrade-icon path, .upgrade-icon circle, .upgrade-icon rect {
+            fill: #333;
+            stroke: #333;
+            stroke-width: 0.5;
+        }
+
+        .upgrade-icon .fill {
+            fill: #333;
+        }
+
+        .upgrade-icon .outline {
+            fill: none;
+            stroke: #333;
+            stroke-width: 1;
+        }
+
+        .upgrade p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .upgrade button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .upgrade button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            color: #fff;
+            display: none;
+        }
+
+        .combo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #ffd700;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="stats">
+            <h1>Cookies: <span id="cookies">0</span></h1>
+            <h2>Cookies per second: <span id="cps">0</span></h2>
+        </div>
+        
+        <div class="cookie-container">
+            <div id="cookie"></div>
+        </div>
+
+        <div class="upgrades">
+            <div class="upgrade" id="cursor">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M7,2l12,12-5,5-2,2-2-2-5-5L7,2z"/>
+                        <path class="fill" d="M7,2l5,5-5,5"/>
+                        <path class="fill" d="M7,2l12,12-5,5-2,2-2-2-5-5L7,2z" fill-opacity="0.2"/>
+                        <path class="outline" d="M7,2l5,5-5,5"/>
+                    </svg>
+                    Cursor
+                </h3>
+                <p>Cost: <span id="cursor-cost">15</span> cookies</p>
+                <p>Amount: <span id="cursor-amount">0</span></p>
+                <button onclick="buyUpgrade('cursor')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="grandma">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <circle class="outline" cx="12" cy="12" r="10"/>
+                        <circle class="fill" cx="9" cy="10" r="1"/>
+                        <circle class="fill" cx="15" cy="10" r="1"/>
+                        <path class="fill" d="M12,14c-1.1,0-2,0.9-2,2h4C14,14.9,13.1,14,12,14z"/>
+                        <path class="outline" d="M12,16c-1.1,0-2,0.9-2,2h4C14,16.9,13.1,16,12,16z"/>
+                    </svg>
+                    Grandma
+                </h3>
+                <p>Cost: <span id="grandma-cost">100</span> cookies</p>
+                <p>Amount: <span id="grandma-amount">0</span></p>
+                <button onclick="buyUpgrade('grandma')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="farm">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <rect class="fill" x="8" y="10" width="2" height="2"/>
+                        <rect class="fill" x="14" y="10" width="2" height="2"/>
+                    </svg>
+                    Farm
+                </h3>
+                <p>Cost: <span id="farm-cost">1100</span> cookies</p>
+                <p>Amount: <span id="farm-amount">0</span></p>
+                <button onclick="buyUpgrade('farm')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="mine">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <path class="outline" d="M12,8l-4,2v4l4,2l4-2v-4L12,8z"/>
+                        <path class="fill" d="M12,10l-2,1v2l2,1l2-1v-2L12,10z"/>
+                    </svg>
+                    Mine
+                </h3>
+                <p>Cost: <span id="mine-cost">12000</span> cookies</p>
+                <p>Amount: <span id="mine-amount">0</span></p>
+                <button onclick="buyUpgrade('mine')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="factory">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <rect class="outline" x="2" y="4" width="20" height="16"/>
+                        <rect class="fill" x="6" y="8" width="4" height="4"/>
+                        <rect class="fill" x="14" y="8" width="4" height="4"/>
+                        <rect class="fill" x="6" y="14" width="4" height="4"/>
+                        <rect class="fill" x="14" y="14" width="4" height="4"/>
+                        <path class="outline" d="M2,8h20M2,12h20M2,16h20"/>
+                    </svg>
+                    Factory
+                </h3>
+                <p>Cost: <span id="factory-cost">130000</span> cookies</p>
+                <p>Amount: <span id="factory-amount">0</span></p>
+                <button onclick="buyUpgrade('factory')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="bank">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <path class="outline" d="M12,8l-4,2v4l4,2l4-2v-4L12,8z"/>
+                        <path class="fill" d="M12,10l-2,1v2l2,1l2-1v-2L12,10z"/>
+                        <circle class="fill" cx="12" cy="12" r="1"/>
+                    </svg>
+                    Bank
+                </h3>
+                <p>Cost: <span id="bank-cost">1400000</span> cookies</p>
+                <p>Amount: <span id="bank-amount">0</span></p>
+                <button onclick="buyUpgrade('bank')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="temple">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <path class="outline" d="M12,8l-4,2v4l4,2l4-2v-4L12,8z"/>
+                        <path class="fill" d="M12,10l-2,1v2l2,1l2-1v-2L12,10z"/>
+                        <path class="outline" d="M12,14l-2,1v2l2,1l2-1v-2L12,14z"/>
+                    </svg>
+                    Temple
+                </h3>
+                <p>Cost: <span id="temple-cost">20000000</span> cookies</p>
+                <p>Amount: <span id="temple-amount">0</span></p>
+                <button onclick="buyUpgrade('temple')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="wizard-tower">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <path class="outline" d="M12,8l-4,2v4l4,2l4-2v-4L12,8z"/>
+                        <path class="fill" d="M12,10l-2,1v2l2,1l2-1v-2L12,10z"/>
+                        <path class="outline" d="M12,14l-2,1v2l2,1l2-1v-2L12,14z"/>
+                        <path class="fill" d="M12,16l-1,0.5v1l1,0.5l1-0.5v-1L12,16z"/>
+                        <path class="outline" d="M12,18l-1,0.5v1l1,0.5l1-0.5v-1L12,18z"/>
+                    </svg>
+                    Wizard Tower
+                </h3>
+                <p>Cost: <span id="wizard-tower-cost">330000000</span> cookies</p>
+                <p>Amount: <span id="wizard-tower-amount">0</span></p>
+                <button onclick="buyUpgrade('wizard-tower')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="shipment">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <path class="outline" d="M12,2L2,8v8l10,6l10-6V8L12,2z"/>
+                        <path class="fill" d="M12,4l-4,2v4l4,2l4-2V6L12,4z"/>
+                        <path class="outline" d="M12,8l-4,2v4l4,2l4-2v-4L12,8z"/>
+                        <path class="fill" d="M12,10l-2,1v2l2,1l2-1v-2L12,10z"/>
+                        <path class="outline" d="M12,14l-2,1v2l2,1l2-1v-2L12,14z"/>
+                        <path class="fill" d="M12,16l-1,0.5v1l1,0.5l1-0.5v-1L12,16z"/>
+                        <path class="outline" d="M12,18l-1,0.5v1l1,0.5l1-0.5v-1L12,18z"/>
+                        <path class="fill" d="M12,20l-0.5,0.25v0.5l0.5,0.25l0.5-0.25v-0.5L12,20z"/>
+                    </svg>
+                    Shipment
+                </h3>
+                <p>Cost: <span id="shipment-cost">5100000000</span> cookies</p>
+                <p>Amount: <span id="shipment-amount">0</span></p>
+                <button onclick="buyUpgrade('shipment')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="portal">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <circle class="outline" cx="12" cy="12" r="10"/>
+                        <circle class="outline" cx="12" cy="12" r="6"/>
+                        <circle class="outline" cx="12" cy="12" r="2"/>
+                        <path class="fill" d="M12,2l-4,8h8L12,2z"/>
+                        <path class="fill" d="M12,22l-4-8h8L12,22z"/>
+                    </svg>
+                    Portal
+                </h3>
+                <p>Cost: <span id="portal-cost">77900000000</span> cookies</p>
+                <p>Amount: <span id="portal-amount">0</span></p>
+                <button onclick="buyUpgrade('portal')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="time-machine">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <circle class="outline" cx="12" cy="12" r="10"/>
+                        <path class="fill" d="M12,6v6l4,2"/>
+                        <circle class="fill" cx="12" cy="12" r="1"/>
+                        <path class="outline" d="M12,6v6l4,2"/>
+                    </svg>
+                    Time Machine
+                </h3>
+                <p>Cost: <span id="time-machine-cost">10000000000</span> cookies</p>
+                <p>Amount: <span id="time-machine-amount">0</span></p>
+                <button onclick="buyUpgrade('time-machine')">Buy</button>
+            </div>
+
+            <div class="upgrade" id="GOD">
+                <h3>
+                    <svg class="upgrade-icon" viewBox="0 0 24 24">
+                        <circle class="outline" cx="12" cy="12" r="10"/>
+                        <path class="fill" d="M12,4l-4,8h8L12,4z"/>
+                        <path class="fill" d="M12,20l-4-8h8L12,20z"/>
+                        <path class="outline" d="M12,4l-4,8h8L12,4z"/>
+                        <path class="outline" d="M12,20l-4-8h8L12,20z"/>
+                        <circle class="fill" cx="12" cy="12" r="2"/>
+                    </svg>
+                    GOD
+                </h3>
+                <p>Cost: <span id="GOD-cost">5000000000000</span> cookies</p>
+                <p>Amount: <span id="GOD-amount">0</span></p>
+                <button onclick="buyUpgrade('GOD')">Buy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="achievement" id="achievement">
+        <h3>Achievement Unlocked!</h3>
+        <p id="achievement-text"></p>
+    </div>
+
+    <div class="combo" id="combo"></div>
+
+    <script>
+        // Game state
+        let cookies = 0;
+        let cookiesPerSecond = 0;
+        let totalClicks = 0;
+        let clickCombo = 0;
+        let lastClickTime = 0;
+        let achievements = {
+            firstClick: false,
+            firstUpgrade: false,
+            hundredClicks: false,
+            thousandClicks: false,
+            millionCookies: false
+        };
+
+        // Upgrade costs and amounts
+        const upgrades = {
+            cursor: { cost: 15, amount: 0, cps: 0.1 },
+            grandma: { cost: 100, amount: 0, cps: 1 },
+            farm: { cost: 1100, amount: 0, cps: 8 },
+            mine: { cost: 12000, amount: 0, cps: 47 },
+            factory: { cost: 130000, amount: 0, cps: 260 },
+            bank: { cost: 1400000, amount: 0, cps: 1400 },
+            temple: { cost: 20000000, amount: 0, cps: 7800 },
+            'wizard-tower': { cost: 330000000, amount: 0, cps: 44000 },
+            shipment: { cost: 5100000000, amount: 0, cps: 260000 },
+            portal: { cost: 77900000000, amount: 0, cps: 1600000 },
+            'time-machine': { cost: 10000000000, amount: 0, cps: 10000000 },
+            GOD: { cost: 5000000000000, amount: 0, cps: 100000000 }
+        };
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookie = document.getElementById('cookie');
+            
+            // Cookie click event
+            cookie.addEventListener('click', () => {
+                const now = Date.now();
+                if (now - lastClickTime < 500) {
+                    clickCombo++;
+                    showCombo(clickCombo);
+                } else {
+                    clickCombo = 1;
+                }
+                lastClickTime = now;
+
+                cookies += clickCombo;
+                totalClicks++;
+                updateStats();
+                
+                // Check achievements
+                checkAchievements();
+            });
+
+            // Start the game loop
+            setInterval(gameLoop, 1000);
+        });
+
+        // Show combo
+        function showCombo(combo) {
+            const comboElement = document.getElementById('combo');
+            comboElement.textContent = combo + 'x Combo!';
+            comboElement.style.display = 'block';
+            setTimeout(() => comboElement.style.display = 'none', 1000);
+        }
+
+        // Show achievement
+        function showAchievement(text) {
+            const achievement = document.getElementById('achievement');
+            const achievementText = document.getElementById('achievement-text');
+            achievementText.textContent = text;
+            achievement.style.display = 'block';
+            setTimeout(() => achievement.style.display = 'none', 3000);
+        }
+
+        // Check achievements
+        function checkAchievements() {
+            if (!achievements.firstClick) {
+                achievements.firstClick = true;
+                showAchievement('First Click!');
+            }
+            if (totalClicks >= 100 && !achievements.hundredClicks) {
+                achievements.hundredClicks = true;
+                showAchievement('100 Clicks!');
+            }
+            if (totalClicks >= 1000 && !achievements.thousandClicks) {
+                achievements.thousandClicks = true;
+                showAchievement('1000 Clicks!');
+            }
+            if (cookies >= 1000000 && !achievements.millionCookies) {
+                achievements.millionCookies = true;
+                showAchievement('1 Million Cookies!');
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            let totalCps = 0;
+            for (const [key, upgrade] of Object.entries(upgrades)) {
+                totalCps += upgrade.amount * upgrade.cps;
+            }
+            cookies += totalCps;
+            cookiesPerSecond = totalCps;
+            updateStats();
+        }
+
+        // Update the display
+        function updateStats() {
+            document.getElementById('cookies').textContent = Math.floor(cookies).toLocaleString();
+            document.getElementById('cps').textContent = cookiesPerSecond.toFixed(1).toLocaleString();
+
+            // Update upgrade buttons
+            for (const [key, upgrade] of Object.entries(upgrades)) {
+                const button = document.querySelector(`#${key} button`);
+                const costElement = document.getElementById(`${key}-cost`);
+                const amountElement = document.getElementById(`${key}-amount`);
+
+                costElement.textContent = Math.floor(upgrade.cost).toLocaleString();
+                amountElement.textContent = upgrade.amount.toLocaleString();
+                button.disabled = cookies < upgrade.cost;
+            }
+        }
+
+        // Buy upgrade function
+        function buyUpgrade(upgradeType) {
+            const upgrade = upgrades[upgradeType];
+            if (cookies >= upgrade.cost) {
+                cookies -= upgrade.cost;
+                upgrade.amount++;
+                upgrade.cost = Math.floor(upgrade.cost * 1.15);
+                
+                if (!achievements.firstUpgrade) {
+                    achievements.firstUpgrade = true;
+                    showAchievement('First Upgrade!');
+                }
+                
+                updateStats();
+            }
+        }
+    </script>
+</body>
+</html>

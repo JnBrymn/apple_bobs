@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Publish script to generate menu of all Apple Bobs games
+# Apple Bobs - A collection of games created by Bo Berryman using vibe coding
+
+python3 scripts/format_index.py
+
+git add .
+# Get list of changed files for commit message
+CHANGED_FILES=$(git status --porcelain | cut -c4- | tr '\n' ' ')
+git commit -m "Update: $CHANGED_FILES"
+git push

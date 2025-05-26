@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multiplication Practice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 30px;
+            
+            border: 2px solid #4CAF50;
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .problem {
+            font-size: 36px;
+            margin: 30px 0;
+            color: #333;
+        }
+        input[type="text"] {
+            font-size: 24px;
+            padding: 10px;
+            width: 120px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+        }
+        button {
+            font-size: 20px;
+            padding: 12px 30px;
+            margin: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .score {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #666;
+        }
+        .timer {
+            font-size: 24px;
+            color: #666;
+            margin: 15px 0;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+    </style>
+    <audio id="correctSound" src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAAAYbUxJZkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tQxAAAAAAGkAAAAAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mp3"></audio>
+    <audio id="incorrectSound" src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAGhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVWqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr///////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAAAYbf0JbiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tQxAAAAAAGkAAAAAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mp3"></audio>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Multiplication Practice</h1>
+        <div class="timer" id="timer">Time: 0:00</div>
+        <div class="progress">
+            <div class="progress-bar" id="progress"></div>
+        </div>
+        <div class="problem" id="problem"></div>
+        <input type="text" id="answer" placeholder="Type answer" maxlength="4">
+        <button onclick="checkAnswer()">Submit</button>
+        <div class="score">Score: <span id="score">0</span> / 10</div>
+    </div>
+
+    <script>
+        let num1, num2, correctAnswer;
+        let score = 0;
+        let startTime;
+        let timerInterval;
+        const targetScore = 3;
+        const correctSound = document.getElementById('correctSound');
+        const incorrectSound = document.getElementById('incorrectSound');
+        let incorrectAnswers = [];
+
+        function updateTimer() {
+            const currentTime = new Date().getTime();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = elapsedTime % 60;
+            document.getElementById('timer').textContent = 
+                `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startGame() {
+            score = 0;
+            document.getElementById('score').textContent = score;
+            document.getElementById('progress').style.width = '0%';
+            startTime = new Date().getTime();
+            timerInterval = setInterval(updateTimer, 1000);
+            generateProblem();
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            const finalTime = document.getElementById('timer').textContent.slice(6);
+            setTimeout(() => {
+                let message = `Congratulations! You completed 10 problems in ${finalTime}!\n\n`;
+                
+                if (incorrectAnswers.length > 0) {
+                    message += "Problems you got wrong:\n";
+                    incorrectAnswers.forEach(problem => {
+                        message += `${problem.num1} × ${problem.num2} = ${problem.correctAnswer}\n`;
+                    });
+                } else {
+                    message += "Perfect score! You got all problems correct!";
+                }
+                
+                alert(message);
+                if (confirm('Play again?')) {
+                    incorrectAnswers = [];
+                    startGame();
+                }
+            }, 300);
+        }
+
+        function generateProblem() {
+            // Generate random numbers between 2 and 50
+            num1 = Math.floor(Math.random() * 9) + 2;  // 2 to 10
+            num2 = Math.floor(Math.random() * 9) + 2;  // 2 to 10
+            correctAnswer = num1 * num2;
+            
+            // Display the problem with multiplication symbol
+            document.getElementById('problem').innerHTML = `${num1} × ${num2} = ?`;
+            document.getElementById('answer').value = '';
+            document.getElementById('answer').focus();
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            
+            if (userAnswer === correctAnswer) {
+                // Play correct sound
+                correctSound.currentTime = 0;
+                correctSound.play();
+                
+                score++;
+                document.getElementById('score').textContent = score;
+                document.getElementById('progress').style.width = `${(score/targetScore) * 100}%`;
+                
+                if (score >= targetScore) {
+                    endGame();
+                } else {
+                    generateProblem();
+                }
+            } else {
+                // Track incorrect answer
+                incorrectAnswers.push({
+                    num1: num1,
+                    num2: num2,
+                    correctAnswer: correctAnswer,
+                    userAnswer: userAnswer
+                });
+                
+                // Play incorrect sound
+                incorrectSound.currentTime = 0;
+                incorrectSound.play();
+                
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = `The correct answer was ${correctAnswer}`;
+                errorMsg.style.color = '#ff4444';
+                errorMsg.style.fontSize = '20px';
+                errorMsg.style.marginTop = '10px';
+                document.querySelector('.problem').appendChild(errorMsg);
+                
+                setTimeout(() => {
+                    errorMsg.remove();
+                    generateProblem();
+                }, 2000);
+            }
+        }
+
+        // Allow Enter key to submit answer
+        document.getElementById('answer').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Start the game immediately
+        startGame();
+    </script>
+</body>
+</html>

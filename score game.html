@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Score Game</title>
+    <style>
+        /* ... existing styles ... */
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <div class="button-container">
+        <button class="plus" onclick="addScore(1)">+1</button>
+        <button class="plus" onclick="addScore(5)">+5</button>
+        <button class="plus" onclick="addScore(10)">+10</button>
+    </div>
+    <div class="button-container">
+        <button class="minus" onclick="addScore(-1)">-1</button>
+        <button class="minus" onclick="addScore(-5)">-5</button>
+        <button class="minus" onclick="addScore(-10)">-10</button>
+    </div>
+
+    <script>
+        let score = 0;
+        const scoreDisplay = document.getElementById('score');
+
+        function addScore(amount) {
+            // Check if subtracting would make score negative
+            if (score + amount < 0) {
+                // If it would go negative, just set to 0
+                score = 0;
+            } else {
+                // Otherwise add the amount normally
+                score += amount;
+            }
+            scoreDisplay.textContent = score;
+        }
+    </script>
+</body>
+</html>

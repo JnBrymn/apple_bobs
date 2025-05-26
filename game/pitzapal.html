@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pizza Factory Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            backgroundColor: '#87CEEB',
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    debug: false
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            }
+        };
+
+        const game = new Phaser.Game(config);
+        let pizzas = [];
+        let conveyorBelt1;
+        let conveyorBelt2;
+        let spawnTimer = 0;
+        const SPAWN_INTERVAL = 6000;
+        let tKey;
+        let cKey;
+        let particles;
+        let sauceParticles = [];
+        let cheeseParticles = [];
+
+        // Screen dimensions
+        const SCREEN_WIDTH = 800;
+        const SCREEN_HEIGHT = 600;
+
+        // Conveyor belt dimensions and positions
+        const CONVEYOR_WIDTH = SCREEN_WIDTH * 0.9;
+        const CONVEYOR_HEIGHT = SCREEN_HEIGHT * 0.2;
+        const CONVEYOR_1_Y = SCREEN_HEIGHT * 0.25;
+        const CONVEYOR_2_Y = SCREEN_HEIGHT * 0.5;
+        const CONVEYOR_X = SCREEN_WIDTH / 2;
+
+        // Pizza dimensions
+        const PIZZA_RADIUS = 60;
+        const PIZZA_SPAWN_X = -50;
+        const PIZZA_OFFSCREEN_X = SCREEN_WIDTH + PIZZA_RADIUS;
+        const PIZZA_RESPAWN_X = -PIZZA_RADIUS;
+
+        // Ingredient text position
+        const INGREDIENT_TEXT_OFFSET = 80;
+
+        // Sauce particle properties
+        const SAUCE_PARTICLE_RADIUS = 15;
+        const SAUCE_PARTICLE_ALPHA = 0.8;
+        const SAUCE_PARTICLE_LIFETIME = 500;
+        const SAUCE_PARTICLE_FADE_DURATION = 300;
+
+        // Pizza class to track ingredients
+        class Pizza {
+            constructor(scene, x, y) {
+                this.dough = scene.add.circle(x, y, PIZZA_RADIUS, 0xD2B48C);
+                this.tomatoSauce = 0;
+                this.cheese = 0;
+                this.pepperoni = 0;
+                this.radius = PIZZA_RADIUS;
+                this.cheeseLines = []; // Array to store cheese line graphics
+                
+                this.ingredientText = scene.add.text(x, y - INGREDIENT_TEXT_OFFSET, '', {
+                    fontSize: '16px',
+                    fill: '#000000',
+                    backgroundColor: '#ffffff',
+                    padding: { x: 10, y: 5 }
+                });
+                this.ingredientText.setOrigin(0.5, 0.5);
+                this.updateIngredientText();
+            }
+
+            addSauce(amount) {
+                this.tomatoSauce += amount;
+                this.updateIngredientText();
+            }
+
+            addCheese(scene, line) {
+                this.cheese += 0.5; // Add 0.5 oz of cheese per sprinkle
+                this.cheeseLines.push(line);
+                this.updateIngredientText();
+            }
+
+            updateIngredientText() {
+                this.ingredientText.setText(
+                    `Sauce: ${this.tomatoSauce.toFixed(1)} oz\n` +
+                    `Cheese: ${this.cheese.toFixed(1)} oz\n` +
+                    `Pepperoni: ${this.pepperoni} slices`
+                );
+            }
+
+            updatePosition(x, y) {
+                const oldX = this.dough.x;
+                const oldY = this.dough.y;
+                
+                this.dough.x = x;
+                this.dough.y = y;
+                this.ingredientText.x = x;
+                this.ingredientText.y = y - INGREDIENT_TEXT_OFFSET;
+                
+                // Update cheese line positions relative to pizza movement
+                this.cheeseLines.forEach(line => {
+                    line.x += x - oldX;
+                    line.y += y - oldY;
+                });
+            }
+
+            destroy() {
+                this.dough.destroy();
+                this.ingredientText.destroy();
+                this.cheeseLines.forEach(line => line.destroy());
+            }
+        }
+
+        function preload() {
+            // Load assets
+            this.load.image('conveyor', 'https://i.imgur.com/8QZQZQZ.png');
+            this.load.image('dough', 'https://i.imgur.com/8QZQZQZ.png');
+        }
+
+        function create() {
+            // Create conveyor belts
+            conveyorBelt1 = this.add.rectangle(
+                CONVEYOR_X, 
+                CONVEYOR_1_Y,
+                CONVEYOR_WIDTH,
+                CONVEYOR_HEIGHT,
+                0x8B4513
+            );
+            conveyorBelt1.setOrigin(0.5, 0.5);
+
+            conveyorBelt2 = this.add.rectangle(
+                CONVEYOR_X, 
+                CONVEYOR_2_Y,
+                CONVEYOR_WIDTH,
+                CONVEYOR_HEIGHT,
+                0x8B4513
+            );
+            conveyorBelt2.setOrigin(0.5, 0.5);
+
+            // Create initial pizza
+            spawnPizza(this);
+
+            // Add key input
+            tKey = this.input.keyboard.addKey('T');
+            cKey = this.input.keyboard.addKey('C');
+
+            // Create particle manager
+            particles = this.add.particles();
+
+            // Handle window resize
+            this.scale.on('resize', (gameSize) => {
+                if (conveyorBelt1 && conveyorBelt2) {
+                    conveyorBelt1.setSize(CONVEYOR_WIDTH, CONVEYOR_HEIGHT);
+                    conveyorBelt1.setPosition(CONVEYOR_X, CONVEYOR_1_Y);
+                    conveyorBelt2.setSize(CONVEYOR_WIDTH, CONVEYOR_HEIGHT);
+                    conveyorBelt2.setPosition(CONVEYOR_X, CONVEYOR_2_Y);
+                }
+            });
+        }
+
+        function update(time, delta) {
+            // Update spawn timer
+            spawnTimer += delta;
+            if (spawnTimer >= SPAWN_INTERVAL) {
+                spawnPizza(this);
+                spawnTimer = 0;
+            }
+
+            // Move all pizzas
+            pizzas.forEach(pizza => {
+                pizza.dough.x += 1;
+                
+                if (pizza.dough.x > PIZZA_OFFSCREEN_X) {
+                    if (pizza.dough.y === CONVEYOR_1_Y) {
+                        pizza.updatePosition(PIZZA_RESPAWN_X, CONVEYOR_2_Y);
+                    } else {
+                        pizza.destroy();
+                        pizzas = pizzas.filter(p => p !== pizza);
+                    }
+                } else {
+                    pizza.updatePosition(pizza.dough.x, pizza.dough.y);
+                }
+            });
+
+            // Handle tomato sauce spraying
+            if (tKey.isDown) {
+                const mouseX = this.input.x;
+                const mouseY = this.input.y;
+                
+                const particle = this.add.circle(mouseX, mouseY, SAUCE_PARTICLE_RADIUS, 0xFF0000);
+                particle.alpha = SAUCE_PARTICLE_ALPHA;
+                sauceParticles.push({
+                    sprite: particle,
+                    isStuck: false,
+                    stuckTo: null,
+                    stuckOffset: { x: 0, y: 0 },
+                    spawnTime: time
+                });
+            }
+
+            // Handle cheese sprinkling
+            if (Phaser.Input.Keyboard.JustDown(cKey)) {
+                const mouseX = this.input.x;
+                const mouseY = this.input.y;
+                
+                // Create 5 cheese lines
+                for (let i = 0; i < 5; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const length = Math.random() * 20 + 10;
+                    const x1 = mouseX;
+                    const y1 = mouseY;
+                    const x2 = x1 + Math.cos(angle) * length;
+                    const y2 = y1 + Math.sin(angle) * length;
+                    
+                    const line = this.add.line(0, 0, x1, y1, x2, y2, 0xFFFFFF);
+                    line.setLineWidth(3);
+                    
+                    cheeseParticles.push({
+                        sprite: line,
+                        isStuck: false,
+                        stuckTo: null,
+                        stuckOffset: { x: 0, y: 0 },
+                        spawnTime: time
+                    });
+                }
+            }
+
+            // Check for collision between cheese and pizzas
+            cheeseParticles.forEach(cheeseParticle => {
+                if (!cheeseParticle.isStuck) {
+                    // Check for collision with pizzas
+                    pizzas.forEach(pizza => {
+                        const distance = Phaser.Math.Distance.Between(
+                            cheeseParticle.sprite.x, 
+                            cheeseParticle.sprite.y,
+                            pizza.dough.x, 
+                            pizza.dough.y
+                        );
+                        
+                        if (distance < pizza.radius) {
+                            cheeseParticle.isStuck = true;
+                            cheeseParticle.stuckTo = pizza;
+                            cheeseParticle.stuckOffset = {
+                                x: cheeseParticle.sprite.x - pizza.dough.x,
+                                y: cheeseParticle.sprite.y - pizza.dough.y
+                            };
+                            pizza.addCheese(this, cheeseParticle.sprite);
+                        }
+                    });
+
+                    // Only fade if not stuck to any pizza
+                    if (!cheeseParticle.isStuck && time - cheeseParticle.spawnTime > SAUCE_PARTICLE_LIFETIME) {
+                        this.tweens.add({
+                            targets: cheeseParticle.sprite,
+                            alpha: 0,
+                            duration: SAUCE_PARTICLE_FADE_DURATION,
+                            onComplete: () => {
+                                cheeseParticle.sprite.destroy();
+                                cheeseParticles = cheeseParticles.filter(p => p !== cheeseParticle);
+                            }
+                        });
+                    }
+                } else {
+                    // Update position of stuck cheese
+                    cheeseParticle.sprite.x = cheeseParticle.stuckTo.dough.x + cheeseParticle.stuckOffset.x;
+                    cheeseParticle.sprite.y = cheeseParticle.stuckTo.dough.y + cheeseParticle.stuckOffset.y;
+                    
+                    if (cheeseParticle.sprite.x > PIZZA_OFFSCREEN_X) {
+                        cheeseParticle.sprite.x -= SCREEN_WIDTH + PIZZA_RADIUS * 2;
+                    }
+                }
+            });
+
+            // Check for collision between sauce and pizzas
+            sauceParticles.forEach(sauceParticle => {
+                if (!sauceParticle.isStuck) {
+                    if (time - sauceParticle.spawnTime > SAUCE_PARTICLE_LIFETIME) {
+                        this.tweens.add({
+                            targets: sauceParticle.sprite,
+                            alpha: 0,
+                            duration: SAUCE_PARTICLE_FADE_DURATION,
+                            onComplete: () => {
+                                sauceParticle.sprite.destroy();
+                                sauceParticles = sauceParticles.filter(p => p !== sauceParticle);
+                            }
+                        });
+                    } else {
+                        // Check for collision with pizzas
+                        pizzas.forEach(pizza => {
+                            const distance = Phaser.Math.Distance.Between(
+                                sauceParticle.sprite.x, 
+                                sauceParticle.sprite.y,
+                                pizza.dough.x, 
+                                pizza.dough.y
+                            );
+                            
+                            if (distance < pizza.radius) {
+                                sauceParticle.isStuck = true;
+                                sauceParticle.stuckTo = pizza;
+                                sauceParticle.stuckOffset = {
+                                    x: sauceParticle.sprite.x - pizza.dough.x,
+                                    y: sauceParticle.sprite.y - pizza.dough.y
+                                };
+                                // Add sauce to the pizza
+                                pizza.addSauce(0.1); // Add 0.1 oz of sauce per hit
+                            }
+                        });
+                    }
+                } else {
+                    // Update position of stuck particles
+                    sauceParticle.sprite.x = sauceParticle.stuckTo.dough.x + sauceParticle.stuckOffset.x;
+                    sauceParticle.sprite.y = sauceParticle.stuckTo.dough.y + sauceParticle.stuckOffset.y;
+                    
+                    // Reset sauce particle position when its pizza resets
+                    if (sauceParticle.sprite.x > PIZZA_OFFSCREEN_X) {
+                        sauceParticle.sprite.x -= SCREEN_WIDTH + PIZZA_RADIUS * 2;
+                    }
+                }
+            });
+
+            // Remove only the unstuck sauce particles that fade out
+            sauceParticles = sauceParticles.filter(particle => particle.sprite.active);
+        }
+
+        function spawnPizza(scene) {
+            const pizza = new Pizza(scene, PIZZA_SPAWN_X, CONVEYOR_1_Y);
+            pizzas.push(pizza);
+        }
+    </script>
+</body>
+</html> 

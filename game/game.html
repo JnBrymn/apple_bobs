@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizard's Journey - Typing Defense</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a2e;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #spell-input {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            font-size: 24px;
+            background: rgba(45, 45, 77, 0.8);
+            color: #fff;
+            border: 2px solid #4a4a6e;
+            border-radius: 5px;
+            text-align: center;
+            width: 300px;
+            outline: none;
+        }
+        #player-stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(45, 45, 77, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        #health-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(45, 45, 77, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .word {
+            position: absolute;
+            color: #fff;
+            font-size: 32px;
+            text-shadow: 0 0 5px #00ff00;
+            transform: translateZ(0);
+            transition: all 0.1s ease;
+            opacity: 0.3;
+        }
+        .word.destroyed {
+            animation: spellHit 0.5s ease-out forwards;
+        }
+        @keyframes spellHit {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        .spell-beam {
+            position: absolute;
+            background: linear-gradient(to right, rgba(0,255,0,0.2), rgba(0,255,0,0.8));
+            height: 2px;
+            transform-origin: left center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="player-stats">
+            <h2>Wizard Status</h2>
+            <p>Rank: <span id="wizard-rank">Apprentice</span></p>
+            <p>Level: <span id="wizard-level">1</span></p>
+            <p>Experience: <span id="wizard-exp">0</span>/100</p>
+        </div>
+        <div id="health-bar">
+            <h2>Health</h2>
+            <p><span id="health">100</span>/100</p>
+        </div>
+        <input type="text" id="spell-input" placeholder="Type the word..." autocomplete="off">
+    </div>
+
+    <script>
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('game-container').appendChild(renderer.domElement);
+
+        // Basic environment setup
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // Camera position
+        camera.position.z = 5;
+
+        // Word difficulty levels
+        const wordLevels = {
+            apprentice: ['cat', 'dog', 'run', 'jump', 'play', 'walk', 'talk', 'read', 'sing', 'dance', 'good', 'bad', 'happy', 'sad', 'angry', 'excited', 'bored', 'tired', 'hungry', 'thirsty', 'cold', 'hot', 'rain'],
+            adept: ['apple', 'house', 'water', 'music', 'happy', 'dream', 'light', 'cloud', 'river', 'forest'],
+            mage: ['computer', 'mountain', 'ocean', 'butterfly', 'elephant', 'giraffe', 'dolphin', 'rainbow', 'sunshine', 'diamond'],
+            master: ['adventure', 'beautiful', 'challenge', 'discovery', 'education', 'fantastic', 'generous', 'happiness', 'imagination', 'journey'],
+            archmage: ['extraordinary', 'phenomenal', 'magnificent', 'incredible', 'wonderful', 'spectacular', 'fascinating', 'remarkable', 'outstanding', 'brilliant', 'wayfinder','oversimplified'],
+        };
+
+        // Game state
+        let currentRank = 'apprentice';
+        let playerLevel = 1;
+        let experience = 0;
+        let health = 100;
+        let activeWords = [];
+        let wordSpeed = 0.02;
+        let spawnInterval = 4000;
+        let lastSpawnTime = 0;
+
+        // Initialize the game
+        function initGame() {
+            animate();
+            setInterval(spawnWord, spawnInterval);
+            
+            // Auto-focus the input box
+            const spellInput = document.getElementById('spell-input');
+            spellInput.focus();
+            
+            // Keep focus on input even when clicking elsewhere
+            document.addEventListener('click', () => {
+                spellInput.focus();
+            });
+            
+            // Handle return key to clear input
+            spellInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    spellInput.value = '';
+                }
+            });
+        }
+
+        // Spawn a new word
+        function spawnWord() {
+            const words = wordLevels[currentRank];
+            const word = words[Math.floor(Math.random() * words.length)];
+            
+            const wordElement = document.createElement('div');
+            wordElement.className = 'word';
+            wordElement.textContent = word;
+            wordElement.style.left = `${Math.random() * (window.innerWidth - 100)}px`;
+            wordElement.style.top = `${Math.random() * (window.innerHeight - 100)}px`;
+            document.getElementById('game-container').appendChild(wordElement);
+
+            activeWords.push({
+                element: wordElement,
+                text: word,
+                z: -20, // Start further back
+                speed: wordSpeed
+            });
+        }
+
+        // Handle word typing
+        const spellInput = document.getElementById('spell-input');
+        spellInput.addEventListener('input', (e) => {
+            const typed = e.target.value.toLowerCase();
+            let targetWordIndex = -1;
+            let maxZ = -Infinity;
+
+            // Find the matching word closest to the player (highest z value)
+            for (let i = 0; i < activeWords.length; i++) {
+                const word = activeWords[i];
+                if (word.text === typed && word.z > maxZ) {
+                    maxZ = word.z;
+                    targetWordIndex = i;
+                }
+            }
+
+            // If a matching word was found, destroy it
+            if (targetWordIndex !== -1) {
+                const word = activeWords[targetWordIndex];
+
+                // Create spell beam effect
+                createSpellBeam(word.element);
+
+                // Word destroyed animation
+                word.element.classList.add('destroyed');
+                setTimeout(() => {
+                    // Ensure the element still exists before trying to remove
+                    if (word.element.parentNode) {
+                        word.element.remove();
+                    }
+                }, 500);
+
+                // Remove the word from the active list
+                activeWords.splice(targetWordIndex, 1);
+
+                gainExperience(10);
+                spellInput.value = '';
+            }
+        });
+
+        // Update word positions
+        function updateWords() {
+            for (let i = activeWords.length - 1; i >= 0; i--) {
+                const word = activeWords[i];
+                word.z += word.speed;
+                
+                // Enhanced scaling based on distance
+                const baseScale = 1.5;
+                const maxScale = 3.0;
+                const scale = Math.max(baseScale, baseScale + (maxScale - baseScale) * (1 + word.z / 20));
+                
+                const opacity = Math.min(1, 0.3 + (-word.z / 20));
+                
+                word.element.style.transform = `translateZ(${word.z}px) scale(${scale})`;
+                word.element.style.opacity = opacity;
+                word.element.style.fontSize = `${32 * scale}px`;
+                
+                if (word.z > -2) {
+                    const shake = (Math.random() - 0.5) * 4;
+                    word.element.style.transform = `translateZ(${word.z}px) scale(${scale}) translateX(${shake}px)`;
+                }
+                
+                if (word.z >= 0) {
+                    word.element.style.transform = `scale(${maxScale * 1.2})`;
+                    word.element.style.opacity = '1';
+                    word.element.style.color = '#ff0000';
+                    setTimeout(() => {
+                        word.element.remove();
+                        activeWords.splice(i, 1);
+                    }, 100);
+                    takeDamage(1);
+                }
+            }
+        }
+
+        // Health system
+        function takeDamage(amount) {
+            health = Math.max(0, health - amount);
+            document.getElementById('health').textContent = health;
+            
+            if (health <= 0) {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            alert('Game Over! Your wizard has fallen.');
+            location.reload();
+        }
+
+        // Experience and leveling system
+        function gainExperience(amount) {
+            experience += amount;
+            document.getElementById('wizard-exp').textContent = experience;
+            
+            if (experience >= 100) {
+                levelUp();
+            }
+        }
+
+        function levelUp() {
+            playerLevel++;
+            experience = 0;
+            document.getElementById('wizard-level').textContent = playerLevel;
+            
+            // Increase difficulty more gradually
+            wordSpeed += 0.003; // Reduced from 0.005
+            spawnInterval = Math.max(2000, spawnInterval - 100); // Reduced from 500 and 200
+            
+            // Rank progression
+            if (playerLevel === 5) updateRank('adept');
+            if (playerLevel === 10) updateRank('mage');
+            if (playerLevel === 15) updateRank('master');
+            if (playerLevel === 20) updateRank('archmage');
+        }
+
+        function updateRank(newRank) {
+            currentRank = newRank;
+            document.getElementById('wizard-rank').textContent = 
+                newRank.charAt(0).toUpperCase() + newRank.slice(1);
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            updateWords();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Create spell beam effect
+        function createSpellBeam(targetWord) {
+            const beam = document.createElement('div');
+            beam.className = 'spell-beam';
+            
+            // Position beam from input to word
+            const inputRect = spellInput.getBoundingClientRect();
+            const wordRect = targetWord.getBoundingClientRect();
+            
+            const startX = inputRect.left + inputRect.width / 2;
+            const startY = inputRect.top;
+            const endX = wordRect.left + wordRect.width / 2;
+            const endY = wordRect.top + wordRect.height / 2;
+            
+            const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+            
+            beam.style.width = `${length}px`;
+            beam.style.left = `${startX}px`;
+            beam.style.top = `${startY}px`;
+            beam.style.transform = `rotate(${angle}deg)`;
+            
+            document.getElementById('game-container').appendChild(beam);
+            
+            // Remove beam after animation
+            setTimeout(() => {
+                beam.remove();
+            }, 200);
+        }
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pancake Cooking Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        h1 {
+            text-align: center;
+            margin: 10px;
+        }
+        canvas {
+            flex-grow: 1;
+            width: 100%;
+        }
+        #controls {
+            text-align: center;
+            padding: 10px;
+        }
+        button {
+            font-size: 18px;
+            padding: 8px 16px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pancake Cooking Game</h1>
+    <div id="controls">
+        <button id="mixBatter">Mix Batter</button>
+        <button id="pourBatter">Pour Batter</button>
+        <button id="flip">Flip Pancake</button>
+    </div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <button id="resetButton" style="position: absolute; top: 10px; right: 10px;">Reset Game</button>
+    
+    <script>
+        // Add these at the very beginning of your script, before any functions
+        let canvas = document.getElementById('gameCanvas');
+        let ctx = canvas.getContext('2d');
+        let activeTab = true;
+        let isPouring = false;
+        let money = 0;
+        let customerHappiness = 0;
+        let totalCustomers = 0;
+        let customerReaction = '';
+        let pan = {
+            x: 100,
+            y: 300,
+            pancakeSize: 0,
+            cookingTime: 0,
+            gameState: 'mixing',
+            batterMixed: 0
+        };
+
+        // Add visibility listener right after variables
+        document.addEventListener('visibilitychange', () => {
+            activeTab = !document.hidden;
+        });
+        
+        let batterMixed = 0;
+        let pancakeSize = 0;
+        let cookingTime = 0;
+        let score = 0;
+        let gameState = 'mixing'; // mixing, pouring, cooking, flipping
+        
+        // Get button elements
+        const mixButton = document.getElementById('mixBatter');
+        const pourButton = document.getElementById('pourBatter');
+        const flipButton = document.getElementById('flip');
+        
+        // Remove disabled attributes from HTML
+        pourButton.removeAttribute('disabled');
+        flipButton.removeAttribute('disabled');
+        
+        // Update canvas size function
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - canvas.offsetTop;
+            
+            // Recalculate pan position to center it
+            panX = canvas.width / 2 - 100;  // pan width is 200
+            panY = canvas.height - 100;     // 100px from bottom
+        }
+        
+        // Add resize event listener
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Initialize canvas size
+        let panX, panY;
+        resizeCanvas();
+        
+        // Update drawPan function
+        function drawPan() {
+            ctx.fillStyle = '#666';
+            ctx.fillRect(panX, panY, 200, 20);
+        }
+        
+        // Update drawPancake function
+        function drawPancake() {
+            if (pancakeSize > 0) {
+                // Change color based on cooking time
+                let color;
+                if (cookingTime > 300) {
+                    color = '#1a1a1a'; // Almost black for burnt pancake
+                } else {
+                    const brownness = Math.min(cookingTime / 120, 1);
+                    color = `rgb(244, ${208 - brownness * 100}, ${63 - brownness * 50})`;
+                }
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                // Make pancake almost as wide as the pan (180px vs 200px pan width)
+                const pancakeWidth = 180;
+                const pancakeHeight = 30; // Increased height for better visibility
+                ctx.ellipse(
+                    panX + 100, // Center of pan
+                    panY - 10,  // Slightly above pan
+                    pancakeWidth/2, // Radius X (half of width)
+                    pancakeHeight/2, // Radius Y (half of height)
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+                
+                if (gameState === 'cooking') {
+                    if (cookingTime >= 85 && cookingTime <= 115) {
+                        if (cookingTime >= 95 && cookingTime <= 105) {
+                            ctx.strokeStyle = '#e74c3c';
+                            ctx.lineWidth = 4;
+                        } else {
+                            ctx.strokeStyle = '#2ecc71';
+                            ctx.lineWidth = 3;
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        // Mix batter
+        mixButton.addEventListener('click', () => {
+            if (gameState === 'mixing') {
+                batterMixed += 20;
+                if (batterMixed >= 100) {
+                    batterMixed = 100;
+                    gameState = 'pouring';
+                }
+            }
+        });
+        
+        // Pour batter - using both mouse and touch events for better compatibility
+        pourButton.addEventListener('mousedown', startPouring);
+        pourButton.addEventListener('mouseup', stopPouring);
+        pourButton.addEventListener('touchstart', startPouring);
+        pourButton.addEventListener('touchend', stopPouring);
+        pourButton.addEventListener('mouseleave', stopPouring);
+        
+        function startPouring(e) {
+            e.preventDefault();
+            isPouring = true;
+            gameState = 'pouring';
+        }
+        
+        function stopPouring(e) {
+            e.preventDefault();
+            isPouring = false;
+            if (pancakeSize > 0) {
+                gameState = 'cooking';
+            }
+        }
+        
+        // Update flip pancake logic
+        flipButton.addEventListener('click', () => {
+            if (gameState === 'cooking' && cookingTime > 0) {
+                let feedback = '';
+                let moneyChange = 0;
+                
+                // Score based on cooking time - more detailed feedback
+                if (cookingTime > 300) {
+                    feedback = 'Yuck! This pancake is completely burnt!';
+                    customerHappiness -= 20;
+                    customerReaction = '😠';
+                    moneyChange = -50;
+                } else if (cookingTime >= 95 && cookingTime <= 105) {
+                    feedback = 'Amazing! This pancake is perfect!';
+                    customerHappiness += 30;
+                    customerReaction = '🤩';
+                    moneyChange = 100;
+                } else if (cookingTime >= 85 && cookingTime <= 115) {
+                    feedback = 'Mmm, this is a good pancake!';
+                    customerHappiness += 20;
+                    customerReaction = '😊';
+                    moneyChange = 50;
+                } else if (cookingTime > 115) {
+                    feedback = 'This pancake is too brown...';
+                    customerHappiness += 0;
+                    customerReaction = '😕';
+                    moneyChange = -50;
+                } else {
+                    feedback = 'This pancake is undercooked!';
+                    customerHappiness -= 10;
+                    customerReaction = '😣';
+                    moneyChange = -50;
+                }
+                
+                money += moneyChange;
+                totalCustomers++;
+                
+                // Show customer reaction and money change
+                let moneyText = moneyChange > 0 ? `+$${moneyChange}` : `-$${Math.abs(moneyChange)}`;
+                alert(`Customer: "${feedback}" ${customerReaction}\nMoney: ${moneyText}\nTotal Money: $${money}`);
+                
+                // Reset for next pancake
+                pancakeSize = 0;
+                cookingTime = 0;
+                gameState = 'mixing';
+                batterMixed = 0;
+
+                // Check for new high score
+                if (money > highScore) {
+                    highScore = money;
+                    localStorage.setItem('pancakeHighScore', highScore);
+                    alert('🎉 New High Score: $' + highScore + '! 🎉');
+                }
+            }
+        });
+        
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw pan
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.ellipse(pan.x + 100, pan.y, 100, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw pancake if exists
+            if (pan.pancakeSize > 0) {
+                let color;
+                if (pan.cookingTime > 300) {
+                    color = '#1a1a1a';
+                } else {
+                    const brownness = Math.min(pan.cookingTime / 120, 1);
+                    color = `rgb(244, ${208 - brownness * 100}, ${63 - brownness * 50})`;
+                }
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.ellipse(
+                    pan.x + 100,
+                    pan.y - 10,
+                    190/2,
+                    40/2,
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+                
+                if (pan.gameState === 'cooking') {
+                    if (pan.cookingTime >= 85 && pan.cookingTime <= 115) {
+                        if (pan.cookingTime >= 95 && pan.cookingTime <= 105) {
+                            ctx.strokeStyle = '#e74c3c';
+                            ctx.lineWidth = 4;
+                        } else {
+                            ctx.strokeStyle = '#2ecc71';
+                            ctx.lineWidth = 3;
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Update cooking time if cooking
+            if (pan.gameState === 'cooking') {
+                pan.cookingTime++;
+            }
+            
+            // Pour logic
+            if (isPouring && pan.pancakeSize < 50) {
+                pan.pancakeSize += 2;
+            }
+            
+            // Update UI
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        gameLoop();
+
+        // Add event listeners for tab visibility
+        document.addEventListener('visibilitychange', () => {
+            activeTab = !document.hidden;
+        });
+
+        // Update button handlers for single pan
+        mixButton.addEventListener('click', () => {
+            if (pan.gameState === 'mixing') {
+                pan.batterMixed += 20;
+                if (pan.batterMixed >= 100) {
+                    pan.gameState = 'pouring';
+                    updateButtonStates();
+                }
+            }
+        });
+
+        pourButton.addEventListener('click', () => {
+            if (pan.gameState === 'pouring') {
+                pan.gameState = 'cooking';
+                isPouring = true;
+                updateButtonStates();
+            }
+        });
+
+        flipButton.addEventListener('click', () => {
+            if (pan.gameState === 'cooking' && pan.cookingTime > 0) {
+                // Existing scoring logic...
+                
+                // Reset pan
+                pan.pancakeSize = 0;
+                pan.cookingTime = 0;
+                pan.gameState = 'mixing';
+                pan.batterMixed = 0;
+                
+                updateButtonStates();
+            }
+        });
+
+        // Update button states for single pan
+        function updateButtonStates() {
+            mixButton.disabled = pan.gameState !== 'mixing';
+            pourButton.disabled = pan.gameState !== 'pouring';
+            flipButton.disabled = pan.gameState !== 'cooking';
+        }
+
+        // Update UI function
+        function updateUI() {
+            const fontSize = Math.min(canvas.width, canvas.height) * 0.05;
+            ctx.font = `${fontSize}px Arial`;
+            const padding = fontSize;
+
+            // Money and high score display
+            ctx.fillStyle = money >= 0 ? '#2ecc71' : '#e74c3c';
+            ctx.fillText('Money: $' + money, padding, padding * 1.5);
+            
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillText('High Score: $' + highScore, padding, padding * 10.5);
+
+            // Batter mixed status
+            ctx.fillStyle = '#000';
+            ctx.fillText('Batter Mixed: ' + pan.batterMixed + '%', padding, padding * 3);
+            
+            if (pan.pancakeSize > 0) {
+                ctx.fillStyle = pan.gameState === 'cooking' ? '#2ecc71' : '#e74c3c';
+                ctx.fillText('Cooking Time: ' + pan.cookingTime, padding, padding * 7.5);
+            }
+        }
+
+        const resetButton = document.getElementById('resetButton');
+
+        resetButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the game? Your high score will be kept.')) {
+                money = 0;
+                customerHappiness = 0;
+                totalCustomers = 0;
+                customerReaction = '';
+                isPouring = false;
+                
+                pan = {
+                    x: 100,
+                    y: 300,
+                    pancakeSize: 0,
+                    cookingTime: 0,
+                    gameState: 'mixing',
+                    batterMixed: 0
+                };
+                
+                updateButtonStates();
+                alert('Game has been reset! High Score remains at: $' + highScore);
+            }
+        });
+    </script>
+</body>
+</html>

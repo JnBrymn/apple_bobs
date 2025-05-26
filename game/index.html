@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 80% 80%, rgba(255, 215, 0, 0.1) 0%, transparent 20%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+        .stats h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ffd700, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 2s infinite;
+            position: relative;
+        }
+
+        .stats h1::after {
+            content: '🍪';
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            animation: bounce 1s infinite;
+        }
+
+        .stats h2 {
+            font-size: 1.5em;
+            opacity: 0.8;
+            position: relative;
+        }
+
+        .stats h2::before {
+            content: '⚡';
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: sparkle 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(-50%); }
+            50% { transform: translateY(-60%); }
+        }
+
+        @keyframes sparkle {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .cookie-container {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        #cookie {
+            width: 250px;
+            height: 250px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2),
+                        inset 0 0 50px rgba(255, 215, 0, 0.3);
+            background: #d4a76a;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        #cookie::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #e6c18a 0%, #d4a76a 50%, #c08c4a 100%);
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #cookie::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 15% 15%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 35% 35%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 55% 55%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 75% 75%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 25% 65%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 65% 25%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 85% 15%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 15% 85%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 45% 15%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 15% 45%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 85% 45%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 45% 85%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 30% 50%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 50% 30%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 70% 50%, #8b4513 2%, transparent 2.5%),
+                radial-gradient(circle at 50% 70%, #8b4513 2%, transparent 2.5%);
+            background-size: 100% 100%;
+            border-radius: 50%;
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #cookie:active {
+            transform: scale(0.95) rotate(5deg) translateZ(-20px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1),
+                        inset 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        #cookie:hover {
+            transform: scale(1.05) translateZ(20px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3),
+                        inset 0 0 60px rgba(255, 215, 0, 0.4);
+        }
+
+        @keyframes glow {
+            0% { 
+                box-shadow: 0 0 5px #ffd700, 0 0 10px #ffd700, 0 0 15px #ffd700,
+                           inset 0 0 30px rgba(255, 215, 0, 0.5);
+            }
+            100% { 
+                box-shadow: 0 0 20px #ffd700, 0 0 30px #ffd700, 0 0 40px #ffd700,
+                           inset 0 0 50px rgba(255, 215, 0, 0.7);
+            }
+        }
+
+        #cookie.clicked {
+            animation: glow 0.5s ease-in-out;
+        }
+
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .upgrade {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .upgrade:hover::before {
+            transform: translateX(100%);
+        }
+
+        .upgrade:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .upgrade h3 {
+            margin-bottom: 10px;
+            color: #ffd700;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+            position: relative;
+            display: inline-block;
+        }
+
+        .upgrade h3::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ffd700, transparent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .upgrade:hover h3::after {
+            transform: scaleX(1);
+        }
+
+        .upgrade p {
+            margin: 5px 0;
+            color: #fff;
+            opacity: 0.8;
+        }
+
+        .upgrade button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .upgrade button:hover::before {
+            transform: translateX(100%);
+        }
+
+        .upgrade button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrade button:disabled {
+            background: linear-gradient(45deg, #666, #555);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Floating cookies animation */
+        .floating-cookie {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #d4a76a;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float-up 1s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Achievement popup */
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            color: #fff;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .achievement.show {
+            transform: translateX(0);
+        }
+
+        .achievement h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Combo counter */
+        .combo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .combo.show {
+            opacity: 1;
+            animation: combo-pop 0.5s ease-out forwards;
+        }
+
+        @keyframes combo-pop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* Golden cookie */
+        .golden-cookie {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #ffd700 0%, #ffa500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            animation: golden-float 3s ease-in-out infinite;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        @keyframes golden-float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Upgrade effect */
+        .upgrade-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.5) 0%, transparent 70%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .upgrade-effect.show {
+            opacity: 1;
+            animation: upgrade-pulse 1s ease-out forwards;
+        }
+
+        @keyframes upgrade-pulse {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Enhanced glitch effects */
+        .glitch {
+            position: relative;
+            animation: glitch-flicker 2s infinite;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 #ff00ff;
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        @keyframes glitch-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            51% { opacity: 0.9; }
+            52% { opacity: 0.7; }
+            53% { opacity: 1; }
+            54% { opacity: 0.6; }
+            55% { opacity: 1; }
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            5% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(5deg);
+            }
+            10% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(-5deg);
+            }
+            15% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            20% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(10deg);
+            }
+            25% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(-10deg);
+            }
+            30% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            35% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(15deg);
+            }
+            40%, 100% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+        }
+
+        @keyframes glitch-anim2 {
+            0% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            5% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(-5deg);
+            }
+            10% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(5deg);
+            }
+            15% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            20% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(-10deg);
+            }
+            25% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(10deg);
+            }
+            30% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+            35% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(-15deg);
+            }
+            40%, 100% {
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+                transform: skew(0deg);
+            }
+        }
+
+        /* Enhanced cookie glitch effect */
+        .cookie-glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        .cookie-glitch.active {
+            opacity: 1;
+            animation: cookie-glitch 0.3s linear;
+        }
+
+        @keyframes cookie-glitch {
+            0% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+            20% {
+                transform: translate(-5px, 5px) scale(1.1);
+                filter: hue-rotate(90deg) brightness(1.2);
+            }
+            40% {
+                transform: translate(5px, -5px) scale(0.9);
+                filter: hue-rotate(180deg) brightness(0.8);
+            }
+            60% {
+                transform: translate(-5px, -5px) scale(1.2);
+                filter: hue-rotate(270deg) brightness(1.3);
+            }
+            80% {
+                transform: translate(5px, 5px) scale(0.8);
+                filter: hue-rotate(360deg) brightness(0.7);
+            }
+            100% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+        }
+
+        /* Enhanced upgrade glitch effect */
+        .upgrade-glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        .upgrade-glitch.active {
+            opacity: 1;
+            animation: upgrade-glitch 0.5s linear;
+        }
+
+        @keyframes upgrade-glitch {
+            0% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+            25% {
+                transform: translate(-10px, 10px) scale(1.1);
+                filter: hue-rotate(90deg) brightness(1.2);
+            }
+            50% {
+                transform: translate(10px, -10px) scale(0.9);
+                filter: hue-rotate(180deg) brightness(0.8);
+            }
+            75% {
+                transform: translate(-10px, -10px) scale(1.2);
+                filter: hue-rotate(270deg) brightness(1.3);
+            }
+            100% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(360deg) brightness(1);
+            }
+        }
+
+        /* Random glitch effect */
+        .random-glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        .random-glitch.active {
+            opacity: 1;
+            animation: random-glitch 0.3s linear;
+        }
+
+        @keyframes random-glitch {
+            0% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+            25% {
+                transform: translate(5px, -5px) scale(1.1);
+                filter: hue-rotate(45deg) brightness(1.1);
+            }
+            50% {
+                transform: translate(-5px, 5px) scale(0.9);
+                filter: hue-rotate(90deg) brightness(0.9);
+            }
+            75% {
+                transform: translate(5px, 5px) scale(1.2);
+                filter: hue-rotate(180deg) brightness(1.2);
+            }
+            100% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+        }
+
+        /* Glitch button styles */
+        .glitch-button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glitch-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .glitch-button:hover::before {
+            transform: translateX(100%);
+        }
+
+        .glitch-button:active {
+            animation: button-glitch 0.3s linear;
+        }
+
+        @keyframes button-glitch {
+            0% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+            25% {
+                transform: translate(-2px, 2px) scale(1.05);
+                filter: hue-rotate(45deg) brightness(1.1);
+            }
+            50% {
+                transform: translate(2px, -2px) scale(0.95);
+                filter: hue-rotate(90deg) brightness(0.9);
+            }
+            75% {
+                transform: translate(-2px, -2px) scale(1.05);
+                filter: hue-rotate(180deg) brightness(1.1);
+            }
+            100% {
+                transform: translate(0) scale(1);
+                filter: hue-rotate(0deg) brightness(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="stats">
+            <h1 class="glitch" data-text="Cookies: 0">Cookies: <span id="cookies" class="glitch" data-text="0">0</span></h1>
+            <h2 class="glitch" data-text="Cookies per second: 0">Cookies per second: <span id="cps" class="glitch" data-text="0">0</span></h2>
+        </div>
+        
+        <div class="cookie-container">
+            <div id="cookie">
+                <div class="cookie-glitch"></div>
+                <div class="random-glitch"></div>
+            </div>
+        </div>
+
+        <div class="upgrades">
+            <div class="upgrade" id="cursor">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Cursor">Cursor</h3>
+                <p>Cost: <span id="cursor-cost" class="glitch" data-text="15">15</span> cookies</p>
+                <p>Amount: <span id="cursor-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('cursor')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="grandma">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Grandma">Grandma</h3>
+                <p>Cost: <span id="grandma-cost" class="glitch" data-text="100">100</span> cookies</p>
+                <p>Amount: <span id="grandma-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('grandma')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="farm">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Farm">Farm</h3>
+                <p>Cost: <span id="farm-cost" class="glitch" data-text="1100">1100</span> cookies</p>
+                <p>Amount: <span id="farm-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('farm')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="mine">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Mine">Mine</h3>
+                <p>Cost: <span id="mine-cost" class="glitch" data-text="12000">12000</span> cookies</p>
+                <p>Amount: <span id="mine-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('mine')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="factory">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Factory">Factory</h3>
+                <p>Cost: <span id="factory-cost" class="glitch" data-text="130000">130000</span> cookies</p>
+                <p>Amount: <span id="factory-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('factory')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="bank">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Bank">Bank</h3>
+                <p>Cost: <span id="bank-cost" class="glitch" data-text="1400000">1400000</span> cookies</p>
+                <p>Amount: <span id="bank-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('bank')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="temple">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Temple">Temple</h3>
+                <p>Cost: <span id="temple-cost" class="glitch" data-text="20000000">20000000</span> cookies</p>
+                <p>Amount: <span id="temple-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('temple')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="wizard-tower">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Wizard Tower">Wizard Tower</h3>
+                <p>Cost: <span id="wizard-tower-cost" class="glitch" data-text="330000000">330000000</span> cookies</p>
+                <p>Amount: <span id="wizard-tower-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('wizard-tower')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="shipment">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Shipment">Shipment</h3>
+                <p>Cost: <span id="shipment-cost" class="glitch" data-text="5100000000">5100000000</span> cookies</p>
+                <p>Amount: <span id="shipment-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('shipment')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="portal">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Portal">Portal</h3>
+                <p>Cost: <span id="portal-cost" class="glitch" data-text="77900000000">77900000000</span> cookies</p>
+                <p>Amount: <span id="portal-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('portal')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="time-machine">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Time Machine">Time Machine</h3>
+                <p>Cost: <span id="time-machine-cost" class="glitch" data-text="10000000000">10000000000</span> cookies</p>
+                <p>Amount: <span id="time-machine-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('time-machine')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="GOD">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="GOD">GOD</h3>
+                <p>Cost: <span id="GOD-cost" class="glitch" data-text="5100000000000000">5100000000000000</span> cookies</p>
+                <p>Amount: <span id="GOD-amount" class="glitch" data-text="0">0</span></p>
+                <button onclick="buyUpgrade('GOD')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-power">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Power">Click Power</h3>
+                <p>Cost: <span id="click-power-cost" class="glitch" data-text="1000">1000</span> cookies</p>
+                <p>Amount: <span id="click-power-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-power-multiplier" class="glitch" data-text="x2">x2</span></p>
+                <button onclick="buyUpgrade('click-power')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-frenzy">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Frenzy">Click Frenzy</h3>
+                <p>Cost: <span id="click-frenzy-cost" class="glitch" data-text="10000">10000</span> cookies</p>
+                <p>Amount: <span id="click-frenzy-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-frenzy-multiplier" class="glitch" data-text="x5">x5</span></p>
+                <button onclick="buyUpgrade('click-frenzy')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-mastery">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Mastery">Click Mastery</h3>
+                <p>Cost: <span id="click-mastery-cost" class="glitch" data-text="100000">100000</span> cookies</p>
+                <p>Amount: <span id="click-mastery-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-mastery-multiplier" class="glitch" data-text="x10">x10</span></p>
+                <button onclick="buyUpgrade('click-mastery')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-god">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click God">Click God</h3>
+                <p>Cost: <span id="click-god-cost" class="glitch" data-text="1000000">1000000</span> cookies</p>
+                <p>Amount: <span id="click-god-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-god-multiplier" class="glitch" data-text="x20">x20</span></p>
+                <button onclick="buyUpgrade('click-god')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-boost">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Boost">Click Boost</h3>
+                <p>Cost: <span id="click-boost-cost" class="glitch" data-text="50">50</span> cookies</p>
+                <p>Amount: <span id="click-boost-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-boost-multiplier" class="glitch" data-text="x1.5">x1.5</span></p>
+                <button onclick="buyUpgrade('click-boost')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-surge">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Surge">Click Surge</h3>
+                <p>Cost: <span id="click-surge-cost" class="glitch" data-text="500">500</span> cookies</p>
+                <p>Amount: <span id="click-surge-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-surge-multiplier" class="glitch" data-text="x3">x3</span></p>
+                <button onclick="buyUpgrade('click-surge')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-legend">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Legend">Click Legend</h3>
+                <p>Cost: <span id="click-legend-cost" class="glitch" data-text="5000000">5000000</span> cookies</p>
+                <p>Amount: <span id="click-legend-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-legend-multiplier" class="glitch" data-text="x50">x50</span></p>
+                <button onclick="buyUpgrade('click-legend')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-mythic">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Mythic">Click Mythic</h3>
+                <p>Cost: <span id="click-mythic-cost" class="glitch" data-text="100000000">100000000</span> cookies</p>
+                <p>Amount: <span id="click-mythic-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-mythic-multiplier" class="glitch" data-text="x100">x100</span></p>
+                <button onclick="buyUpgrade('click-mythic')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+
+            <div class="upgrade" id="click-omnipotent">
+                <div class="upgrade-glitch"></div>
+                <div class="random-glitch"></div>
+                <h3 class="glitch" data-text="Click Omnipotent">Click Omnipotent</h3>
+                <p>Cost: <span id="click-omnipotent-cost" class="glitch" data-text="10000000000">10000000000</span> cookies</p>
+                <p>Amount: <span id="click-omnipotent-amount" class="glitch" data-text="0">0</span></p>
+                <p>Multiplier: <span id="click-omnipotent-multiplier" class="glitch" data-text="x1000">x1000</span></p>
+                <button onclick="buyUpgrade('click-omnipotent')" class="glitch-button">Buy</button>
+                <div class="upgrade-effect"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="achievement" id="achievement">
+        <h3 class="glitch" data-text="Achievement Unlocked!">Achievement Unlocked!</h3>
+        <p id="achievement-text" class="glitch" data-text=""></p>
+    </div>
+
+    <div class="combo" id="combo" class="glitch" data-text=""></div>
+
+    <script>
+        // Game state
+        let cookies = 0;
+        let cookiesPerSecond = 0;
+        let totalClicks = 0;
+        let clickCombo = 0;
+        let lastClickTime = 0;
+        let goldenCookieActive = false;
+        let clickMultiplier = 1;
+        let achievements = {
+            firstClick: false,
+            firstUpgrade: false,
+            hundredClicks: false,
+            thousandClicks: false,
+            millionCookies: false,
+            goldenCookie: false,
+            comboMaster: false,
+            clickPower: false,
+            clickFrenzy: false,
+            clickMastery: false,
+            clickGod: false,
+            clickBoost: false,
+            clickSurge: false,
+            clickLegend: false,
+            clickMythic: false,
+            clickOmnipotent: false
+        };
+
+        // Upgrade costs and amounts
+        const upgrades = {
+            cursor: { cost: 15, amount: 0, cps: 0.1 },
+            grandma: { cost: 100, amount: 0, cps: 1 },
+            farm: { cost: 1100, amount: 0, cps: 8 },
+            mine: { cost: 12000, amount: 0, cps: 47 },
+            factory: { cost: 130000, amount: 0, cps: 260 },
+            bank: { cost: 1400000, amount: 0, cps: 1400 },
+            temple: { cost: 20000000, amount: 0, cps: 7800 },
+            'wizard-tower': { cost: 330000000, amount: 0, cps: 44000 },
+            shipment: { cost: 5100000000, amount: 0, cps: 260000 },
+            portal: { cost: 77900000000, amount: 0, cps: 1600000 },
+            'time-machine': { cost: 10000000000, amount: 0, cps: 10000000 },
+            GOD: { cost: 5100000000000000, amount: 0, cps: 100000000 },
+            'click-power': { cost: 1000, amount: 0, multiplier: 2 },
+            'click-frenzy': { cost: 10000, amount: 0, multiplier: 5 },
+            'click-mastery': { cost: 100000, amount: 0, multiplier: 10 },
+            'click-god': { cost: 1000000, amount: 0, multiplier: 20 },
+            'click-boost': { cost: 50, amount: 0, multiplier: 1.5 },
+            'click-surge': { cost: 500, amount: 0, multiplier: 3 },
+            'click-legend': { cost: 5000000, amount: 0, multiplier: 50 },
+            'click-mythic': { cost: 100000000, amount: 0, multiplier: 100 },
+            'click-omnipotent': { cost: 10000000000, amount: 0, multiplier: 1000 }
+        };
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookie = document.getElementById('cookie');
+            const cookieGlitch = cookie.querySelector('.cookie-glitch');
+            
+            // Cookie click event with animation
+            cookie.addEventListener('click', (e) => {
+                const now = Date.now();
+                if (now - lastClickTime < 500) {
+                    clickCombo++;
+                    showCombo(clickCombo);
+                } else {
+                    clickCombo = 1;
+                }
+                lastClickTime = now;
+
+                // Calculate click value with multipliers
+                let clickValue = clickCombo * clickMultiplier;
+                cookies += clickValue;
+                totalClicks++;
+                updateStats();
+                
+                // Add click animation
+                cookie.classList.add('clicked');
+                cookieGlitch.classList.add('active');
+                setTimeout(() => {
+                    cookie.classList.remove('clicked');
+                    cookieGlitch.classList.remove('active');
+                }, 500);
+
+                // Create floating cookie
+                createFloatingCookie(e);
+
+                // Check achievements
+                checkAchievements();
+            });
+
+            // Enhanced random glitch effect on stats
+            setInterval(() => {
+                if (Math.random() < 0.1) { // 10% chance of glitch
+                    document.querySelectorAll('.glitch').forEach(el => {
+                        // Random glitch effect
+                        const glitchType = Math.floor(Math.random() * 3);
+                        switch(glitchType) {
+                            case 0:
+                                el.style.transform = `translate(${Math.random() * 10 - 5}px, ${Math.random() * 10 - 5}px)`;
+                                break;
+                            case 1:
+                                el.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+                                break;
+                            case 2:
+                                el.style.transform = `scale(${1 + Math.random() * 0.2})`;
+                                break;
+                        }
+                        setTimeout(() => {
+                            el.style.transform = 'none';
+                        }, 100);
+                    });
+                }
+            }, 1000);
+
+            // Start the game loop
+            setInterval(gameLoop, 1000);
+            setInterval(spawnGoldenCookie, 30000); // Spawn golden cookie every 30 seconds
+        });
+
+        // Create floating cookie
+        function createFloatingCookie(e) {
+            const cookie = document.createElement('div');
+            cookie.className = 'floating-cookie';
+            cookie.style.left = e.clientX + 'px';
+            cookie.style.top = e.clientY + 'px';
+            document.body.appendChild(cookie);
+            setTimeout(() => cookie.remove(), 1000);
+        }
+
+        // Show combo
+        function showCombo(combo) {
+            const comboElement = document.getElementById('combo');
+            comboElement.textContent = combo + 'x Combo!';
+            comboElement.classList.add('show');
+            setTimeout(() => comboElement.classList.remove('show'), 1000);
+        }
+
+        // Spawn golden cookie
+        function spawnGoldenCookie() {
+            if (goldenCookieActive) return;
+            
+            const goldenCookie = document.createElement('div');
+            goldenCookie.className = 'golden-cookie';
+            goldenCookie.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+            goldenCookie.style.top = Math.random() * (window.innerHeight - 50) + 'px';
+            
+            goldenCookie.addEventListener('click', () => {
+                cookies += 1000;
+                updateStats();
+                goldenCookie.remove();
+                goldenCookieActive = false;
+                
+                if (!achievements.goldenCookie) {
+                    achievements.goldenCookie = true;
+                    showAchievement('Golden Cookie!');
+                }
+            });
+            
+            document.body.appendChild(goldenCookie);
+            goldenCookieActive = true;
+            
+            setTimeout(() => {
+                if (goldenCookie.parentNode) {
+                    goldenCookie.remove();
+                    goldenCookieActive = false;
+                }
+            }, 10000);
+        }
+
+        // Show achievement
+        function showAchievement(text) {
+            const achievement = document.getElementById('achievement');
+            const achievementText = document.getElementById('achievement-text');
+            achievementText.textContent = text;
+            achievement.classList.add('show');
+            setTimeout(() => achievement.classList.remove('show'), 3000);
+        }
+
+        // Check achievements
+        function checkAchievements() {
+            if (!achievements.firstClick) {
+                achievements.firstClick = true;
+                showAchievement('First Click!');
+            }
+            if (totalClicks >= 100 && !achievements.hundredClicks) {
+                achievements.hundredClicks = true;
+                showAchievement('100 Clicks!');
+            }
+            if (totalClicks >= 1000 && !achievements.thousandClicks) {
+                achievements.thousandClicks = true;
+                showAchievement('1000 Clicks!');
+            }
+            if (cookies >= 1000000 && !achievements.millionCookies) {
+                achievements.millionCookies = true;
+                showAchievement('1 Million Cookies!');
+            }
+            if (clickCombo >= 10 && !achievements.comboMaster) {
+                achievements.comboMaster = true;
+                showAchievement('Combo Master!');
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            let totalCps = 0;
+            for (const [key, upgrade] of Object.entries(upgrades)) {
+                totalCps += upgrade.amount * upgrade.cps;
+            }
+            cookies += totalCps;
+            cookiesPerSecond = totalCps;
+            updateStats();
+        }
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('cookies').textContent = Math.floor(cookies);
+            document.getElementById('cookies-per-second').textContent = cookiesPerSecond.toFixed(1);
+            document.getElementById('total-clicks').textContent = totalClicks;
+            
+            // Update upgrade costs and amounts
+            for (const [key, upgrade] of Object.entries(upgrades)) {
+                const costElement = document.getElementById(`${key}-cost`);
+                const amountElement = document.getElementById(`${key}-amount`);
+                if (costElement) costElement.textContent = Math.floor(upgrade.cost);
+                if (amountElement) amountElement.textContent = upgrade.amount;
+            }
+            
+            // Update click multipliers
+            updateClickMultipliers();
+        }
+
+        // Buy upgrade
+        function buyUpgrade(upgradeType) {
+            const upgrade = upgrades[upgradeType];
+            if (cookies >= upgrade.cost) {
+                cookies -= upgrade.cost;
+                upgrade.amount++;
+                upgrade.cost = Math.floor(upgrade.cost * 1.15); // Increase cost by 15%
+                
+                // Update click multiplier if it's a click power upgrade
+                if (upgradeType.startsWith('click-')) {
+                    clickMultiplier *= upgrade.multiplier;
+                }
+                
+                // Trigger glitch effect
+                const upgradeElement = document.getElementById(upgradeType);
+                const glitchElement = upgradeElement.querySelector('.upgrade-glitch');
+                glitchElement.classList.add('active');
+                setTimeout(() => glitchElement.classList.remove('active'), 500);
+                
+                // Check achievements
+                if (upgradeType === 'click-boost' && !achievements.clickBoost) {
+                    achievements.clickBoost = true;
+                    showAchievement('Click Boost!');
+                }
+                if (upgradeType === 'click-surge' && !achievements.clickSurge) {
+                    achievements.clickSurge = true;
+                    showAchievement('Click Surge!');
+                }
+                if (upgradeType === 'click-power' && !achievements.clickPower) {
+                    achievements.clickPower = true;
+                    showAchievement('Click Power!');
+                }
+                if (upgradeType === 'click-frenzy' && !achievements.clickFrenzy) {
+                    achievements.clickFrenzy = true;
+                    showAchievement('Click Frenzy!');
+                }
+                if (upgradeType === 'click-mastery' && !achievements.clickMastery) {
+                    achievements.clickMastery = true;
+                    showAchievement('Click Mastery!');
+                }
+                if (upgradeType === 'click-god' && !achievements.clickGod) {
+                    achievements.clickGod = true;
+                    showAchievement('Click God!');
+                }
+                if (upgradeType === 'click-legend' && !achievements.clickLegend) {
+                    achievements.clickLegend = true;
+                    showAchievement('Click Legend!');
+                }
+                if (upgradeType === 'click-mythic' && !achievements.clickMythic) {
+                    achievements.clickMythic = true;
+                    showAchievement('Click Mythic!');
+                }
+                if (upgradeType === 'click-omnipotent' && !achievements.clickOmnipotent) {
+                    achievements.clickOmnipotent = true;
+                    showAchievement('Click Omnipotent!');
+                }
+                
+                updateStats();
+            }
+        }
+
+        // Update click multipliers display
+        function updateClickMultipliers() {
+            document.getElementById('click-power-multiplier').textContent = `x${upgrades['click-power'].multiplier}`;
+            document.getElementById('click-frenzy-multiplier').textContent = `x${upgrades['click-frenzy'].multiplier}`;
+            document.getElementById('click-mastery-multiplier').textContent = `x${upgrades['click-mastery'].multiplier}`;
+            document.getElementById('click-god-multiplier').textContent = `x${upgrades['click-god'].multiplier}`;
+            document.getElementById('click-boost-multiplier').textContent = `x${upgrades['click-boost'].multiplier}`;
+            document.getElementById('click-surge-multiplier').textContent = `x${upgrades['click-surge'].multiplier}`;
+            document.getElementById('click-legend-multiplier').textContent = `x${upgrades['click-legend'].multiplier}`;
+            document.getElementById('click-mythic-multiplier').textContent = `x${upgrades['click-mythic'].multiplier}`;
+            document.getElementById('click-omnipotent-multiplier').textContent = `x${upgrades['click-omnipotent'].multiplier}`;
+        }
+    </script>
+</body>
+</html> 

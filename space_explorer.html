@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Explorer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: Arial, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        #game {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: #000;
+            border: 2px solid #444;
+            overflow: hidden;
+        }
+
+        #player {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%234CAF50" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>');
+            background-size: contain;
+            transition: transform 0.1s;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 1s infinite alternate;
+        }
+
+        .resource {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            animation: float 2s infinite alternate;
+        }
+
+        .resource.energy { background: #FFD700; }
+        .resource.mineral { background: #4CAF50; }
+        .resource.crystal { background: #00BCD4; }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        #shop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 100;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .shop-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+            text-align: left;
+        }
+
+        .shop-item:hover {
+            background: #45a049;
+            transform: scale(1.02);
+        }
+
+        .shop-item:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #shopButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .explosion {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #ff4444 0%, transparent 70%);
+            animation: explode 0.5s forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="player"></div>
+        <div id="hud">
+            <div>Energy: <span id="energy">100</span></div>
+            <div>Minerals: <span id="minerals">0</span></div>
+            <div>Crystals: <span id="crystals">0</span></div>
+            <div>Speed: <span id="speed">1</span>x</div>
+        </div>
+        <button id="shopButton">Shop (S)</button>
+        <div id="shop">
+            <h2>Space Shop</h2>
+            <button class="shop-item" id="speed1">Speed Upgrade I - 50 Minerals</button>
+            <button class="shop-item" id="speed2">Speed Upgrade II - 100 Minerals</button>
+            <button class="shop-item" id="speed3">Speed Upgrade III - 200 Minerals</button>
+            <button class="shop-item" id="shield">Shield Generator - 150 Crystals</button>
+            <button class="shop-item" id="collector">Resource Collector - 100 Minerals</button>
+            <button class="shop-item" id="engine">Quantum Engine - 300 Crystals</button>
+        </div>
+    </div>
+
+    <script>
+        const game = document.getElementById('game');
+        const player = document.getElementById('player');
+        const shop = document.getElementById('shop');
+        const shopButton = document.getElementById('shopButton');
+
+        let playerX = 400;
+        let playerY = 300;
+        let speed = 1;
+        let energy = 100;
+        let minerals = 0;
+        let crystals = 0;
+        let hasShield = false;
+        let hasCollector = false;
+        let hasQuantumEngine = false;
+        let speedUpgrades = 0;
+
+        const resources = [];
+        const stars = [];
+
+        // Initialize game
+        function initGame() {
+            // Create stars
+            for (let i = 0; i < 100; i++) {
+                createStar();
+            }
+
+            // Create initial resources
+            for (let i = 0; i < 10; i++) {
+                createResource();
+            }
+
+            // Set initial player position
+            updatePlayerPosition();
+
+            // Start game loop
+            setInterval(gameLoop, 1000 / 60);
+            setInterval(createResource, 5000);
+            setInterval(updateHUD, 100);
+        }
+
+        function createStar() {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 800 + 'px';
+            star.style.top = Math.random() * 600 + 'px';
+            game.appendChild(star);
+            stars.push(star);
+        }
+
+        function createResource() {
+            const resource = document.createElement('div');
+            resource.className = 'resource';
+            const type = Math.random() < 0.6 ? 'energy' : Math.random() < 0.8 ? 'mineral' : 'crystal';
+            resource.classList.add(type);
+            resource.style.left = Math.random() * 760 + 'px';
+            resource.style.top = Math.random() * 560 + 'px';
+            game.appendChild(resource);
+            resources.push({ element: resource, type, x: parseFloat(resource.style.left), y: parseFloat(resource.style.top) });
+        }
+
+        function updatePlayerPosition() {
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+        }
+
+        function gameLoop() {
+            // Move player based on keyboard input
+            if (keys.ArrowLeft) playerX -= 5 * speed;
+            if (keys.ArrowRight) playerX += 5 * speed;
+            if (keys.ArrowUp) playerY -= 5 * speed;
+            if (keys.ArrowDown) playerY += 5 * speed;
+
+            // Keep player in bounds
+            playerX = Math.max(0, Math.min(760, playerX));
+            playerY = Math.max(0, Math.min(560, playerY));
+
+            // Update player position
+            updatePlayerPosition();
+
+            // Check resource collection
+            resources.forEach((resource, index) => {
+                const dx = playerX - resource.x;
+                const dy = playerY - resource.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 30) {
+                    collectResource(resource.type);
+                    resource.element.remove();
+                    resources.splice(index, 1);
+                    createResource();
+                }
+            });
+
+            // Consume energy
+            if (keys.ArrowLeft || keys.ArrowRight || keys.ArrowUp || keys.ArrowDown) {
+                energy = Math.max(0, energy - 0.1);
+            } else {
+                energy = Math.min(100, energy + 0.05);
+            }
+
+            // Game over if no energy
+            if (energy <= 0) {
+                alert('Game Over! Out of energy!');
+                resetGame();
+            }
+        }
+
+        function collectResource(type) {
+            switch(type) {
+                case 'energy':
+                    energy = Math.min(100, energy + 20);
+                    break;
+                case 'mineral':
+                    minerals += 10;
+                    break;
+                case 'crystal':
+                    crystals += 5;
+                    break;
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('energy').textContent = Math.floor(energy);
+            document.getElementById('minerals').textContent = minerals;
+            document.getElementById('crystals').textContent = crystals;
+            document.getElementById('speed').textContent = speed.toFixed(1);
+        }
+
+        function resetGame() {
+            energy = 100;
+            minerals = 0;
+            crystals = 0;
+            speed = 1;
+            speedUpgrades = 0;
+            hasShield = false;
+            hasCollector = false;
+            hasQuantumEngine = false;
+            updateShopButtons();
+        }
+
+        // Keyboard controls
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 's') {
+                shop.style.display = shop.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Shop functionality
+        function updateShopButtons() {
+            document.getElementById('speed1').disabled = minerals < 50 || speedUpgrades >= 1;
+            document.getElementById('speed2').disabled = minerals < 100 || speedUpgrades >= 2;
+            document.getElementById('speed3').disabled = minerals < 200 || speedUpgrades >= 3;
+            document.getElementById('shield').disabled = crystals < 150 || hasShield;
+            document.getElementById('collector').disabled = minerals < 100 || hasCollector;
+            document.getElementById('engine').disabled = crystals < 300 || hasQuantumEngine;
+        }
+
+        document.getElementById('speed1').addEventListener('click', () => {
+            if (minerals >= 50 && speedUpgrades < 1) {
+                minerals -= 50;
+                speed += 0.5;
+                speedUpgrades++;
+                updateShopButtons();
+            }
+        });
+
+        document.getElementById('speed2').addEventListener('click', () => {
+            if (minerals >= 100 && speedUpgrades < 2) {
+                minerals -= 100;
+                speed += 0.5;
+                speedUpgrades++;
+                updateShopButtons();
+            }
+        });
+
+        document.getElementById('speed3').addEventListener('click', () => {
+            if (minerals >= 200 && speedUpgrades < 3) {
+                minerals -= 200;
+                speed += 0.5;
+                speedUpgrades++;
+                updateShopButtons();
+            }
+        });
+
+        document.getElementById('shield').addEventListener('click', () => {
+            if (crystals >= 150 && !hasShield) {
+                crystals -= 150;
+                hasShield = true;
+                player.style.filter = 'drop-shadow(0 0 10px #00BCD4)';
+                updateShopButtons();
+            }
+        });
+
+        document.getElementById('collector').addEventListener('click', () => {
+            if (minerals >= 100 && !hasCollector) {
+                minerals -= 100;
+                hasCollector = true;
+                setInterval(() => {
+                    if (hasCollector) {
+                        resources.forEach((resource, index) => {
+                            const dx = playerX - resource.x;
+                            const dy = playerY - resource.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            if (distance < 100) {
+                                collectResource(resource.type);
+                                resource.element.remove();
+                                resources.splice(index, 1);
+                                createResource();
+                            }
+                        });
+                    }
+                }, 1000);
+                updateShopButtons();
+            }
+        });
+
+        document.getElementById('engine').addEventListener('click', () => {
+            if (crystals >= 300 && !hasQuantumEngine) {
+                crystals -= 300;
+                hasQuantumEngine = true;
+                speed *= 2;
+                player.style.filter = 'drop-shadow(0 0 20px #FFD700)';
+                updateShopButtons();
+            }
+        });
+
+        shopButton.addEventListener('click', () => {
+            shop.style.display = shop.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html> 

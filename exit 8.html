@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exit 8</title>
+    <style>
+        body {
+            background: white;
+            color: black;
+            font-family: Arial;
+            text-align: center;
+            padding: 20px;
+        }
+        .game {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .instructions {
+            background: #fff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+            color: #666;
+        }
+        .hallway {
+            width: 100%;
+            height: 400px;
+            background: #e0e0e0;
+            margin: 20px 0;
+            position: relative;
+            border: 2px solid #ccc;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .floor {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: #d0d0d0;
+        }
+        .floor::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                #d0d0d0,
+                #d0d0d0 100px,
+                #c0c0c0 100px,
+                #c0c0c0 200px
+            );
+        }
+        .wall {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 300px;
+            background: #f0f0f0;
+        }
+        .wall::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                #f0f0f0,
+                #f0f0f0 100px,
+                #e8e8e8 100px,
+                #e8e8e8 200px
+            );
+        }
+        .light {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 40px;
+            background: #ddd;
+            border-radius: 2px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .light::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: #eee;
+            border-radius: 1px;
+            animation: flicker 5s infinite;
+        }
+        @keyframes flicker {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        .light-2 {
+            top: 150px;
+        }
+        .exit {
+            font-size: 24px;
+            color: #0f0;
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #444;
+        }
+        .message {
+            margin-top: 20px;
+            color: rgb(255, 0, 0);
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        .win-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .item {
+            position: absolute;
+            z-index: 2;
+            transform-style: preserve-3d;
+        }
+        .bench {
+            position: absolute;
+            width: 120px;
+            height: 40px;
+            background: #ddd;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .bench::before {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background: #ccc;
+            bottom: -30px;
+            left: 20px;
+            border-radius: 0 0 2px 2px;
+        }
+        .bench::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 30px;
+            background: #ccc;
+            bottom: -30px;
+            right: 20px;
+            border-radius: 0 0 2px 2px;
+        }
+        .hanging-sign {
+            position: absolute;
+            width: 100px;
+            height: 40px;
+            background: #ddd;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 12px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .hanging-sign::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: #ccc;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .trash-can {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: #ddd;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .trash-can::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 5px;
+            background: #ccc;
+            top: -5px;
+            left: -5px;
+            border-radius: 2px;
+        }
+        .painting {
+            width: 60px;
+            height: 40px;
+            background: #555;
+            border: 3px solid #444;
+            position: relative;
+            transform: rotateX(-60deg) translateZ(20px);
+        }
+        .painting::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #666;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+        }
+        .vending-machine {
+            width: 40px;
+            height: 80px;
+            background: #444;
+            border: 2px solid #555;
+            position: relative;
+            transform: rotateX(-60deg) translateZ(20px);
+        }
+        .vending-machine::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: #666;
+            top: 10px;
+            left: 5px;
+            border-radius: 2px;
+        }
+        .plant {
+            width: 40px;
+            height: 60px;
+            background: #444;
+            border-radius: 5px;
+            position: relative;
+            transform: rotateX(60deg) translateZ(20px);
+        }
+        .plant::before {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 30px;
+            background: #2d5a27;
+            top: -20px;
+            left: -5px;
+            border-radius: 25px 25px 0 0;
+        }
+        .fire-extinguisher {
+            position: absolute;
+            width: 20px;
+            height: 50px;
+            background: #c00;
+            border: 2px solid #a00;
+            border-radius: 3px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .fire-extinguisher::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 10px;
+            background: #c00;
+            top: 10px;
+            left: -5px;
+            border-radius: 2px;
+        }
+        .item-1 { top: 60%; left: 20%; }
+        .item-2 { top: 60%; right: 20%; }
+        .item-3 { top: 30%; left: 20%; }
+        .item-4 { top: 30%; right: 20%; }
+        .item-5 { top: 70%; left: 40%; }
+        .item-6 { top: 70%; right: 40%; }
+        .item-7 { top: 40%; left: 40%; }
+        .item-8 { top: 40%; right: 40%; }
+        .poster {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: #fff;
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 12px;
+            text-align: center;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .door {
+            position: absolute;
+            width: 60px;
+            height: 100px;
+            background: #ddd;
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 12px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .poster-1 { top: 150px; left: 20%; }
+        .poster-2 { top: 150px; right: 20%; }
+        .poster-3 { top: 200px; left: 20%; }
+        .poster-4 { top: 200px; right: 20%; }
+        .poster-5 { top: 250px; left: 50%; transform: translateX(-50%); }
+        .poster-5.reversed {
+            transform: translateX(-50%) scaleX(-1);
+        }
+        .light.flicker {
+            animation: intenseFlicker 0.5s infinite;
+        }
+        @keyframes intenseFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .door-1 { top: 200px; left: 40%; }
+        .door-2 { top: 200px; right: 40%; }
+        .door.mirrored {
+            transform: scaleX(-1);
+        }
+        .poster.mirrored {
+            transform: scaleX(-1);
+        }
+        .warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .warning-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        .warning-content h2 {
+            color: #c00;
+            margin-bottom: 20px;
+        }
+        .warning-content .age-warning {
+            color: #c00;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px solid #c00;
+            border-radius: 5px;
+        }
+        .warning-content .time-warning {
+            color: #c00;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px solid #c00;
+            border-radius: 5px;
+        }
+        .warning-content p {
+            color: #333;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        .warning-content button {
+            background: #c00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .warning-content button:hover {
+            background: #a00;
+        }
+        .hanging-sign-1 { top: 100px; left: 50%; transform: translateX(-50%); }
+        .fire-extinguisher-1 { top: 150px; left: 25%; }
+        .fire-extinguisher-2 { top: 150px; right: 25%; }
+        .poster-1 { top: 150px; left: 20%; }
+        .poster-2 { top: 150px; right: 20%; }
+        .poster-3 { top: 200px; left: 20%; }
+        .poster-4 { top: 200px; right: 20%; }
+        .poster-5 { top: 250px; left: 50%; transform: translateX(-50%); }
+        .door-1 { top: 200px; left: 40%; }
+        .door-2 { top: 200px; right: 40%; }
+        .bench-1 { top: 320px; left: 20%; }
+        .bench-2 { top: 320px; right: 20%; }
+        .trash-can-1 { top: 350px; left: 30%; }
+        .trash-can-2 { top: 350px; right: 30%; }
+    </style>
+</head>
+<body>
+    <div class="warning" id="warning">
+        <div class="warning-content">
+            <h2>⚠️ WARNING ⚠️</h2>
+            
+            <div class="age-warning">
+                <p>⚠️ AGE RESTRICTION ⚠️</p>
+                <p>This game contains horror elements.</p>
+                <p>DO NOT PLAY if you are under 7 or over 98 years old.</p>
+            </div>
+
+            <div class="time-warning">
+                <p>⚠️ TIME LIMIT WARNING ⚠️</p>
+                <p>DO NOT play this game for more than 5 hours.</p>
+                <p>If you have been playing for 5 hours, shut down immediately.</p>
+            </div>
+
+            <p>This game contains subtle anomalies that require careful observation.</p>
+            <p>If you see anything strange in the hallway, you must go back.</p>
+            <p>If you proceed forward with an anomaly present, you will lose.</p>
+            <p>Pay close attention to:</p>
+            <ul style="text-align: left; margin: 15px 0;">
+                <li>The direction of the exit sign arrow</li>
+                <li>Flickering lights</li>
+                <li>Mirrored posters or doors</li>
+                <li>Reversed floor or wall patterns</li>
+            </ul>
+            <button onclick="startGame()">I Understand - Start Game</button>
+        </div>
+    </div>
+
+    <div class="game" style="display: none;">
+        <h1>Exit 8</h1>
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <ul>
+                <li>Look carefully at the hallway before moving</li>
+                <li>If you see anything strange (like the exit sign pointing left, flickering lights, or mirrored posters), click "Go Back"</li>
+                <li>If everything looks normal, click "Go Forward"</li>
+                <li>Reach Exit 8 to win!</li>
+            </ul>
+        </div>
+        <div class="exit">Exit: <span id="exit">0</span></div>
+        <div class="hallway">
+            <div class="floor"></div>
+            <div class="wall"></div>
+            <div class="light"></div>
+            <div class="light light-2"></div>
+            
+            <!-- Hanging Sign -->
+            <div class="hanging-sign hanging-sign-1">EXIT THIS WAY</div>
+            
+            <!-- Fire Extinguishers -->
+            <div class="fire-extinguisher fire-extinguisher-1"></div>
+            <div class="fire-extinguisher fire-extinguisher-2"></div>
+            
+            <!-- Benches -->
+            <div class="bench bench-1"></div>
+            <div class="bench bench-2"></div>
+            
+            <!-- Trash Cans -->
+            <div class="trash-can trash-can-1"></div>
+            <div class="trash-can trash-can-2"></div>
+            
+            <!-- Posters -->
+            <div class="poster poster-1">Camera in Operation</div>
+            <div class="poster poster-2">Camera in Operation</div>
+            <div class="poster poster-3">Camera in Operation</div>
+            <div class="poster poster-4">Camera in Operation</div>
+            <div class="poster poster-5">Exit 8 →</div>
+            
+            <!-- Doors -->
+            <div class="door door-1">PRIVATE</div>
+            <div class="door door-2">PRIVATE</div>
+        </div>
+        <div class="buttons">
+            <button onclick="goBack()">Go Back</button>
+            <button onclick="goForward()">Go Forward</button>
+        </div>
+        <div class="message" id="message"></div>
+    </div>
+    <div class="win-message" id="winMessage">
+        Congratulations! You've reached Exit 8!
+        <br><br>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <script>
+        let exit = 0;
+        let hasAnomaly = false;
+        let anomalies = document.querySelectorAll('.anomaly');
+        let gameStartTime = null;
+
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show warning and hide game initially
+            document.getElementById('warning').style.display = 'flex';
+            document.querySelector('.game').style.display = 'none';
+        });
+
+        function startGame() {
+            gameStartTime = Date.now();
+            document.getElementById('warning').style.display = 'none';
+            document.querySelector('.game').style.display = 'block';
+            exit = 0;
+            hasAnomaly = false;
+            resetAnomalies();
+            updateDisplay();
+            
+            // Start checking play time
+            setInterval(checkPlayTime, 60000); // Check every minute
+        }
+
+        function checkPlayTime() {
+            if (gameStartTime) {
+                const playTime = (Date.now() - gameStartTime) / (1000 * 60 * 60); // Convert to hours
+                if (playTime >= 5) {
+                    alert("WARNING: You have been playing for 5 hours. Please shut down the game immediately.");
+                    resetGame();
+                }
+            }
+        }
+
+        function generateAnomaly() {
+            // 60% chance of anomaly, but never at start (exit 0) or exit 8
+            const hasAnomaly = exit > 0 && exit < 8 && Math.random() < 0.6;
+            
+            if (hasAnomaly) {
+                // Reset all previous anomalies
+                resetAnomalies();
+                
+                // Choose a random anomaly
+                const anomalies = [
+                    // Arrow points left
+                    () => {
+                        const exitSign = document.querySelector('.poster-5');
+                        exitSign.classList.add('reversed');
+                        return true;
+                    },
+                    // Lights flicker intensely
+                    () => {
+                        const lights = document.querySelectorAll('.light');
+                        lights.forEach(light => light.classList.add('flicker'));
+                        return true;
+                    },
+                    // Doors are mirrored
+                    () => {
+                        const doors = document.querySelectorAll('.door');
+                        doors.forEach(door => door.classList.add('mirrored'));
+                        return true;
+                    },
+                    // Posters are mirrored
+                    () => {
+                        const posters = document.querySelectorAll('.poster');
+                        posters.forEach(poster => poster.classList.add('mirrored'));
+                        return true;
+                    },
+                    // Floor pattern is reversed
+                    () => {
+                        const floor = document.querySelector('.floor');
+                        floor.style.background = 'repeating-linear-gradient(90deg, #c0c0c0, #c0c0c0 100px, #d0d0d0 100px, #d0d0d0 200px)';
+                        return true;
+                    },
+                    // Wall pattern is reversed
+                    () => {
+                        const wall = document.querySelector('.wall');
+                        wall.style.background = 'repeating-linear-gradient(90deg, #e8e8e8, #e8e8e8 100px, #f0f0f0 100px, #f0f0f0 200px)';
+                        return true;
+                    },
+                    // Hanging sign is upside down
+                    () => {
+                        const sign = document.querySelector('.hanging-sign');
+                        sign.style.transform = 'translateX(-50%) rotate(180deg)';
+                        return true;
+                    },
+                    // Fire extinguishers are swapped
+                    () => {
+                        const ext1 = document.querySelector('.fire-extinguisher-1');
+                        const ext2 = document.querySelector('.fire-extinguisher-2');
+                        ext1.style.left = '75%';
+                        ext2.style.left = '25%';
+                        return true;
+                    },
+                    // Benches are swapped
+                    () => {
+                        const bench1 = document.querySelector('.bench-1');
+                        const bench2 = document.querySelector('.bench-2');
+                        bench1.style.left = '80%';
+                        bench2.style.left = '20%';
+                        return true;
+                    },
+                    // Trash cans are swapped
+                    () => {
+                        const trash1 = document.querySelector('.trash-can-1');
+                        const trash2 = document.querySelector('.trash-can-2');
+                        trash1.style.left = '70%';
+                        trash2.style.left = '30%';
+                        return true;
+                    }
+                ];
+                
+                const randomAnomaly = anomalies[Math.floor(Math.random() * anomalies.length)];
+                return randomAnomaly();
+            }
+            
+            return false;
+        }
+
+        function resetAnomalies() {
+            // Reset exit sign
+            const exitSign = document.querySelector('.poster-5');
+            exitSign.classList.remove('reversed');
+            
+            // Reset lights
+            const lights = document.querySelectorAll('.light');
+            lights.forEach(light => light.classList.remove('flicker'));
+            
+            // Reset doors
+            const doors = document.querySelectorAll('.door');
+            doors.forEach(door => door.classList.remove('mirrored'));
+            
+            // Reset posters
+            const posters = document.querySelectorAll('.poster');
+            posters.forEach(poster => poster.classList.remove('mirrored'));
+            
+            // Reset floor pattern
+            const floor = document.querySelector('.floor');
+            floor.style.background = '';
+            
+            // Reset wall pattern
+            const wall = document.querySelector('.wall');
+            wall.style.background = '';
+            
+            // Reset hanging sign
+            const sign = document.querySelector('.hanging-sign');
+            sign.style.transform = 'translateX(-50%)';
+            
+            // Reset fire extinguishers
+            const ext1 = document.querySelector('.fire-extinguisher-1');
+            const ext2 = document.querySelector('.fire-extinguisher-2');
+            ext1.style.left = '25%';
+            ext2.style.left = '75%';
+            
+            // Reset benches
+            const bench1 = document.querySelector('.bench-1');
+            const bench2 = document.querySelector('.bench-2');
+            bench1.style.left = '20%';
+            bench2.style.left = '80%';
+            
+            // Reset trash cans
+            const trash1 = document.querySelector('.trash-can-1');
+            const trash2 = document.querySelector('.trash-can-2');
+            trash1.style.left = '30%';
+            trash2.style.left = '70%';
+        }
+
+        function goBack() {
+            if (exit === 0) {
+                showMessage("You're at the start!");
+                return;
+            }
+            
+            if (hasAnomaly) {
+                exit--;
+                hasAnomaly = generateAnomaly();
+                updateDisplay();
+                showMessage("Good catch! You safely went back.");
+            } else {
+                resetGame();
+                showMessage("You went back from a normal corridor! Game Over!");
+            }
+        }
+
+        function goForward() {
+            // If we're at exit 7 and there's no anomaly, we can win
+            if (exit === 7 && !hasAnomaly) {
+                exit++;
+                showWinMessage();
+                return;
+            }
+
+            // If there's an anomaly, game over
+            if (hasAnomaly) {
+                resetGame();
+                showMessage("You entered a corridor with an anomaly! Game Over!");
+                return;
+            }
+
+            // Otherwise, move forward
+            exit++;
+            hasAnomaly = generateAnomaly();
+            updateDisplay();
+            showMessage("You moved forward.");
+        }
+
+        function resetGame() {
+            gameStartTime = null;
+            exit = 0;
+            hasAnomaly = false;
+            resetAnomalies();
+            updateDisplay();
+            document.getElementById('winMessage').style.display = 'none';
+            // Show warning again when game resets
+            document.getElementById('warning').style.display = 'flex';
+            document.querySelector('.game').style.display = 'none';
+        }
+
+        function updateDisplay() {
+            document.getElementById('exit').textContent = exit;
+        }
+
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.style.opacity = '1';
+            message.style.color = text.includes('Game Over') ? 'red' : 'black';
+            message.style.fontWeight = text.includes('Game Over') ? 'bold' : 'normal';
+            setTimeout(() => {
+                message.style.opacity = '0';
+            }, 3000);
+        }
+        function showWinMessage() {
+            document.getElementById('winMessage').style.display = 'block';
+        }
+
+        // Start the game
+        resetGame();
+    </script>
+</body>
+</html>
