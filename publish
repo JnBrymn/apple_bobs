@@ -10,3 +10,5 @@ git add .
 CHANGED_FILES=$(git status --porcelain | cut -c4- | tr '\n' ' ')
 git commit -m "Update: $CHANGED_FILES"
 git push
+
+echo "Published to https://jnbrymn.github.io/apple_bobs/"
