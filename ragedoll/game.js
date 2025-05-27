@@ -1,9 +1,78 @@
 // Matter.js module aliases
 const { Engine, Render, World, Bodies, Body, Composite, Constraint, Mouse, MouseConstraint, Events } = Matter;
 
+// Cookie functions
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// Create cookie button
+const cookieButton = document.createElement('button');
+cookieButton.innerHTML = '🍪 Get Cookie';
+cookieButton.style.position = 'absolute';
+cookieButton.style.top = '10px';
+cookieButton.style.right = '10px';
+cookieButton.style.padding = '10px 20px';
+cookieButton.style.fontSize = '20px';
+cookieButton.style.cursor = 'pointer';
+cookieButton.style.backgroundColor = '#4CAF50';
+cookieButton.style.color = 'white';
+cookieButton.style.border = 'none';
+cookieButton.style.borderRadius = '5px';
+cookieButton.style.zIndex = '1000';
+
+cookieButton.onclick = function() {
+    moolah += 50; // Add 50 moolah when cookie button is clicked
+    document.getElementById('moolah').textContent = moolah;
+    setCookie('moolah', moolah, 365);
+    
+    // Create a floating text effect
+    const floatingText = document.createElement('div');
+    floatingText.textContent = '+50 🍪';
+    floatingText.style.position = 'absolute';
+    floatingText.style.left = (cookieButton.offsetLeft + cookieButton.offsetWidth/2) + 'px';
+    floatingText.style.top = (cookieButton.offsetTop - 20) + 'px';
+    floatingText.style.color = '#4CAF50';
+    floatingText.style.fontSize = '20px';
+    floatingText.style.fontWeight = 'bold';
+    floatingText.style.transition = 'all 1s ease-out';
+    floatingText.style.opacity = '1';
+    document.body.appendChild(floatingText);
+    
+    // Animate the floating text
+    setTimeout(() => {
+        floatingText.style.transform = 'translateY(-50px)';
+        floatingText.style.opacity = '0';
+    }, 50);
+    
+    // Remove the floating text after animation
+    setTimeout(() => {
+        document.body.removeChild(floatingText);
+    }, 1000);
+};
+
+document.getElementById('game-container').appendChild(cookieButton);
+
 // Game state
-let moolah = 200; // Starting moolah
-let currentWeapon = null;
+let moolah = parseInt(getCookie('moolah')) || 200; // Load moolah from cookie or use default
+let currentWeapon = getCookie('currentWeapon') || null;
 const weapons = {
     pistol: { damage: 10, cost: 100, cooldown: 500 },
     shotgun: { damage: 25, cost: 300, cooldown: 1000 },
@@ -194,6 +263,7 @@ Events.on(engine, 'collisionStart', (event) => {
                 // Add moolah
                 moolah += weapons[currentWeapon].damage;
                 document.getElementById('moolah').textContent = moolah;
+                setCookie('moolah', moolah, 365); // Save moolah for 1 year
                 
                 // Remove bullet
                 World.remove(world, bullet);
@@ -208,6 +278,8 @@ function buyWeapon(weaponType) {
         moolah -= weapons[weaponType].cost;
         currentWeapon = weaponType;
         document.getElementById('moolah').textContent = moolah;
+        setCookie('moolah', moolah, 365); // Save moolah for 1 year
+        setCookie('currentWeapon', currentWeapon, 365); // Save current weapon for 1 year
         updateShopButtons();
     }
 }
