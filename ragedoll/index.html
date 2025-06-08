@@ -3,70 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragdoll Battle Arena</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #1a1a1a;
-            font-family: Arial, sans-serif;
-        }
-        #game-container {
-            position: relative;
-        }
-        canvas {
-            border: 2px solid #333;
-            background: #2a2a2a;
-        }
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-size: 20px;
-        }
-        #shop {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-        }
-        .weapon-btn {
-            background: #4CAF50;
-            border: none;
-            color: white;
-            padding: 5px 10px;
-            margin: 5px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-        .weapon-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-    </style>
+    <title>This is Not My Neighbor - The Game</title>
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div id="ui">
-            Moolah: <span id="moolah">0</span>
+    <div class="container">
+        <h1 class="glitch-text">THIS IS NOT MY NEIGHBOR</h1>
+        
+        <div class="game-stats">
+            <div class="stat">
+                <span class="flicker">Score:</span>
+                <span id="score">0</span>
+            </div>
+            <div class="stat">
+                <span class="flicker">Lives:</span>
+                <span id="lives">3</span>
+            </div>
+            <div class="stat">
+                <span class="flicker">Level:</span>
+                <span id="level">1</span>
+            </div>
         </div>
-        <div id="shop">
-            <h3>Weapon Shop</h3>
-            <button class="weapon-btn" onclick="buyWeapon('pistol')">Pistol ($100)</button>
-            <button class="weapon-btn" onclick="buyWeapon('shotgun')">Shotgun ($300)</button>
-            <button class="weapon-btn" onclick="buyWeapon('rifle')">Rifle ($500)</button>
+
+        <div class="warning-box">
+            <p>WARNING: Trust no one. Verify all visitors.</p>
+        </div>
+
+        <div class="neighbor-check">
+            <h2 class="flicker">Visitor Verification System</h2>
+            <div class="visitor-card hover-effect">
+                <img id="visitor-image" src="https://placehold.co/200x300/1a1a1a/ff3d3d" alt="Visitor" class="visitor-image">
+                <div class="visitor-info">
+                    <p>ID: <span id="visitor-id">#UNKNOWN</span></p>
+                    <p>Status: <span id="visitor-status" class="glitch-text">VERIFYING...</span></p>
+                    <p>Time Left: <span id="timer">10</span>s</p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="verify-btn" class="neighbor-button hover-effect">VERIFY VISITOR</button>
+                <button id="report-btn" class="neighbor-button hover-effect">REPORT SUSPICIOUS</button>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3 class="flicker">Security Log</h3>
+            <div id="log-entries" class="log-entries">
+                <p class="hover-effect">[23:45] Unauthorized access attempt detected</p>
+                <p class="hover-effect">[23:30] Strange noises from apartment 4B</p>
+                <p class="hover-effect">[23:15] Power fluctuation in building</p>
+            </div>
         </div>
     </div>
-    <script src="game.js"></script>
+
+    <div id="game-over" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 class="glitch-text">GAME OVER</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="restart-btn" class="neighbor-button">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let timer = 10;
+        let timerInterval;
+        let isNeighbor = false;
+
+        const visitors = [
+            { id: 'NORMAL', image: 'https://placehold.co/200x300/1a1a1a/4CAF50', isNeighbor: false },
+            { id: 'SUSPICIOUS', image: 'https://placehold.co/200x300/1a1a1a/ff3d3d', isNeighbor: true },
+            { id: 'UNKNOWN', image: 'https://placehold.co/200x300/1a1a1a/ffd700', isNeighbor: Math.random() > 0.5 }
+        ];
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('level').textContent = level;
+        }
+
+        function addLogEntry(message) {
+            const log = document.getElementById('log-entries');
+            const entry = document.createElement('p');
+            entry.className = 'hover-effect';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 5) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function showVisitor() {
+            const visitor = visitors[Math.floor(Math.random() * visitors.length)];
+            document.getElementById('visitor-image').src = visitor.image;
+            document.getElementById('visitor-id').textContent = `#${visitor.id}`;
+            document.getElementById('visitor-status').textContent = 'VERIFYING...';
+            isNeighbor = visitor.isNeighbor;
+            timer = 10;
+            document.getElementById('timer').textContent = timer;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timer--;
+                document.getElementById('timer').textContent = timer;
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    wrongDecision();
+                }
+            }, 1000);
+        }
+
+        function verifyVisitor() {
+            if (!isNeighbor) {
+                correctDecision();
+            } else {
+                wrongDecision();
+            }
+        }
+
+        function reportVisitor() {
+            if (isNeighbor) {
+                correctDecision();
+            } else {
+                wrongDecision();
+            }
+        }
+
+        function correctDecision() {
+            score += level * 10;
+            addLogEntry('Correct verification!');
+            level++;
+            updateStats();
+            showVisitor();
+            startTimer();
+        }
+
+        function wrongDecision() {
+            lives--;
+            addLogEntry('Wrong decision! Entity breached security!');
+            updateStats();
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                showVisitor();
+                startTimer();
+            }
+        }
+
+        function gameOver() {
+            document.getElementById('game-over').style.display = 'flex';
+            document.getElementById('final-score').textContent = score;
+        }
+
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            document.getElementById('game-over').style.display = 'none';
+            updateStats();
+            showVisitor();
+            startTimer();
+        }
+
+        // Event Listeners
+        document.getElementById('verify-btn').addEventListener('click', verifyVisitor);
+        document.getElementById('report-btn').addEventListener('click', reportVisitor);
+        document.getElementById('restart-btn').addEventListener('click', restartGame);
+
+        // Start game
+        showVisitor();
+        startTimer();
+    </script>
 </body>
 </html>
