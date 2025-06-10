@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Mixing Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .sound-button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .sound-button:hover {
+            background-color: #e0e0e0;
+        }
+        #mixer {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .sound-category {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sound Mixing Game</h1>
+    <div id="mixer">
+        <div class="sound-category">
+            <h3>Basic Sounds</h3>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bab.mp3?filename=click-21156.mp3">Click</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8f3c1a7.mp3?filename=pop-39222.mp3">Pop</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=ding-126515.mp3">Ding</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=beep-07a.mp3">Beep</button>
+        </div>
+
+        <div class="sound-category">
+            <h3>Nature Sounds</h3>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=water-drop-153941.mp3">Water Drop</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=wind-126515.mp3">Wind</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=thunder-126515.mp3">Thunder</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=bird-126515.mp3">Bird</button>
+        </div>
+
+        <div class="sound-category">
+            <h3>Musical Elements</h3>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=piano-126515.mp3">Piano Note</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=drum-126515.mp3">Drum Hit</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=guitar-126515.mp3">Guitar Strum</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=synth-126515.mp3">Synth Note</button>
+        </div>
+
+        <div class="sound-category">
+            <h3>Effects</h3>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=whoosh-126515.mp3">Whoosh</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=laser-126515.mp3">Laser</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=explosion-126515.mp3">Explosion</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=magic-126515.mp3">Magic</button>
+        </div>
+
+        <div class="sound-category">
+            <h3>Ambient</h3>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=ambient-126515.mp3">Ambient</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=atmosphere-126515.mp3">Atmosphere</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=space-126515.mp3">Space</button>
+            <button class="sound-button" data-sound="https://cdn.pixabay.com/download/audio/2022/01/18/audio_5cba1c9e9c.mp3?filename=underwater-126515.mp3">Underwater</button>
+        </div>
+    </div>
+
+    <script>
+        // Load all sounds when the page loads
+        const sounds = {};
+        document.querySelectorAll('.sound-button').forEach(button => {
+            const sound = new Audio(button.dataset.sound);
+            sounds[button.textContent] = sound;
+            
+            button.addEventListener('click', () => {
+                // Stop the sound if it's playing
+                sound.pause();
+                sound.currentTime = 0;
+                // Play the sound
+                sound.play();
+            });
+        });
+    </script>
+</body>
+</html>
