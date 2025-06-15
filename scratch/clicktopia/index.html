@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clickitey Clickitey</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #FFEB3B;
+            font-family: Arial, sans-serif;
+        }
+        #clickArea {
+            cursor: pointer;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+            user-select: none;
+        }
+        #clickArea:active {
+            transform: scale(0.95);
+        }
+        #number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        #title {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        #stopwatch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #timeWasted {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        #restartButton {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            transition: transform 0.1s;
+        }
+        #restartButton:hover {
+            transform: scale(1.05);
+        }
+        #restartButton:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <button id="restartButton">Restart</button>
+    <div id="stopwatch">
+        <div id="timeWasted">Time Wasted</div>
+        <div id="timer">00:00:00</div>
+    </div>
+    <h1 id="title">Clickitey Clickitey</h1>
+    <div id="clickArea">
+        <p id="number">0</p>
+    </div>
+
+    <script>
+        let count = 0;
+        const numberDisplay = document.getElementById('number');
+        const clickArea = document.getElementById('clickArea');
+        const timerDisplay = document.getElementById('timer');
+        const restartButton = document.getElementById('restartButton');
+
+        clickArea.addEventListener('click', () => {
+            count++;
+            numberDisplay.textContent = count;
+        });
+
+        // Stopwatch functionality
+        let seconds = 0;
+        let minutes = 0;
+        let hours = 0;
+        let timerInterval;
+
+        function updateTimer() {
+            seconds++;
+            if (seconds === 60) {
+                seconds = 0;
+                minutes++;
+                if (minutes === 60) {
+                    minutes = 0;
+                    hours++;
+                }
+            }
+
+            const displayHours = hours.toString().padStart(2, '0');
+            const displayMinutes = minutes.toString().padStart(2, '0');
+            const displaySeconds = seconds.toString().padStart(2, '0');
+            
+            timerDisplay.textContent = `${displayHours}:${displayMinutes}:${displaySeconds}`;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function resetGame() {
+            // Reset click counter
+            count = 0;
+            numberDisplay.textContent = '0';
+            
+            // Reset timer
+            clearInterval(timerInterval);
+            seconds = 0;
+            minutes = 0;
+            hours = 0;
+            timerDisplay.textContent = '00:00:00';
+            startTimer();
+        }
+
+        restartButton.addEventListener('click', () => {
+            if (confirm('Do you really want to restart? All progress will be lost!')) {
+                resetGame();
+            }
+        });
+
+        // Start the timer immediately when the page loads
+        startTimer();
+    </script>
+</body>
+</html>
