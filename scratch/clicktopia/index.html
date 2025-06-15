@@ -24,10 +24,10 @@
         }
 
         @keyframes backgroundShift {
-            0% { background: linear-gradient(45deg, #FFEB3B, #FFF176, #FFD54F); }
-            33% { background: linear-gradient(45deg, #FFF176, #FFD54F, #FFEB3B); }
-            66% { background: linear-gradient(45deg, #FFD54F, #FFEB3B, #FFF176); }
-            100% { background: linear-gradient(45deg, #FFEB3B, #FFF176, #FFD54F); }
+            0% { background: linear-gradient(45deg, #FFD700, #FFEB3B, #FFC107); }
+            33% { background: linear-gradient(45deg, #FFEB3B, #FFC107, #FFD700); }
+            66% { background: linear-gradient(45deg, #FFC107, #FFD700, #FFEB3B); }
+            100% { background: linear-gradient(45deg, #FFD700, #FFEB3B, #FFC107); }
         }
 
         @keyframes floatAround {
@@ -73,7 +73,7 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(45deg, #FFEB3B, #FFF176, #FFD54F);
+            background: linear-gradient(45deg, #FFD700, #FFEB3B, #FFC107);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             animation: backgroundShift 15s infinite;
             overflow: hidden;
@@ -87,7 +87,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%);
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.05) 100%);
             pointer-events: none;
         }
 
@@ -129,6 +129,132 @@
         #phone {
             animation: floatAround3 30s infinite linear;
             top: 30%;
+            left: 50%;
+        }
+
+        #star {
+            animation: floatAround 22s infinite linear;
+            top: 15%;
+            left: 80%;
+        }
+
+        #heart {
+            animation: floatAround2 18s infinite linear;
+            top: 75%;
+            left: 25%;
+        }
+
+        #sun {
+            animation: floatAround3 25s infinite linear;
+            top: 85%;
+            left: 60%;
+        }
+
+        #moon {
+            animation: floatAround 28s infinite linear;
+            top: 25%;
+            left: 85%;
+        }
+
+        #cloud {
+            animation: floatAround2 20s infinite linear;
+            top: 45%;
+            left: 15%;
+        }
+
+        #tree {
+            animation: floatAround3 24s infinite linear;
+            top: 65%;
+            left: 90%;
+        }
+
+        #flower {
+            animation: floatAround 19s infinite linear;
+            top: 35%;
+            left: 40%;
+        }
+
+        #rocket {
+            animation: floatAround2 26s infinite linear;
+            top: 55%;
+            left: 75%;
+        }
+
+        #book {
+            animation: floatAround3 23s infinite linear;
+            top: 80%;
+            left: 35%;
+        }
+
+        #rainbow {
+            animation: floatAround 21s infinite linear;
+            top: 40%;
+            left: 65%;
+        }
+
+        #pizza {
+            animation: floatAround2 27s infinite linear;
+            top: 70%;
+            left: 45%;
+        }
+
+        #coffee {
+            animation: floatAround3 22s infinite linear;
+            top: 30%;
+            left: 55%;
+        }
+
+        #cat {
+            animation: floatAround 23s infinite linear;
+            top: 20%;
+            left: 30%;
+        }
+
+        #dog {
+            animation: floatAround2 24s infinite linear;
+            top: 60%;
+            left: 20%;
+        }
+
+        #house {
+            animation: floatAround3 26s infinite linear;
+            top: 75%;
+            left: 80%;
+        }
+
+        #car {
+            animation: floatAround 25s infinite linear;
+            top: 35%;
+            left: 70%;
+        }
+
+        #ball {
+            animation: floatAround2 22s infinite linear;
+            top: 85%;
+            left: 40%;
+        }
+
+        #crown {
+            animation: floatAround3 27s infinite linear;
+            top: 45%;
+            left: 85%;
+        }
+
+        #gift {
+            animation: floatAround 24s infinite linear;
+            top: 15%;
+            left: 60%;
+        }
+
+        #camera {
+            animation: floatAround2 25s infinite linear;
+            top: 55%;
+            left: 25%;
+        }
+
+        #globe {
+            animation: floatAround3 28s infinite linear;
+            top: 65%;
             left: 50%;
         }
 
@@ -261,17 +387,96 @@
             0% { filter: hue-rotate(0deg) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); }
             100% { filter: hue-rotate(360deg) drop-shadow(0 0 10px rgba(255, 255, 255, 0.5)); }
         }
+
+        #playerInfo {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 15px 25px;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15),
+                        0 0 20px rgba(255, 255, 255, 0.3);
+            text-align: center;
+            animation: float 4s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #playerName {
+            width: 200px;
+            padding: 8px 15px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s;
+        }
+
+        #playerName:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        #playerStats {
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        #nameDisplay {
+            margin-right: 15px;
+            color: #FFD700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        #clickCount {
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <div class="floating-object" id="duck">🦆</div>
     <div class="floating-object" id="banana">🍌</div>
     <div class="floating-object" id="phone">☎️</div>
+    <div class="floating-object" id="star">⭐</div>
+    <div class="floating-object" id="heart">❤️</div>
+    <div class="floating-object" id="sun">☀️</div>
+    <div class="floating-object" id="moon">🌙</div>
+    <div class="floating-object" id="cloud">☁️</div>
+    <div class="floating-object" id="tree">🌳</div>
+    <div class="floating-object" id="flower">🌸</div>
+    <div class="floating-object" id="rocket">🚀</div>
+    <div class="floating-object" id="book">📚</div>
+    <div class="floating-object" id="rainbow">🌈</div>
+    <div class="floating-object" id="pizza">🍕</div>
+    <div class="floating-object" id="coffee">☕</div>
+    <div class="floating-object" id="cat">🐱</div>
+    <div class="floating-object" id="dog">🐶</div>
+    <div class="floating-object" id="house">🏠</div>
+    <div class="floating-object" id="car">🚗</div>
+    <div class="floating-object" id="ball">⚽</div>
+    <div class="floating-object" id="crown">👑</div>
+    <div class="floating-object" id="gift">🎁</div>
+    <div class="floating-object" id="camera">📷</div>
+    <div class="floating-object" id="globe">🌍</div>
     
     <button id="restartButton">Restart</button>
     <div id="stopwatch">
         <div id="timeWasted">Time Wasted</div>
         <div id="timer">00:00:00</div>
+    </div>
+    <div id="playerInfo">
+        <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+        <div id="playerStats">
+            <span id="nameDisplay"></span>
+            <span id="clickCount">Clicks: 0</span>
+        </div>
     </div>
     <h1 id="title" class="rainbow-text">Clickitey Clickitey</h1>
     <div id="clickArea">
@@ -284,6 +489,17 @@
         const clickArea = document.getElementById('clickArea');
         const timerDisplay = document.getElementById('timer');
         const restartButton = document.getElementById('restartButton');
+        const playerName = document.getElementById('playerName');
+        const nameDisplay = document.getElementById('nameDisplay');
+        const clickCount = document.getElementById('clickCount');
+
+        playerName.addEventListener('input', (e) => {
+            nameDisplay.textContent = e.target.value ? `${e.target.value}'s Progress:` : '';
+        });
+
+        function updateClickCount() {
+            clickCount.textContent = `Clicks: ${count}`;
+        }
 
         function createParticle(x, y) {
             const particle = document.createElement('div');
@@ -316,6 +532,7 @@
         clickArea.addEventListener('click', (e) => {
             count++;
             numberDisplay.textContent = count;
+            updateClickCount();
             numberDisplay.classList.remove('number-pop');
             void numberDisplay.offsetWidth;
             numberDisplay.classList.add('number-pop');
@@ -368,6 +585,7 @@
         function resetGame() {
             count = 0;
             numberDisplay.textContent = '0';
+            updateClickCount();
             numberDisplay.style.color = '#333';
             
             clearInterval(timerInterval);
