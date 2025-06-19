@@ -390,11 +390,11 @@
 
         #playerInfo {
             position: fixed;
-            top: 20px;
+            top: 100px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.85);
-            padding: 15px 25px;
+            padding: 20px 30px;
             border-radius: 20px;
             box-shadow: 0 12px 40px rgba(0,0,0,0.15),
                         0 0 20px rgba(255, 255, 255, 0.3);
@@ -404,39 +404,181 @@
             z-index: 2;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 300px;
         }
 
         #playerName {
-            width: 200px;
-            padding: 8px 15px;
+            width: 100%;
+            padding: 12px 20px;
             border: 2px solid rgba(0,0,0,0.1);
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
+            border-radius: 15px;
+            font-size: 18px;
+            margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.9);
             transition: all 0.3s;
+            text-align: center;
         }
 
         #playerName:focus {
             outline: none;
             border-color: #FFD700;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
         }
 
         #playerStats {
-            font-size: 18px;
+            font-size: 20px;
             color: #333;
             font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         #nameDisplay {
-            margin-right: 15px;
             color: #FFD700;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            font-size: 22px;
+            margin-bottom: 5px;
         }
 
         #clickCount {
             color: #666;
+            font-size: 18px;
+        }
+
+        #achievements {
+            position: fixed;
+            top: 250px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15),
+                        0 0 20px rgba(255, 255, 255, 0.3);
+            text-align: center;
+            animation: float 4s ease-in-out infinite;
+            position: relative;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        #achievements.visible {
+            display: block;
+            animation: achievementPanelPop 0.3s ease-out;
+        }
+
+        @keyframes achievementPanelPop {
+            0% { transform: translateX(-50%) scale(0.9); opacity: 0; }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+
+        #achievements h3 {
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            font-weight: 800;
+        }
+
+        #achievementsList {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 5px;
+        }
+
+        .achievement {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 15px;
+            border-radius: 15px;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+            opacity: 0.7;
+            transform: scale(0.98);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .achievement.unlocked {
+            opacity: 1;
+            transform: scale(1);
+            background: rgba(255, 215, 0, 0.15);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+        }
+
+        .achievement.new {
+            animation: achievementPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .achievement strong {
+            color: #333;
+            font-size: 18px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .achievement.unlocked strong {
+            color: #B8860B;
+        }
+
+        #achievementsButton {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15),
+                        0 0 20px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-size: 20px;
+            color: #333;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: float 4s ease-in-out infinite;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        #achievementsButton:hover {
+            transform: translateX(-50%) scale(1.05);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 16px 50px rgba(0,0,0,0.2),
+                        0 0 30px rgba(255, 255, 255, 0.4);
+        }
+
+        #achievementsButton:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        #achievementsButton .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #FFD700;
+            color: #333;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -467,6 +609,7 @@
     <div class="floating-object" id="globe">🌍</div>
     
     <button id="restartButton">Restart</button>
+    <button id="achievementsButton">Achievements <span class="badge">0</span></button>
     <div id="stopwatch">
         <div id="timeWasted">Time Wasted</div>
         <div id="timer">00:00:00</div>
@@ -477,6 +620,10 @@
             <span id="nameDisplay"></span>
             <span id="clickCount">Clicks: 0</span>
         </div>
+    </div>
+    <div id="achievements">
+        <h3>Achievements</h3>
+        <div id="achievementsList"></div>
     </div>
     <h1 id="title" class="rainbow-text">Clickitey Clickitey</h1>
     <div id="clickArea">
@@ -492,10 +639,247 @@
         const playerName = document.getElementById('playerName');
         const nameDisplay = document.getElementById('nameDisplay');
         const clickCount = document.getElementById('clickCount');
+        const achievementsList = document.getElementById('achievementsList');
 
-        playerName.addEventListener('input', (e) => {
-            nameDisplay.textContent = e.target.value ? `${e.target.value}'s Progress:` : '';
+        const achievements = [
+            // Click Count Achievements
+            { id: 'first_click', name: 'Baby Clicker', description: 'Get your first click', requirement: 1 },
+            { id: 'ten_clicks', name: 'Getting Started', description: 'Reach 10 clicks', requirement: 10 },
+            { id: 'fifty_clicks', name: 'Click Enthusiast', description: 'Reach 50 clicks', requirement: 50 },
+            { id: 'hundred_clicks', name: 'Century Club', description: 'Reach 100 clicks', requirement: 100 },
+            { id: 'two_hundred', name: 'Double Century', description: 'Reach 200 clicks', requirement: 200 },
+            { id: 'five_hundred', name: 'Click Master', description: 'Reach 500 clicks', requirement: 500 },
+            { id: 'thousand', name: 'Click Legend', description: 'Reach 1,000 clicks', requirement: 1000 },
+            { id: 'two_thousand', name: 'Click Champion', description: 'Reach 2,000 clicks', requirement: 2000 },
+            { id: 'five_thousand', name: 'Click God', description: 'Reach 5,000 clicks', requirement: 5000 },
+            { id: 'ten_thousand', name: 'Click Deity', description: 'Reach 10,000 clicks', requirement: 10000 },
+            { id: 'twenty_thousand', name: 'Click Titan', description: 'Reach 20,000 clicks', requirement: 20000 },
+            { id: 'fifty_thousand', name: 'Click Overlord', description: 'Reach 50,000 clicks', requirement: 50000 },
+            { id: 'hundred_thousand', name: 'Click Emperor', description: 'Reach 100,000 clicks', requirement: 100000 },
+
+            // Speed Achievements
+            { id: 'speed_clicker', name: 'Speed Demon', description: 'Click 10 times in 5 seconds', requirement: 'speed_10_5' },
+            { id: 'speed_master', name: 'Speed Master', description: 'Click 20 times in 5 seconds', requirement: 'speed_20_5' },
+            { id: 'speed_god', name: 'Speed God', description: 'Click 30 times in 5 seconds', requirement: 'speed_30_5' },
+            { id: 'speed_legend', name: 'Speed Legend', description: 'Click 50 times in 5 seconds', requirement: 'speed_50_5' },
+            { id: 'burst_clicker', name: 'Burst Clicker', description: 'Click 5 times in 1 second', requirement: 'speed_5_1' },
+            { id: 'rapid_clicker', name: 'Rapid Clicker', description: 'Click 10 times in 2 seconds', requirement: 'speed_10_2' },
+
+            // Time Achievements
+            { id: 'persistent', name: 'Persistent', description: 'Play for 5 minutes', requirement: 'time_5' },
+            { id: 'dedicated', name: 'Dedicated', description: 'Play for 15 minutes', requirement: 'time_15' },
+            { id: 'committed', name: 'Committed', description: 'Play for 30 minutes', requirement: 'time_30' },
+            { id: 'devoted', name: 'Devoted', description: 'Play for 1 hour', requirement: 'time_60' },
+            { id: 'obsessed', name: 'Obsessed', description: 'Play for 2 hours', requirement: 'time_120' },
+            { id: 'addicted', name: 'Addicted', description: 'Play for 5 hours', requirement: 'time_300' },
+
+            // Streak Achievements
+            { id: 'streak_10', name: 'Streak Starter', description: 'Click 10 times in a row without stopping', requirement: 'streak_10' },
+            { id: 'streak_50', name: 'Streak Master', description: 'Click 50 times in a row without stopping', requirement: 'streak_50' },
+            { id: 'streak_100', name: 'Streak Legend', description: 'Click 100 times in a row without stopping', requirement: 'streak_100' },
+
+            // Special Achievements
+            { id: 'lucky_click', name: 'Lucky Click', description: 'Reach exactly 777 clicks', requirement: 'exact_777' },
+            { id: 'unlucky_click', name: 'Unlucky Click', description: 'Reach exactly 666 clicks', requirement: 'exact_666' },
+            { id: 'perfect_click', name: 'Perfect Click', description: 'Reach exactly 1000 clicks', requirement: 'exact_1000' },
+            { id: 'golden_click', name: 'Golden Click', description: 'Reach exactly 5000 clicks', requirement: 'exact_5000' },
+
+            // Milestone Achievements
+            { id: 'first_minute', name: 'First Minute', description: 'Click 100 times in your first minute', requirement: 'first_minute_100' },
+            { id: 'first_hour', name: 'First Hour', description: 'Click 1000 times in your first hour', requirement: 'first_hour_1000' },
+            { id: 'click_efficiency', name: 'Click Efficiency', description: 'Average 1 click per second for 1 minute', requirement: 'efficiency_60' },
+
+            // Special Time Achievements
+            { id: 'midnight_clicker', name: 'Midnight Clicker', description: 'Play at midnight (00:00)', requirement: 'time_midnight' },
+            { id: 'dawn_clicker', name: 'Dawn Clicker', description: 'Play at dawn (06:00)', requirement: 'time_dawn' },
+            { id: 'dusk_clicker', name: 'Dusk Clicker', description: 'Play at dusk (18:00)', requirement: 'time_dusk' },
+
+            // Click Pattern Achievements
+            { id: 'rhythm_clicker', name: 'Rhythm Clicker', description: 'Click 10 times with exactly 1 second between each click', requirement: 'rhythm_10' },
+            { id: 'double_clicker', name: 'Double Clicker', description: 'Click twice within 100ms 10 times', requirement: 'double_10' },
+            { id: 'triple_clicker', name: 'Triple Clicker', description: 'Click three times within 200ms 10 times', requirement: 'triple_10' },
+
+            // Special Number Achievements
+            { id: 'binary_clicker', name: 'Binary Clicker', description: 'Reach 1024 clicks (2^10)', requirement: 'exact_1024' },
+            { id: 'fibonacci_clicker', name: 'Fibonacci Clicker', description: 'Reach 377 clicks (14th Fibonacci number)', requirement: 'exact_377' },
+            { id: 'prime_clicker', name: 'Prime Clicker', description: 'Reach 997 clicks (largest 3-digit prime)', requirement: 'exact_997' },
+
+            // Special Time Pattern Achievements
+            { id: 'hour_clicker', name: 'Hour Clicker', description: 'Play for exactly 60 minutes', requirement: 'exact_time_60' },
+            { id: 'day_clicker', name: 'Day Clicker', description: 'Play for exactly 24 hours', requirement: 'exact_time_1440' },
+            { id: 'week_clicker', name: 'Week Clicker', description: 'Play for exactly 7 days', requirement: 'exact_time_10080' }
+        ];
+
+        let unlockedAchievements = new Set();
+        let lastClickTime = Date.now();
+        let clicksInLast5Seconds = 0;
+        let clicksInLast2Seconds = 0;
+        let clicksInLast1Second = 0;
+        let currentStreak = 0;
+        let lastClickTimestamp = 0;
+        let clickIntervals = [];
+        let startTime = Date.now();
+        let firstMinuteClicks = 0;
+        let firstHourClicks = 0;
+
+        const achievementsButton = document.getElementById('achievementsButton');
+        const achievementsPanel = document.getElementById('achievements');
+
+        achievementsButton.addEventListener('click', () => {
+            achievementsPanel.classList.toggle('visible');
+            updateAchievementsBadge();
         });
+
+        function updateAchievementsBadge() {
+            const badge = achievementsButton.querySelector('.badge');
+            badge.textContent = unlockedAchievements.size;
+        }
+
+        function initializeAchievements() {
+            achievements.forEach(achievement => {
+                const element = createAchievementElement(achievement);
+                achievementsList.appendChild(element);
+            });
+        }
+
+        // Initialize achievements when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAchievements();
+            startTimer();
+        });
+
+        function createAchievementElement(achievement) {
+            const div = document.createElement('div');
+            div.className = 'achievement';
+            div.id = achievement.id;
+            div.innerHTML = `
+                <strong>${achievement.name}</strong><br>
+                ${achievement.description}
+            `;
+            return div;
+        }
+
+        function unlockAchievement(achievement) {
+            if (!unlockedAchievements.has(achievement.id)) {
+                unlockedAchievements.add(achievement.id);
+                const element = document.getElementById(achievement.id);
+                if (element) {
+                    element.classList.add('unlocked', 'new');
+                    setTimeout(() => element.classList.remove('new'), 500);
+                }
+                updateAchievementsBadge();
+            }
+        }
+
+        function checkAchievements() {
+            const now = Date.now();
+            const currentHour = new Date().getHours();
+            const currentMinute = new Date().getMinutes();
+
+            achievements.forEach(achievement => {
+                if (achievement.requirement === 'speed_10_5' && clicksInLast5Seconds >= 10) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'speed_20_5' && clicksInLast5Seconds >= 20) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'speed_30_5' && clicksInLast5Seconds >= 30) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'speed_50_5' && clicksInLast5Seconds >= 50) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'speed_5_1' && clicksInLast1Second >= 5) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'speed_10_2' && clicksInLast2Seconds >= 10) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_5' && (hours > 0 || minutes >= 5)) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_15' && (hours > 0 || minutes >= 15)) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_30' && (hours > 0 || minutes >= 30)) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_60' && hours >= 1) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_120' && hours >= 2) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_300' && hours >= 5) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'streak_10' && currentStreak >= 10) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'streak_50' && currentStreak >= 50) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'streak_100' && currentStreak >= 100) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_777' && count === 777) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_666' && count === 666) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_1000' && count === 1000) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_5000' && count === 5000) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'first_minute_100' && firstMinuteClicks >= 100) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'first_hour_1000' && firstHourClicks >= 1000) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_midnight' && currentHour === 0 && currentMinute === 0) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_dawn' && currentHour === 6 && currentMinute === 0) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'time_dusk' && currentHour === 18 && currentMinute === 0) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_1024' && count === 1024) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_377' && count === 377) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_997' && count === 997) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_time_60' && hours === 1 && minutes === 0 && seconds === 0) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_time_1440' && hours === 24 && minutes === 0 && seconds === 0) {
+                    unlockAchievement(achievement);
+                } else if (achievement.requirement === 'exact_time_10080' && hours === 168 && minutes === 0 && seconds === 0) {
+                    unlockAchievement(achievement);
+                } else if (count >= achievement.requirement && typeof achievement.requirement === 'number') {
+                    unlockAchievement(achievement);
+                }
+            });
+        }
+
+        function updateSpeedClicker() {
+            const now = Date.now();
+            
+            // Update 5-second window
+            if (now - lastClickTime > 5000) {
+                clicksInLast5Seconds = 0;
+            }
+            clicksInLast5Seconds++;
+            
+            // Update 2-second window
+            if (now - lastClickTime > 2000) {
+                clicksInLast2Seconds = 0;
+            }
+            clicksInLast2Seconds++;
+            
+            // Update 1-second window
+            if (now - lastClickTime > 1000) {
+                clicksInLast1Second = 0;
+            }
+            clicksInLast1Second++;
+
+            // Update streak
+            if (now - lastClickTimestamp > 1000) {
+                currentStreak = 0;
+            }
+            currentStreak++;
+            lastClickTimestamp = now;
+
+            // Update first minute and hour clicks
+            const timeSinceStart = now - startTime;
+            if (timeSinceStart <= 60000) {
+                firstMinuteClicks++;
+            }
+            if (timeSinceStart <= 3600000) {
+                firstHourClicks++;
+            }
+        }
 
         function updateClickCount() {
             clickCount.textContent = `Clicks: ${count}`;
@@ -533,6 +917,8 @@
             count++;
             numberDisplay.textContent = count;
             updateClickCount();
+            updateSpeedClicker();
+            checkAchievements();
             numberDisplay.classList.remove('number-pop');
             void numberDisplay.offsetWidth;
             numberDisplay.classList.add('number-pop');
@@ -594,6 +980,23 @@
             hours = 0;
             timerDisplay.textContent = '00:00:00';
             startTimer();
+
+            // Reset achievements
+            unlockedAchievements.clear();
+            document.querySelectorAll('.achievement').forEach(el => {
+                el.classList.remove('unlocked', 'new');
+            });
+
+            // Reset speed tracking
+            clicksInLast5Seconds = 0;
+            clicksInLast2Seconds = 0;
+            clicksInLast1Second = 0;
+            currentStreak = 0;
+            lastClickTimestamp = 0;
+            clickIntervals = [];
+            startTime = Date.now();
+            firstMinuteClicks = 0;
+            firstHourClicks = 0;
         }
 
         restartButton.addEventListener('click', () => {
@@ -603,6 +1006,10 @@
         });
 
         startTimer();
+
+        playerName.addEventListener('input', (e) => {
+            nameDisplay.textContent = e.target.value ? `${e.target.value}'s Progress:` : '';
+        });
     </script>
 </body>
 </html> 

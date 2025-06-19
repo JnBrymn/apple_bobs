@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashware</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: #111;
+            overflow: hidden;
+        }
+        
+        #elevator {
+            position: absolute;
+            width: 200px;
+            height: 300px;
+            background: #333;
+            left: 300px;
+            top: 150px;
+            border: 4px solid #444;
+            transition: all 0.5s;
+        }
+        
+        #elevator-door {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #222;
+            transition: transform 1s;
+            transform-origin: left;
+        }
+        
+        #elevator-door.open {
+            transform: scaleX(0);
+        }
+        
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #0f0;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow: 0 0 10px #0f0;
+            z-index: 2;
+        }
+        
+        #challenge-area {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: #222;
+            left: 400px;
+            top: 100px;
+            display: none;
+        }
+        
+        .platform {
+            position: absolute;
+            background: #444;
+            border-radius: 5px;
+        }
+        
+        .moving-platform {
+            position: absolute;
+            background: #444;
+            border-radius: 5px;
+            transition: all 2s linear;
+        }
+        
+        .collectible {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ff0;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff0;
+        }
+        
+        .target {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #0f0;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #0f0;
+        }
+        
+        .obstacle {
+            position: absolute;
+            background: #f00;
+            border-radius: 5px;
+        }
+        
+        .timer {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-family: monospace;
+        }
+        
+        .score {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-family: monospace;
+        }
+        
+        #floor-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0f0;
+            font-size: 24px;
+            font-family: monospace;
+        }
+        
+        #lives {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #f00;
+            font-size: 24px;
+        }
+        
+        #start-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+        
+        #start-button {
+            padding: 20px 40px;
+            font-size: 24px;
+            background: #0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        #win-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="elevator">
+            <div id="elevator-door"></div>
+            <div id="floor-display">Floor 1</div>
+        </div>
+        <div id="player"></div>
+        <div id="challenge-area"></div>
+        <div id="lives">❤️❤️❤️</div>
+        
+        <div id="start-screen">
+            <h1>Dashware</h1>
+            <p>Complete challenges to reach floor 50!</p>
+            <button id="start-button">Start Game</button>
+        </div>
+        
+        <div id="win-screen">
+            <h1>You Win!</h1>
+            <p>You've reached floor 50!</p>
+            <button id="start-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const elevator = document.getElementById('elevator');
+        const elevatorDoor = document.getElementById('elevator-door');
+        const player = document.getElementById('player');
+        const challengeArea = document.getElementById('challenge-area');
+        const floorDisplay = document.getElementById('floor-display');
+        const livesDisplay = document.getElementById('lives');
+        const startScreen = document.getElementById('start-screen');
+        const winScreen = document.getElementById('win-screen');
+        
+        let currentFloor = 1;
+        let lives = 3;
+        let gameStarted = false;
+        let challengeActive = false;
+        let playerPosition = { x: 400, y: 300 };
+        const moveSpeed = 5;
+        
+        // Movement controls
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false
+        };
+        
+        document.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key.toLowerCase()] = true;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key.toLowerCase()] = false;
+            }
+        });
+        
+        function startGame() {
+            gameStarted = true;
+            startScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            currentFloor = 1;
+            lives = 3;
+            updateDisplay();
+            startFloor();
+        }
+        
+        function updateDisplay() {
+            floorDisplay.textContent = `Floor ${currentFloor}`;
+            livesDisplay.textContent = '❤️'.repeat(lives);
+        }
+        
+        function startFloor() {
+            playerPosition = { x: 400, y: 300 };
+            player.style.left = `${playerPosition.x}px`;
+            player.style.top = `${playerPosition.y}px`;
+            
+            elevatorDoor.classList.remove('open');
+            
+            setTimeout(() => {
+                elevator.style.transform = `translateY(${(currentFloor - 1) * -100}px)`;
+                
+                setTimeout(() => {
+                    elevatorDoor.classList.add('open');
+                    
+                    setTimeout(() => {
+                        startChallenge();
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+        
+        function startChallenge() {
+            challengeActive = true;
+            challengeArea.style.display = 'block';
+            challengeArea.innerHTML = '';
+            
+            // Different challenge for each floor
+            switch(currentFloor) {
+                case 1:
+                    createPlatformChallenge();
+                    break;
+                case 2:
+                    createMazeChallenge();
+                    break;
+                case 3:
+                    createRhythmChallenge();
+                    break;
+                case 4:
+                    createWordScrambleChallenge();
+                    break;
+                case 5:
+                    createMemoryChallenge();
+                    break;
+                case 6:
+                    createMathChallenge();
+                    break;
+                case 7:
+                    createTypingChallenge();
+                    break;
+                case 8:
+                    createPuzzleChallenge();
+                    break;
+                case 9:
+                    createReactionChallenge();
+                    break;
+                case 10:
+                    createPatternChallenge();
+                    break;
+                default:
+                    // For floors 11+, cycle through unique challenges
+                    const challengeTypes = [
+                        createPlatformChallenge,
+                        createMazeChallenge,
+                        createRhythmChallenge,
+                        createWordScrambleChallenge,
+                        createMemoryChallenge,
+                        createMathChallenge,
+                        createTypingChallenge,
+                        createPuzzleChallenge,
+                        createReactionChallenge,
+                        createPatternChallenge
+                    ];
+                    const randomIndex = Math.floor(Math.random() * challengeTypes.length);
+                    challengeTypes[randomIndex]();
+            }
+        }
+        
+        function createPlatformChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Jump to the goal! Use W to jump.';
+            challengeArea.appendChild(instructions);
+
+            // Create platforms
+            const platforms = [
+                { x: 50, y: 350, width: 100, height: 20 },
+                { x: 200, y: 300, width: 100, height: 20 },
+                { x: 350, y: 250, width: 100, height: 20 }
+            ];
+
+            platforms.forEach(platform => {
+                const platformElement = document.createElement('div');
+                platformElement.style.position = 'absolute';
+                platformElement.style.left = `${platform.x}px`;
+                platformElement.style.top = `${platform.y}px`;
+                platformElement.style.width = `${platform.width}px`;
+                platformElement.style.height = `${platform.height}px`;
+                platformElement.style.background = '#444';
+                platformElement.style.borderRadius = '5px';
+                challengeArea.appendChild(platformElement);
+            });
+
+            // Create goal
+            const goal = document.createElement('div');
+            goal.style.position = 'absolute';
+            goal.style.left = '450px';
+            goal.style.top = '200px';
+            goal.style.width = '40px';
+            goal.style.height = '40px';
+            goal.style.background = '#0f0';
+            goal.style.borderRadius = '50%';
+            challengeArea.appendChild(goal);
+
+            // Player physics
+            let velocityY = 0;
+            const gravity = 0.5;
+            const jumpForce = -10;
+            let isJumping = false;
+
+            // Game loop
+            const gameLoop = setInterval(() => {
+                if (!challengeActive) {
+                    clearInterval(gameLoop);
+                    return;
+                }
+
+                // Apply gravity
+                velocityY += gravity;
+                playerPosition.y += velocityY;
+
+                // Check platform collisions
+                let onPlatform = false;
+                platforms.forEach(platform => {
+                    if (playerPosition.x + 15 > platform.x && 
+                        playerPosition.x - 15 < platform.x + platform.width &&
+                        playerPosition.y + 15 > platform.y && 
+                        playerPosition.y - 15 < platform.y + platform.height) {
+                        if (velocityY > 0) {
+                            playerPosition.y = platform.y - 15;
+                            velocityY = 0;
+                            isJumping = false;
+                            onPlatform = true;
+                        }
+                    }
+                });
+
+                // Check goal collision
+                if (playerPosition.x + 15 > 450 && 
+                    playerPosition.x - 15 < 490 &&
+                    playerPosition.y + 15 > 200 && 
+                    playerPosition.y - 15 < 240) {
+                    clearInterval(gameLoop);
+                    completeChallenge();
+                    return;
+                }
+
+                // Keep player in bounds
+                if (playerPosition.y > 400) {
+                    playerPosition.y = 400;
+                    velocityY = 0;
+                    isJumping = false;
+                }
+
+                // Update player position
+                player.style.top = `${playerPosition.y}px`;
+            }, 16);
+
+            // Jump when W is pressed
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'w' && !isJumping) {
+                    velocityY = jumpForce;
+                    isJumping = true;
+                }
+            });
+        }
+        
+        function createMazeChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Find your way through the maze!';
+            challengeArea.appendChild(instructions);
+
+            const mazeSize = 10;
+            const cellSize = 30;
+            const maze = generateMaze(mazeSize);
+            
+            // Create maze walls
+            for (let y = 0; y < mazeSize; y++) {
+                for (let x = 0; x < mazeSize; x++) {
+                    if (maze[y][x] === 1) {
+                        const wall = document.createElement('div');
+                        wall.style.position = 'absolute';
+                        wall.style.width = `${cellSize}px`;
+                        wall.style.height = `${cellSize}px`;
+                        wall.style.background = '#444';
+                        wall.style.left = `${x * cellSize + 50}px`;
+                        wall.style.top = `${y * cellSize + 50}px`;
+                        challengeArea.appendChild(wall);
+                    }
+                }
+            }
+
+            // Add goal
+            const goal = document.createElement('div');
+            goal.style.position = 'absolute';
+            goal.style.width = `${cellSize}px`;
+            goal.style.height = `${cellSize}px`;
+            goal.style.background = '#0f0';
+            goal.style.borderRadius = '50%';
+            goal.style.left = `${(mazeSize - 1) * cellSize + 50}px`;
+            goal.style.top = `${(mazeSize - 1) * cellSize + 50}px`;
+            challengeArea.appendChild(goal);
+
+            // Check for wall collisions and goal
+            const collisionLoop = setInterval(() => {
+                if (!challengeActive) {
+                    clearInterval(collisionLoop);
+                    return;
+                }
+
+                const playerRect = player.getBoundingClientRect();
+                const walls = challengeArea.querySelectorAll('div');
+                
+                for (const wall of walls) {
+                    if (wall !== goal && isColliding(playerRect, wall.getBoundingClientRect())) {
+                        playerPosition.x = 400;
+                        playerPosition.y = 300;
+                        player.style.left = `${playerPosition.x}px`;
+                        player.style.top = `${playerPosition.y}px`;
+                    }
+                }
+
+                if (isColliding(playerRect, goal.getBoundingClientRect())) {
+                    clearInterval(collisionLoop);
+                    completeChallenge();
+                }
+            }, 16);
+        }
+        
+        function createRhythmChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Press SPACE when the line hits the target!';
+            challengeArea.appendChild(instructions);
+
+            const target = document.createElement('div');
+            target.style.position = 'absolute';
+            target.style.width = '4px';
+            target.style.height = '100px';
+            target.style.background = '#0f0';
+            target.style.left = '200px';
+            target.style.top = '150px';
+            challengeArea.appendChild(target);
+
+            const line = document.createElement('div');
+            line.style.position = 'absolute';
+            line.style.width = '2px';
+            line.style.height = '100px';
+            line.style.background = '#fff';
+            line.style.left = '50px';
+            line.style.top = '150px';
+            challengeArea.appendChild(line);
+
+            let score = 0;
+            let misses = 0;
+            const maxMisses = 3;
+
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.style.position = 'absolute';
+            scoreDisplay.style.top = '50px';
+            scoreDisplay.style.left = '50%';
+            scoreDisplay.style.transform = 'translateX(-50%)';
+            scoreDisplay.style.color = 'white';
+            scoreDisplay.textContent = `Score: ${score}`;
+            challengeArea.appendChild(scoreDisplay);
+
+            let linePosition = 50;
+            let direction = 1;
+            let speed = 3;
+
+            const rhythmLoop = setInterval(() => {
+                if (!challengeActive) {
+                    clearInterval(rhythmLoop);
+                    return;
+                }
+
+                linePosition += speed * direction;
+                if (linePosition >= 350) direction = -1;
+                if (linePosition <= 50) direction = 1;
+                
+                line.style.left = `${linePosition}px`;
+
+                if (misses >= maxMisses) {
+                    clearInterval(rhythmLoop);
+                    failChallenge();
+                }
+            }, 16);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    const distance = Math.abs(linePosition - 200);
+                    if (distance < 20) {
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        speed += 0.5;
+                        if (score >= 10) {
+                            clearInterval(rhythmLoop);
+                            completeChallenge();
+                        }
+                    } else {
+                        misses++;
+                    }
+                }
+            });
+        }
+        
+        function createWordScrambleChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Unscramble the word!';
+            challengeArea.appendChild(instructions);
+
+            const words = ['ELEVATOR', 'FLOOR', 'CHALLENGE', 'GAME', 'WIN'];
+            const word = words[Math.floor(Math.random() * words.length)];
+            const scrambled = word.split('').sort(() => Math.random() - 0.5).join('');
+
+            const wordDisplay = document.createElement('div');
+            wordDisplay.style.position = 'absolute';
+            wordDisplay.style.top = '100px';
+            wordDisplay.style.left = '50%';
+            wordDisplay.style.transform = 'translateX(-50%)';
+            wordDisplay.style.color = 'white';
+            wordDisplay.style.fontSize = '24px';
+            wordDisplay.style.fontFamily = 'monospace';
+            wordDisplay.textContent = scrambled;
+            challengeArea.appendChild(wordDisplay);
+
+            const input = document.createElement('input');
+            input.style.position = 'absolute';
+            input.style.top = '150px';
+            input.style.left = '50%';
+            input.style.transform = 'translateX(-50%)';
+            input.style.padding = '10px';
+            input.style.fontSize = '18px';
+            challengeArea.appendChild(input);
+
+            const submitButton = document.createElement('button');
+            submitButton.style.position = 'absolute';
+            submitButton.style.top = '200px';
+            submitButton.style.left = '50%';
+            submitButton.style.transform = 'translateX(-50%)';
+            submitButton.style.padding = '10px 20px';
+            submitButton.textContent = 'Submit';
+            submitButton.onclick = () => {
+                if (input.value.toUpperCase() === word) {
+                    completeChallenge();
+                } else {
+                    failChallenge();
+                }
+            };
+            challengeArea.appendChild(submitButton);
+        }
+        
+        function createMemoryChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Remember the pattern!';
+            challengeArea.appendChild(instructions);
+
+            const grid = document.createElement('div');
+            grid.style.position = 'absolute';
+            grid.style.top = '100px';
+            grid.style.left = '50%';
+            grid.style.transform = 'translateX(-50%)';
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            grid.style.gap = '10px';
+            challengeArea.appendChild(grid);
+
+            const cells = [];
+            const sequence = [];
+            let playerSequence = [];
+            let isShowingSequence = true;
+
+            // Create grid cells
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.style.width = '60px';
+                cell.style.height = '60px';
+                cell.style.background = '#444';
+                cell.style.borderRadius = '5px';
+                cell.style.cursor = 'pointer';
+                cell.style.transition = 'background 0.3s';
+                
+                cell.addEventListener('click', () => {
+                    if (!isShowingSequence) {
+                        const index = cells.indexOf(cell);
+                        playerSequence.push(index);
+                        cell.style.background = '#0f0';
+                        setTimeout(() => cell.style.background = '#444', 300);
+                        checkSequence();
+                    }
+                });
+                
+                grid.appendChild(cell);
+                cells.push(cell);
+            }
+
+            // Generate sequence
+            for (let i = 0; i < 5; i++) {
+                sequence.push(Math.floor(Math.random() * 9));
+            }
+
+            let currentIndex = 0;
+            const showNextCell = () => {
+                if (currentIndex < sequence.length) {
+                    const cell = cells[sequence[currentIndex]];
+                    cell.style.background = '#0f0';
+                    setTimeout(() => {
+                        cell.style.background = '#444';
+                        currentIndex++;
+                        setTimeout(showNextCell, 500);
+                    }, 500);
+                } else {
+                    isShowingSequence = false;
+                }
+            };
+
+            showNextCell();
+
+            function checkSequence() {
+                const currentIndex = playerSequence.length - 1;
+                if (playerSequence[currentIndex] !== sequence[currentIndex]) {
+                    failChallenge();
+                    return;
+                }
+                if (playerSequence.length === sequence.length) {
+                    completeChallenge();
+                }
+            }
+        }
+        
+        function generateMaze(size) {
+            const maze = Array(size).fill().map(() => Array(size).fill(1));
+            const stack = [];
+            const start = { x: 1, y: 1 };
+            
+            maze[start.y][start.x] = 0;
+            stack.push(start);
+            
+            while (stack.length > 0) {
+                const current = stack[stack.length - 1];
+                const neighbors = [];
+                
+                if (current.x > 1 && maze[current.y][current.x - 2] === 1) neighbors.push({ x: current.x - 2, y: current.y });
+                if (current.x < size - 2 && maze[current.y][current.x + 2] === 1) neighbors.push({ x: current.x + 2, y: current.y });
+                if (current.y > 1 && maze[current.y - 2][current.x] === 1) neighbors.push({ x: current.x, y: current.y - 2 });
+                if (current.y < size - 2 && maze[current.y + 2][current.x] === 1) neighbors.push({ x: current.x, y: current.y + 2 });
+                
+                if (neighbors.length > 0) {
+                    const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    maze[next.y][next.x] = 0;
+                    maze[current.y + (next.y - current.y) / 2][current.x + (next.x - current.x) / 2] = 0;
+                    stack.push(next);
+                } else {
+                    stack.pop();
+                }
+            }
+            
+            return maze;
+        }
+        
+        function isColliding(rect1, rect2) {
+            return !(rect1.right < rect2.left || 
+                    rect1.left > rect2.right || 
+                    rect1.bottom < rect2.top || 
+                    rect1.top > rect2.bottom);
+        }
+        
+        function completeChallenge() {
+            challengeActive = false;
+            challengeArea.style.display = 'none';
+            
+            if (currentFloor === 50) {
+                winGame();
+            } else {
+                currentFloor++;
+                updateDisplay();
+                startFloor();
+            }
+        }
+        
+        function failChallenge() {
+            challengeActive = false;
+            challengeArea.style.display = 'none';
+            lives--;
+            updateDisplay();
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                startFloor();
+            }
+        }
+        
+        function gameOver() {
+            gameStarted = false;
+            startScreen.style.display = 'flex';
+            startScreen.querySelector('h1').textContent = 'Game Over';
+            startScreen.querySelector('p').textContent = `You reached floor ${currentFloor}`;
+        }
+        
+        function winGame() {
+            gameStarted = false;
+            winScreen.style.display = 'flex';
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (gameStarted && challengeActive) {
+                if (keys.w) playerPosition.y -= moveSpeed;
+                if (keys.s) playerPosition.y += moveSpeed;
+                if (keys.a) playerPosition.x -= moveSpeed;
+                if (keys.d) playerPosition.x += moveSpeed;
+                
+                playerPosition.x = Math.max(15, Math.min(785, playerPosition.x));
+                playerPosition.y = Math.max(15, Math.min(585, playerPosition.y));
+                
+                player.style.left = `${playerPosition.x}px`;
+                player.style.top = `${playerPosition.y}px`;
+            }
+        }
+        
+        animate();
+        
+        document.getElementById('start-button').addEventListener('click', startGame);
+
+        function createMathChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Solve the math problems!';
+            challengeArea.appendChild(instructions);
+
+            let score = 0;
+            const requiredScore = 5;
+            let timeLeft = 30;
+
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.style.position = 'absolute';
+            scoreDisplay.style.top = '50px';
+            scoreDisplay.style.left = '50%';
+            scoreDisplay.style.transform = 'translateX(-50%)';
+            scoreDisplay.style.color = 'white';
+            scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+            challengeArea.appendChild(scoreDisplay);
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.style.position = 'absolute';
+            timerDisplay.style.top = '80px';
+            timerDisplay.style.left = '50%';
+            timerDisplay.style.transform = 'translateX(-50%)';
+            timerDisplay.style.color = 'white';
+            timerDisplay.textContent = `Time: ${timeLeft}s`;
+            challengeArea.appendChild(timerDisplay);
+
+            const problemDisplay = document.createElement('div');
+            problemDisplay.style.position = 'absolute';
+            problemDisplay.style.top = '150px';
+            problemDisplay.style.left = '50%';
+            problemDisplay.style.transform = 'translateX(-50%)';
+            problemDisplay.style.color = 'white';
+            problemDisplay.style.fontSize = '24px';
+            challengeArea.appendChild(problemDisplay);
+
+            const input = document.createElement('input');
+            input.style.position = 'absolute';
+            input.style.top = '200px';
+            input.style.left = '50%';
+            input.style.transform = 'translateX(-50%)';
+            input.style.padding = '10px';
+            input.style.fontSize = '18px';
+            challengeArea.appendChild(input);
+
+            function generateProblem() {
+                const operations = ['+', '-', '*'];
+                const operation = operations[Math.floor(Math.random() * operations.length)];
+                let num1, num2, answer;
+
+                switch(operation) {
+                    case '+':
+                        num1 = Math.floor(Math.random() * 50) + 1;
+                        num2 = Math.floor(Math.random() * 50) + 1;
+                        answer = num1 + num2;
+                        break;
+                    case '-':
+                        num1 = Math.floor(Math.random() * 50) + 26;
+                        num2 = Math.floor(Math.random() * 25) + 1;
+                        answer = num1 - num2;
+                        break;
+                    case '*':
+                        num1 = Math.floor(Math.random() * 12) + 1;
+                        num2 = Math.floor(Math.random() * 12) + 1;
+                        answer = num1 * num2;
+                        break;
+                }
+
+                problemDisplay.textContent = `${num1} ${operation} ${num2} = ?`;
+                return answer;
+            }
+
+            let currentAnswer = generateProblem();
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const userAnswer = parseInt(input.value);
+                    if (userAnswer === currentAnswer) {
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+                        if (score >= requiredScore) {
+                            completeChallenge();
+                            return;
+                        }
+                        currentAnswer = generateProblem();
+                    }
+                    input.value = '';
+                }
+            });
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    failChallenge();
+                }
+            }, 1000);
+        }
+
+        function createTypingChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Type the words as they appear!';
+            challengeArea.appendChild(instructions);
+
+            const words = [
+                'ELEVATOR', 'FLOOR', 'CHALLENGE', 'GAME', 'WIN',
+                'KEYBOARD', 'COMPUTER', 'SCREEN', 'MOUSE', 'CLICK',
+                'PROGRAM', 'CODE', 'FUNCTION', 'VARIABLE', 'LOOP'
+            ];
+
+            let currentWordIndex = 0;
+            let timeLeft = 30;
+            let score = 0;
+            const requiredScore = 10;
+
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.style.position = 'absolute';
+            scoreDisplay.style.top = '50px';
+            scoreDisplay.style.left = '50%';
+            scoreDisplay.style.transform = 'translateX(-50%)';
+            scoreDisplay.style.color = 'white';
+            scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+            challengeArea.appendChild(scoreDisplay);
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.style.position = 'absolute';
+            timerDisplay.style.top = '80px';
+            timerDisplay.style.left = '50%';
+            timerDisplay.style.transform = 'translateX(-50%)';
+            timerDisplay.style.color = 'white';
+            timerDisplay.textContent = `Time: ${timeLeft}s`;
+            challengeArea.appendChild(timerDisplay);
+
+            const wordDisplay = document.createElement('div');
+            wordDisplay.style.position = 'absolute';
+            wordDisplay.style.top = '150px';
+            wordDisplay.style.left = '50%';
+            wordDisplay.style.transform = 'translateX(-50%)';
+            wordDisplay.style.color = 'white';
+            wordDisplay.style.fontSize = '24px';
+            wordDisplay.style.fontFamily = 'monospace';
+            challengeArea.appendChild(wordDisplay);
+
+            const input = document.createElement('input');
+            input.style.position = 'absolute';
+            input.style.top = '200px';
+            input.style.left = '50%';
+            input.style.transform = 'translateX(-50%)';
+            input.style.padding = '10px';
+            input.style.fontSize = '18px';
+            challengeArea.appendChild(input);
+
+            function showNextWord() {
+                wordDisplay.textContent = words[currentWordIndex];
+                input.value = '';
+                input.focus();
+            }
+
+            showNextWord();
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    if (input.value.toUpperCase() === words[currentWordIndex]) {
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+                        if (score >= requiredScore) {
+                            completeChallenge();
+                            return;
+                        }
+                        currentWordIndex = (currentWordIndex + 1) % words.length;
+                        showNextWord();
+                    }
+                }
+            });
+
+            const timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    failChallenge();
+                }
+            }, 1000);
+        }
+
+        function createPuzzleChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Arrange the puzzle pieces in order!';
+            challengeArea.appendChild(instructions);
+
+            const grid = document.createElement('div');
+            grid.style.position = 'absolute';
+            grid.style.top = '100px';
+            grid.style.left = '50%';
+            grid.style.transform = 'translateX(-50%)';
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            grid.style.gap = '5px';
+            challengeArea.appendChild(grid);
+
+            const pieces = [];
+            const size = 3;
+            const totalPieces = size * size;
+
+            // Create puzzle pieces
+            for (let i = 0; i < totalPieces; i++) {
+                const piece = document.createElement('div');
+                piece.style.width = '60px';
+                piece.style.height = '60px';
+                piece.style.background = `hsl(${(i * 360) / totalPieces}, 70%, 50%)`;
+                piece.style.display = 'flex';
+                piece.style.justifyContent = 'center';
+                piece.style.alignItems = 'center';
+                piece.style.color = 'white';
+                piece.style.fontSize = '24px';
+                piece.style.cursor = 'pointer';
+                piece.style.transition = 'transform 0.2s';
+                piece.textContent = i + 1;
+                piece.dataset.value = i;
+                pieces.push(piece);
+                grid.appendChild(piece);
+            }
+
+            // Shuffle pieces
+            for (let i = pieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                grid.appendChild(pieces[i]);
+                grid.appendChild(pieces[j]);
+                pieces[i] = pieces[j];
+                pieces[j] = pieces[i];
+            }
+
+            let selectedPiece = null;
+
+            pieces.forEach(piece => {
+                piece.addEventListener('click', () => {
+                    if (!selectedPiece) {
+                        selectedPiece = piece;
+                        piece.style.transform = 'scale(0.9)';
+                    } else {
+                        const tempValue = selectedPiece.dataset.value;
+                        const tempText = selectedPiece.textContent;
+                        selectedPiece.dataset.value = piece.dataset.value;
+                        selectedPiece.textContent = piece.textContent;
+                        piece.dataset.value = tempValue;
+                        piece.textContent = tempText;
+                        selectedPiece.style.transform = 'scale(1)';
+                        selectedPiece = null;
+                        checkSolution();
+                    }
+                });
+            });
+
+            function checkSolution() {
+                const isCorrect = pieces.every((piece, index) => 
+                    parseInt(piece.dataset.value) === index
+                );
+                if (isCorrect) {
+                    completeChallenge();
+                }
+            }
+        }
+
+        function createReactionChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Click when the circle turns green!';
+            challengeArea.appendChild(instructions);
+
+            const circle = document.createElement('div');
+            circle.style.position = 'absolute';
+            circle.style.width = '100px';
+            circle.style.height = '100px';
+            circle.style.background = '#444';
+            circle.style.borderRadius = '50%';
+            circle.style.left = '50%';
+            circle.style.top = '50%';
+            circle.style.transform = 'translate(-50%, -50%)';
+            circle.style.cursor = 'pointer';
+            challengeArea.appendChild(circle);
+
+            let score = 0;
+            const requiredScore = 5;
+            let isWaiting = false;
+            let startTime = 0;
+
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.style.position = 'absolute';
+            scoreDisplay.style.top = '50px';
+            scoreDisplay.style.left = '50%';
+            scoreDisplay.style.transform = 'translateX(-50%)';
+            scoreDisplay.style.color = 'white';
+            scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+            challengeArea.appendChild(scoreDisplay);
+
+            function startRound() {
+                isWaiting = true;
+                circle.style.background = '#444';
+                const delay = Math.random() * 2000 + 1000;
+                setTimeout(() => {
+                    if (isWaiting) {
+                        circle.style.background = '#0f0';
+                        startTime = Date.now();
+                    }
+                }, delay);
+            }
+
+            circle.addEventListener('click', () => {
+                if (circle.style.background === 'rgb(0, 255, 0)') {
+                    const reactionTime = Date.now() - startTime;
+                    if (reactionTime < 500) {
+                        score++;
+                        scoreDisplay.textContent = `Score: ${score}/${requiredScore}`;
+                        if (score >= requiredScore) {
+                            completeChallenge();
+                            return;
+                        }
+                    } else {
+                        failChallenge();
+                        return;
+                    }
+                } else {
+                    failChallenge();
+                    return;
+                }
+                isWaiting = false;
+                startRound();
+            });
+
+            startRound();
+        }
+
+        function createPatternChallenge() {
+            const instructions = document.createElement('div');
+            instructions.style.position = 'absolute';
+            instructions.style.top = '20px';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translateX(-50%)';
+            instructions.style.color = 'white';
+            instructions.textContent = 'Complete the pattern!';
+            challengeArea.appendChild(instructions);
+
+            const grid = document.createElement('div');
+            grid.style.position = 'absolute';
+            grid.style.top = '100px';
+            grid.style.left = '50%';
+            grid.style.transform = 'translateX(-50%)';
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            grid.style.gap = '10px';
+            challengeArea.appendChild(grid);
+
+            const patterns = [
+                // Number sequence
+                [1, 2, 3, 4, 5, 6, 7, 8, '?'],
+                // Alternating colors
+                ['red', 'blue', 'red', 'blue', 'red', 'blue', 'red', 'blue', '?'],
+                // Geometric shapes
+                ['circle', 'square', 'triangle', 'circle', 'square', 'triangle', 'circle', 'square', '?']
+            ];
+
+            const currentPattern = patterns[Math.floor(Math.random() * patterns.length)];
+            const cells = [];
+
+            // Create grid cells
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.style.width = '60px';
+                cell.style.height = '60px';
+                cell.style.background = '#444';
+                cell.style.borderRadius = '5px';
+                cell.style.display = 'flex';
+                cell.style.justifyContent = 'center';
+                cell.style.alignItems = 'center';
+                cell.style.color = 'white';
+                cell.style.fontSize = '18px';
+                cell.style.cursor = 'pointer';
+
+                if (i < 8) {
+                    if (typeof currentPattern[i] === 'number') {
+                        cell.textContent = currentPattern[i];
+                    } else if (currentPattern[i] === 'red' || currentPattern[i] === 'blue') {
+                        cell.style.background = currentPattern[i];
+                    } else {
+                        cell.textContent = currentPattern[i];
+                    }
+                } else {
+                    cell.textContent = '?';
+                    cell.addEventListener('click', () => {
+                        const options = document.createElement('div');
+                        options.style.position = 'absolute';
+                        options.style.top = '100%';
+                        options.style.left = '0';
+                        options.style.background = '#333';
+                        options.style.padding = '10px';
+                        options.style.borderRadius = '5px';
+                        options.style.zIndex = '1000';
+
+                        const possibleAnswers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                        possibleAnswers.forEach(answer => {
+                            const option = document.createElement('div');
+                            option.style.padding = '5px';
+                            option.style.cursor = 'pointer';
+                            option.style.color = 'white';
+                            option.textContent = answer;
+                            option.addEventListener('click', () => {
+                                if (answer === currentPattern[8]) {
+                                    completeChallenge();
+                                } else {
+                                    failChallenge();
+                                }
+                                options.remove();
+                            });
+                            options.appendChild(option);
+                        });
+
+                        cell.appendChild(options);
+                    });
+                }
+
+                grid.appendChild(cell);
+                cells.push(cell);
+            }
+        }
+    </script>
+</body>
+</html>
