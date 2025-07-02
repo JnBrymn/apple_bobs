@@ -1,0 +1,407 @@
+<!--
+PARKOUR ESCAPE GAME
+- 2D world where you control a body-shaped character
+- Jump on platforms to escape from a purple glitching void wave
+- Use arrow keys or WASD to move and jump
+- The void follows you and you must keep moving right to survive!
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parkour Escape</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #333;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            display: block;
+            margin: 20px auto;
+            max-width: 95vw;
+            max-height: 80vh;
+        }
+        
+        #gameInfo {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            margin: 10px;
+        }
+        
+        #instructions {
+            text-align: center;
+            color: white;
+            font-size: 14px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameInfo">
+        <h1>🏃‍♂️ PARKOUR ESCAPE 🏃‍♂️</h1>
+        <div>Distance: <span id="distance">0</span>m | Score: <span id="score">0</span> | Difficulty: <span id="difficulty">1</span></div>
+    </div>
+    
+    <canvas id="gameCanvas" width="1600" height="800"></canvas>
+    
+    <div id="instructions">
+        <strong>Controls:</strong> Space or Up Arrow to jump | Left/Right to control speed | AUTO PARKOUR RUNNING!
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = true;
+        let distance = 0;
+        let score = 0;
+        let cameraX = 0;
+        let difficulty = 1;
+        
+        // Player
+        const player = {
+            x: 250,
+            y: 650,
+            width: 40,
+            height: 60,
+            velocityX: 0,
+            velocityY: 0,
+            onGround: false,
+            jumpPower: 18,
+            speed: 6
+        };
+        
+        // Void wave
+        const voidWave = {
+            x: 0,
+            y: 0,
+            width: 200,
+            height: canvas.height,
+            speed: 2,
+            glitchOffset: 0
+        };
+        
+        // Platforms
+        let platforms = [
+            { x: 0, y: 750, width: 200, height: 50 },
+            { x: 250, y: 700, width: 150, height: 50 },
+            { x: 450, y: 650, width: 150, height: 50 },
+            { x: 650, y: 600, width: 150, height: 50 },
+            { x: 850, y: 550, width: 150, height: 50 },
+            { x: 1050, y: 500, width: 150, height: 50 }
+        ];
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Draw body-shaped character
+        function drawPlayer() {
+            ctx.save();
+            
+            // Body
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillRect(player.x - cameraX, player.y + 10, player.width, player.height - 10);
+            
+            // Head
+            ctx.fillStyle = '#FFB6C1';
+            ctx.beginPath();
+            ctx.arc(player.x - cameraX + player.width/2, player.y + 5, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Arms
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillRect(player.x - cameraX - 8, player.y + 15, 8, 20);
+            ctx.fillRect(player.x - cameraX + player.width, player.y + 15, 8, 20);
+            
+            // Legs
+            ctx.fillRect(player.x - cameraX + 5, player.y + player.height - 10, 8, 15);
+            ctx.fillRect(player.x - cameraX + player.width - 13, player.y + player.height - 10, 8, 15);
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(player.x - cameraX + player.width/2 - 4, player.y + 2, 2, 0, Math.PI * 2);
+            ctx.arc(player.x - cameraX + player.width/2 + 4, player.y + 2, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // Draw glitching void wave
+        function drawVoidWave() {
+            ctx.save();
+            
+            // Glitch effect
+            const glitchTime = Date.now() * 0.01;
+            const glitchAmount = Math.sin(glitchTime) * 5;
+            
+            // Create glitching purple wave
+            const gradient = ctx.createLinearGradient(voidWave.x - cameraX, 0, voidWave.x - cameraX + voidWave.width, 0);
+            gradient.addColorStop(0, 'rgba(128, 0, 255, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 0, 255, 0.6)');
+            gradient.addColorStop(1, 'rgba(128, 0, 255, 0.8)');
+            
+            ctx.fillStyle = gradient;
+            
+            // Draw with glitch effect
+            for (let i = 0; i < 3; i++) {
+                ctx.fillRect(
+                    voidWave.x - cameraX + glitchAmount * i, 
+                    voidWave.y + Math.sin(glitchTime + i) * 10, 
+                    voidWave.width, 
+                    voidWave.height
+                );
+            }
+            
+            // Add glitch lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(voidWave.x - cameraX + Math.random() * voidWave.width, 0);
+                ctx.lineTo(voidWave.x - cameraX + Math.random() * voidWave.width, canvas.height);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        // Draw platforms
+        function drawPlatforms() {
+            ctx.fillStyle = '#8B4513';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x - cameraX, platform.y, platform.width, platform.height);
+                
+                // Add some texture
+                ctx.fillStyle = '#A0522D';
+                ctx.fillRect(platform.x - cameraX + 5, platform.y + 5, platform.width - 10, 5);
+                ctx.fillStyle = '#8B4513';
+            });
+        }
+        
+        // Check collision between two rectangles
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Update player physics
+        function updatePlayer() {
+            // Auto-run to the right
+            player.velocityX = player.speed;
+            
+            // Handle input for jumping only
+            if (keys['arrowleft'] || keys['a']) {
+                player.velocityX = player.speed * 0.5; // Slow down a bit
+            } else if (keys['arrowright'] || keys['d']) {
+                player.velocityX = player.speed * 1.5; // Speed up a bit
+            }
+            
+            // Update camera to follow player
+            cameraX = player.x - canvas.width * 0.3;
+            if (cameraX < 0) cameraX = 0;
+            
+            // Make sure there are always platforms ahead
+            const lastPlatform = platforms[platforms.length - 1];
+            if (lastPlatform && player.x > lastPlatform.x - 300) {
+                // Add more platforms if player is getting close to the end
+                const baseSpacing = 100 - (difficulty * 5);
+                const newX = lastPlatform.x + Math.max(60, baseSpacing + Math.random() * 60);
+                const newY = Math.max(250, lastPlatform.y - 20 + (Math.random() - 0.5) * (40 + difficulty * 5));
+                const baseWidth = 120 - (difficulty * 5);
+                platforms.push({
+                    x: newX,
+                    y: newY,
+                    width: Math.max(60, baseWidth + Math.random() * 80),
+                    height: 25
+                });
+            }
+            
+            if ((keys['arrowup'] || keys['w'] || keys[' ']) && player.onGround) {
+                player.velocityY = -player.jumpPower;
+                player.onGround = false;
+            }
+            
+            // Apply gravity
+            player.velocityY += 0.8;
+            
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            // Check platform collisions
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (checkCollision(player, platform)) {
+                    if (player.velocityY > 0 && player.y < platform.y) {
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0;
+                        player.onGround = true;
+                    }
+                }
+            });
+            
+            // Keep player in bounds
+            if (player.x < 0) player.x = 0;
+            if (player.y > canvas.height) {
+                gameRunning = false;
+            }
+        }
+        
+        // Update void wave
+        function updateVoidWave() {
+            voidWave.x += voidWave.speed;
+            
+            // Check if void caught the player
+            if (checkCollision(player, voidWave)) {
+                gameRunning = false;
+            }
+        }
+        
+        // Generate new platforms
+        function generatePlatforms() {
+            // Remove platforms that are far off screen
+            platforms = platforms.filter(platform => platform.x + platform.width > cameraX - 200);
+            
+            // Add new platforms with better parkour design
+            while (platforms.length < 10) {
+                const lastPlatform = platforms[platforms.length - 1];
+                
+                // Platform spacing gets harder with difficulty
+                const baseSpacing = 100 - (difficulty * 5);
+                const spacingVariation = 60 - (difficulty * 3);
+                const newX = lastPlatform.x + Math.max(60, baseSpacing + Math.random() * spacingVariation);
+                
+                // Create more interesting parkour patterns that get harder
+                let newY;
+                const highJumpChance = 0.2 + (difficulty * 0.05);
+                const normalJumpChance = 0.6 - (difficulty * 0.03);
+                
+                if (Math.random() < highJumpChance) {
+                    // High jump (gets more frequent and higher)
+                    const heightIncrease = 80 + (difficulty * 10);
+                    newY = Math.max(150, lastPlatform.y - heightIncrease - Math.random() * (40 + difficulty * 5));
+                } else if (Math.random() < normalJumpChance) {
+                    // Normal jump (gets more varied)
+                    const variation = 40 + (difficulty * 8);
+                    newY = Math.max(250, lastPlatform.y - 20 + (Math.random() - 0.5) * variation);
+                } else {
+                    // Low jump or same level (gets more varied)
+                    const variation = 30 + (difficulty * 5);
+                    newY = Math.max(300, lastPlatform.y + 10 + Math.random() * variation);
+                }
+                
+                // Platform width gets smaller with difficulty
+                const baseWidth = 120 - (difficulty * 5);
+                const widthVariation = 80 - (difficulty * 3);
+                
+                platforms.push({
+                    x: newX,
+                    y: newY,
+                    width: Math.max(60, baseWidth + Math.random() * widthVariation),
+                    height: 25
+                });
+            }
+        }
+        
+        // Update score and distance
+        function updateScore() {
+            distance = Math.floor((player.x - 100) / 10);
+            score = distance * 10;
+            
+            // Increase difficulty based on distance
+            difficulty = 1 + Math.floor(distance / 50);
+            
+            document.getElementById('distance').textContent = distance;
+            document.getElementById('score').textContent = score;
+            document.getElementById('difficulty').textContent = difficulty;
+        }
+        
+        // Game over screen
+        function drawGameOver() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER!', canvas.width/2, canvas.height/2 - 50);
+            
+            ctx.font = '24px Arial';
+            ctx.fillText(`Final Score: ${score}`, canvas.width/2, canvas.height/2);
+            ctx.fillText('Press R to restart', canvas.width/2, canvas.height/2 + 50);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameRunning) {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Update game objects
+                updatePlayer();
+                updateVoidWave();
+                generatePlatforms();
+                updateScore();
+                
+                // Draw everything
+                drawPlatforms();
+                drawPlayer();
+                drawVoidWave();
+            } else {
+                drawGameOver();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Restart game
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r' && !gameRunning) {
+                // Reset game state
+                player.x = 250;
+                player.y = 650;
+                player.velocityX = 0;
+                player.velocityY = 0;
+                voidWave.x = 0;
+                cameraX = 0;
+                distance = 0;
+                score = 0;
+                difficulty = 1;
+                gameRunning = true;
+                
+                // Reset platforms
+                platforms = [
+                    { x: 0, y: 750, width: 200, height: 50 },
+                    { x: 250, y: 700, width: 150, height: 50 },
+                    { x: 450, y: 650, width: 150, height: 50 },
+                    { x: 650, y: 600, width: 150, height: 50 },
+                    { x: 850, y: 550, width: 150, height: 50 },
+                    { x: 1050, y: 500, width: 150, height: 50 }
+                ];
+            }
+        });
+        
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>

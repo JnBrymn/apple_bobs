@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flying Umbrellas Game</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(to bottom, #87CEEB, #98FB98);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #333;
+            display: block;
+            margin: 20px auto;
+            background: linear-gradient(to bottom, #87CEEB, #98FB98);
+        }
+        
+        #gameInfo {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+            margin: 10px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 32px;
+            display: none;
+        }
+        
+        #restartBtn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        #restartBtn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameInfo">
+        <div>Score: <span id="score">0</span></div>
+        <div>Time: <span id="time">60</span></div>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="gameOver">
+        <div id="gameOverText"></div>
+        <button id="restartBtn" onclick="restartGame()">Play Again!</button>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const timeElement = document.getElementById('time');
+        const gameOverDiv = document.getElementById('gameOver');
+        const gameOverText = document.getElementById('gameOverText');
+        
+        let score = 0;
+        let timeLeft = 60;
+        let gameRunning = true;
+        
+        // Player (umbrella)
+        const player = {
+            x: 50,
+            y: 300,
+            width: 40,
+            height: 40,
+            speed: 5,
+            color: '#FF6B9D'
+        };
+        
+        // Collectibles
+        let collectibles = [];
+        
+        // Obstacles
+        let obstacles = [];
+        
+        // End block
+        const endBlock = {
+            x: 750,
+            y: 280,
+            width: 30,
+            height: 40,
+            color: '#FFD700'
+        };
+        
+        // Create collectibles
+        function createCollectibles() {
+            for (let i = 0; i < 8; i++) {
+                collectibles.push({
+                    x: Math.random() * 700 + 50,
+                    y: Math.random() * 500 + 50,
+                    width: 20,
+                    height: 20,
+                    color: '#FFD700',
+                    collected: false
+                });
+            }
+        }
+        
+        // Create obstacles
+        function createObstacles() {
+            for (let i = 0; i < 6; i++) {
+                obstacles.push({
+                    x: Math.random() * 700 + 50,
+                    y: Math.random() * 500 + 50,
+                    width: 30,
+                    height: 30,
+                    color: '#FF4444'
+                });
+            }
+        }
+        
+        // Draw umbrella
+        function drawUmbrella(x, y) {
+            // Umbrella handle
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x + 18, y + 25, 4, 15);
+            
+            // Umbrella top
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(x + 20, y + 20, 15, 0, Math.PI, true);
+            ctx.fill();
+            
+            // Umbrella ribs
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y + 20);
+                ctx.lineTo(x + 20 + (i - 1) * 10, y + 5);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw collectibles
+        function drawCollectibles() {
+            collectibles.forEach(item => {
+                if (!item.collected) {
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+                    ctx.arc(item.x + 10, item.y + 10, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Sparkle effect
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(item.x + 5, item.y + 5, 3, 3);
+                }
+            });
+        }
+        
+        // Draw obstacles
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                
+                // Danger symbol
+                ctx.fillStyle = 'white';
+                ctx.font = '16px Arial';
+                ctx.fillText('!', obstacle.x + 10, obstacle.y + 20);
+            });
+        }
+        
+        // Draw end block
+        function drawEndBlock() {
+            ctx.fillStyle = endBlock.color;
+            ctx.fillRect(endBlock.x, endBlock.y, endBlock.width, endBlock.height);
+            
+            // Win symbol
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText('🏆', endBlock.x + 5, endBlock.y + 25);
+        }
+        
+        // Check collision
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Game over
+        function gameOver(won) {
+            gameRunning = false;
+            if (won) {
+                gameOverText.textContent = '🎉 YOU WIN! 🎉';
+            } else {
+                gameOverText.textContent = '😢 GAME OVER! 😢';
+            }
+            gameOverDiv.style.display = 'block';
+        }
+        
+        // Restart game
+        function restartGame() {
+            score = 0;
+            timeLeft = 60;
+            gameRunning = true;
+            player.x = 50;
+            player.y = 300;
+            
+            collectibles = [];
+            obstacles = [];
+            
+            createCollectibles();
+            createObstacles();
+            
+            gameOverDiv.style.display = 'none';
+            scoreElement.textContent = score;
+            timeElement.textContent = timeLeft;
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Handle input
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
+            if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
+            if (keys['ArrowDown'] && player.y < canvas.height - player.height) player.y -= player.speed;
+            
+            // Check collectible collisions
+            collectibles.forEach(item => {
+                if (!item.collected && checkCollision(player, item)) {
+                    item.collected = true;
+                    score += 10;
+                    scoreElement.textContent = score;
+                }
+            });
+            
+            // Check obstacle collisions
+            obstacles.forEach(obstacle => {
+                if (checkCollision(player, obstacle)) {
+                    gameOver(false);
+                }
+            });
+            
+            // Check end block collision
+            if (checkCollision(player, endBlock)) {
+                gameOver(true);
+            }
+            
+            // Draw everything
+            drawCollectibles();
+            drawObstacles();
+            drawEndBlock();
+            drawUmbrella(player.x, player.y);
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Timer
+        function updateTimer() {
+            if (gameRunning && timeLeft > 0) {
+                timeLeft--;
+                timeElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    gameOver(false);
+                }
+            }
+        }
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Start game
+        createCollectibles();
+        createObstacles();
+        setInterval(updateTimer, 1000);
+        gameLoop();
+    </script>
+</body>
+</html>
