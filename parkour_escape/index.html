@@ -75,8 +75,8 @@ PARKOUR ESCAPE GAME
             velocityX: 0,
             velocityY: 0,
             onGround: false,
-            jumpPower: 18,
-            speed: 6
+            jumpPower: 22,
+            speed: 8
         };
         
         // Void wave
@@ -85,7 +85,7 @@ PARKOUR ESCAPE GAME
             y: 0,
             width: 200,
             height: canvas.height,
-            speed: 2,
+            speed: 3,
             glitchOffset: 0
         };
         
@@ -221,16 +221,16 @@ PARKOUR ESCAPE GAME
             
             // Make sure there are always platforms ahead
             const lastPlatform = platforms[platforms.length - 1];
-            if (lastPlatform && player.x > lastPlatform.x - 300) {
+            if (lastPlatform && player.x > lastPlatform.x - 400) {
                 // Add more platforms if player is getting close to the end
-                const baseSpacing = 100 - (difficulty * 5);
-                const newX = lastPlatform.x + Math.max(60, baseSpacing + Math.random() * 60);
-                const newY = Math.max(250, lastPlatform.y - 20 + (Math.random() - 0.5) * (40 + difficulty * 5));
-                const baseWidth = 120 - (difficulty * 5);
+                const baseSpacing = 150 + (difficulty * 10);
+                const newX = lastPlatform.x + Math.max(120, baseSpacing + Math.random() * 80);
+                const newY = Math.max(200, lastPlatform.y - 40 + (Math.random() - 0.5) * (80 + difficulty * 12));
+                const baseWidth = 100 - (difficulty * 8);
                 platforms.push({
                     x: newX,
                     y: newY,
-                    width: Math.max(60, baseWidth + Math.random() * 80),
+                    width: Math.max(40, baseWidth + Math.random() * 60),
                     height: 25
                 });
             }
@@ -285,10 +285,10 @@ PARKOUR ESCAPE GAME
             while (platforms.length < 10) {
                 const lastPlatform = platforms[platforms.length - 1];
                 
-                // Platform spacing gets harder with difficulty
-                const baseSpacing = 100 - (difficulty * 5);
-                const spacingVariation = 60 - (difficulty * 3);
-                const newX = lastPlatform.x + Math.max(60, baseSpacing + Math.random() * spacingVariation);
+                            // Platform spacing gets harder with difficulty
+            const baseSpacing = 130 + (difficulty * 8);
+            const spacingVariation = 70 + (difficulty * 4);
+            const newX = lastPlatform.x + Math.max(100, baseSpacing + Math.random() * spacingVariation);
                 
                 // Create more interesting parkour patterns that get harder
                 let newY;
@@ -297,26 +297,26 @@ PARKOUR ESCAPE GAME
                 
                 if (Math.random() < highJumpChance) {
                     // High jump (gets more frequent and higher)
-                    const heightIncrease = 80 + (difficulty * 10);
-                    newY = Math.max(150, lastPlatform.y - heightIncrease - Math.random() * (40 + difficulty * 5));
+                    const heightIncrease = 100 + (difficulty * 12);
+                    newY = Math.max(120, lastPlatform.y - heightIncrease - Math.random() * (50 + difficulty * 6));
                 } else if (Math.random() < normalJumpChance) {
                     // Normal jump (gets more varied)
-                    const variation = 40 + (difficulty * 8);
-                    newY = Math.max(250, lastPlatform.y - 20 + (Math.random() - 0.5) * variation);
+                    const variation = 70 + (difficulty * 10);
+                    newY = Math.max(220, lastPlatform.y - 30 + (Math.random() - 0.5) * variation);
                 } else {
                     // Low jump or same level (gets more varied)
-                    const variation = 30 + (difficulty * 5);
-                    newY = Math.max(300, lastPlatform.y + 10 + Math.random() * variation);
+                    const variation = 50 + (difficulty * 6);
+                    newY = Math.max(270, lastPlatform.y + 15 + Math.random() * variation);
                 }
                 
                 // Platform width gets smaller with difficulty
-                const baseWidth = 120 - (difficulty * 5);
-                const widthVariation = 80 - (difficulty * 3);
+                const baseWidth = 110 - (difficulty * 6);
+                const widthVariation = 70 - (difficulty * 4);
                 
                 platforms.push({
                     x: newX,
                     y: newY,
-                    width: Math.max(60, baseWidth + Math.random() * widthVariation),
+                    width: Math.max(50, baseWidth + Math.random() * widthVariation),
                     height: 25
                 });
             }
