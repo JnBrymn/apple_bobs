@@ -1,0 +1,468 @@
+<!-- 
+WILL IT CRUSH? GAME
+- Two spikey balls that spin automatically with one spike each
+- Squares fall from the top randomly
+- Spikes break squares and turn them into money
+- Player controls the balls to crush squares
+- Use money to buy more spikes for the balls
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will It Crush?</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            background: #000;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #money {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 100;
+        }
+        
+        .spikey-ball {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, #0026ff, #ee5a24);
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        
+        .spike {
+            position: absolute;
+            width: 12px;
+            height: 20px;
+            background: #ff0000;
+            border: 2px solid #fff;
+            border-radius: 50% 50% 0 0;
+            transform-origin: center bottom;
+            z-index: 10;
+        }
+        
+        .square {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            border: 2px solid #fff;
+            border-radius: 5px;
+            transform-origin: center;
+        }
+        
+        .money-particle {
+            position: absolute;
+            color: #ffd700;
+            font-size: 20px;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        #instructions {
+            text-align: center;
+            color: #fff;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+        
+        #shop {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px;
+            color: #fff;
+            z-index: 100;
+        }
+        
+        .shop-button {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .shop-button:hover {
+            background: #ffed4e;
+        }
+        
+        .shop-button:disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="money">💰 $0</div>
+        <div id="shop">
+            <div>🛒 SHOP</div>
+            <button class="shop-button" onclick="buySpike(1)">Add Spike to Ball 1 ($50)</button>
+            <button class="shop-button" onclick="buySpike(2)">Add Spike to Ball 2 ($50)</button>
+        </div>
+        <div class="spikey-ball" id="ball1">
+            <div class="spike"></div>
+        </div>
+        <div class="spikey-ball" id="ball2">
+            <div class="spike"></div>
+        </div>
+    </div>
+    <div id="instructions">
+        Use A/D to move left ball, J/L to move right ball. Crush squares to earn money! 💰
+    </div>
+
+    <script>
+        // Game variables
+        let money = 0;
+        let squares = [];
+        let ball1 = { x: 100, y: 500, rotation: 0, speed: 0, spikes: 1, size: 200 };
+        let ball2 = { x: 700, y: 500, rotation: 0, speed: 0, spikes: 1, size: 200 };
+        let keys = {};
+        let gravity = 0.5;
+        let growing = true;
+        
+        const gameContainer = document.getElementById('gameContainer');
+        const ball1Element = document.getElementById('ball1');
+        const ball2Element = document.getElementById('ball2');
+        const moneyDisplay = document.getElementById('money');
+        
+        // Handle keyboard input
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Create a square
+        function createSquare() {
+            const square = document.createElement('div');
+            square.className = 'square';
+            square.x = Math.random() * (gameContainer.offsetWidth - 40);
+            square.y = -50;
+            square.velocityY = 0;
+            square.velocityX = 0;
+            square.angularVelocity = 0;
+            square.rotation = 0;
+            square.element = square;
+            gameContainer.appendChild(square);
+            squares.push(square);
+        }
+        
+        // Buy spike function
+        function buySpike(ballNumber) {
+            const cost = 50;
+            if (money >= cost) {
+                money -= cost;
+                moneyDisplay.textContent = `💰 $${money}`;
+                
+                if (ballNumber === 1) {
+                    ball1.spikes++;
+                    addSpikeToBall(ball1Element, ball1.spikes);
+                } else {
+                    ball2.spikes++;
+                    addSpikeToBall(ball2Element, ball2.spikes);
+                }
+                
+                // Create money particle effect for purchase
+                createMoneyParticle(50, 50, '-$50');
+            }
+        }
+        
+        // Add spike to ball
+        function addSpikeToBall(ballElement, spikeCount) {
+            // Remove old spikes
+            const oldSpikes = ballElement.querySelectorAll('.spike');
+            oldSpikes.forEach(spike => spike.remove());
+            
+            // Add new spikes in evenly spaced positions
+            for (let i = 0; i < spikeCount; i++) {
+                const spike = document.createElement('div');
+                spike.className = 'spike';
+                const angle = (360 / spikeCount) * i;
+                
+                // Position spike at the edge of the ball
+                spike.style.left = '50%';
+                spike.style.top = '50%';
+                spike.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-50px)`;
+                
+                // Give each spike a different color
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                spike.style.background = colors[i % colors.length];
+                
+                ballElement.appendChild(spike);
+            }
+            
+            console.log('Added', spikeCount, 'spikes to ball at angles:', Array.from({length: spikeCount}, (_, i) => (360 / spikeCount) * i));
+        }
+        
+
+        
+        // Update ball positions and rotation
+        function updateBalls() {
+            // Ball 1 controls (A/D)
+            if (keys['a'] && ball1.x > ball1.size/2) ball1.x -= 5;
+            if (keys['d'] && ball1.x < gameContainer.offsetWidth - ball1.size/2) ball1.x += 5;
+            
+            // Ball 2 controls (J/L)
+            if (keys['j'] && ball2.x > ball2.size/2) ball2.x -= 5;
+            if (keys['l'] && ball2.x < gameContainer.offsetWidth - ball2.size/2) ball2.x += 5;
+            
+            // Rotate balls automatically
+            ball1.rotation += 3;
+            ball2.rotation += 3;
+            
+            // Grow balls until they touch
+            if (growing) {
+                ball1.size += 1;
+                ball2.size += 1;
+                
+                // Check if balls are touching
+                const distance = Math.abs(ball2.x - ball1.x);
+                const combinedRadius = ball1.size/2 + ball2.size/2;
+                
+                if (distance <= combinedRadius) {
+                    growing = false;
+                }
+            }
+            
+            // Update ball elements
+            ball1Element.style.left = (ball1.x - ball1.size/2) + 'px';
+            ball1Element.style.top = (ball1.y - ball1.size/2) + 'px';
+            ball1Element.style.width = ball1.size + 'px';
+            ball1Element.style.height = ball1.size + 'px';
+            ball1Element.style.transform = `rotate(${ball1.rotation}deg)`;
+            
+            ball2Element.style.left = (ball2.x - ball2.size/2) + 'px';
+            ball2Element.style.top = (ball2.y - ball2.size/2) + 'px';
+            ball2Element.style.width = ball2.size + 'px';
+            ball2Element.style.height = ball2.size + 'px';
+            ball2Element.style.transform = `rotate(${ball2.rotation}deg)`;
+        }
+        
+        // Check collision with ball body (for bouncing)
+        function checkBallCollision(square, ball) {
+            const dx = (square.x + 20) - ball.x;
+            const dy = (square.y + 20) - ball.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < ball.size/2 + 20;
+        }
+        
+        // Calculate normal vector at collision point
+        function getNormalVector(square, ball) {
+            const dx = (square.x + 20) - ball.x;
+            const dy = (square.y + 20) - ball.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Normalize the vector
+            return {
+                x: dx / distance,
+                y: dy / distance
+            };
+        }
+        
+        // Update squares
+        function updateSquares() {
+            for (let i = squares.length - 1; i >= 0; i--) {
+                const square = squares[i];
+                
+                // Apply gravity
+                square.velocityY += gravity;
+                square.y += square.velocityY;
+                
+                // Apply horizontal velocity if it exists
+                if (square.velocityX) {
+                    square.x += square.velocityX;
+                    // Add some friction to horizontal movement
+                    square.velocityX *= 0.98;
+                }
+                
+                // Apply rotation
+                square.rotation += square.angularVelocity;
+                square.element.style.transform = `rotate(${square.rotation}deg)`;
+                
+                // Check collision with ball body for bouncing
+                const ball1Bounce = checkBallCollision(square, ball1);
+                const ball2Bounce = checkBallCollision(square, ball2);
+                
+                if (ball1Bounce || ball2Bounce) {
+                    // Bounce the square off the ball with proper physics
+                    const ball = ball1Bounce ? ball1 : ball2;
+                    
+                    // Get normal vector at collision point
+                    const normal = getNormalVector(square, ball);
+                    
+                    // Push square to surface of ball
+                    const dx = (square.x + 20) - ball.x;
+                    const dy = (square.y + 20) - ball.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const pushDistance = ball.size/2 + 20 - distance;
+                    
+                    square.x += normal.x * pushDistance;
+                    square.y += normal.y * pushDistance;
+                    
+                    // Calculate bounce velocity using reflection formula
+                    // v' = v - 2(v · n)n
+                    const velocityX = 0; // Squares only have Y velocity for now
+                    const velocityY = square.velocityY;
+                    
+                    const dotProduct = velocityX * normal.x + velocityY * normal.y;
+                    const bounceX = velocityX - 2 * dotProduct * normal.x;
+                    const bounceY = velocityY - 2 * dotProduct * normal.y;
+                    
+                    // Apply bounce with some energy loss
+                    square.velocityY = bounceY * 0.8;
+                    
+                    // Add some horizontal velocity for more realistic bouncing
+                    if (Math.abs(bounceX) > 0.1) {
+                        square.velocityX = (square.velocityX || 0) + bounceX * 0.8;
+                    }
+                    
+                    // Add angular velocity based on collision point
+                    // The further from center the collision, the more rotation
+                    const collisionPoint = {
+                        x: square.x + 20 - ball.x,
+                        y: square.y + 20 - ball.y
+                    };
+                    const distanceFromCenter = Math.sqrt(collisionPoint.x * collisionPoint.x + collisionPoint.y * collisionPoint.y);
+                    const maxDistance = ball.size / 2;
+                    const rotationFactor = (distanceFromCenter / maxDistance) * 10;
+                    
+                    // Add rotation based on which side of the square hit
+                    if (Math.abs(collisionPoint.x) > Math.abs(collisionPoint.y)) {
+                        // Hit on left or right side
+                        square.angularVelocity += (collisionPoint.x > 0 ? 1 : -1) * rotationFactor;
+                    } else {
+                        // Hit on top or bottom side
+                        square.angularVelocity += (collisionPoint.y > 0 ? 1 : -1) * rotationFactor;
+                    }
+                }
+                
+                square.element.style.left = square.x + 'px';
+                square.element.style.top = square.y + 'px';
+                
+                // Check collision with spikes
+                const ball1Hit = checkSpikeCollision(square, ball1, ball1Element);
+                const ball2Hit = checkSpikeCollision(square, ball2, ball2Element);
+                
+                // Debug: log collision attempts
+                if (ball1Hit || ball2Hit) {
+                    console.log('Spike hit! Square at:', square.x, square.y);
+                    // Crush the square!
+                    gameContainer.removeChild(square.element);
+                    squares.splice(i, 1);
+                    money += 10;
+                    moneyDisplay.textContent = `💰 $${money}`;
+                    
+                    // Create money particle effect
+                    createMoneyParticle(square.x, square.y);
+                } else if (square.y > gameContainer.offsetHeight) {
+                    // Remove squares that fall off screen
+                    gameContainer.removeChild(square.element);
+                    squares.splice(i, 1);
+                }
+            }
+        }
+        
+        // Check collision between square and spikes
+        function checkSpikeCollision(square, ball, ballElement) {
+            const spikes = ballElement.querySelectorAll('.spike');
+            
+            for (let i = 0; i < spikes.length; i++) {
+                const spike = spikes[i];
+                
+                // Calculate spike position based on its index and ball rotation
+                const spikeAngle = (360 / spikes.length) * i + ball.rotation;
+                const angleInRadians = spikeAngle * (Math.PI / 180);
+                const spikeRadius = ball.size / 2 + 15;
+                
+                // Calculate spike position
+                const spikeX = ball.x + Math.cos(angleInRadians) * spikeRadius;
+                const spikeY = ball.y + Math.sin(angleInRadians) * spikeRadius;
+                
+                // Check if square touches this specific spike
+                const dx = (square.x + 20) - spikeX;
+                const dy = (square.y + 20) - spikeY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 20) { // Spike hitbox
+                    console.log('SPIKE HIT! Spike', i, 'at', spikeX, spikeY);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Create money particle effect
+        function createMoneyParticle(x, y, text = '+$10') {
+            const particle = document.createElement('div');
+            particle.className = 'money-particle';
+            particle.textContent = text;
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            gameContainer.appendChild(particle);
+            
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 1000);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            updateBalls();
+            updateSquares();
+            
+            // Randomly create new squares
+            if (Math.random() < 0.02) {
+                createSquare();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
