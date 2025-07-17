@@ -1,0 +1,728 @@
+<!--
+STONE WARS GAME
+- Two armies fighting over stones in the middle
+- Player controls left side warriors, AI controls right side
+- Click warriors to attack enemies
+- Kill enemies to get money
+- Use money to buy more warriors and expand battlefield
+- Enemy army gets stronger over time
+- Protect your stone while trying to destroy enemy stone
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stone Wars</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            overflow-x: auto;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .money {
+            color: #FFD700;
+        }
+        
+        .health {
+            color: #FF6B6B;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: #2980b9;
+        }
+        
+        .control-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .battlefield {
+            position: relative;
+            background: linear-gradient(90deg, #8B4513 0%, #A0522D 50%, #8B4513 100%);
+            border: 3px solid #654321;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 400px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .stone {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        
+        .stone.player {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .stone.enemy {
+            background: linear-gradient(145deg, #f44336, #d32f2f);
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .warrior {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+        
+        .warrior.selected {
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 15px #FFD700;
+        }
+        
+        .warrior.player {
+            background: linear-gradient(145deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .warrior.enemy {
+            background: linear-gradient(145deg, #FF5722, #E64A19);
+            color: white;
+        }
+        
+        .warrior:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        
+        .warrior.attacking {
+            animation: attack 0.5s ease-in-out;
+        }
+        
+        @keyframes attack {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .warrior.dead {
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+        
+        .projectile {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+        
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .grid-position {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .grid-position:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .grid-position.occupied {
+            border-color: transparent;
+            cursor: not-allowed;
+        }
+        
+        .grid-position.occupied:hover {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>⚔️ STONE WARS ⚔️</h1>
+        
+        <div class="hud">
+            <div class="stats">
+                <div class="stat money">💰 Money: <span id="money">100</span></div>
+                <div class="stat health">❤️ Stone Health: <span id="playerHealth">100</span></div>
+                <div class="stat">🗡️ Warriors: <span id="playerWarriors">0</span></div>
+                <div class="stat">👹 Enemies: <span id="enemyWarriors">1</span></div>
+                <div class="stat">🎯 Wave: <span id="wave">1</span></div>
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="buyWarrior()">🗡️ Buy Warrior ($50)</button>
+                <button class="control-btn" onclick="expandBattlefield()">🏗️ Expand Field ($200)</button>
+                <button class="control-btn" onclick="startWave()" id="startBtn">⚔️ Start Wave</button>
+            </div>
+        </div>
+        
+        <div class="battlefield" id="battlefield">
+            <div class="stone player" id="playerStone">
+                <span id="playerStoneText">100</span>
+            </div>
+            <div class="stone enemy" id="enemyStone">
+                <span id="enemyStoneText">100</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="message" id="message"></div>
+
+    <script>
+        // Game state
+        let gameState = {
+            money: 100,
+            playerHealth: 100,
+            enemyHealth: 100,
+            playerWarriors: [],
+            enemyWarriors: [],
+            battlefieldSize: 3,
+            wave: 1,
+            isWaveActive: false,
+            gridPositions: [],
+            projectiles: [],
+            selectedWarrior: null
+        };
+        
+        // Warrior class
+        class Warrior {
+            constructor(x, y, isPlayer, id) {
+                this.x = x;
+                this.y = y;
+                this.isPlayer = isPlayer;
+                this.id = id;
+                this.health = 100;
+                this.attackPower = 25;
+                this.attackRange = 100;
+                this.attackCooldown = 0;
+                this.target = null;
+                this.element = null;
+            }
+            
+            createElement() {
+                const warrior = document.createElement('div');
+                warrior.className = `warrior ${this.isPlayer ? 'player' : 'enemy'}`;
+                warrior.textContent = this.isPlayer ? '🗡️' : '👹';
+                warrior.style.left = this.x + 'px';
+                warrior.style.top = this.y + 'px';
+                warrior.dataset.id = this.id;
+                
+                if (this.isPlayer) {
+                    warrior.onclick = (e) => {
+                        e.stopPropagation();
+                        this.select();
+                    };
+                }
+                
+                this.element = warrior;
+                document.getElementById('battlefield').appendChild(warrior);
+            }
+            
+            select() {
+                // Deselect previous warrior
+                if (gameState.selectedWarrior) {
+                    gameState.selectedWarrior.element.classList.remove('selected');
+                }
+                
+                // Select this warrior
+                gameState.selectedWarrior = this;
+                this.element.classList.add('selected');
+            }
+            
+            moveTo(x, y) {
+                if (!this.isPlayer) return;
+                
+                // Check if position is valid (not too close to stones)
+                const playerStoneX = 50;
+                const playerStoneY = 200;
+                const enemyStoneX = 1150;
+                const enemyStoneY = 200;
+                
+                const distToPlayerStone = Math.sqrt(Math.pow(x - playerStoneX, 2) + Math.pow(y - playerStoneY, 2));
+                const distToEnemyStone = Math.sqrt(Math.pow(x - enemyStoneX, 2) + Math.pow(y - enemyStoneY, 2));
+                
+                if (distToPlayerStone < 80 || distToEnemyStone < 80) {
+                    showMessage('Cannot move too close to stones!');
+                    return;
+                }
+                
+                // Check boundaries
+                if (x < 50 || x > 1150 || y < 50 || y > 350) {
+                    showMessage('Cannot move outside battlefield!');
+                    return;
+                }
+                
+                this.x = x;
+                this.y = y;
+                this.element.style.left = x + 'px';
+                this.element.style.top = y + 'px';
+            }
+            
+            attack() {
+                if (this.attackCooldown > 0) return;
+                
+                // Find closest enemy
+                const enemies = this.isPlayer ? gameState.enemyWarriors : gameState.playerWarriors;
+                let closestEnemy = null;
+                let closestDistance = Infinity;
+                
+                enemies.forEach(enemy => {
+                    if (enemy.health <= 0) return;
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(this.x - enemy.x, 2) + Math.pow(this.y - enemy.y, 2)
+                    );
+                    
+                    if (distance < closestDistance && distance <= this.attackRange) {
+                        closestDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                });
+                
+                if (closestEnemy) {
+                    this.target = closestEnemy;
+                    this.performAttack();
+                }
+            }
+            
+            performAttack() {
+                if (!this.target || this.target.health <= 0) return;
+                
+                // Visual attack animation
+                this.element.classList.add('attacking');
+                setTimeout(() => this.element.classList.remove('attacking'), 500);
+                
+                // Create projectile
+                this.createProjectile();
+                
+                // Damage target
+                this.target.takeDamage(this.attackPower);
+                
+                // Cooldown
+                this.attackCooldown = 1000;
+                setTimeout(() => {
+                    this.attackCooldown = 0;
+                }, 1000);
+            }
+            
+            createProjectile() {
+                if (!this.target) return;
+                
+                const projectile = document.createElement('div');
+                projectile.className = 'projectile';
+                projectile.style.left = (this.x + 20) + 'px';
+                projectile.style.top = (this.y + 20) + 'px';
+                
+                document.getElementById('battlefield').appendChild(projectile);
+                
+                // Animate projectile
+                const startX = this.x + 20;
+                const startY = this.y + 20;
+                const endX = this.target.x + 20;
+                const endY = this.target.y + 20;
+                
+                let progress = 0;
+                const animate = () => {
+                    progress += 0.05;
+                    const x = startX + (endX - startX) * progress;
+                    const y = startY + (endY - startY) * progress;
+                    
+                    projectile.style.left = x + 'px';
+                    projectile.style.top = y + 'px';
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        projectile.remove();
+                    }
+                };
+                
+                animate();
+            }
+            
+            takeDamage(damage) {
+                this.health -= damage;
+                
+                if (this.health <= 0) {
+                    this.die();
+                }
+            }
+            
+            die() {
+                this.health = 0;
+                this.element.classList.add('dead');
+                
+                // Remove from arrays
+                if (this.isPlayer) {
+                    gameState.playerWarriors = gameState.playerWarriors.filter(w => w.id !== this.id);
+                } else {
+                    gameState.enemyWarriors = gameState.enemyWarriors.filter(w => w.id !== this.id);
+                    
+                    // Give money for killing enemy
+                    gameState.money += 25;
+                    updateHUD();
+                }
+                
+                // Remove element after animation
+                setTimeout(() => {
+                    if (this.element) {
+                        this.element.remove();
+                    }
+                }, 1000);
+            }
+            
+            update() {
+                if (this.health <= 0) return;
+                
+                // AI for enemy warriors
+                if (!this.isPlayer && this.attackCooldown === 0) {
+                    this.attack();
+                }
+            }
+        }
+        
+        // Initialize game
+        function initGame() {
+            createGrid();
+            updateHUD();
+        }
+        
+        // Create battlefield grid
+        function createGrid() {
+            const battlefield = document.getElementById('battlefield');
+            const gridContainer = battlefield.querySelector('.grid-container');
+            if (gridContainer) {
+                gridContainer.remove();
+            }
+            
+            const container = document.createElement('div');
+            container.className = 'grid-container';
+            container.style.position = 'absolute';
+            container.style.left = '100px';
+            container.style.right = '100px';
+            container.style.top = '50px';
+            container.style.bottom = '50px';
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = `repeat(${gameState.battlefieldSize}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${gameState.battlefieldSize}, 1fr)`;
+            container.style.gap = '10px';
+            container.style.pointerEvents = 'none'; // <-- allow clicks to pass through
+            
+            gameState.gridPositions = [];
+            
+            for (let row = 0; row < gameState.battlefieldSize; row++) {
+                for (let col = 0; col < gameState.battlefieldSize; col++) {
+                    const position = document.createElement('div');
+                    position.className = 'grid-position';
+                    position.dataset.row = row;
+                    position.dataset.col = col;
+                    position.onclick = () => placeWarrior(row, col);
+                    position.style.pointerEvents = 'auto'; // <-- clickable
+                    
+                    container.appendChild(position);
+                    gameState.gridPositions.push(position);
+                }
+            }
+            
+            battlefield.appendChild(container);
+        }
+        
+        // Place warrior on grid
+        function placeWarrior(row, col) {
+            if (gameState.money < 50) {
+                showMessage('Not enough money!');
+                return;
+            }
+            
+            const position = gameState.gridPositions.find(p => 
+                p.dataset.row == row && p.dataset.col == col
+            );
+            
+            if (position.classList.contains('occupied')) {
+                return;
+            }
+            
+            // Calculate position
+            const battlefield = document.getElementById('battlefield');
+            const rect = battlefield.getBoundingClientRect();
+            const gridRect = position.getBoundingClientRect();
+            
+            const x = gridRect.left - rect.left + 25;
+            const y = gridRect.top - rect.top + 25;
+            
+            // Create warrior
+            const warrior = new Warrior(x, y, true, Date.now() + Math.random());
+            warrior.createElement();
+            gameState.playerWarriors.push(warrior);
+            
+            // Mark position as occupied
+            position.classList.add('occupied');
+            
+            // Deduct money
+            gameState.money -= 50;
+            updateHUD();
+        }
+        
+        // Buy warrior
+        function buyWarrior() {
+            if (gameState.money >= 50) {
+                showMessage('Click on a grid position to place your warrior!');
+            } else {
+                showMessage('Not enough money!');
+            }
+        }
+        
+        // Expand battlefield
+        function expandBattlefield() {
+            if (gameState.money >= 200) {
+                gameState.money -= 200;
+                gameState.battlefieldSize++;
+                createGrid();
+                updateHUD();
+                showMessage('Battlefield expanded!');
+            } else {
+                showMessage('Not enough money!');
+            }
+        }
+        
+        // Start wave
+        function startWave() {
+            if (gameState.isWaveActive) return;
+            
+            gameState.isWaveActive = true;
+            document.getElementById('startBtn').disabled = true;
+            
+            // Spawn enemy warriors
+            spawnEnemyWarriors();
+            
+            // Start game loop
+            gameLoop();
+        }
+        
+        // Spawn enemy warriors
+        function spawnEnemyWarriors() {
+            const numEnemies = gameState.wave + 1;
+            
+            for (let i = 0; i < numEnemies; i++) {
+                setTimeout(() => {
+                    if (!gameState.isWaveActive) return;
+                    
+                    const x = Math.random() * 200 + 800; // Right side
+                    const y = Math.random() * 300 + 50;
+                    
+                    const enemy = new Warrior(x, y, false, Date.now() + Math.random());
+                    enemy.createElement();
+                    gameState.enemyWarriors.push(enemy);
+                    
+                    updateHUD();
+                }, i * 1000);
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameState.isWaveActive) return;
+            
+            // Update all warriors
+            [...gameState.playerWarriors, ...gameState.enemyWarriors].forEach(warrior => {
+                warrior.update();
+            });
+            
+            // Check win/lose conditions
+            checkGameState();
+            
+            // Continue loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Check game state
+        function checkGameState() {
+            // Check if all enemies are dead
+            const aliveEnemies = gameState.enemyWarriors.filter(w => w.health > 0);
+            if (aliveEnemies.length === 0 && gameState.enemyWarriors.length > 0) {
+                // Wave completed
+                gameState.isWaveActive = false;
+                gameState.wave++;
+                gameState.money += 100; // Bonus for completing wave
+                
+                // Clear dead warriors
+                gameState.enemyWarriors = [];
+                
+                updateHUD();
+                showMessage(`Wave ${gameState.wave - 1} completed! +$100 bonus`);
+                
+                document.getElementById('startBtn').disabled = false;
+                return;
+            }
+            
+            // Check if player stone is destroyed
+            if (gameState.playerHealth <= 0) {
+                gameState.isWaveActive = false;
+                showMessage('GAME OVER! Your stone was destroyed!');
+                document.getElementById('startBtn').disabled = true;
+                return;
+            }
+            
+            // Check if enemy stone is destroyed
+            if (gameState.enemyHealth <= 0) {
+                gameState.isWaveActive = false;
+                showMessage('VICTORY! You destroyed the enemy stone!');
+                document.getElementById('startBtn').disabled = true;
+                return;
+            }
+        }
+        
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('money').textContent = gameState.money;
+            document.getElementById('playerHealth').textContent = gameState.playerHealth;
+            document.getElementById('playerWarriors').textContent = gameState.playerWarriors.filter(w => w.health > 0).length;
+            document.getElementById('enemyWarriors').textContent = gameState.enemyWarriors.filter(w => w.health > 0).length;
+            document.getElementById('wave').textContent = gameState.wave;
+        }
+        
+        // Show message
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 2000);
+        }
+        
+        // Handle battlefield clicks for movement
+        document.getElementById('battlefield').addEventListener('click', (e) => {
+            if (gameState.selectedWarrior && gameState.selectedWarrior.isPlayer) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left - 20; // Center the warrior
+                const y = e.clientY - rect.top - 20;
+                gameState.selectedWarrior.moveTo(x, y);
+            }
+        });
+        
+        // Handle keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.selectedWarrior) return;
+            
+            const warrior = gameState.selectedWarrior;
+            const moveDistance = 20;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    warrior.moveTo(warrior.x, warrior.y - moveDistance);
+                    break;
+                case 'ArrowDown':
+                    warrior.moveTo(warrior.x, warrior.y + moveDistance);
+                    break;
+                case 'ArrowLeft':
+                    warrior.moveTo(warrior.x - moveDistance, warrior.y);
+                    break;
+                case 'ArrowRight':
+                    warrior.moveTo(warrior.x + moveDistance, warrior.y);
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    warrior.attack();
+                    break;
+            }
+        });
+        
+        // Initialize when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
