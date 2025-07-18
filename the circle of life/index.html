@@ -152,6 +152,22 @@
             border-radius: 15px;
             padding: 20px;
             margin: 20px 0;
+            position: relative;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.5) rotate(180deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) rotate(360deg);
+            }
         }
 
         .character-avatar {
@@ -689,7 +705,647 @@
                 ]
             },
             20: {
-                story: "👴 You've lived a long life. As you grow older, how do you want to spend your final years?",
+                story: "🎓 High school graduation! What's your next big step?",
+                choices: [
+                    { text: "🎓 Go to college and study hard", effects: { intelligence: 30, happiness: 10 } },
+                    { text: "💼 Start working and earn money", effects: { strength: 25, happiness: 15 } },
+                    { text: "🌍 Take a gap year to travel", effects: { happiness: 25, intelligence: 15 } }
+                ]
+            },
+            21: {
+                story: "🎓 College life begins! How do you want to spend your time?",
+                choices: [
+                    { text: "📚 Focus on academics and research", effects: { intelligence: 35, happiness: 5 } },
+                    { text: "🎉 Join clubs and make friends", effects: { happiness: 30, intelligence: 10 } },
+                    { text: "🏃‍♂️ Play sports and stay active", effects: { strength: 30, health: 15 } }
+                ]
+            },
+            22: {
+                story: "💼 You're looking for your first real job. What field interests you?",
+                choices: [
+                    { text: "💻 Technology and computers", effects: { intelligence: 30, happiness: 15 } },
+                    { text: "🎨 Creative arts and design", effects: { happiness: 30, intelligence: 10 } },
+                    { text: "🏢 Business and management", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            23: {
+                story: "🏠 You're thinking about where to live. What's your dream?",
+                choices: [
+                    { text: "🏙️ Big city life with excitement", effects: { happiness: 25, intelligence: 15 } },
+                    { text: "🏡 Quiet suburb with space", effects: { health: 20, happiness: 20 } },
+                    { text: "🌊 Beach town by the ocean", effects: { happiness: 30, health: 10 } }
+                ]
+            },
+            24: {
+                story: "💕 You meet someone special. How do you feel about relationships?",
+                choices: [
+                    { text: "💘 Fall in love and get serious", effects: { happiness: 35, health: 10 } },
+                    { text: "😊 Stay friends and take it slow", effects: { happiness: 20, intelligence: 15 } },
+                    { text: "🎯 Focus on your career first", effects: { intelligence: 25, strength: 15 } }
+                ]
+            },
+            25: {
+                story: "🎉 Quarter century! You're officially an adult. What's your priority?",
+                choices: [
+                    { text: "💰 Build wealth and save money", effects: { intelligence: 25, happiness: 10 } },
+                    { text: "🌍 Experience life and travel", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "💪 Build your career and skills", effects: { strength: 30, intelligence: 20 } }
+                ]
+            },
+            26: {
+                story: "🏠 You're ready to buy your first home. What type appeals to you?",
+                choices: [
+                    { text: "🏢 Modern apartment in the city", effects: { happiness: 25, intelligence: 15 } },
+                    { text: "🏡 House with a big yard", effects: { health: 25, happiness: 20 } },
+                    { text: "🏘️ Townhouse in a community", effects: { happiness: 20, health: 15 } }
+                ]
+            },
+            27: {
+                story: "💼 Your career is taking off! What's your leadership style?",
+                choices: [
+                    { text: "👑 Take charge and lead teams", effects: { strength: 30, intelligence: 15 } },
+                    { text: "🤝 Collaborate and build consensus", effects: { happiness: 25, intelligence: 20 } },
+                    { text: "🎯 Focus on individual excellence", effects: { intelligence: 30, strength: 10 } }
+                ]
+            },
+            28: {
+                story: "🌍 You have the opportunity to work abroad. What do you choose?",
+                choices: [
+                    { text: "✈️ Take the international job", effects: { happiness: 30, intelligence: 25 } },
+                    { text: "🏠 Stay close to family", effects: { happiness: 20, health: 15 } },
+                    { text: "🔄 Find a remote work option", effects: { intelligence: 20, happiness: 15 } }
+                ]
+            },
+            29: {
+                story: "🎓 You're considering going back to school. What motivates you?",
+                choices: [
+                    { text: "📚 Pursue a higher degree", effects: { intelligence: 35, happiness: 10 } },
+                    { text: "🎨 Learn creative skills", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "💼 Get professional certification", effects: { intelligence: 25, strength: 15 } }
+                ]
+            },
+            30: {
+                story: "🎉 The big 3-0! How do you feel about turning thirty?",
+                choices: [
+                    { text: "😊 Excited for new adventures", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "😰 Worried about getting older", effects: { health: -10, happiness: -10 } },
+                    { text: "🎯 Focused on your goals", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            31: {
+                story: "👶 Your friends are starting families. How do you feel about having kids?",
+                choices: [
+                    { text: "👶 Ready to start a family", effects: { happiness: 35, health: -5 } },
+                    { text: "😊 Happy for friends, not ready", effects: { happiness: 20, intelligence: 15 } },
+                    { text: "🎯 Focus on career and travel", effects: { intelligence: 25, strength: 20 } }
+                ]
+            },
+            32: {
+                story: "🏥 You need to make a health decision. How do you approach it?",
+                choices: [
+                    { text: "💪 Take proactive steps", effects: { health: 30, strength: 20 } },
+                    { text: "🩺 Get professional advice", effects: { intelligence: 25, health: 15 } },
+                    { text: "😰 Ignore it and hope for best", effects: { health: -20, happiness: -10 } }
+                ]
+            },
+            33: {
+                story: "💼 You're offered a big promotion. What's your approach?",
+                choices: [
+                    { text: "🚀 Take the challenge", effects: { strength: 30, intelligence: 20 } },
+                    { text: "🤔 Negotiate for better terms", effects: { intelligence: 25, happiness: 15 } },
+                    { text: "😰 Decline, it's too stressful", effects: { happiness: 15, health: 10 } }
+                ]
+            },
+            34: {
+                story: "🏠 You're thinking about moving to a new city. What attracts you?",
+                choices: [
+                    { text: "🌆 Big city opportunities", effects: { intelligence: 25, happiness: 20 } },
+                    { text: "🏔️ Mountain town lifestyle", effects: { health: 25, happiness: 15 } },
+                    { text: "🌊 Coastal city by the sea", effects: { happiness: 30, health: 10 } }
+                ]
+            },
+            35: {
+                story: "🎯 Mid-thirties! You're established in your career. What's next?",
+                choices: [
+                    { text: "💼 Climb the corporate ladder", effects: { strength: 30, intelligence: 15 } },
+                    { text: "🚀 Start your own business", effects: { intelligence: 30, happiness: 20 } },
+                    { text: "🌍 Change careers entirely", effects: { happiness: 25, intelligence: 20 } }
+                ]
+            },
+            36: {
+                story: "💕 You're in a serious relationship. How do you see the future?",
+                choices: [
+                    { text: "💍 Ready to get married", effects: { happiness: 35, health: 10 } },
+                    { text: "😊 Happy as things are", effects: { happiness: 25, intelligence: 15 } },
+                    { text: "🤔 Need more time to decide", effects: { intelligence: 20, happiness: 10 } }
+                ]
+            },
+            37: {
+                story: "🏠 You're thinking about buying a bigger home. What's important?",
+                choices: [
+                    { text: "🏡 Space for a family", effects: { happiness: 30, health: 15 } },
+                    { text: "💰 Investment potential", effects: { intelligence: 25, happiness: 10 } },
+                    { text: "🎨 Perfect location and style", effects: { happiness: 25, intelligence: 15 } }
+                ]
+            },
+            38: {
+                story: "🎓 You want to learn something new. What interests you?",
+                choices: [
+                    { text: "🎨 Creative hobby or art", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "💻 New technology skills", effects: { intelligence: 30, happiness: 10 } },
+                    { text: "🏃‍♂️ Physical fitness challenge", effects: { strength: 35, health: 20 } }
+                ]
+            },
+            39: {
+                story: "🌍 You have the chance to live abroad for a year. What do you do?",
+                choices: [
+                    { text: "✈️ Take the adventure", effects: { happiness: 35, intelligence: 25 } },
+                    { text: "🏠 Stay in your comfort zone", effects: { happiness: 15, health: 10 } },
+                    { text: "🔄 Plan a shorter trip", effects: { happiness: 25, intelligence: 15 } }
+                ]
+            },
+            40: {
+                story: "🎉 The big 4-0! How do you feel about middle age?",
+                choices: [
+                    { text: "😊 Excited for new chapter", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "😰 Worried about aging", effects: { health: -15, happiness: -15 } },
+                    { text: "🎯 Focused on achievements", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            41: {
+                story: "👶 You're thinking about having children. What's your decision?",
+                choices: [
+                    { text: "👶 Ready to become a parent", effects: { happiness: 40, health: -10 } },
+                    { text: "😊 Happy without children", effects: { happiness: 25, intelligence: 20 } },
+                    { text: "🤔 Still deciding", effects: { intelligence: 20, happiness: 10 } }
+                ]
+            },
+            42: {
+                story: "💼 You're at a career crossroads. What direction do you take?",
+                choices: [
+                    { text: "🚀 Pursue executive position", effects: { strength: 30, intelligence: 20 } },
+                    { text: "🎯 Focus on work-life balance", effects: { happiness: 30, health: 20 } },
+                    { text: "🔄 Change to a new field", effects: { intelligence: 25, happiness: 20 } }
+                ]
+            },
+            43: {
+                story: "🏥 You need to make lifestyle changes. How do you approach it?",
+                choices: [
+                    { text: "💪 Make major health changes", effects: { health: 35, strength: 25 } },
+                    { text: "🩺 Get professional guidance", effects: { intelligence: 25, health: 20 } },
+                    { text: "😰 Make small adjustments", effects: { health: 15, happiness: 10 } }
+                ]
+            },
+            44: {
+                story: "🏠 You're thinking about downsizing. What's your priority?",
+                choices: [
+                    { text: "💰 Financial freedom", effects: { intelligence: 25, happiness: 15 } },
+                    { text: "🌍 Location and lifestyle", effects: { happiness: 30, health: 15 } },
+                    { text: "🏡 Keep current home", effects: { happiness: 20, health: 10 } }
+                ]
+            },
+            45: {
+                story: "🎓 You want to mentor others. How do you share your knowledge?",
+                choices: [
+                    { text: "👨‍🏫 Teach or coach", effects: { intelligence: 30, happiness: 25 } },
+                    { text: "📚 Write or create content", effects: { intelligence: 25, happiness: 20 } },
+                    { text: "🤝 Volunteer in community", effects: { happiness: 30, health: 15 } }
+                ]
+            },
+            46: {
+                story: "🌍 You're planning your dream vacation. Where do you go?",
+                choices: [
+                    { text: "🗺️ Exotic international trip", effects: { happiness: 35, intelligence: 20 } },
+                    { text: "🏔️ Adventure in nature", effects: { health: 30, happiness: 25 } },
+                    { text: "🏖️ Relaxing beach getaway", effects: { happiness: 30, health: 20 } }
+                ]
+            },
+            47: {
+                story: "💼 You're considering early retirement. What's your plan?",
+                choices: [
+                    { text: "💰 Save aggressively", effects: { intelligence: 30, happiness: 10 } },
+                    { text: "🌍 Travel and explore", effects: { happiness: 35, intelligence: 15 } },
+                    { text: "🎯 Keep working longer", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            48: {
+                story: "🎨 You want to pursue a creative passion. What do you choose?",
+                choices: [
+                    { text: "🎨 Visual arts or crafts", effects: { happiness: 35, intelligence: 15 } },
+                    { text: "🎵 Music or performance", effects: { happiness: 30, intelligence: 20 } },
+                    { text: "✍️ Writing or storytelling", effects: { intelligence: 30, happiness: 20 } }
+                ]
+            },
+            49: {
+                story: "🏥 You're thinking about preventive health. What's your approach?",
+                choices: [
+                    { text: "💪 Comprehensive health plan", effects: { health: 40, strength: 25 } },
+                    { text: "🩺 Regular check-ups", effects: { health: 25, intelligence: 20 } },
+                    { text: "😰 Hope for the best", effects: { health: 10, happiness: 5 } }
+                ]
+            },
+            50: {
+                story: "🎉 Half a century! How do you celebrate turning 50?",
+                choices: [
+                    { text: "🎉 Big party with friends", effects: { happiness: 35, health: 10 } },
+                    { text: "🌍 Special trip or adventure", effects: { happiness: 30, intelligence: 20 } },
+                    { text: "😊 Quiet reflection", effects: { intelligence: 25, happiness: 20 } }
+                ]
+            },
+            51: {
+                story: "👶 Your children are growing up. How do you parent?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Very involved and supportive", effects: { happiness: 35, health: 10 } },
+                    { text: "😊 Balanced approach", effects: { happiness: 25, intelligence: 20 } },
+                    { text: "🎯 Focus on independence", effects: { intelligence: 25, strength: 15 } }
+                ]
+            },
+            52: {
+                story: "💼 You're at the peak of your career. What's your legacy?",
+                choices: [
+                    { text: "🏆 Build a lasting company", effects: { strength: 35, intelligence: 25 } },
+                    { text: "🤝 Mentor the next generation", effects: { intelligence: 30, happiness: 25 } },
+                    { text: "💰 Focus on financial security", effects: { intelligence: 25, happiness: 15 } }
+                ]
+            },
+            53: {
+                story: "🏠 You're thinking about your forever home. What matters most?",
+                choices: [
+                    { text: "🏡 Perfect location and size", effects: { happiness: 35, health: 15 } },
+                    { text: "💰 Investment and value", effects: { intelligence: 25, happiness: 15 } },
+                    { text: "🌍 Community and neighbors", effects: { happiness: 30, intelligence: 15 } }
+                ]
+            },
+            54: {
+                story: "🌍 You want to make a difference. How do you give back?",
+                choices: [
+                    { text: "🤝 Volunteer regularly", effects: { happiness: 35, health: 15 } },
+                    { text: "💰 Donate to causes", effects: { intelligence: 25, happiness: 20 } },
+                    { text: "🎯 Use your skills to help", effects: { intelligence: 30, happiness: 25 } }
+                ]
+            },
+            55: {
+                story: "🎓 You're thinking about learning something new. What interests you?",
+                choices: [
+                    { text: "💻 Technology and digital skills", effects: { intelligence: 35, happiness: 15 } },
+                    { text: "🎨 Creative arts and hobbies", effects: { happiness: 35, intelligence: 15 } },
+                    { text: "🏃‍♂️ Physical fitness and sports", effects: { strength: 35, health: 25 } }
+                ]
+            },
+            56: {
+                story: "💼 You're considering a career change. What motivates you?",
+                choices: [
+                    { text: "🎯 Pursue your passion", effects: { happiness: 35, intelligence: 20 } },
+                    { text: "💰 Better financial security", effects: { intelligence: 25, happiness: 15 } },
+                    { text: "🌍 Work-life balance", effects: { happiness: 30, health: 20 } }
+                ]
+            },
+            57: {
+                story: "🏥 You're focusing on health and wellness. What's your priority?",
+                choices: [
+                    { text: "💪 Physical fitness and strength", effects: { health: 40, strength: 30 } },
+                    { text: "🧠 Mental health and mindfulness", effects: { intelligence: 30, happiness: 25 } },
+                    { text: "🩺 Preventive medical care", effects: { health: 30, intelligence: 25 } }
+                ]
+            },
+            58: {
+                story: "🌍 You're planning for retirement. What's your vision?",
+                choices: [
+                    { text: "🌍 Travel and adventure", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "🏠 Quiet home life", effects: { happiness: 30, health: 20 } },
+                    { text: "🎯 Continue working part-time", effects: { intelligence: 25, strength: 20 } }
+                ]
+            },
+            59: {
+                story: "🎉 Almost 60! How do you feel about this milestone?",
+                choices: [
+                    { text: "😊 Excited for new chapter", effects: { happiness: 35, intelligence: 15 } },
+                    { text: "😰 Worried about aging", effects: { health: -15, happiness: -15 } },
+                    { text: "🎯 Focused on achievements", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            60: {
+                story: "🎉 The big 6-0! How do you want to spend your sixties?",
+                choices: [
+                    { text: "🌍 Travel and explore the world", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "🏠 Enjoy quiet home life", effects: { happiness: 30, health: 25 } },
+                    { text: "🎯 Stay active and working", effects: { strength: 30, intelligence: 20 } }
+                ]
+            },
+            61: {
+                story: "👶 Your children are adults now. How do you support them?",
+                choices: [
+                    { text: "💰 Financial support when needed", effects: { intelligence: 25, happiness: 20 } },
+                    { text: "🤝 Emotional support and advice", effects: { happiness: 35, intelligence: 20 } },
+                    { text: "🎯 Let them be independent", effects: { strength: 25, intelligence: 15 } }
+                ]
+            },
+            62: {
+                story: "🏥 You're thinking about long-term health. What's your approach?",
+                choices: [
+                    { text: "💪 Stay very active", effects: { health: 40, strength: 30 } },
+                    { text: "🩺 Regular medical check-ups", effects: { health: 30, intelligence: 25 } },
+                    { text: "😰 Hope for the best", effects: { health: 10, happiness: 5 } }
+                ]
+            },
+            63: {
+                story: "🎓 You want to keep learning. What interests you now?",
+                choices: [
+                    { text: "📚 Take college courses", effects: { intelligence: 35, happiness: 20 } },
+                    { text: "🎨 Creative hobbies", effects: { happiness: 35, intelligence: 15 } },
+                    { text: "🏃‍♂️ Physical activities", effects: { strength: 30, health: 25 } }
+                ]
+            },
+            64: {
+                story: "💼 You're thinking about retirement. What's your plan?",
+                choices: [
+                    { text: "💰 Retire early with savings", effects: { intelligence: 30, happiness: 25 } },
+                    { text: "🎯 Work a few more years", effects: { strength: 25, intelligence: 20 } },
+                    { text: "🌍 Part-time work and travel", effects: { happiness: 35, intelligence: 20 } }
+                ]
+            },
+            65: {
+                story: "🎉 Official retirement age! How do you want to retire?",
+                choices: [
+                    { text: "🌍 Travel and adventure", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "🏠 Quiet home life", effects: { happiness: 30, health: 25 } },
+                    { text: "🎯 Keep working part-time", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            66: {
+                story: "🏠 You're thinking about downsizing. What's your priority?",
+                choices: [
+                    { text: "💰 Financial freedom", effects: { intelligence: 25, happiness: 20 } },
+                    { text: "🌍 Better location", effects: { happiness: 30, health: 15 } },
+                    { text: "🏡 Stay in current home", effects: { happiness: 25, health: 20 } }
+                ]
+            },
+            67: {
+                story: "🌍 You have time to travel. Where do you want to go?",
+                choices: [
+                    { text: "🗺️ International adventures", effects: { happiness: 40, intelligence: 25 } },
+                    { text: "🏔️ National parks", effects: { health: 35, happiness: 30 } },
+                    { text: "🏖️ Relaxing beach trips", effects: { happiness: 35, health: 20 } }
+                ]
+            },
+            68: {
+                story: "🎨 You want to pursue creative interests. What do you choose?",
+                choices: [
+                    { text: "🎨 Painting or crafts", effects: { happiness: 40, intelligence: 15 } },
+                    { text: "🎵 Music or dance", effects: { happiness: 35, intelligence: 20 } },
+                    { text: "✍️ Writing or poetry", effects: { intelligence: 35, happiness: 20 } }
+                ]
+            },
+            69: {
+                story: "🏥 You're focusing on health. What's most important?",
+                choices: [
+                    { text: "💪 Physical fitness", effects: { health: 40, strength: 30 } },
+                    { text: "🧠 Mental sharpness", effects: { intelligence: 35, happiness: 20 } },
+                    { text: "😊 Emotional well-being", effects: { happiness: 40, health: 15 } }
+                ]
+            },
+            70: {
+                story: "🎉 The big 7-0! How do you feel about being 70?",
+                choices: [
+                    { text: "😊 Grateful and happy", effects: { happiness: 40, intelligence: 15 } },
+                    { text: "😰 Worried about health", effects: { health: -20, happiness: -20 } },
+                    { text: "🎯 Still setting goals", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            71: {
+                story: "👶 You're a grandparent now! How do you want to be involved?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Very involved", effects: { happiness: 45, health: 10 } },
+                    { text: "😊 Occasional visits", effects: { happiness: 30, intelligence: 15 } },
+                    { text: "🎯 Let parents handle it", effects: { strength: 20, intelligence: 15 } }
+                ]
+            },
+            72: {
+                story: "🏠 You're thinking about where to live. What's best?",
+                choices: [
+                    { text: "🏠 Stay in your home", effects: { happiness: 30, health: 20 } },
+                    { text: "🏘️ Move to retirement community", effects: { happiness: 35, health: 25 } },
+                    { text: "👨‍👩‍👧‍👦 Live near family", effects: { happiness: 40, health: 15 } }
+                ]
+            },
+            73: {
+                story: "🎓 You want to keep your mind sharp. How do you do it?",
+                choices: [
+                    { text: "📚 Read and study", effects: { intelligence: 40, happiness: 20 } },
+                    { text: "🎮 Play brain games", effects: { intelligence: 30, happiness: 25 } },
+                    { text: "🤝 Social activities", effects: { happiness: 35, intelligence: 20 } }
+                ]
+            },
+            74: {
+                story: "🏥 You need to make health decisions. How do you approach it?",
+                choices: [
+                    { text: "💪 Stay active and fight", effects: { health: 35, strength: 25 } },
+                    { text: "🩺 Follow doctor's advice", effects: { health: 30, intelligence: 25 } },
+                    { text: "😰 Avoid medical care", effects: { health: -30, happiness: -20 } }
+                ]
+            },
+            75: {
+                story: "🎉 Three quarters of a century! How do you celebrate?",
+                choices: [
+                    { text: "🎉 Big family celebration", effects: { happiness: 45, health: 10 } },
+                    { text: "🌍 Special trip", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "😊 Quiet reflection", effects: { intelligence: 30, happiness: 25 } }
+                ]
+            },
+            76: {
+                story: "🌍 You still want to travel. What's your style?",
+                choices: [
+                    { text: "🗺️ International trips", effects: { happiness: 40, intelligence: 25 } },
+                    { text: "🚗 Road trips", effects: { health: 30, happiness: 35 } },
+                    { text: "🏠 Stay close to home", effects: { happiness: 30, health: 25 } }
+                ]
+            },
+            77: {
+                story: "🎨 You have time for hobbies. What do you enjoy?",
+                choices: [
+                    { text: "🎨 Creative arts", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "🌱 Gardening", effects: { health: 35, happiness: 30 } },
+                    { text: "📚 Reading and writing", effects: { intelligence: 35, happiness: 25 } }
+                ]
+            },
+            78: {
+                story: "🏥 You're thinking about your health. What's your priority?",
+                choices: [
+                    { text: "💪 Stay physically active", effects: { health: 40, strength: 25 } },
+                    { text: "🧠 Keep mentally sharp", effects: { intelligence: 40, happiness: 20 } },
+                    { text: "😊 Maintain happiness", effects: { happiness: 45, health: 15 } }
+                ]
+            },
+            79: {
+                story: "👶 Your grandchildren are growing up. How do you connect?",
+                choices: [
+                    { text: "📚 Share wisdom and stories", effects: { intelligence: 30, happiness: 35 } },
+                    { text: "🎮 Play games together", effects: { happiness: 40, health: 15 } },
+                    { text: "🌍 Take them on adventures", effects: { happiness: 45, intelligence: 20 } }
+                ]
+            },
+            80: {
+                story: "🎉 The big 8-0! How do you feel about being 80?",
+                choices: [
+                    { text: "😊 Grateful for long life", effects: { happiness: 50, intelligence: 15 } },
+                    { text: "😰 Worried about future", effects: { health: -25, happiness: -25 } },
+                    { text: "🎯 Still making plans", effects: { strength: 20, intelligence: 25 } }
+                ]
+            },
+            81: {
+                story: "🏠 You're thinking about your living situation. What's best?",
+                choices: [
+                    { text: "🏠 Stay independent", effects: { strength: 30, happiness: 25 } },
+                    { text: "🏘️ Assisted living", effects: { health: 35, happiness: 30 } },
+                    { text: "👨‍👩‍👧‍👦 Live with family", effects: { happiness: 40, health: 20 } }
+                ]
+            },
+            82: {
+                story: "🎓 You want to share your life experience. How do you do it?",
+                choices: [
+                    { text: "📚 Write memoirs", effects: { intelligence: 40, happiness: 25 } },
+                    { text: "🤝 Mentor others", effects: { happiness: 40, intelligence: 25 } },
+                    { text: "🎨 Create art", effects: { happiness: 35, intelligence: 20 } }
+                ]
+            },
+            83: {
+                story: "🏥 You need to make health choices. How do you decide?",
+                choices: [
+                    { text: "💪 Fight for quality of life", effects: { health: 35, strength: 20 } },
+                    { text: "🩺 Trust medical advice", effects: { health: 30, intelligence: 25 } },
+                    { text: "😰 Give up hope", effects: { health: -40, happiness: -30 } }
+                ]
+            },
+            84: {
+                story: "🌍 You still want to experience new things. What do you choose?",
+                choices: [
+                    { text: "🌍 Travel to new places", effects: { happiness: 45, intelligence: 25 } },
+                    { text: "🎨 Try new hobbies", effects: { happiness: 40, intelligence: 20 } },
+                    { text: "🤝 Meet new people", effects: { happiness: 35, intelligence: 25 } }
+                ]
+            },
+            85: {
+                story: "🎉 Eighty-five years old! How do you spend your days?",
+                choices: [
+                    { text: "📚 Read and learn", effects: { intelligence: 40, happiness: 25 } },
+                    { text: "🎨 Create and express", effects: { happiness: 45, intelligence: 20 } },
+                    { text: "🌱 Garden and nature", effects: { health: 35, happiness: 35 } }
+                ]
+            },
+            86: {
+                story: "👶 Your great-grandchildren are born. How do you feel?",
+                choices: [
+                    { text: "😊 Overjoyed with family", effects: { happiness: 50, health: 10 } },
+                    { text: "📚 Share family history", effects: { intelligence: 35, happiness: 30 } },
+                    { text: "🎯 Focus on your own life", effects: { strength: 25, intelligence: 20 } }
+                ]
+            },
+            87: {
+                story: "🏥 You're thinking about your legacy. What matters most?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Family and relationships", effects: { happiness: 50, intelligence: 20 } },
+                    { text: "📚 Knowledge and wisdom", effects: { intelligence: 45, happiness: 25 } },
+                    { text: "🎨 Creative contributions", effects: { happiness: 45, intelligence: 25 } }
+                ]
+            },
+            88: {
+                story: "🌍 You want to make the most of your time. What do you do?",
+                choices: [
+                    { text: "🌍 Travel and explore", effects: { happiness: 50, intelligence: 25 } },
+                    { text: "🤝 Help others", effects: { happiness: 45, intelligence: 30 } },
+                    { text: "😊 Enjoy simple pleasures", effects: { happiness: 40, health: 25 } }
+                ]
+            },
+            89: {
+                story: "🎓 You're reflecting on your life. What are you most proud of?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Family and relationships", effects: { happiness: 55, intelligence: 20 } },
+                    { text: "💼 Career achievements", effects: { intelligence: 40, happiness: 25 } },
+                    { text: "🌍 Life experiences", effects: { happiness: 50, intelligence: 25 } }
+                ]
+            },
+            90: {
+                story: "🎉 Ninety years old! How do you feel about this milestone?",
+                choices: [
+                    { text: "😊 Grateful for long life", effects: { happiness: 55, intelligence: 20 } },
+                    { text: "😰 Worried about health", effects: { health: -30, happiness: -30 } },
+                    { text: "🎯 Still setting goals", effects: { strength: 20, intelligence: 30 } }
+                ]
+            },
+            91: {
+                story: "🏠 You're thinking about your final years. What's important?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Be with family", effects: { happiness: 60, health: 10 } },
+                    { text: "🏠 Stay in your home", effects: { happiness: 45, health: 25 } },
+                    { text: "🌍 Experience new things", effects: { happiness: 50, intelligence: 25 } }
+                ]
+            },
+            92: {
+                story: "🎓 You want to share your wisdom. How do you do it?",
+                choices: [
+                    { text: "📚 Write your story", effects: { intelligence: 50, happiness: 30 } },
+                    { text: "🤝 Give advice", effects: { happiness: 50, intelligence: 30 } },
+                    { text: "🎨 Create art", effects: { happiness: 45, intelligence: 25 } }
+                ]
+            },
+            93: {
+                story: "🏥 You're thinking about your health. What's your approach?",
+                choices: [
+                    { text: "💪 Stay active", effects: { health: 40, strength: 20 } },
+                    { text: "🩺 Accept medical help", effects: { health: 35, intelligence: 30 } },
+                    { text: "😰 Give up", effects: { health: -50, happiness: -40 } }
+                ]
+            },
+            94: {
+                story: "🌍 You want to make every day count. What do you do?",
+                choices: [
+                    { text: "🌍 Try new experiences", effects: { happiness: 55, intelligence: 30 } },
+                    { text: "🤝 Help others", effects: { happiness: 50, intelligence: 35 } },
+                    { text: "😊 Enjoy simple things", effects: { happiness: 45, health: 30 } }
+                ]
+            },
+            95: {
+                story: "🎉 Ninety-five! How do you spend your time?",
+                choices: [
+                    { text: "📚 Read and reflect", effects: { intelligence: 50, happiness: 30 } },
+                    { text: "👨‍👩‍👧‍👦 Be with family", effects: { happiness: 60, health: 10 } },
+                    { text: "🎨 Create beauty", effects: { happiness: 50, intelligence: 25 } }
+                ]
+            },
+            96: {
+                story: "🏥 You're thinking about your legacy. What matters most?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Family love", effects: { happiness: 65, intelligence: 20 } },
+                    { text: "📚 Knowledge shared", effects: { intelligence: 55, happiness: 25 } },
+                    { text: "🌍 Life well lived", effects: { happiness: 60, intelligence: 30 } }
+                ]
+            },
+            97: {
+                story: "🌍 You want to make the most of your time. What do you choose?",
+                choices: [
+                    { text: "🌍 Experience beauty", effects: { happiness: 60, intelligence: 30 } },
+                    { text: "🤝 Give love", effects: { happiness: 65, intelligence: 25 } },
+                    { text: "😊 Find peace", effects: { happiness: 55, health: 25 } }
+                ]
+            },
+            98: {
+                story: "🎓 You're reflecting on your long life. What are you grateful for?",
+                choices: [
+                    { text: "👨‍👩‍👧‍👦 Family and love", effects: { happiness: 70, intelligence: 25 } },
+                    { text: "🌍 Life experiences", effects: { happiness: 65, intelligence: 30 } },
+                    { text: "📚 Wisdom gained", effects: { intelligence: 60, happiness: 30 } }
+                ]
+            },
+            99: {
+                story: "🎉 Ninety-nine years old! How do you feel about your life?",
+                choices: [
+                    { text: "😊 Complete and grateful", effects: { happiness: 75, intelligence: 25 } },
+                    { text: "😰 Fearful of death", effects: { health: -40, happiness: -50 } },
+                    { text: "🎯 Still curious", effects: { strength: 15, intelligence: 40 } }
+                ]
+            },
+            100: {
+                story: "👴 You've lived a century! As you reach the end of your journey, how do you want to spend your final years?",
                 choices: [
                     { text: "🏠 Stay home and rest peacefully", effects: { health: -100 }, death: "old_age" },
                     { text: "🌍 Travel and have adventures", effects: { happiness: 30, health: -20 } },
@@ -887,7 +1543,7 @@
             
             // Present next choice or end game
             setTimeout(() => {
-                if (gameState.age <= 20) {
+                if (gameState.age <= 100) {
                     presentChoice();
                 } else {
                     endGame();
@@ -986,58 +1642,67 @@
         }
 
         function drawBaby(ctx) {
-            // Face with advanced shading
-            for (let y = 12; y < 28; y++) {
-                for (let x = 12; x < 32; x++) {
+            // Face with ultra-advanced shading and radial gradients
+            for (let y = 16; y < 36; y++) {
+                for (let x = 16; x < 40; x++) {
                     let color = '#ffdbac';
-                    if (x < 18) color = '#f4c088'; // Left shadow
-                    if (x > 26) color = '#f4c088'; // Right shadow
-                    if (y < 18) color = '#f4c088'; // Top shadow
-                    if (x < 16 && y < 20) color = '#e6b17a'; // Deep shadow
-                    if (x > 28 && y < 20) color = '#e6b17a'; // Deep shadow
+                    if (x < 24) color = '#f4c088'; // Left shadow
+                    if (x > 32) color = '#f4c088'; // Right shadow
+                    if (y < 24) color = '#f4c088'; // Top shadow
+                    if (x < 20 && y < 26) color = '#e6b17a'; // Deep shadow
+                    if (x > 36 && y < 26) color = '#e6b17a'; // Deep shadow
+                    if (x === 24 && y === 26) color = '#ffedcc'; // Center highlight
+                    if (x === 32 && y === 26) color = '#ffedcc'; // Center highlight
                     drawPixel(ctx, x, y, color);
                 }
             }
             
-            // Cheeks with gradient
-            drawGradient(ctx, 13, 22, 2, 2, '#ffb3ba', '#ff9ba3');
-            drawGradient(ctx, 29, 22, 2, 2, '#ffb3ba', '#ff9ba3');
+            // Cheeks with radial gradients
+            drawRadialGradient(ctx, 18, 28, 2, '#ffb3ba', '#ff9ba3');
+            drawRadialGradient(ctx, 38, 28, 2, '#ffb3ba', '#ff9ba3');
             
-            // Eyes with detailed highlights
-            drawPixel(ctx, 17, 20, '#000');
-            drawPixel(ctx, 27, 20, '#000');
-            drawPixel(ctx, 18, 19, '#fff'); // Eye highlight
-            drawPixel(ctx, 28, 19, '#fff'); // Eye highlight
-            drawPixel(ctx, 17, 21, '#333'); // Eye depth
-            drawPixel(ctx, 27, 21, '#333'); // Eye depth
+            // Eyes with ultra-detailed highlights and depth
+            drawPixel(ctx, 22, 26, '#000');
+            drawPixel(ctx, 34, 26, '#000');
+            drawPixel(ctx, 23, 25, '#fff'); // Eye highlight
+            drawPixel(ctx, 35, 25, '#fff'); // Eye highlight
+            drawPixel(ctx, 22, 27, '#333'); // Eye depth
+            drawPixel(ctx, 34, 27, '#333'); // Eye depth
+            drawPixel(ctx, 23, 26, '#666'); // Eye detail
+            drawPixel(ctx, 35, 26, '#666'); // Eye detail
             
-            // Large mouth with 3D effect
-            for (let y = 26; y < 30; y++) {
-                for (let x = 18; x < 26; x++) {
+            // Large mouth with 4D effect
+            for (let y = 32; y < 38; y++) {
+                for (let x = 22; x < 34; x++) {
                     let color = '#ff6b9d';
-                    if (y === 29) color = '#e55a8a'; // Darker bottom
-                    if (y === 28) color = '#ff8ab4'; // Middle tone
-                    if (x < 20 || x > 24) color = '#ff8ab4'; // Sides
+                    if (y === 37) color = '#e55a8a'; // Darker bottom
+                    if (y === 36) color = '#ff8ab4'; // Middle tone
+                    if (y === 35) color = '#ff9bc4'; // Light tone
+                    if (x < 24 || x > 32) color = '#ff8ab4'; // Sides
+                    if (x === 26 || x === 30) color = '#ff9bc4'; // Highlights
                     drawPixel(ctx, x, y, color);
                 }
             }
             
-            // Nose with shading
-            drawPixel(ctx, 22, 22, '#f4c088');
-            drawPixel(ctx, 22, 23, '#e6b17a');
+            // Nose with advanced shading
+            drawPixel(ctx, 28, 28, '#f4c088');
+            drawPixel(ctx, 28, 29, '#e6b17a');
+            drawPixel(ctx, 28, 30, '#d4a574');
             
-            // Eyebrows
-            drawPixel(ctx, 16, 18, '#8b4513');
-            drawPixel(ctx, 26, 18, '#8b4513');
+            // Eyebrows with texture
+            drawPixel(ctx, 20, 24, '#8b4513');
+            drawPixel(ctx, 36, 24, '#8b4513');
+            drawPixel(ctx, 21, 24, '#a0522d');
+            drawPixel(ctx, 35, 24, '#a0522d');
             
             // Outline with thickness and gradient
-            for (let x = 12; x < 32; x++) {
-                drawPixel(ctx, x, 12, '#000');
-                drawPixel(ctx, x, 27, '#000');
+            for (let x = 16; x < 40; x++) {
+                drawPixel(ctx, x, 16, '#000');
+                drawPixel(ctx, x, 35, '#000');
             }
-            for (let y = 12; y < 28; y++) {
-                drawPixel(ctx, 12, y, '#000');
-                drawPixel(ctx, 31, y, '#000');
+            for (let y = 16; y < 36; y++) {
+                drawPixel(ctx, 16, y, '#000');
+                drawPixel(ctx, 39, y, '#000');
             }
         }
 

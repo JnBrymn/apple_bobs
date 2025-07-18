@@ -1,0 +1,1033 @@
+<!-- Cookie Clicker Game - Bo wants a cookie clicker with buildings: cursor, grandma, farm, mine, factory, bank, temple, wizardtower, shipment, alchemylab, portal, time machine, antim.condenser, prism, chancemaker, idverse, cortexbaker, you. Each building has a simple drawing. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #8B4513;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stats {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            color: #654321;
+        }
+        
+        .cookie-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .cookie {
+            width: 150px;
+            height: 150px;
+            background: #D2691E;
+            border-radius: 50%;
+            border: 8px solid #8B4513;
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        .cookie:hover {
+            transform: scale(1.1);
+        }
+        
+        .cookie:active {
+            transform: scale(0.95);
+        }
+        
+        .cookie::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            background: #654321;
+            border-radius: 50%;
+        }
+        
+        .cookie::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            right: 30px;
+            width: 15px;
+            height: 15px;
+            background: #654321;
+            border-radius: 50%;
+        }
+        
+        .buildings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .building {
+            background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+            border: 2px solid #ccc;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .building:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .building.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .building-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+            border: 4px solid #333;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .building-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+        
+        .building-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .building-cost {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .building-count {
+            color: #8B4513;
+            font-weight: bold;
+        }
+        
+        /* Building drawings */
+        .cursor-icon { 
+            background: linear-gradient(135deg, #87CEEB, #4682B4, #1E90FF, #0000CD); 
+            position: relative;
+            border: 4px solid #333;
+        }
+        .cursor-icon::before { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 25px;
+            width: 10px;
+            height: 35px;
+            background: linear-gradient(to bottom, #333, #555, #777);
+            border-radius: 5px;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .cursor-icon::after { 
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 18px solid #333;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        
+        .grandma-icon { 
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4, #FF1493, #DC143C); 
+            position: relative;
+            border: 4px solid #8B4513;
+            transition: all 0.5s ease;
+        }
+        .grandma-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFE4B5, #F5DEB3, #DEB887);
+            border-radius: 50%;
+            border: 4px solid #CD853F;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.2);
+            transition: all 0.5s ease;
+        }
+        .grandma-icon::after { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 20px;
+            width: 40px;
+            height: 18px;
+            background: linear-gradient(to bottom, #8B4513, #A0522D, #CD853F);
+            border-radius: 9px;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+        
+        /* Grandma face features */
+        .grandma-icon .eye-left {
+            position: absolute;
+            top: 22px;
+            left: 28px;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+        }
+        
+        .grandma-icon .eye-right {
+            position: absolute;
+            top: 22px;
+            left: 36px;
+            width: 4px;
+            height: 4px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+        }
+        
+        .grandma-icon .mouth {
+            position: absolute;
+            top: 28px;
+            left: 30px;
+            width: 8px;
+            height: 3px;
+            background: #333;
+            border-radius: 0 0 4px 4px;
+            transition: all 0.5s ease;
+        }
+        
+        /* Creepy grandma levels */
+        .grandma-icon.creepy-1 {
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4, #FF1493, #8B0000);
+            border-color: #8B0000;
+            filter: brightness(0.9);
+        }
+        .grandma-icon.creepy-1::before {
+            background: linear-gradient(135deg, #F5DEB3, #DEB887, #CD853F);
+            border-color: #8B4513;
+        }
+        .grandma-icon.creepy-1::after {
+            background: linear-gradient(to bottom, #8B4513, #654321, #4A4A4A);
+        }
+        .grandma-icon.creepy-1 .eye-left,
+        .grandma-icon.creepy-1 .eye-right {
+            background: #8B0000;
+            width: 5px;
+            height: 5px;
+        }
+        .grandma-icon.creepy-1 .mouth {
+            background: #8B0000;
+            width: 10px;
+            height: 4px;
+        }
+        
+        .grandma-icon.creepy-2 {
+            background: linear-gradient(135deg, #FF69B4, #FF1493, #8B0000, #4A0000);
+            border-color: #4A0000;
+            filter: brightness(0.8) contrast(1.2);
+        }
+        .grandma-icon.creepy-2::before {
+            background: linear-gradient(135deg, #DEB887, #CD853F, #8B4513);
+            border-color: #654321;
+        }
+        .grandma-icon.creepy-2::after {
+            background: linear-gradient(to bottom, #654321, #4A4A4A, #2F2F2F);
+        }
+        .grandma-icon.creepy-2 .eye-left,
+        .grandma-icon.creepy-2 .eye-right {
+            background: #4A0000;
+            width: 6px;
+            height: 6px;
+            border-radius: 50% 50% 0 0;
+        }
+        .grandma-icon.creepy-2 .mouth {
+            background: #4A0000;
+            width: 12px;
+            height: 5px;
+            border-radius: 0 0 6px 6px;
+        }
+        
+        .grandma-icon.creepy-3 {
+            background: linear-gradient(135deg, #FF1493, #8B0000, #4A0000, #000000);
+            border-color: #000000;
+            filter: brightness(0.7) contrast(1.4) saturate(1.2);
+        }
+        .grandma-icon.creepy-3::before {
+            background: linear-gradient(135deg, #CD853F, #8B4513, #654321);
+            border-color: #4A4A4A;
+        }
+        .grandma-icon.creepy-3::after {
+            background: linear-gradient(to bottom, #4A4A4A, #2F2F2F, #1C1C1C);
+        }
+        .grandma-icon.creepy-3 .eye-left,
+        .grandma-icon.creepy-3 .eye-right {
+            background: #000000;
+            width: 7px;
+            height: 7px;
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 0 3px #FF0000;
+        }
+        .grandma-icon.creepy-3 .mouth {
+            background: #000000;
+            width: 14px;
+            height: 6px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 0 3px #FF0000;
+        }
+        
+        .grandma-icon.creepy-4 {
+            background: linear-gradient(135deg, #8B0000, #4A0000, #000000, #000000);
+            border-color: #000000;
+            filter: brightness(0.6) contrast(1.6) saturate(1.4) hue-rotate(10deg);
+        }
+        .grandma-icon.creepy-4::before {
+            background: linear-gradient(135deg, #8B4513, #654321, #4A4A4A);
+            border-color: #2F2F2F;
+        }
+        .grandma-icon.creepy-4::after {
+            background: linear-gradient(to bottom, #2F2F2F, #1C1C1C, #000000);
+        }
+        .grandma-icon.creepy-4 .eye-left,
+        .grandma-icon.creepy-4 .eye-right {
+            background: #000000;
+            width: 8px;
+            height: 8px;
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 0 5px #FF0000, 0 0 10px #FF0000;
+            animation: eye-glow 1s infinite alternate;
+        }
+        .grandma-icon.creepy-4 .mouth {
+            background: #000000;
+            width: 16px;
+            height: 7px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 0 5px #FF0000, 0 0 10px #FF0000;
+            animation: mouth-glow 1s infinite alternate;
+        }
+        
+        .grandma-icon.creepy-5 {
+            background: linear-gradient(135deg, #4A0000, #000000, #000000, #000000);
+            border-color: #000000;
+            filter: brightness(0.5) contrast(1.8) saturate(1.6) hue-rotate(20deg);
+            animation: grandma-twitch 2s infinite;
+        }
+        .grandma-icon.creepy-5::before {
+            background: linear-gradient(135deg, #654321, #4A4A4A, #2F2F2F);
+            border-color: #1C1C1C;
+        }
+        .grandma-icon.creepy-5::after {
+            background: linear-gradient(to bottom, #1C1C1C, #000000, #000000);
+        }
+        .grandma-icon.creepy-5 .eye-left,
+        .grandma-icon.creepy-5 .eye-right {
+            background: #000000;
+            width: 10px;
+            height: 10px;
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 0 8px #FF0000, 0 0 15px #FF0000, 0 0 20px #FF0000;
+            animation: eye-glow 0.5s infinite alternate, eye-twitch 3s infinite;
+        }
+        .grandma-icon.creepy-5 .mouth {
+            background: #000000;
+            width: 18px;
+            height: 8px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 0 8px #FF0000, 0 0 15px #FF0000, 0 0 20px #FF0000;
+            animation: mouth-glow 0.5s infinite alternate, mouth-twitch 3s infinite;
+        }
+        
+        @keyframes grandma-twitch {
+            0%, 90%, 100% { transform: rotate(0deg); }
+            5% { transform: rotate(1deg); }
+            10% { transform: rotate(-1deg); }
+            15% { transform: rotate(0.5deg); }
+            20% { transform: rotate(-0.5deg); }
+            25% { transform: rotate(0deg); }
+        }
+        
+        @keyframes eye-glow {
+            0% { box-shadow: 0 0 3px #FF0000; }
+            100% { box-shadow: 0 0 8px #FF0000, 0 0 15px #FF0000; }
+        }
+        
+        @keyframes mouth-glow {
+            0% { box-shadow: 0 0 3px #FF0000; }
+            100% { box-shadow: 0 0 8px #FF0000, 0 0 15px #FF0000; }
+        }
+        
+        @keyframes eye-twitch {
+            0%, 95%, 100% { transform: translateX(0px); }
+            5% { transform: translateX(1px); }
+            10% { transform: translateX(-1px); }
+            15% { transform: translateX(0.5px); }
+            20% { transform: translateX(-0.5px); }
+            25% { transform: translateX(0px); }
+        }
+        
+        @keyframes mouth-twitch {
+            0%, 95%, 100% { transform: scaleX(1); }
+            5% { transform: scaleX(1.1); }
+            10% { transform: scaleX(0.9); }
+            15% { transform: scaleX(1.05); }
+            20% { transform: scaleX(0.95); }
+            25% { transform: scaleX(1); }
+        }
+        
+        .farm-icon { 
+            background: linear-gradient(135deg, #90EE90, #32CD32, #228B22, #006400); 
+            position: relative;
+            border: 4px solid #228B22;
+        }
+        .farm-icon::before { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 16px;
+            width: 48px;
+            height: 32px;
+            background: linear-gradient(to bottom, #8B4513, #A0522D, #CD853F);
+            border-radius: 5px;
+            border: 3px solid #654321;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .farm-icon::after { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-bottom: 24px solid #228B22;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.3));
+        }
+        
+        .mine-icon { 
+            background: linear-gradient(135deg, #696969, #2F4F4F, #1C1C1C, #000000); 
+            position: relative;
+            border: 4px solid #333;
+        }
+        .mine-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #2F4F4F, #1C1C1C, #000000);
+            border-radius: 50%;
+            border: 5px solid #333;
+            box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.6), inset -1px -1px 2px rgba(255, 255, 255, 0.05);
+        }
+        .mine-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 28px;
+            width: 10px;
+            height: 26px;
+            background: linear-gradient(to bottom, #333, #555, #777);
+            transform: rotate(45deg);
+            border-radius: 5px;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .factory-icon { 
+            background: linear-gradient(135deg, #A9A9A9, #696969, #2F4F4F, #1C1C1C); 
+            position: relative;
+            border: 4px solid #333;
+        }
+        .factory-icon::before { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 56px;
+            height: 36px;
+            background: linear-gradient(135deg, #696969, #2F4F4F, #1C1C1C);
+            border-radius: 5px;
+            border: 4px solid #333;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .factory-icon::after { 
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 16px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 18px solid #FF4500;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        
+        .bank-icon { 
+            background: linear-gradient(135deg, #FFD700, #DAA520, #B8860B, #8B4513); 
+            position: relative;
+            border: 4px solid #B8860B;
+        }
+        .bank-icon::before { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 56px;
+            height: 40px;
+            background: linear-gradient(135deg, #DAA520, #B8860B, #8B4513);
+            border-radius: 10px;
+            border: 4px solid #B8860B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+        .bank-icon::after { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 36px;
+            height: 26px;
+            background: linear-gradient(to bottom, #8B4513, #654321, #4A4A4A);
+            border-radius: 5px;
+            border: 3px solid #654321;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .temple-icon { 
+            background: linear-gradient(135deg, #DEB887, #CD853F, #8B4513, #654321); 
+            position: relative;
+            border: 4px solid #8B4513;
+        }
+        .temple-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 32px;
+            background: linear-gradient(135deg, #CD853F, #8B4513, #654321);
+            border-radius: 5px;
+            border: 4px solid #8B4513;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .temple-icon::after { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-bottom: 26px solid #D2691E;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        
+        .wizardtower-icon { 
+            background: linear-gradient(135deg, #9370DB, #4B0082, #2E0854, #000033); 
+            position: relative;
+            border: 4px solid #2E0854;
+        }
+        .wizardtower-icon::before { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 18px;
+            width: 44px;
+            height: 36px;
+            background: linear-gradient(135deg, #4B0082, #2E0854, #000033);
+            border-radius: 5px;
+            border: 4px solid #2E0854;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .wizardtower-icon::after { 
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-bottom: 20px solid #FFD700;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        
+        .shipment-icon { 
+            background: linear-gradient(135deg, #4682B4, #191970, #000080, #000033); 
+            position: relative;
+            border: 4px solid #000080;
+        }
+        .shipment-icon::before { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 12px;
+            width: 56px;
+            height: 26px;
+            background: linear-gradient(135deg, #191970, #000080, #000033);
+            border-radius: 10px;
+            border: 4px solid #000080;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .shipment-icon::after { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-bottom: 20px solid #F5F5DC;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.3));
+        }
+        
+        .alchemylab-icon { 
+            background: linear-gradient(135deg, #32CD32, #228B22, #006400, #004000); 
+            position: relative;
+            border: 4px solid #006400;
+        }
+        .alchemylab-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #228B22, #006400, #004000);
+            border-radius: 18px 18px 0 0;
+            border: 4px solid #006400;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .alchemylab-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 28px;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #FF4500, #DC143C, #8B0000);
+            border-radius: 50%;
+            border: 3px solid #DC143C;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .portal-icon { 
+            background: linear-gradient(135deg, #8A2BE2, #4B0082, #2E0854, #000033); 
+            position: relative;
+            border: 4px solid #2E0854;
+        }
+        .portal-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #4B0082, #2E0854, #000033);
+            border-radius: 50%;
+            border: 5px solid #FFD700;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .portal-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00CED1, #20B2AA, #008B8B);
+            border-radius: 50%;
+            border: 3px solid #20B2AA;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .timemachine-icon { 
+            background: linear-gradient(135deg, #00CED1, #20B2AA, #008B8B, #006666); 
+            position: relative;
+            border: 4px solid #008B8B;
+        }
+        .timemachine-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #20B2AA, #008B8B, #006666);
+            border-radius: 50%;
+            border: 5px solid #333;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .timemachine-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFD700, #B8860B, #8B4513);
+            border-radius: 50%;
+            border: 3px solid #B8860B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .antimcondenser-icon { 
+            background: linear-gradient(135deg, #FF1493, #C71585, #8B008B, #4B0082); 
+            position: relative;
+            border: 4px solid #8B008B;
+        }
+        .antimcondenser-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #C71585, #8B008B, #4B0082);
+            border-radius: 50%;
+            border: 5px solid #8B008B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .antimcondenser-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFD700, #B8860B, #8B4513);
+            border-radius: 50%;
+            border: 3px solid #B8860B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .prism-icon { 
+            background: linear-gradient(135deg, #FF69B4, #FF1493, #C71585, #8B008B); 
+            position: relative;
+            border: 4px solid #C71585;
+        }
+        .prism-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-bottom: 32px solid #FFD700;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        .prism-icon::after { 
+            content: '';
+            position: absolute;
+            top: 38px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 32px solid #FF1493;
+            filter: drop-shadow(3px 3px 3px rgba(0, 0, 0, 0.4));
+        }
+        
+        .chancemaker-icon { 
+            background: linear-gradient(135deg, #FF4500, #DC143C, #8B0000, #4A0000); 
+            position: relative;
+            border: 4px solid #8B0000;
+        }
+        .chancemaker-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #DC143C, #8B0000, #4A0000);
+            border-radius: 50%;
+            border: 5px solid #8B0000;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .chancemaker-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFD700, #B8860B, #8B4513);
+            border-radius: 50%;
+            border: 3px solid #B8860B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .idverse-icon { 
+            background: linear-gradient(135deg, #000080, #191970, #000033, #000000); 
+            position: relative;
+            border: 4px solid #000033;
+        }
+        .idverse-icon::before { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #191970, #000033, #000000);
+            border-radius: 50%;
+            border: 5px solid #000033;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6), inset 1px 1px 2px rgba(255, 255, 255, 0.05);
+        }
+        .idverse-icon::after { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #4B0082, #2E0854, #000033);
+            border-radius: 50%;
+            border: 4px solid #2E0854;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.05);
+        }
+        
+        .cortexbaker-icon { 
+            background: linear-gradient(135deg, #FF6347, #DC143C, #8B0000, #4A0000); 
+            position: relative;
+            border: 4px solid #8B0000;
+        }
+        .cortexbaker-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #DC143C, #8B0000, #4A0000);
+            border-radius: 50%;
+            border: 5px solid #8B0000;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .cortexbaker-icon::after { 
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFD700, #B8860B, #8B4513);
+            border-radius: 50%;
+            border: 3px solid #B8860B;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        
+        .you-icon { 
+            background: linear-gradient(135deg, #FF69B4, #FF1493, #C71585, #8B008B); 
+            position: relative;
+            border: 4px solid #C71585;
+        }
+        .you-icon::before { 
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 22px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #FFE4B5, #F5DEB3, #DEB887);
+            border-radius: 50%;
+            border: 4px solid #CD853F;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+        .you-icon::after { 
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 20px;
+            width: 40px;
+            height: 18px;
+            background: linear-gradient(to bottom, #8B4513, #A0522D, #CD853F);
+            border-radius: 9px;
+            box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3), inset 1px 1px 2px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Clicker 🍪</h1>
+        
+        <div class="stats">
+            <div>Cookies: <span id="cookies">0</span></div>
+            <div>Cookies per second: <span id="cps">0</span></div>
+        </div>
+        
+        <div class="cookie-container">
+            <div class="cookie" id="cookie" onclick="clickCookie()"></div>
+            <p>Click the cookie!</p>
+        </div>
+        
+        <div class="buildings" id="buildings">
+            <!-- Buildings will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        let cookies = 0;
+        let cps = 0;
+        let buildings = {
+            cursor: { name: 'Cursor', cost: 15, baseCost: 15, count: 0, cps: 0.1, icon: 'cursor-icon' },
+            grandma: { name: 'Grandma', cost: 100, baseCost: 100, count: 0, cps: 1, icon: 'grandma-icon' },
+            farm: { name: 'Farm', cost: 1100, baseCost: 1100, count: 0, cps: 8, icon: 'farm-icon' },
+            mine: { name: 'Mine', cost: 12000, baseCost: 12000, count: 0, cps: 47, icon: 'mine-icon' },
+            factory: { name: 'Factory', cost: 130000, baseCost: 130000, count: 0, cps: 260, icon: 'factory-icon' },
+            bank: { name: 'Bank', cost: 1400000, baseCost: 1400000, count: 0, cps: 1400, icon: 'bank-icon' },
+            temple: { name: 'Temple', cost: 20000000, baseCost: 20000000, count: 0, cps: 7800, icon: 'temple-icon' },
+            wizardtower: { name: 'Wizard Tower', cost: 330000000, baseCost: 330000000, count: 0, cps: 44000, icon: 'wizardtower-icon' },
+            shipment: { name: 'Shipment', cost: 5100000000, baseCost: 5100000000, count: 0, cps: 260000, icon: 'shipment-icon' },
+            alchemylab: { name: 'Alchemy Lab', cost: 75000000000, baseCost: 75000000000, count: 0, cps: 1600000, icon: 'alchemylab-icon' },
+            portal: { name: 'Portal', cost: 1000000000000, baseCost: 1000000000000, count: 0, cps: 10000000, icon: 'portal-icon' },
+            timemachine: { name: 'Time Machine', cost: 14000000000000, baseCost: 14000000000000, count: 0, cps: 65000000, icon: 'timemachine-icon' },
+            antimcondenser: { name: 'Antimatter Condenser', cost: 170000000000000, baseCost: 170000000000000, count: 0, cps: 430000000, icon: 'antimcondenser-icon' },
+            prism: { name: 'Prism', cost: 2100000000000000, baseCost: 2100000000000000, count: 0, cps: 2900000000, icon: 'prism-icon' },
+            chancemaker: { name: 'Chancemaker', cost: 26000000000000000, baseCost: 26000000000000000, count: 0, cps: 21000000000, icon: 'chancemaker-icon' },
+            idverse: { name: 'Idverse', cost: 310000000000000000, baseCost: 310000000000000000, count: 0, cps: 150000000000, icon: 'idverse-icon' },
+            cortexbaker: { name: 'Cortex Baker', cost: 7100000000000000000, baseCost: 7100000000000000000, count: 0, cps: 1100000000000, icon: 'cortexbaker-icon' },
+            you: { name: 'You', cost: 120000000000000000000, baseCost: 120000000000000000000, count: 0, cps: 8300000000000, icon: 'you-icon' }
+        };
+
+        function clickCookie() {
+            cookies++;
+            updateDisplay();
+            
+            // Visual feedback
+            const cookie = document.getElementById('cookie');
+            cookie.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                cookie.style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        function buyBuilding(buildingName) {
+            const building = buildings[buildingName];
+            if (cookies >= building.cost) {
+                cookies -= building.cost;
+                building.count++;
+                building.cost = Math.floor(building.baseCost * Math.pow(1.15, building.count));
+                updateCPS();
+                updateDisplay();
+                generateBuildings();
+            }
+        }
+
+        function updateCPS() {
+            cps = 0;
+            for (let buildingName in buildings) {
+                cps += buildings[buildingName].count * buildings[buildingName].cps;
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('cookies').textContent = Math.floor(cookies);
+            document.getElementById('cps').textContent = cps.toFixed(1);
+        }
+
+        function generateBuildings() {
+            const buildingsContainer = document.getElementById('buildings');
+            buildingsContainer.innerHTML = '';
+            
+            for (let buildingName in buildings) {
+                const building = buildings[buildingName];
+                const buildingElement = document.createElement('div');
+                buildingElement.className = `building ${cookies >= building.cost ? '' : 'disabled'}`;
+                buildingElement.onclick = () => buyBuilding(buildingName);
+                
+                let iconClass = building.icon;
+                
+                // Make grandmas creepy based on total cookies earned
+                if (buildingName === 'grandma') {
+                    const totalCookies = Math.floor(cookies);
+                    if (totalCookies >= 1000000) {
+                        iconClass += ' creepy-5';
+                    } else if (totalCookies >= 100000) {
+                        iconClass += ' creepy-4';
+                    } else if (totalCookies >= 10000) {
+                        iconClass += ' creepy-3';
+                    } else if (totalCookies >= 1000) {
+                        iconClass += ' creepy-2';
+                    } else if (totalCookies >= 100) {
+                        iconClass += ' creepy-1';
+                    }
+                }
+                
+                buildingElement.innerHTML = `
+                    <div class="building-icon ${iconClass}">
+                        ${buildingName === 'grandma' ? '<div class="eye-left"></div><div class="eye-right"></div><div class="mouth"></div>' : ''}
+                    </div>
+                    <div class="building-name">${building.name}</div>
+                    <div class="building-cost">Cost: ${building.cost.toLocaleString()} cookies</div>
+                    <div class="building-count">Owned: ${building.count}</div>
+                `;
+                
+                buildingsContainer.appendChild(buildingElement);
+            }
+        }
+
+        // Game loop
+        setInterval(() => {
+            cookies += cps / 10; // Update 10 times per second for smooth animation
+            updateDisplay();
+        }, 100);
+
+        // Initialize
+        updateCPS();
+        updateDisplay();
+        generateBuildings();
+    </script>
+</body>
+</html>
