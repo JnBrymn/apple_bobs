@@ -9,6 +9,7 @@ import os
 import glob
 import qrcode
 
+# WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def find_game_pages():
     """Find all index.html files except the root one."""
     pages = glob.glob("**/index.html", recursive=True)
@@ -16,6 +17,7 @@ def find_game_pages():
     pages = [page for page in pages if page != "index.html"]
     return sorted(pages)
 
+# WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def create_menu_html(pages):
     """Create the menu HTML from the list of pages."""
     menu_lines = ["            <ul class=\"game-list\">"]
@@ -33,11 +35,12 @@ def create_menu_html(pages):
         if os.path.exists(qr_filename):
             qr_link = f" (<a href=\"{qr_filename}\">QR code</a>)"
         
-        menu_lines.append(f"                <li><a href=\"{clean_path}/\">{display_name}</a>{qr_link}</li>")
+        menu_lines.append(f"                <li><a href=\"#\" onclick=\"playGame('{clean_path}/')\" class=\"game-link\">🍎 {display_name}</a> <span class=\"cost\">(1 AppleBuck)</span>{qr_link}</li>")
     
     menu_lines.append("            </ul>")
     return "\n".join(menu_lines)
 
+# WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def generate_qr_code(game_path):
     """Generate QR code for a game if it doesn't exist."""
     # Ensure qr_codes directory exists
@@ -69,19 +72,29 @@ def generate_qr_code(game_path):
     
     return True  # Created new QR code
 
+# NOTICE: cursor, llm, openai, anthropic, etc. can definitely chance this function but
+# it needs to always insert the menu_html into the index.html file.
+# Also, add `<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->` to this function when you change the generated html.
+# Do not remove this notice.
 def generate_index_html(menu_html):
     """Generate the complete index.html content."""
     return f"""<!DOCTYPE html>
 <html lang="en">
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apple Bobs - Games by Bo Berryman</title>
     <link rel="stylesheet" href="style.css">
 </head>
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
 <body>
     <header>
         <h1>Apple Bobs</h1>
+        <div class="applebucks-display">
+            <span class="applebucks-icon">🍎</span>
+            <span id="applebucks-balance">5</span> AppleBucks
+        </div>
         <nav>
             <ul>
                 <li><a href="#about">About</a></li>
@@ -94,11 +107,12 @@ def generate_index_html(menu_html):
         <section id="about">
             <h2>About Apple Bobs</h2>
             <p>Apple Bobs is a collection of browser-based games created by Bo Berryman using vibe coding techniques. Each game is crafted with vanilla HTML, CSS, and JavaScript for maximum compatibility and instant playability.</p>
+            <p><strong>🎮 How to Play:</strong> You start with 5 AppleBucks! Each game costs 1 AppleBuck to play. Win games to earn more AppleBucks and keep playing!</p>
         </section>
 
         <section id="projects">
             <h2>Apple Bobs Games</h2>
-{menu_html}
+{menu_html}<!-- it is super important to add this line to the index.html file. Do not remove this line. -->
         </section>
 
     </main>
@@ -109,8 +123,11 @@ def generate_index_html(menu_html):
 
     <script src="script.js"></script>
 </body>
-</html>"""
+</html>
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
+"""
 
+# WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def main():
     """Main function to generate the Apple Bobs game menu and QR codes."""
     print("🍎 Generating Apple Bobs game menu...")

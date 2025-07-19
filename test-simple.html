@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppleBucks Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            background: #f0f0f0;
+        }
+        .test-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .balance {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <h1>🍎 AppleBucks Test</h1>
+        <p>This is a simple test to see if AppleBucks work.</p>
+        
+        <div class="balance">
+            AppleBucks: <span id="balance">5</span>
+        </div>
+        
+        <button onclick="giveAppleBucks(1)">Give 1 AppleBuck</button>
+        <button onclick="giveAppleBucks(5)">Give 5 AppleBucks</button>
+        <button onclick="resetAppleBucks()">Reset to 5</button>
+        
+        <p><strong>Instructions:</strong></p>
+        <p>1. Click the buttons above to test</p>
+        <p>2. The number should change</p>
+        <p>3. Refresh the page - it should remember your AppleBucks</p>
+    </div>
+
+    <script>
+        // Simple AppleBucks system for testing
+        let appleBucks = 5;
+        
+        function loadAppleBucks() {
+            const saved = localStorage.getItem('test_appleBucks');
+            if (saved !== null) {
+                appleBucks = parseInt(saved);
+            }
+            updateDisplay();
+        }
+        
+        function saveAppleBucks() {
+            localStorage.setItem('test_appleBucks', appleBucks.toString());
+        }
+        
+        function updateDisplay() {
+            document.getElementById('balance').textContent = appleBucks;
+        }
+        
+        function giveAppleBucks(amount) {
+            appleBucks += amount;
+            saveAppleBucks();
+            updateDisplay();
+            alert(`🎉 You got ${amount} AppleBuck${amount > 1 ? 's' : ''}! Total: ${appleBucks}`);
+        }
+        
+        function resetAppleBucks() {
+            appleBucks = 5;
+            saveAppleBucks();
+            updateDisplay();
+            alert('🔄 Reset to 5 AppleBucks!');
+        }
+        
+        // Load when page loads
+        loadAppleBucks();
+        
+        console.log('🍎 Simple AppleBucks test loaded!');
+    </script>
+</body>
+</html> 

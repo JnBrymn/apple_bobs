@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apple Bobs - Games by Bo Berryman</title>
     <link rel="stylesheet" href="style.css">
 </head>
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
 <body>
     <header>
         <h1>Apple Bobs</h1>
+        <div class="applebucks-display">
+            <span class="applebucks-icon">🍎</span>
+            <span id="applebucks-balance">5</span> AppleBucks
+        </div>
         <nav>
             <ul>
                 <li><a href="#about">About</a></li>
@@ -21,34 +27,37 @@
         <section id="about">
             <h2>About Apple Bobs</h2>
             <p>Apple Bobs is a collection of browser-based games created by Bo Berryman using vibe coding techniques. Each game is crafted with vanilla HTML, CSS, and JavaScript for maximum compatibility and instant playability.</p>
+            <p><strong>🎮 How to Play:</strong> You start with 5 AppleBucks! Each game costs 1 AppleBuck to play. Win games to earn more AppleBucks and keep playing!</p>
         </section>
 
         <section id="projects">
             <h2>Apple Bobs Games</h2>
             <ul class="game-list">
-                <li><a href="2048/">2048</a> (<a href="qr_codes/2048.png">QR code</a>)</li>
-                <li><a href="Mandelbrot explore/">Mandelbrot explore</a> (<a href="qr_codes/Mandelbrot explore.png">QR code</a>)</li>
-                <li><a href="Tetris/">Tetris</a> (<a href="qr_codes/Tetris.png">QR code</a>)</li>
-                <li><a href="checks/">Checks</a> (<a href="qr_codes/checks.png">QR code</a>)</li>
-                <li><a href="clicktopia/">Clicktopia</a> (<a href="qr_codes/clicktopia.png">QR code</a>)</li>
-                <li><a href="cookie clicker/">Cookie clicker</a> (<a href="qr_codes/cookie clicker.png">QR code</a>)</li>
-                <li><a href="exit 8/">Exit 8</a> (<a href="qr_codes/exit 8.png">QR code</a>)</li>
-                <li><a href="flying_umbrellas/">Flying_umbrellas</a> (<a href="qr_codes/flying_umbrellas.png">QR code</a>)</li>
-                <li><a href="game/">Game</a> (<a href="qr_codes/game.png">QR code</a>)</li>
-                <li><a href="geometry run/">Geometry run</a> (<a href="qr_codes/geometry run.png">QR code</a>)</li>
-                <li><a href="gold_rush/">Gold_rush</a> (<a href="qr_codes/gold_rush.png">QR code</a>)</li>
-                <li><a href="hammer_hammer/">Hammer_hammer</a> (<a href="qr_codes/hammer_hammer.png">QR code</a>)</li>
-                <li><a href="math game/">Math game</a> (<a href="qr_codes/math game.png">QR code</a>)</li>
-                <li><a href="morse_code_practice/">Morse_code_practice</a> (<a href="qr_codes/morse_code_practice.png">QR code</a>)</li>
-                <li><a href="number_listener/">Number_listener</a> (<a href="qr_codes/number_listener.png">QR code</a>)</li>
-                <li><a href="parkour_escape/">Parkour_escape</a> (<a href="qr_codes/parkour_escape.png">QR code</a>)</li>
-                <li><a href="ragedoll/">Ragedoll</a> (<a href="qr_codes/ragedoll.png">QR code</a>)</li>
-                <li><a href="stone_wars/">Stone_wars</a> (<a href="qr_codes/stone_wars.png">QR code</a>)</li>
-                <li><a href="the circle of life/">The circle of life</a> (<a href="qr_codes/the circle of life.png">QR code</a>)</li>
-                <li><a href="the snake/">The snake</a> (<a href="qr_codes/the snake.png">QR code</a>)</li>
-                <li><a href="tic-tac-toe/">Tic-tac-toe</a> (<a href="qr_codes/tic-tac-toe.png">QR code</a>)</li>
-                <li><a href="will it crush?/">Will it crush?</a> (<a href="qr_codes/will it crush?.png">QR code</a>)</li>
-            </ul>
+                <li><a href="#" onclick="playGame('2048/')" class="game-link">🍎 2048</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/2048.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('Mandelbrot explore/')" class="game-link">🍎 Mandelbrot explore</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/Mandelbrot explore.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('Tetris/')" class="game-link">🍎 Tetris</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/Tetris.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('checks/')" class="game-link">🍎 Checks</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/checks.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('clicktopia/')" class="game-link">🍎 Clicktopia</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/clicktopia.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('cookie clicker/')" class="game-link">🍎 Cookie clicker</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/cookie clicker.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('exit 8/')" class="game-link">🍎 Exit 8</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/exit 8.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('flying_umbrellas/')" class="game-link">🍎 Flying_umbrellas</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/flying_umbrellas.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('game/')" class="game-link">🍎 Game</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/game.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('geometry run/')" class="game-link">🍎 Geometry run</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/geometry run.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('gold_rush/')" class="game-link">🍎 Gold_rush</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/gold_rush.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('hammer_hammer/')" class="game-link">🍎 Hammer_hammer</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/hammer_hammer.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('math game/')" class="game-link">🍎 Math game</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/math game.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('morse_code_practice/')" class="game-link">🍎 Morse_code_practice</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/morse_code_practice.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('number_listener/')" class="game-link">🍎 Number_listener</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/number_listener.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('parkour_escape/')" class="game-link">🍎 Parkour_escape</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/parkour_escape.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('pop_the_lock/')" class="game-link">🍎 Pop_the_lock</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/pop_the_lock.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('ragedoll/')" class="game-link">🍎 Ragedoll</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/ragedoll.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('stone_wars/')" class="game-link">🍎 Stone_wars</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/stone_wars.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('test-applebucks/')" class="game-link">🍎 Test-applebucks</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/test-applebucks.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('the circle of life/')" class="game-link">🍎 The circle of life</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/the circle of life.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('the snake/')" class="game-link">🍎 The snake</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/the snake.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('tic-tac-toe/')" class="game-link">🍎 Tic-tac-toe</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/tic-tac-toe.png">QR code</a>)</li>
+                <li><a href="#" onclick="playGame('will it crush?/')" class="game-link">🍎 Will it crush?</a> <span class="cost">(1 AppleBuck)</span> (<a href="qr_codes/will it crush?.png">QR code</a>)</li>
+            </ul><!-- it is super important to add this line to the index.html file. Do not remove this line. -->
         </section>
 
     </main>
@@ -60,3 +69,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+<!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AppleBucks Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .score {
+            font-size: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+    <script src="../applebucks-helper.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🍎 Test AppleBucks Game</h1>
+        
+        <div class="instructions">
+            <p>Click the button to earn AppleBucks!</p>
+            <p>This game shows how to give AppleBucks to players.</p>
+        </div>
+        
+        <div class="score">
+            Clicks: <span id="clickCount">0</span>
+        </div>
+        
+        <button onclick="clickButton()">🎯 Click Me!</button>
+        <button onclick="AppleBucks.return()">🍎 Return to Apple Bobs</button>
+        
+        <div class="instructions">
+            <p><strong>How it works:</strong></p>
+            <p>• Every 5 clicks = 1 AppleBuck</p>
+            <p>• Every 10 clicks = 2 AppleBucks</p>
+            <p>• Every 20 clicks = 5 AppleBucks</p>
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        
+        function clickButton() {
+            clickCount++;
+            document.getElementById('clickCount').textContent = clickCount;
+            
+            // Give AppleBucks based on click milestones
+            if (clickCount % 20 === 0) {
+                AppleBucks.give(5);
+                showMessage('🎉 5 AppleBucks for 20 clicks!');
+            } else if (clickCount % 10 === 0) {
+                AppleBucks.give(2);
+                showMessage('🎉 2 AppleBucks for 10 clicks!');
+            } else if (clickCount % 5 === 0) {
+                AppleBucks.give(1);
+                showMessage('🎉 1 AppleBuck for 5 clicks!');
+            }
+        }
+        
+        function showMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #4CAF50;
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 1000;
+                animation: popIn 0.5s ease-out;
+            `;
+            
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 2000);
+        }
+        
+        // Add pop-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes popIn {
+                0% { transform: translate(-50%, -50%) scale(0); }
+                50% { transform: translate(-50%, -50%) scale(1.2); }
+                100% { transform: translate(-50%, -50%) scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        console.log('🍎 Test AppleBucks Game loaded! Click the button to earn AppleBucks!');
+    </script>
+</body>
+</html> 

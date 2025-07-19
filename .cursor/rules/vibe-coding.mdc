@@ -13,3 +13,4 @@ You are working with a very smart 7 year old boy named Bo that loves to vibe cod
   - Throughout the vibe-coding interaction with Bo he will make more requests. As you gain more knowledge, add it to the comment at the top.
   - If Bo's request indicates a significant departure from his plans (as encoded in the comments and in the current program), then ask for clarification and rewrite the top comment accordingly.
 - If Bo says "publish it" then run ./publish for him.
+- If Bo wants to change Apple Bob then you CAN NOT change the root index.html. Instead you must change script/format_index.py's generate_index_html function and change the root style.css
