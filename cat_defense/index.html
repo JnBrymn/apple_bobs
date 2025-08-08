@@ -1,0 +1,1318 @@
+<!--
+Cat Tower Defense Game
+- Place different types of cats to defend your base
+- Warrior cats (melee), Archer cats (ranged), Mage cats (magic)
+- Upgrade cats to make them stronger
+- Collect cat treats to buy more cats
+- Unlock special abilities like laser eyes and super speed
+- Waves of enemies: mice, rats, birds, dogs
+- Beautiful animated cats and enemies
+- Strategic tower defense gameplay
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Cat Defense - Protect Your Kingdom!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: cloudFloat 20s linear infinite;
+        }
+        
+        .cloud::before {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+        }
+        
+        @keyframes cloudFloat {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #8FBC8F, #98FB98);
+            z-index: 3;
+        }
+        
+        .cat-base {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 20px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #FFD700;
+            animation: baseGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes baseGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255, 215, 0, 0.6); }
+        }
+        
+        .cat {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            z-index: 8;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .cat:hover {
+            transform: scale(1.2);
+            z-index: 12;
+        }
+        
+        .warrior-cat {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+        }
+        
+        .archer-cat {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+        }
+        
+        .mage-cat {
+            background: linear-gradient(45deg, #A8E6CF, #7FCDCD);
+        }
+        
+        .ninja-cat {
+            background: linear-gradient(45deg, #2C3E50, #34495E);
+        }
+        
+        .tank-cat {
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+        }
+        
+        .sniper-cat {
+            background: linear-gradient(45deg, #1E3A8A, #3B82F6);
+        }
+        
+        .berserker-cat {
+            background: linear-gradient(45deg, #DC2626, #EF4444);
+        }
+        
+        .wizard-cat {
+            background: linear-gradient(45deg, #7C3AED, #A855F7);
+        }
+        
+        .cat::before {
+            content: '🐱';
+            position: absolute;
+            top: -5px;
+            left: 5px;
+            font-size: 30px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        .cat::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: catEyes 2s ease-in-out infinite;
+        }
+        
+        .cat::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: catEyes 2s ease-in-out infinite;
+        }
+        
+        @keyframes catEyes {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .enemy {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 7;
+            animation: enemyWalk 8s linear;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        
+        .mouse {
+            background: linear-gradient(45deg, #8B7355, #A0522D);
+        }
+        
+        .rat {
+            background: linear-gradient(45deg, #696969, #808080);
+        }
+        
+        .bird {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+        }
+        
+        .dog {
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+        }
+        
+        .enemy::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .mouse::before {
+            content: '🐭';
+            font-size: 20px;
+        }
+        
+        .rat::before {
+            content: '🐀';
+            font-size: 20px;
+        }
+        
+        .bird::before {
+            content: '🐦';
+            font-size: 20px;
+        }
+        
+        .dog::before {
+            content: '🐕';
+            font-size: 20px;
+        }
+        
+        @keyframes enemyWalk {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(calc(100vw - 200px)); }
+        }
+        
+        .projectile {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            border-radius: 50%;
+            z-index: 9;
+            animation: projectileFly 1s linear;
+            box-shadow: 0 0 10px #FFD700;
+        }
+        
+        .sniper-bullet {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FF0000;
+            border-radius: 50%;
+            z-index: 9;
+            animation: sniperShot 0.5s linear;
+            box-shadow: 0 0 20px #FF0000;
+        }
+        
+        @keyframes sniperShot {
+            0% { transform: scale(1); }
+            50% { transform: scale(2); }
+            100% { transform: scale(0.5); }
+        }
+        
+        @keyframes projectileFly {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(0.5); }
+        }
+        
+        .laser {
+            position: absolute;
+            width: 4px;
+            height: 100px;
+            background: linear-gradient(to bottom, #FF0000, #FF6B6B);
+            z-index: 9;
+            animation: laserShoot 0.5s linear;
+            box-shadow: 0 0 20px #FF0000;
+        }
+        
+        @keyframes laserShoot {
+            0% { height: 0; opacity: 1; }
+            100% { height: 100px; opacity: 0; }
+        }
+        
+        .magic-spell {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #9932CC, #8A2BE2);
+            border-radius: 50%;
+            z-index: 9;
+            animation: magicSpell 1.5s ease-out;
+            box-shadow: 0 0 30px #9932CC;
+        }
+        
+        @keyframes magicSpell {
+            0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
+            50% { transform: scale(2) rotate(180deg); opacity: 0.8; }
+            100% { transform: scale(3) rotate(360deg); opacity: 0; }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .cat-shop {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 200px;
+        }
+        
+        .cat-type {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .cat-type:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .cat-type.selected {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .wave-info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 100;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .game-over-content {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: gameOverShow 1s ease-out;
+        }
+        
+        @keyframes gameOverShow {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .game-over-content h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .game-over-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+        
+        .restart-btn {
+            background: white;
+            color: #FF6B6B;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        .upgrade-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 200px;
+        }
+        
+        .cat-stats {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 200px;
+        }
+        
+        .health-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+        
+        .treat-float {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 16px;
+            animation: treatFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes treatFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .base-health {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 11;
+        }
+        
+        .base-health-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="cloud" style="top: 50px; width: 80px; height: 40px; animation-delay: 0s;"></div>
+            <div class="cloud" style="top: 100px; width: 60px; height: 30px; animation-delay: 5s;"></div>
+            <div class="cloud" style="top: 30px; width: 100px; height: 50px; animation-delay: 10s;"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="cat-base" id="catBase">
+            🏰
+        </div>
+        
+        <div class="base-health">
+            <div class="base-health-fill" id="baseHealthFill" style="width: 100%"></div>
+        </div>
+        
+        <div class="wave-info" id="waveInfo">
+            🌊 Wave 1 - Enemies: 5
+        </div>
+        
+        <div class="ui-panel">
+            <h3>🐱 Cat Defense</h3>
+            <div class="resource">
+                <span>🍪 Cat Treats:</span>
+                <span id="treats">50</span>
+            </div>
+            <div class="resource">
+                <span>🏆 Score:</span>
+                <span id="score">0</span>
+            </div>
+            <div class="resource">
+                <span>💎 Gems:</span>
+                <span id="gems">0</span>
+            </div>
+            <div class="resource">
+                <span>⚔️ Cats Deployed:</span>
+                <span id="catsDeployed">0</span>
+            </div>
+        </div>
+        
+        <div class="cat-shop">
+            <h3>🐱 Cat Shop</h3>
+            <div class="cat-type" data-type="warrior">
+                <span>⚔️ Warrior Cat</span>
+                <span>🍪 10</span>
+            </div>
+            <div class="cat-type" data-type="archer">
+                <span>🏹 Archer Cat</span>
+                <span>🍪 15</span>
+            </div>
+            <div class="cat-type" data-type="mage">
+                <span>🔮 Mage Cat</span>
+                <span>🍪 20</span>
+            </div>
+            <div class="cat-type" data-type="ninja">
+                <span>🥷 Ninja Cat</span>
+                <span>🍪 30</span>
+            </div>
+            <div class="cat-type" data-type="tank">
+                <span>🛡️ Tank Cat</span>
+                <span>🍪 40</span>
+            </div>
+            <div class="cat-type" data-type="sniper">
+                <span>🎯 Sniper Cat</span>
+                <span>🍪 35</span>
+            </div>
+            <div class="cat-type" data-type="berserker">
+                <span>⚔️ Berserker Cat</span>
+                <span>🍪 50</span>
+            </div>
+            <div class="cat-type" data-type="wizard">
+                <span>🧙‍♂️ Wizard Cat</span>
+                <span>🍪 45</span>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn" onclick="startWave()">🌊 Start Wave</button>
+                <button class="btn" onclick="upgradeAllCats()">⬆️ Upgrade All</button>
+            </div>
+        </div>
+        
+        <div class="upgrade-panel">
+            <h4>⬆️ Upgrades</h4>
+            <div class="resource">
+                <span>⚔️ Attack Power:</span>
+                <span id="attackLevel">1</span>
+            </div>
+            <div class="resource">
+                <span>🛡️ Defense:</span>
+                <span id="defenseLevel">1</span>
+            </div>
+            <div class="resource">
+                <span>⚡ Speed:</span>
+                <span id="speedLevel">1</span>
+            </div>
+            <button class="btn" onclick="upgradeAttack()">⚔️ Attack +1 (🍪 25)</button>
+            <button class="btn" onclick="upgradeDefense()">🛡️ Defense +1 (🍪 25)</button>
+            <button class="btn" onclick="upgradeSpeed()">⚡ Speed +1 (🍪 25)</button>
+        </div>
+        
+        <div class="cat-stats">
+            <h4>📊 Cat Stats</h4>
+            <div class="resource">
+                <span>🐱 Total Cats:</span>
+                <span id="totalCats">0</span>
+            </div>
+            <div class="resource">
+                <span>💀 Enemies Defeated:</span>
+                <span id="enemiesDefeated">0</span>
+            </div>
+            <div class="resource">
+                <span>🌟 Special Abilities:</span>
+                <span id="specialAbilities">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-over-screen" id="gameOverScreen">
+        <div class="game-over-content">
+            <h2>😿 Game Over!</h2>
+            <p>Your cat kingdom was invaded!</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Enemies Defeated: <span id="finalEnemies">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">🔄 Try Again!</button>
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            treats: 50,
+            score: 0,
+            gems: 0,
+            catsDeployed: 0,
+            totalCats: 0,
+            enemiesDefeated: 0,
+            specialAbilities: 0,
+            baseHealth: 100,
+            maxBaseHealth: 100,
+            currentWave: 1,
+            enemiesInWave: 5,
+            enemiesSpawned: 0,
+            enemiesAlive: 0,
+            waveActive: false,
+            selectedCatType: 'warrior',
+            cats: [],
+            enemies: [],
+            projectiles: [],
+            upgrades: {
+                attack: 1,
+                defense: 1,
+                speed: 1
+            },
+            catTypes: {
+                warrior: { cost: 10, damage: 15, range: 60, attackSpeed: 1000, health: 100 },
+                archer: { cost: 15, damage: 20, range: 120, attackSpeed: 800, health: 80 },
+                mage: { cost: 20, damage: 25, range: 100, attackSpeed: 1200, health: 70 },
+                ninja: { cost: 30, damage: 35, range: 80, attackSpeed: 600, health: 90 },
+                tank: { cost: 40, damage: 20, range: 50, attackSpeed: 1500, health: 200 },
+                sniper: { cost: 35, damage: 50, range: 200, attackSpeed: 2000, health: 60 },
+                berserker: { cost: 50, damage: 60, range: 70, attackSpeed: 500, health: 120 },
+                wizard: { cost: 45, damage: 40, range: 150, attackSpeed: 1000, health: 85 }
+            }
+        };
+        
+        const enemyTypes = [
+            { type: 'mouse', health: 30, speed: 1, reward: 5, emoji: '🐭' },
+            { type: 'rat', health: 50, speed: 0.8, reward: 8, emoji: '🐀' },
+            { type: 'bird', health: 40, speed: 1.2, reward: 10, emoji: '🐦' },
+            { type: 'dog', health: 80, speed: 0.6, reward: 15, emoji: '🐕' }
+        ];
+        
+        function updateUI() {
+            document.getElementById('treats').textContent = gameData.treats;
+            document.getElementById('score').textContent = gameData.score;
+            document.getElementById('gems').textContent = gameData.gems;
+            document.getElementById('catsDeployed').textContent = gameData.catsDeployed;
+            document.getElementById('totalCats').textContent = gameData.totalCats;
+            document.getElementById('enemiesDefeated').textContent = gameData.enemiesDefeated;
+            document.getElementById('specialAbilities').textContent = gameData.specialAbilities;
+            document.getElementById('attackLevel').textContent = gameData.upgrades.attack;
+            document.getElementById('defenseLevel').textContent = gameData.upgrades.defense;
+            document.getElementById('speedLevel').textContent = gameData.upgrades.speed;
+            
+            // Update base health
+            const healthPercent = (gameData.baseHealth / gameData.maxBaseHealth) * 100;
+            document.getElementById('baseHealthFill').style.width = healthPercent + '%';
+            
+            // Update wave info
+            document.getElementById('waveInfo').textContent = `🌊 Wave ${gameData.currentWave} - Enemies: ${gameData.enemiesInWave - gameData.enemiesSpawned}`;
+        }
+        
+        // Cat shop selection
+        document.querySelectorAll('.cat-type').forEach(catType => {
+            catType.addEventListener('click', () => {
+                document.querySelectorAll('.cat-type').forEach(ct => ct.classList.remove('selected'));
+                catType.classList.add('selected');
+                gameData.selectedCatType = catType.dataset.type;
+            });
+        });
+        
+        // Place cats on click
+        document.querySelector('.game-container').addEventListener('click', (e) => {
+            if (e.target.classList.contains('game-container') || e.target.classList.contains('ground')) {
+                placeCat(e.clientX, e.clientY);
+            }
+        });
+        
+        function placeCat(x, y) {
+            const catType = gameData.selectedCatType;
+            const catCost = gameData.catTypes[catType].cost;
+            
+            if (gameData.treats >= catCost) {
+                gameData.treats -= catCost;
+                gameData.catsDeployed++;
+                gameData.totalCats++;
+                
+                const cat = {
+                    id: Date.now() + Math.random(),
+                    type: catType,
+                    x: x,
+                    y: y,
+                    health: gameData.catTypes[catType].health * gameData.upgrades.defense,
+                    maxHealth: gameData.catTypes[catType].health * gameData.upgrades.defense,
+                    damage: gameData.catTypes[catType].damage * gameData.upgrades.attack,
+                    range: gameData.catTypes[catType].range,
+                    attackSpeed: gameData.catTypes[catType].attackSpeed / gameData.upgrades.speed,
+                    lastAttack: 0,
+                    level: 1
+                };
+                
+                gameData.cats.push(cat);
+                createCatElement(cat);
+                showNotification(`🐱 ${catType.charAt(0).toUpperCase() + catType.slice(1)} cat deployed!`);
+                updateUI();
+            } else {
+                showNotification('❌ Not enough treats!');
+            }
+        }
+        
+        function createCatElement(cat) {
+            const catElement = document.createElement('div');
+            catElement.className = `cat ${cat.type}-cat`;
+            catElement.id = `cat-${cat.id}`;
+            catElement.style.left = (cat.x - 20) + 'px';
+            catElement.style.top = (cat.y - 20) + 'px';
+            
+            // Add health bar
+            const healthBar = document.createElement('div');
+            healthBar.className = 'health-bar';
+            healthBar.style.position = 'absolute';
+            healthBar.style.top = '-15px';
+            healthBar.style.left = '0px';
+            healthBar.style.width = '40px';
+            healthBar.style.height = '5px';
+            
+            const healthFill = document.createElement('div');
+            healthFill.className = 'health-fill';
+            healthFill.style.width = '100%';
+            
+            healthBar.appendChild(healthFill);
+            catElement.appendChild(healthBar);
+            
+            document.querySelector('.game-container').appendChild(catElement);
+        }
+        
+        function startWave() {
+            if (!gameData.waveActive) {
+                gameData.waveActive = true;
+                gameData.enemiesSpawned = 0;
+                gameData.enemiesAlive = 0;
+                showNotification(`🌊 Wave ${gameData.currentWave} started!`);
+                spawnEnemies();
+            } else {
+                showNotification('🌊 Wave already in progress!');
+            }
+        }
+        
+        function spawnEnemies() {
+            if (gameData.enemiesSpawned < gameData.enemiesInWave) {
+                const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+                const enemy = {
+                    id: Date.now() + Math.random(),
+                    type: enemyType.type,
+                    health: enemyType.health,
+                    maxHealth: enemyType.health,
+                    speed: enemyType.speed,
+                    reward: enemyType.reward,
+                    x: -50,
+                    y: Math.random() * (window.innerHeight - 200) + 100
+                };
+                
+                gameData.enemies.push(enemy);
+                createEnemyElement(enemy);
+                gameData.enemiesSpawned++;
+                gameData.enemiesAlive++;
+                
+                setTimeout(spawnEnemies, 2000);
+            }
+        }
+        
+        function createEnemyElement(enemy) {
+            const enemyElement = document.createElement('div');
+            enemyElement.className = `enemy ${enemy.type}`;
+            enemyElement.id = `enemy-${enemy.id}`;
+            enemyElement.style.left = enemy.x + 'px';
+            enemyElement.style.top = enemy.y + 'px';
+            
+            // Add health bar
+            const healthBar = document.createElement('div');
+            healthBar.className = 'health-bar';
+            healthBar.style.position = 'absolute';
+            healthBar.style.top = '-10px';
+            healthBar.style.left = '0px';
+            healthBar.style.width = '30px';
+            healthBar.style.height = '4px';
+            
+            const healthFill = document.createElement('div');
+            healthFill.className = 'health-fill';
+            healthFill.style.width = '100%';
+            
+            healthBar.appendChild(healthFill);
+            enemyElement.appendChild(healthBar);
+            
+            document.querySelector('.game-container').appendChild(enemyElement);
+        }
+        
+        function gameLoop() {
+            const now = Date.now();
+            
+            // Move enemies
+            gameData.enemies.forEach(enemy => {
+                enemy.x += enemy.speed * 2;
+                const enemyElement = document.getElementById(`enemy-${enemy.id}`);
+                if (enemyElement) {
+                    enemyElement.style.left = enemy.x + 'px';
+                    
+                    // Check if enemy reached base
+                    if (enemy.x > window.innerWidth - 200) {
+                        damageBase(enemy);
+                        removeEnemy(enemy.id);
+                    }
+                }
+            });
+            
+            // Cat attacks
+            gameData.cats.forEach(cat => {
+                if (now - cat.lastAttack > cat.attackSpeed) {
+                    const target = findTarget(cat);
+                    if (target) {
+                        attackEnemy(cat, target);
+                        cat.lastAttack = now;
+                    }
+                }
+            });
+            
+            // Check wave completion
+            if (gameData.waveActive && gameData.enemiesAlive === 0 && gameData.enemiesSpawned >= gameData.enemiesInWave) {
+                completeWave();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function findTarget(cat) {
+            return gameData.enemies.find(enemy => {
+                const distance = Math.sqrt(
+                    Math.pow(enemy.x - cat.x, 2) + Math.pow(enemy.y - cat.y, 2)
+                );
+                return distance <= cat.range;
+            });
+        }
+        
+        function attackEnemy(cat, enemy) {
+            // Create projectile based on cat type
+            if (cat.type === 'archer' || cat.type === 'sniper') {
+                createProjectile(cat, enemy);
+            } else if (cat.type === 'mage' || cat.type === 'wizard') {
+                createMagicSpell(cat, enemy);
+            } else if (cat.type === 'ninja') {
+                createNinjaAttack(cat, enemy);
+            } else if (cat.type === 'berserker') {
+                createBerserkerAttack(cat, enemy);
+            } else {
+                // Warrior/Tank cat melee attack
+                enemy.health -= cat.damage;
+                updateEnemyHealth(enemy);
+                
+                if (enemy.health <= 0) {
+                    defeatEnemy(enemy);
+                }
+            }
+        }
+        
+        function createProjectile(cat, enemy) {
+            const isSniper = cat.type === 'sniper';
+            const projectile = {
+                id: Date.now() + Math.random(),
+                x: cat.x,
+                y: cat.y,
+                targetX: enemy.x,
+                targetY: enemy.y,
+                damage: isSniper ? cat.damage * 2 : cat.damage,
+                targetId: enemy.id
+            };
+            
+            const projectileElement = document.createElement('div');
+            projectileElement.className = isSniper ? 'sniper-bullet' : 'projectile';
+            projectileElement.id = `projectile-${projectile.id}`;
+            projectileElement.style.left = projectile.x + 'px';
+            projectileElement.style.top = projectile.y + 'px';
+            
+            document.querySelector('.game-container').appendChild(projectileElement);
+            
+            // Animate projectile
+            const startX = projectile.x;
+            const startY = projectile.y;
+            const endX = projectile.targetX;
+            const endY = projectile.targetY;
+            const duration = isSniper ? 500 : 1000;
+            const startTime = Date.now();
+            
+            function animateProjectile() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                
+                if (progress < 1) {
+                    const x = startX + (endX - startX) * progress;
+                    const y = startY + (endY - startY) * progress;
+                    
+                    projectileElement.style.left = x + 'px';
+                    projectileElement.style.top = y + 'px';
+                    
+                    requestAnimationFrame(animateProjectile);
+                } else {
+                    // Hit target
+                    const target = gameData.enemies.find(e => e.id === projectile.targetId);
+                    if (target) {
+                        target.health -= projectile.damage;
+                        updateEnemyHealth(target);
+                        
+                        if (target.health <= 0) {
+                            defeatEnemy(target);
+                        }
+                    }
+                    
+                    projectileElement.remove();
+                }
+            }
+            
+            animateProjectile();
+        }
+        
+        function createMagicSpell(cat, enemy) {
+            const spell = {
+                id: Date.now() + Math.random(),
+                x: cat.x,
+                y: cat.y,
+                damage: cat.damage * (cat.type === 'wizard' ? 2.0 : 1.5)
+            };
+            
+            const spellElement = document.createElement('div');
+            spellElement.className = 'magic-spell';
+            spellElement.id = `spell-${spell.id}`;
+            spellElement.style.left = spell.x + 'px';
+            spellElement.style.top = spell.y + 'px';
+            
+            document.querySelector('.game-container').appendChild(spellElement);
+            
+            // Magic spell affects all enemies in range
+            setTimeout(() => {
+                gameData.enemies.forEach(enemy => {
+                    const distance = Math.sqrt(
+                        Math.pow(enemy.x - spell.x, 2) + Math.pow(enemy.y - spell.y, 2)
+                    );
+                    if (distance <= (cat.type === 'wizard' ? 150 : 100)) {
+                        enemy.health -= spell.damage;
+                        updateEnemyHealth(enemy);
+                        
+                        if (enemy.health <= 0) {
+                            defeatEnemy(enemy);
+                        }
+                    }
+                });
+                
+                spellElement.remove();
+            }, 1500);
+        }
+        
+        function createNinjaAttack(cat, enemy) {
+            // Ninja teleports and does massive damage
+            const ninjaElement = document.getElementById(`cat-${cat.id}`);
+            if (ninjaElement) {
+                // Teleport effect
+                ninjaElement.style.transform = 'scale(0.1)';
+                ninjaElement.style.opacity = '0.5';
+                
+                setTimeout(() => {
+                    ninjaElement.style.left = (enemy.x - 20) + 'px';
+                    ninjaElement.style.top = (enemy.y - 20) + 'px';
+                    ninjaElement.style.transform = 'scale(1.2)';
+                    ninjaElement.style.opacity = '1';
+                    
+                    // Do damage
+                    enemy.health -= cat.damage * 2;
+                    updateEnemyHealth(enemy);
+                    
+                    if (enemy.health <= 0) {
+                        defeatEnemy(enemy);
+                    }
+                    
+                    // Return to original position
+                    setTimeout(() => {
+                        ninjaElement.style.left = (cat.x - 20) + 'px';
+                        ninjaElement.style.top = (cat.y - 20) + 'px';
+                        ninjaElement.style.transform = 'scale(1)';
+                    }, 500);
+                }, 200);
+            }
+        }
+        
+        function createBerserkerAttack(cat, enemy) {
+            // Berserker does massive damage and affects multiple enemies
+            const berserkerElement = document.getElementById(`cat-${cat.id}`);
+            if (berserkerElement) {
+                // Berserker rage effect
+                berserkerElement.style.transform = 'scale(1.5)';
+                berserkerElement.style.filter = 'hue-rotate(0deg)';
+                
+                // Attack animation
+                let hue = 0;
+                const rageInterval = setInterval(() => {
+                    hue += 30;
+                    berserkerElement.style.filter = `hue-rotate(${hue}deg)`;
+                }, 100);
+                
+                // Damage all enemies in range
+                gameData.enemies.forEach(enemy => {
+                    const distance = Math.sqrt(
+                        Math.pow(enemy.x - cat.x, 2) + Math.pow(enemy.y - cat.y, 2)
+                    );
+                    if (distance <= 120) {
+                        enemy.health -= cat.damage * 1.5;
+                        updateEnemyHealth(enemy);
+                        
+                        if (enemy.health <= 0) {
+                            defeatEnemy(enemy);
+                        }
+                    }
+                });
+                
+                setTimeout(() => {
+                    clearInterval(rageInterval);
+                    berserkerElement.style.transform = 'scale(1)';
+                    berserkerElement.style.filter = 'none';
+                }, 1000);
+            }
+        }
+        
+        function updateEnemyHealth(enemy) {
+            const enemyElement = document.getElementById(`enemy-${enemy.id}`);
+            if (enemyElement) {
+                const healthBar = enemyElement.querySelector('.health-fill');
+                const healthPercent = (enemy.health / enemy.maxHealth) * 100;
+                healthBar.style.width = Math.max(0, healthPercent) + '%';
+            }
+        }
+        
+        function defeatEnemy(enemy) {
+            gameData.score += enemy.reward;
+            gameData.treats += Math.floor(enemy.reward / 2);
+            gameData.enemiesDefeated++;
+            gameData.enemiesAlive--;
+            
+            showTreatFloat(enemy.reward, enemy.x, enemy.y);
+            removeEnemy(enemy.id);
+            
+            // Random gem drop
+            if (Math.random() < 0.1) {
+                gameData.gems++;
+                showNotification('💎 Gem found!');
+            }
+        }
+        
+        function removeEnemy(enemyId) {
+            const enemyElement = document.getElementById(`enemy-${enemyId}`);
+            if (enemyElement) {
+                enemyElement.remove();
+            }
+            gameData.enemies = gameData.enemies.filter(e => e.id !== enemyId);
+        }
+        
+        function damageBase(enemy) {
+            gameData.baseHealth -= 10;
+            updateUI();
+            
+            if (gameData.baseHealth <= 0) {
+                gameOver();
+            }
+        }
+        
+        function completeWave() {
+            gameData.waveActive = false;
+            gameData.currentWave++;
+            gameData.enemiesInWave = Math.floor(5 + gameData.currentWave * 1.5);
+            gameData.treats += 20;
+            gameData.score += 100;
+            
+            showNotification(`🎉 Wave ${gameData.currentWave - 1} completed! +20 treats, +100 score`);
+            updateUI();
+        }
+        
+        function upgradeAttack() {
+            if (gameData.treats >= 25) {
+                gameData.treats -= 25;
+                gameData.upgrades.attack++;
+                updateUI();
+                showNotification('⚔️ Attack power upgraded!');
+            } else {
+                showNotification('❌ Not enough treats!');
+            }
+        }
+        
+        function upgradeDefense() {
+            if (gameData.treats >= 25) {
+                gameData.treats -= 25;
+                gameData.upgrades.defense++;
+                updateUI();
+                showNotification('🛡️ Defense upgraded!');
+            } else {
+                showNotification('❌ Not enough treats!');
+            }
+        }
+        
+        function upgradeSpeed() {
+            if (gameData.treats >= 25) {
+                gameData.treats -= 25;
+                gameData.upgrades.speed++;
+                updateUI();
+                showNotification('⚡ Speed upgraded!');
+            } else {
+                showNotification('❌ Not enough treats!');
+            }
+        }
+        
+        function upgradeAllCats() {
+            if (gameData.treats >= 50) {
+                gameData.treats -= 50;
+                gameData.cats.forEach(cat => {
+                    cat.level++;
+                    cat.damage = Math.floor(gameData.catTypes[cat.type].damage * gameData.upgrades.attack * (1 + cat.level * 0.2));
+                    cat.health = Math.floor(gameData.catTypes[cat.type].health * gameData.upgrades.defense * (1 + cat.level * 0.1));
+                    cat.maxHealth = cat.health;
+                });
+                updateUI();
+                showNotification('⬆️ All cats upgraded!');
+            } else {
+                showNotification('❌ Not enough treats!');
+            }
+        }
+        
+        function showTreatFloat(amount, x, y) {
+            const treatFloat = document.createElement('div');
+            treatFloat.className = 'treat-float';
+            treatFloat.textContent = `+${amount}`;
+            treatFloat.style.left = x + 'px';
+            treatFloat.style.top = y + 'px';
+            document.querySelector('.game-container').appendChild(treatFloat);
+            
+            setTimeout(() => {
+                if (treatFloat.parentNode) {
+                    treatFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function gameOver() {
+            document.getElementById('finalScore').textContent = gameData.score;
+            document.getElementById('finalEnemies').textContent = gameData.enemiesDefeated;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+        
+        function restartGame() {
+            gameData = {
+                treats: 50,
+                score: 0,
+                gems: 0,
+                catsDeployed: 0,
+                totalCats: 0,
+                enemiesDefeated: 0,
+                specialAbilities: 0,
+                baseHealth: 100,
+                maxBaseHealth: 100,
+                currentWave: 1,
+                enemiesInWave: 5,
+                enemiesSpawned: 0,
+                enemiesAlive: 0,
+                waveActive: false,
+                selectedCatType: 'warrior',
+                cats: [],
+                enemies: [],
+                projectiles: [],
+                upgrades: {
+                    attack: 1,
+                    defense: 1,
+                    speed: 1
+                },
+                catTypes: {
+                    warrior: { cost: 10, damage: 15, range: 60, attackSpeed: 1000, health: 100 },
+                    archer: { cost: 15, damage: 20, range: 120, attackSpeed: 800, health: 80 },
+                    mage: { cost: 20, damage: 25, range: 100, attackSpeed: 1200, health: 70 },
+                    ninja: { cost: 30, damage: 35, range: 80, attackSpeed: 600, health: 90 },
+                    tank: { cost: 40, damage: 20, range: 50, attackSpeed: 1500, health: 200 },
+                    sniper: { cost: 35, damage: 50, range: 200, attackSpeed: 2000, health: 60 },
+                    berserker: { cost: 50, damage: 60, range: 70, attackSpeed: 500, health: 120 },
+                    wizard: { cost: 45, damage: 40, range: 150, attackSpeed: 1000, health: 85 }
+                }
+            };
+            
+            // Hide game over screen
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Clear all game elements
+            document.querySelectorAll('.cat, .enemy, .projectile, .magic-spell').forEach(element => {
+                if (element.parentNode) {
+                    element.remove();
+                }
+            });
+            
+            updateUI();
+            showNotification('🔄 New game started! Good luck!');
+        }
+        
+        // Initialize
+        updateUI();
+        gameLoop();
+        
+        console.log('🐱 Cat Defense loaded! Protect your cat kingdom!');
+    </script>
+</body>
+</html>

@@ -1,0 +1,844 @@
+<!-- KnOcK oF - Stick Figure Parkour Game -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnOcK oF - Parkour Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 1.8em;
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .game-area {
+            position: relative;
+            flex: 1;
+            background: #000000;
+            border: 2px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .tunnel-wall {
+            position: absolute;
+            background: #2a2a2a;
+            border: 1px solid #444;
+        }
+
+        .tunnel-floor {
+            position: absolute;
+            background: #1a1a1a;
+            border-top: 2px solid #444;
+        }
+
+        .stick-figure {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            z-index: 100;
+            transition: none;
+        }
+
+        .stick-figure .head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 16px;
+            background: #FFB6C1;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .stick-figure .body {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 20px;
+            background: #4169E1;
+            border: 2px solid #333;
+        }
+
+        .stick-figure .arms {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 4px;
+            background: #333;
+        }
+
+        .stick-figure .legs {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 4px;
+            background: #333;
+        }
+
+        .platform {
+            position: absolute;
+            background: #444;
+            border: 2px solid #666;
+            border-radius: 3px;
+        }
+
+        .fake-platform {
+            background: #555;
+            border: 2px solid #777;
+            opacity: 0.7;
+        }
+
+        .hidden-hole {
+            position: absolute;
+            background: #000;
+            border: 1px solid #FF0000;
+            opacity: 0.5;
+        }
+
+        .spike {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FF0000;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 50;
+        }
+
+        .goal {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #FFD700;
+            border: 3px solid #FFA500;
+            border-radius: 50%;
+            z-index: 50;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            flex-shrink: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 6px 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .control-btn:hover {
+            background: #0056b3;
+        }
+
+        .control-btn:active {
+            background: #004085;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .level-info {
+            text-align: center;
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+        }
+
+        .win-message button {
+            background: white;
+            color: #28a745;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            font-family: inherit;
+        }
+
+        .win-message button:hover {
+            background: #f8f9fa;
+        }
+
+        .death-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+        }
+
+        .death-message button {
+            background: white;
+            color: #dc3545;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            font-family: inherit;
+        }
+
+        .death-message button:hover {
+            background: #f8f9fa;
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .instructions h3 {
+            color: #FFD700;
+            margin: 0 0 5px 0;
+            font-size: 14px;
+        }
+
+        .instructions p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div>
+                        <h1>🕳️ Tunnel Run</h1>
+        <div class="subtitle">Navigate the Dark Tunnel!</div>
+            </div>
+            <div class="stats">
+                <div>Level: <span id="currentLevel">1</span></div>
+                <div>Deaths: <span id="deathCount">0</span></div>
+                <div>Time: <span id="timer">00:00</span></div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>🎯 How to Play</h3>
+            <p><strong>A/D:</strong> Move | <strong>Space:</strong> Jump | <strong>R:</strong> Restart | Navigate through the dark tunnel!</p>
+        </div>
+
+        <div class="level-info">
+            Level <span id="levelDisplay">1</span> - <span id="levelName">Tutorial</span>
+        </div>
+
+        <div class="ui">
+            <div class="controls">
+                <button class="control-btn" onclick="moveLeft()">← Left</button>
+                <button class="control-btn" onclick="moveRight()">Right →</button>
+                <button class="control-btn" onclick="jump()">Jump</button>
+                <button class="control-btn" onclick="restartLevel()">Restart</button>
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="stick-figure" id="player">
+                <div class="head"></div>
+                <div class="body"></div>
+                <div class="arms"></div>
+                <div class="legs"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="win-message" id="winMessage">
+        <h2>🎉 Level Complete!</h2>
+        <p>Great parkour skills!</p>
+        <p>Time: <span id="finalTime">00:00</span></p>
+        <button onclick="nextLevel()">Next Level</button>
+    </div>
+
+    <div class="death-message" id="deathMessage">
+        <h2>💀 You Died!</h2>
+        <p>Don't give up!</p>
+        <button onclick="restartLevel()">Try Again</button>
+    </div>
+
+    <script>
+        // Game variables
+        let player = {
+            x: 50,
+            y: 500,
+            velocityX: 0,
+            velocityY: 0,
+            onGround: false,
+            width: 20,
+            height: 40
+        };
+
+        let keys = {};
+        let currentLevel = 1;
+        let deathCount = 0;
+        let startTime = Date.now();
+        let gameTimer;
+        let platforms = [];
+        let spikes = [];
+        let hiddenHoles = [];
+        let goal = null;
+        let gameRunning = true;
+
+        // Physics constants
+        const GRAVITY = 0.5; // Reduced gravity as requested
+        const JUMP_FORCE = 14; // Slightly stronger jump
+        const MOVE_SPEED = 5;
+        const FRICTION = 0.8;
+
+        // Tunnel level generation
+        function generateLevel(levelNum) {
+            const levelNames = [
+                "Tunnel Start", "First Obstacle", "Dark Passage", "Hidden Trap", "Spike Tunnel",
+                "Narrow Path", "Death Pit", "Fake Ground", "Spike Maze", "Tunnel Master",
+                "Dark Challenge", "Trap Tunnel", "Death Passage", "Spike Master", "Tunnel Ninja",
+                "Dark Master", "Death Tunnel", "Spike Ninja", "Tunnel Pro", "Dark Ninja",
+                "Death Master", "Spike Pro", "Tunnel Legend", "Dark Pro", "Death Legend",
+                "Spike Legend", "Tunnel God", "Dark Legend", "Death God", "Spike God"
+            ];
+
+            const name = levelNum <= levelNames.length ? levelNames[levelNum - 1] : `Tunnel ${levelNum}`;
+            
+            // Get screen dimensions
+            const gameArea = document.getElementById('gameArea');
+            const screenWidth = gameArea.offsetWidth || 800;
+            const screenHeight = gameArea.offsetHeight || 600;
+            
+            // Tunnel difficulty increases with level
+            const difficulty = Math.min(levelNum / 15, 3);
+            const platformCount = Math.max(3, Math.min(6, Math.floor(3 + levelNum / 12)));
+            
+            const platforms = [];
+            const spikes = [];
+            const hiddenHoles = [];
+            const fakePlatforms = [];
+            
+            // Create tunnel walls
+            const tunnelWalls = [
+                { x: 0, y: 0, width: screenWidth, height: 50 }, // Top wall
+                { x: 0, y: screenHeight - 50, width: screenWidth, height: 50 } // Bottom wall
+            ];
+            
+            // Starting platform (left side)
+            platforms.push({ 
+                x: 50, 
+                y: screenHeight - 120, 
+                width: 80, 
+                height: 20,
+                isReal: true
+            });
+            
+            // Generate tunnel platforms (mostly on the ground)
+            let currentX = 150;
+            
+            for (let i = 0; i < platformCount; i++) {
+                const gap = 80 + Math.random() * 60; // Consistent gaps
+                currentX += gap;
+                
+                const width = 60 + Math.random() * 40;
+                
+                // Ensure platform doesn't go off screen
+                if (currentX + width > screenWidth - 100) {
+                    currentX = screenWidth - width - 100;
+                }
+                
+                // Add tunnel elements based on level
+                const isFake = levelNum > 2 && Math.random() < (difficulty * 0.15); // Fake platforms
+                const hasHiddenHole = levelNum > 1 && Math.random() < (difficulty * 0.2); // Hidden holes
+                const hasSpikes = levelNum > 1 && Math.random() < (difficulty * 0.25); // Spikes on platform
+                
+                if (isFake) {
+                    fakePlatforms.push({
+                        x: currentX,
+                        y: screenHeight - 120,
+                        width: width,
+                        height: 20
+                    });
+                } else {
+                    platforms.push({
+                        x: currentX,
+                        y: screenHeight - 120,
+                        width: width,
+                        height: 20,
+                        isReal: true
+                    });
+                    
+                    // Add hidden holes in real platforms
+                    if (hasHiddenHole) {
+                        const holeX = currentX + width * 0.2 + Math.random() * (width * 0.6);
+                        const holeWidth = 15 + Math.random() * 15;
+                        hiddenHoles.push({
+                            x: holeX,
+                            y: screenHeight - 100,
+                            width: holeWidth,
+                            height: 40
+                        });
+                    }
+                    
+                    // Add spikes on platform
+                    if (hasSpikes) {
+                        const spikeX = currentX + width * 0.3 + Math.random() * (width * 0.4);
+                        spikes.push({ x: spikeX, y: screenHeight - 140 });
+                    }
+                }
+            }
+            
+            // Add ground spikes (tunnel traps)
+            for (let i = 0; i < Math.floor(difficulty * 3); i++) {
+                const spikeX = 200 + Math.random() * (screenWidth - 400);
+                spikes.push({ x: spikeX, y: screenHeight - 70 });
+            }
+            
+            // Goal at the end (right side)
+            const goal = {
+                x: screenWidth - 80,
+                y: screenHeight - 150,
+                width: 30,
+                height: 30
+            };
+            
+            return {
+                name: name,
+                playerStart: { x: 80, y: screenHeight - 140 },
+                platforms: platforms,
+                spikes: spikes,
+                hiddenHoles: hiddenHoles,
+                fakePlatforms: fakePlatforms,
+                goal: goal,
+                tunnelWalls: tunnelWalls
+            };
+        }
+
+        function initGame() {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                loadLevel(currentLevel);
+                startTimer();
+                setupEventListeners();
+                gameLoop();
+            }, 100);
+        }
+
+        function loadLevel(levelNum) {
+            const level = generateLevel(levelNum);
+            if (!level) {
+                showWinMessage();
+                return;
+            }
+
+            // Reset player
+            player.x = level.playerStart.x;
+            player.y = level.playerStart.y;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.onGround = false;
+
+            // Clear existing objects
+            clearLevel();
+
+            // Create real platforms
+            level.platforms.forEach(platform => {
+                createPlatform(platform.x, platform.y, platform.width, platform.height, 'real');
+            });
+
+            // Create fake platforms (look real but you fall through)
+            level.fakePlatforms.forEach(platform => {
+                createPlatform(platform.x, platform.y, platform.width, platform.height, 'fake');
+            });
+
+            // Create hidden holes (invisible death zones)
+            level.hiddenHoles.forEach(hole => {
+                createHiddenHole(hole.x, hole.y, hole.width, hole.height);
+            });
+
+            // Create spikes
+            level.spikes.forEach(spike => {
+                createSpike(spike.x, spike.y);
+            });
+
+            // Create tunnel walls
+            level.tunnelWalls.forEach(wall => {
+                createTunnelWall(wall.x, wall.y, wall.width, wall.height);
+            });
+
+            // Create goal
+            createGoal(level.goal.x, level.goal.y, level.goal.width, level.goal.height);
+
+            // Update UI
+            document.getElementById('currentLevel').textContent = levelNum;
+            document.getElementById('levelDisplay').textContent = levelNum;
+            document.getElementById('levelName').textContent = level.name;
+
+            gameRunning = true;
+        }
+
+        function clearLevel() {
+            // Remove all platforms, spikes, hidden holes, tunnel walls, and goal
+            document.querySelectorAll('.platform, .spike, .hidden-hole, .tunnel-wall, .goal').forEach(el => el.remove());
+            platforms = [];
+            spikes = [];
+            hiddenHoles = [];
+            goal = null;
+        }
+
+        function createPlatform(x, y, width, height, type = 'real') {
+            const platform = document.createElement('div');
+            platform.className = type === 'fake' ? 'platform fake-platform' : 'platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            platforms.push({ x, y, width, height, element: platform, isReal: type === 'real' });
+        }
+
+        function createHiddenHole(x, y, width, height) {
+            const hole = document.createElement('div');
+            hole.className = 'hidden-hole';
+            hole.style.left = x + 'px';
+            hole.style.top = y + 'px';
+            hole.style.width = width + 'px';
+            hole.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(hole);
+            hiddenHoles.push({ x, y, width, height, element: hole });
+        }
+
+        function createTunnelWall(x, y, width, height) {
+            const wall = document.createElement('div');
+            wall.className = 'tunnel-wall';
+            wall.style.left = x + 'px';
+            wall.style.top = y + 'px';
+            wall.style.width = width + 'px';
+            wall.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(wall);
+        }
+
+        function createSpike(x, y) {
+            const spike = document.createElement('div');
+            spike.className = 'spike';
+            spike.style.left = x + 'px';
+            spike.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(spike);
+            spikes.push({ x, y, element: spike });
+        }
+
+        function createGoal(x, y, width, height) {
+            const goalElement = document.createElement('div');
+            goalElement.className = 'goal';
+            goalElement.style.left = x + 'px';
+            goalElement.style.top = y + 'px';
+            goalElement.style.width = width + 'px';
+            goalElement.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(goalElement);
+            goal = { x, y, width, height, element: goalElement };
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('keydown', (event) => {
+                keys[event.code] = true;
+                
+                if (event.code === 'KeyR') {
+                    restartLevel();
+                }
+            });
+
+            document.addEventListener('keyup', (event) => {
+                keys[event.code] = false;
+            });
+        }
+
+        function updatePlayer() {
+            if (!gameRunning) return;
+
+            // Handle input
+            if (keys['KeyA'] || keys['ArrowLeft']) {
+                player.velocityX = -MOVE_SPEED;
+            } else if (keys['KeyD'] || keys['ArrowRight']) {
+                player.velocityX = MOVE_SPEED;
+            } else {
+                player.velocityX *= FRICTION;
+            }
+
+            if ((keys['Space'] || keys['ArrowUp']) && player.onGround) {
+                player.velocityY = -JUMP_FORCE;
+                player.onGround = false;
+            }
+
+            // Apply gravity
+            player.velocityY += GRAVITY;
+
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Check boundaries
+            const gameArea = document.getElementById('gameArea');
+            const areaWidth = gameArea.offsetWidth;
+            const areaHeight = gameArea.offsetHeight;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x > areaWidth - player.width) player.x = areaWidth - player.width;
+            if (player.y > areaHeight - player.height) {
+                player.y = areaHeight - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+            }
+            
+            // Check if player fell off screen (death)
+            if (player.y > areaHeight + 50) {
+                playerDeath();
+            }
+
+            // Check platform collisions
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height + 5 &&
+                    player.velocityY >= 0) {
+                    
+                    // Only real platforms support the player
+                    if (platform.isReal) {
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0;
+                        player.onGround = true;
+                    }
+                    // Fake platforms don't support the player (they fall through)
+                }
+            });
+
+            // Check hidden hole collisions
+            hiddenHoles.forEach(hole => {
+                if (player.x < hole.x + hole.width &&
+                    player.x + player.width > hole.x &&
+                    player.y < hole.y + hole.height &&
+                    player.y + player.height > hole.y) {
+                    playerDeath();
+                }
+            });
+
+            // Check spike collisions
+            spikes.forEach(spike => {
+                if (player.x < spike.x + 20 &&
+                    player.x + player.width > spike.x &&
+                    player.y < spike.y + 20 &&
+                    player.y + player.height > spike.y) {
+                    playerDeath();
+                }
+            });
+
+            // Check goal collision
+            if (goal && player.x < goal.x + goal.width &&
+                player.x + player.width > goal.x &&
+                player.y < goal.y + goal.height &&
+                player.y + player.height > goal.y) {
+                levelComplete();
+            }
+
+            // Update player position
+            const playerElement = document.getElementById('player');
+            playerElement.style.left = player.x + 'px';
+            playerElement.style.top = player.y + 'px';
+        }
+
+        function playerDeath() {
+            deathCount++;
+            document.getElementById('deathCount').textContent = deathCount;
+            showDeathMessage();
+            gameRunning = false;
+        }
+
+        function levelComplete() {
+            gameRunning = false;
+            showWinMessage();
+        }
+
+        function showDeathMessage() {
+            document.getElementById('deathMessage').style.display = 'block';
+        }
+
+        function showWinMessage() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('finalTime').textContent = timeString;
+            
+            // Update win message for infinite levels
+            const winMessage = document.getElementById('winMessage');
+            if (currentLevel >= 100) {
+                winMessage.innerHTML = `
+                    <h2>🎉 Congratulations!</h2>
+                    <p>You've completed 100+ levels!</p>
+                    <p>You're a true parkour master!</p>
+                    <p>Time: <span id="finalTime">${timeString}</span></p>
+                    <p>Total Deaths: ${deathCount}</p>
+                    <button onclick="nextLevel()">Continue Playing</button>
+                `;
+            } else {
+                winMessage.innerHTML = `
+                    <h2>🎉 Level Complete!</h2>
+                    <p>Great parkour skills!</p>
+                    <p>Time: <span id="finalTime">${timeString}</span></p>
+                    <button onclick="nextLevel()">Next Level</button>
+                `;
+            }
+            
+            winMessage.style.display = 'block';
+        }
+
+        function restartLevel() {
+            document.getElementById('deathMessage').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'none';
+            loadLevel(currentLevel);
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            document.getElementById('winMessage').style.display = 'none';
+            loadLevel(currentLevel);
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            gameTimer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function gameLoop() {
+            updatePlayer();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Control functions for buttons
+        function moveLeft() {
+            keys['KeyA'] = true;
+            setTimeout(() => keys['KeyA'] = false, 100);
+        }
+
+        function moveRight() {
+            keys['KeyD'] = true;
+            setTimeout(() => keys['KeyD'] = false, 100);
+        }
+
+        function jump() {
+            keys['Space'] = true;
+            setTimeout(() => keys['Space'] = false, 100);
+        }
+
+        // Initialize the game
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
+ne

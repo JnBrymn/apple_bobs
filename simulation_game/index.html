@@ -1,0 +1,1358 @@
+<!--
+Lemonade Stand Tycoon Game
+- Manage lemonade stand business with ingredients and pricing
+- Buy ingredients (lemons, sugar, ice, cups)
+- Set prices and recipe quality
+- Upgrade stand and equipment
+- Customer satisfaction and demand system
+- Weather affects sales
+- Business statistics and profit tracking
+- Beautiful animated stand with customers
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemonade Stand Tycoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 50px;
+            right: 100px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #FFD700;
+            animation: sunMove 20s linear infinite, sunPulse 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        .sun::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent);
+            border-radius: 50%;
+            animation: sunGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes sunGlow {
+            0% { opacity: 0.5; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        @keyframes sunMove {
+            0% { transform: translateX(0) translateY(0); }
+            50% { transform: translateX(-50px) translateY(100px); }
+            100% { transform: translateX(-100px) translateY(200px); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #8FBC8F, #98FB98);
+            z-index: 3;
+        }
+        
+        .lemonade-stand {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 10px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: standGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes standGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255, 215, 0, 0.6); }
+        }
+        
+        .stand-sign {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: signBounce 2s ease-in-out infinite;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        
+        @keyframes signBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0px) rotate(-1deg); }
+            50% { transform: translateX(-50%) translateY(-5px) rotate(1deg); }
+        }
+        
+        .lemonade-pitcher {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 50px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 20px 20px 5px 5px;
+            border: 3px solid #FF8C00;
+            animation: pitcherShine 4s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .lemonade-pitcher::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 30px;
+            height: 40px;
+            background: linear-gradient(45deg, rgba(255,255,255,0.3), transparent);
+            border-radius: 15px 15px 2px 2px;
+        }
+        
+        @keyframes pitcherShine {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+        
+        .customer {
+            position: absolute;
+            bottom: 50px;
+            width: 30px;
+            height: 50px;
+            background: linear-gradient(45deg, #333, #555);
+            border-radius: 15px 15px 0 0;
+            z-index: 5;
+            animation: customerWalk 8s linear infinite;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .rater {
+            position: absolute;
+            bottom: 50px;
+            width: 35px;
+            height: 55px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 17px 17px 0 0;
+            z-index: 5;
+            animation: raterWalk 10s linear infinite;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .rater::before {
+            content: '👑';
+            position: absolute;
+            top: -15px;
+            left: 5px;
+            font-size: 20px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .rater::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 8px;
+            width: 19px;
+            height: 30px;
+            background: linear-gradient(45deg, #FF69B4, #FF1493);
+            border-radius: 9px 9px 0 0;
+        }
+        
+        @keyframes raterWalk {
+            0% { transform: translateX(-50px) scale(0.8); opacity: 0; }
+            10% { transform: translateX(0px) scale(1.1); opacity: 1; }
+            45% { transform: translateX(calc(50vw - 100px)) scale(1.1); opacity: 1; }
+            55% { transform: translateX(calc(50vw - 80px)) scale(1.2); opacity: 1; }
+            90% { transform: translateX(calc(100vw - 50px)) scale(1.1); opacity: 1; }
+            100% { transform: translateX(calc(100vw + 50px)) scale(0.8); opacity: 0; }
+        }
+        
+        .customer::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 5px;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #FFB6C1, #FF69B4);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .customer::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 8px;
+            width: 14px;
+            height: 25px;
+            background: linear-gradient(45deg, #4A90E2, #357ABD);
+            border-radius: 7px 7px 0 0;
+        }
+        
+        @keyframes customerWalk {
+            0% { transform: translateX(-50px) scale(0.8); opacity: 0; }
+            10% { transform: translateX(0px) scale(1); opacity: 1; }
+            45% { transform: translateX(calc(50vw - 100px)) scale(1); opacity: 1; }
+            55% { transform: translateX(calc(50vw - 80px)) scale(1.1); opacity: 1; }
+            90% { transform: translateX(calc(100vw - 50px)) scale(1); opacity: 1; }
+            100% { transform: translateX(calc(100vw + 50px)) scale(0.8); opacity: 0; }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            animation: panelGlow 4s ease-in-out infinite;
+        }
+        
+        @keyframes panelGlow {
+            0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 0 20px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 0 30px rgba(255, 255, 255, 0.3); }
+        }
+        
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .shop-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-width: 250px;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .recipe-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .recipe-quality {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .quality-bar {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .quality-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #26DE81);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .quality-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: qualityShine 2s ease-in-out infinite;
+        }
+        
+        @keyframes qualityShine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .recipe-tip {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .recipe-slider {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        .rating-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 25px 35px;
+            border-radius: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            z-index: 1001;
+            opacity: 0;
+            animation: ratingShow 4s ease-in-out;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5);
+            border: 3px solid #FFA500;
+        }
+        
+        @keyframes ratingShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(5deg); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) rotate(5deg); }
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .weather-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 100;
+        }
+        
+        .lemon {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            animation: lemonBounce 2s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .lemon::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 6px;
+            background: #228B22;
+            border-radius: 2px;
+        }
+        
+        .lemon::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle, rgba(255,255,255,0.4), transparent);
+            border-radius: 50%;
+        }
+        
+        @keyframes lemonBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            25% { transform: translateY(-15px) rotate(90deg) scale(1.1); }
+            50% { transform: translateY(-20px) rotate(180deg) scale(1.2); }
+            75% { transform: translateY(-15px) rotate(270deg) scale(1.1); }
+        }
+        
+        .money-float {
+            position: absolute;
+            color: #2ECC71;
+            font-weight: bold;
+            font-size: 16px;
+            animation: moneyFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.5));
+        }
+        
+        .bankruptcy-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .bankruptcy-content {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: bankruptcyShow 1s ease-out;
+        }
+        
+        @keyframes bankruptcyShow {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .bankruptcy-content h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .bankruptcy-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+        
+        .restart-btn {
+            background: white;
+            color: #FF6B6B;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        @keyframes moneyFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .social-media-btn {
+            background: linear-gradient(45deg, #1877F2, #42A5F5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .social-media-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .youtube-btn {
+            background: linear-gradient(45deg, #FF0000, #FF4444);
+        }
+        
+        .fame-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .social-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #1877F2, #42A5F5);
+            color: white;
+            padding: 25px 35px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1001;
+            opacity: 0;
+            animation: socialShow 4s ease-in-out;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(24, 119, 242, 0.5);
+            border: 3px solid #42A5F5;
+            max-width: 400px;
+        }
+        
+        @keyframes socialShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="sun"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="lemonade-stand">
+            <div class="stand-sign">🍋 LEMONADE 🍋</div>
+            <div class="lemonade-pitcher"></div>
+        </div>
+        
+        <div class="weather-indicator" id="weatherIndicator">
+            ☀️ Sunny Day - Sales: +20%
+        </div>
+        
+        <div class="ui-panel">
+            <h3>💰 Business Stats</h3>
+            <div class="resource">
+                <span>💵 Money:</span>
+                <span id="money">100</span>
+            </div>
+            <div class="resource">
+                <span>🍋 Lemons:</span>
+                <span id="lemons">10</span>
+            </div>
+            <div class="resource">
+                <span>🍯 Sugar:</span>
+                <span id="sugar">10</span>
+            </div>
+            <div class="resource">
+                <span>🧊 Ice:</span>
+                <span id="ice">10</span>
+            </div>
+            <div class="resource">
+                <span>🥤 Cups:</span>
+                <span id="cups">10</span>
+            </div>
+            <div class="resource">
+                <span>📊 Reputation:</span>
+                <span id="reputation">50</span>
+            </div>
+            <div class="resource">
+                <span>⭐ Stand Rating:</span>
+                <span id="standRating">3.0</span> / 5.0
+            </div>
+        </div>
+        
+        <div class="shop-panel">
+            <h3>🛒 Shop</h3>
+            <div class="shop-item">
+                <span>🍋 Lemons ($2 each)</span>
+                <button class="btn" onclick="buyItem('lemons', 2)">Buy 5</button>
+            </div>
+            <div class="shop-item">
+                <span>🍯 Sugar ($1 each)</span>
+                <button class="btn" onclick="buyItem('sugar', 1)">Buy 10</button>
+            </div>
+            <div class="shop-item">
+                <span>🧊 Ice ($0.5 each)</span>
+                <button class="btn" onclick="buyItem('ice', 0.5)">Buy 20</button>
+            </div>
+            <div class="shop-item">
+                <span>🥤 Cups ($0.3 each)</span>
+                <button class="btn" onclick="buyItem('cups', 0.3)">Buy 30</button>
+            </div>
+            <div class="shop-item">
+                <span>🏪 Stand Upgrade ($50)</span>
+                <button class="btn" onclick="upgradeStand()">Upgrade</button>
+            </div>
+        </div>
+        
+        <div class="recipe-panel">
+            <h3>🍋 Recipe</h3>
+            <div>
+                <label>🍯 Sweetness: <span id="sweetnessValue">5</span></label>
+                <input type="range" id="sweetnessSlider" min="1" max="10" value="5" class="recipe-slider">
+            </div>
+            <div>
+                <label>🍋 Sourness: <span id="sournessValue">5</span></label>
+                <input type="range" id="sournessSlider" min="1" max="10" value="5" class="recipe-slider">
+            </div>
+            <div>
+                <label>💰 Price: $<span id="priceValue">1.00</span></label>
+                <input type="range" id="priceSlider" min="0.5" max="5" step="0.1" value="1" class="recipe-slider">
+            </div>
+            <div class="recipe-quality">
+                <div>Recipe Quality: <span id="qualityScore">50</span>% <span id="ingredientBonus" style="color: #26DE81; font-size: 12px;"></span></div>
+                <div class="quality-bar">
+                    <div class="quality-fill" id="qualityBar" style="width: 50%"></div>
+                </div>
+                <div class="recipe-tip" id="recipeTip">Try balancing sweetness and sourness!</div>
+            </div>
+            <button class="btn" onclick="makeLemonade()">🍋 Make Lemonade!</button>
+        </div>
+        
+        <div class="stats-panel">
+            <h4>📊 Sales Stats</h4>
+            <div class="resource">
+                <span>Today's Sales:</span>
+                <span id="todaySales">0</span>
+            </div>
+            <div class="resource">
+                <span>Total Profit:</span>
+                <span id="totalProfit">0</span>
+            </div>
+            <div class="resource">
+                <span>Customers Served:</span>
+                <span id="customersServed">0</span>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="social-media-btn" id="facebookBtn" onclick="postToFacebook()">📘 Post to Facebook</button>
+                <button class="social-media-btn youtube-btn" id="youtubeBtn" onclick="makeYouTubeVideo()">📺 Make YouTube Video</button>
+                <button class="social-media-btn fame-btn" id="fameBtn" onclick="becomeFamous()">🌟 Become Famous!</button>
+            </div>
+        </div>
+     </div>
+     
+     <div class="bankruptcy-screen" id="bankruptcyScreen">
+         <div class="bankruptcy-content">
+             <h2>💸 OOPS!</h2>
+             <p>You got bankrupt! 😅</p>
+             <p>Your lemonade stand went out of business!</p>
+             <p>Final Stats:</p>
+             <p>Total Profit: $<span id="finalProfit">0</span></p>
+             <p>Customers Served: <span id="finalCustomers">0</span></p>
+             <button class="restart-btn" onclick="restartGame()">🔄 Try Again!</button>
+         </div>
+     </div>
+
+    <script>
+        let gameData = {
+            money: 100,
+            lemons: 10,
+            sugar: 10,
+            ice: 10,
+            cups: 10,
+            reputation: 50,
+            todaySales: 0,
+            totalProfit: 0,
+            customersServed: 0,
+            standLevel: 1,
+            recipe: {
+                sweetness: 5,
+                sourness: 5,
+                price: 1.00
+            },
+            weather: 'sunny',
+            customers: [],
+            lemonadeMade: 0,
+            salesSinceLastRating: 0,
+            standRating: 3.0,
+            totalRatings: 0,
+            ratingCount: 0,
+            facebookUnlocked: false,
+            youtubeUnlocked: false,
+            fameUnlocked: false
+        };
+        
+        const weatherTypes = [
+            { type: 'sunny', emoji: '☀️', name: 'Sunny Day', bonus: 1.2 },
+            { type: 'hot', emoji: '🔥', name: 'Hot Day', bonus: 1.5 },
+            { type: 'cloudy', emoji: '☁️', name: 'Cloudy Day', bonus: 0.8 },
+            { type: 'rainy', emoji: '🌧️', name: 'Rainy Day', bonus: 0.5 }
+        ];
+        
+        function updateUI() {
+            document.getElementById('money').textContent = gameData.money.toFixed(2);
+            document.getElementById('lemons').textContent = gameData.lemons;
+            document.getElementById('sugar').textContent = gameData.sugar;
+            document.getElementById('ice').textContent = gameData.ice;
+            document.getElementById('cups').textContent = gameData.cups;
+            document.getElementById('reputation').textContent = gameData.reputation;
+            document.getElementById('todaySales').textContent = gameData.todaySales;
+            document.getElementById('totalProfit').textContent = gameData.totalProfit.toFixed(2);
+            document.getElementById('customersServed').textContent = gameData.customersServed;
+            document.getElementById('standRating').textContent = gameData.standRating.toFixed(1);
+            
+            // Update recipe sliders
+            document.getElementById('sweetnessValue').textContent = gameData.recipe.sweetness;
+            document.getElementById('sournessValue').textContent = gameData.recipe.sourness;
+            document.getElementById('priceValue').textContent = gameData.recipe.price.toFixed(2);
+            
+            // Update recipe quality
+            updateRecipeQuality();
+        }
+        
+        function buyItem(item, cost) {
+            const quantities = { lemons: 5, sugar: 10, ice: 20, cups: 30 };
+            const quantity = quantities[item];
+            const totalCost = cost * quantity;
+            
+            if (gameData.money >= totalCost) {
+                gameData.money -= totalCost;
+                gameData[item] += quantity;
+                showNotification(`✅ Bought ${quantity} ${item}!`);
+                updateUI();
+                checkBankruptcy();
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+        function upgradeStand() {
+            if (gameData.money >= 50) {
+                gameData.money -= 50;
+                gameData.standLevel++;
+                gameData.reputation += 10;
+                showNotification(`🏪 Stand upgraded to level ${gameData.standLevel}!`);
+                updateUI();
+                checkBankruptcy();
+            } else {
+                showNotification('❌ Not enough money for upgrade!');
+            }
+        }
+        
+        function makeLemonade() {
+            if (gameData.lemons >= 1 && gameData.sugar >= 1 && gameData.ice >= 1 && gameData.cups >= 1) {
+                gameData.lemons--;
+                gameData.sugar--;
+                gameData.ice--;
+                gameData.cups--;
+                gameData.lemonadeMade++;
+                
+                createLemon();
+                showNotification('🍋 Made delicious lemonade!');
+                updateUI();
+            } else {
+                let missingItems = [];
+                if (gameData.lemons < 1) missingItems.push('lemons');
+                if (gameData.sugar < 1) missingItems.push('sugar');
+                if (gameData.ice < 1) missingItems.push('ice');
+                if (gameData.cups < 1) missingItems.push('cups');
+                
+                showNotification(`❌ Need more: ${missingItems.join(', ')}!`);
+            }
+        }
+        
+        function createLemon() {
+            const lemon = document.createElement('div');
+            lemon.className = 'lemon';
+            lemon.style.left = Math.random() * window.innerWidth + 'px';
+            lemon.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(lemon);
+            
+            setTimeout(() => {
+                if (lemon.parentNode) {
+                    lemon.remove();
+                }
+            }, 2000);
+        }
+        
+        function createCustomer() {
+            if (gameData.lemonadeMade > 0) {
+                const isRater = gameData.salesSinceLastRating >= 9; // Every 10th customer is a rater
+                
+                const customer = document.createElement('div');
+                customer.className = isRater ? 'rater' : 'customer';
+                customer.style.bottom = '50px';
+                customer.style.left = '-50px';
+                document.querySelector('.game-container').appendChild(customer);
+                
+                // Customer behavior
+                setTimeout(() => {
+                    if (customer.parentNode) {
+                        const satisfaction = calculateSatisfaction();
+                        const willBuy = Math.random() < satisfaction;
+                        
+                        if (willBuy) {
+                            const profit = gameData.recipe.price * getWeatherBonus();
+                            gameData.money += profit;
+                            gameData.todaySales += profit;
+                            gameData.totalProfit += profit;
+                            gameData.customersServed++;
+                            gameData.lemonadeMade--;
+                            gameData.reputation += 1;
+                            gameData.salesSinceLastRating++;
+                            
+                            showMoneyFloat(profit);
+                            
+                            if (isRater) {
+                                // Special rater behavior
+                                const rating = calculateRating(satisfaction);
+                                showRatingNotification(rating, satisfaction);
+                                updateStandRating(rating);
+                                gameData.salesSinceLastRating = 0; // Reset counter
+                            } else {
+                                // Regular customer messages
+                                if (satisfaction > 0.9) {
+                                    showNotification(`🌟 AMAZING! Customer loved it! +$${profit.toFixed(2)}`);
+                                } else if (satisfaction > 0.7) {
+                                    showNotification(`😊 Customer enjoyed it! +$${profit.toFixed(2)}`);
+                                } else {
+                                    showNotification(`👍 Customer bought it! +$${profit.toFixed(2)}`);
+                                }
+                            }
+                        } else {
+                            gameData.reputation -= 1;
+                            
+                            if (isRater) {
+                                showRatingNotification(0.1, 0);
+                                updateStandRating(0.1);
+                                gameData.salesSinceLastRating = 0; // Reset counter
+                            } else {
+                                // Different messages based on what's wrong
+                                if (gameData.recipe.sweetness < 3) {
+                                    showNotification('😖 Too sour! Customer didn\'t like it');
+                                } else if (gameData.recipe.sweetness > 8) {
+                                    showNotification('😖 Too sweet! Customer didn\'t like it');
+                                } else if (gameData.recipe.sourness < 2) {
+                                    showNotification('😖 Not sour enough! Customer didn\'t like it');
+                                } else if (gameData.recipe.sourness > 7) {
+                                    showNotification('😖 Too sour! Customer didn\'t like it');
+                                } else if (gameData.recipe.price > 3) {
+                                    showNotification('😖 Too expensive! Customer walked away');
+                                } else {
+                                    showNotification('😞 Customer didn\'t like the lemonade');
+                                }
+                            }
+                        }
+                        
+                        customer.remove();
+                        updateUI();
+                    }
+                }, 4000);
+            }
+        }
+        
+        function calculateSatisfaction() {
+            const sweetness = gameData.recipe.sweetness;
+            const sourness = gameData.recipe.sourness;
+            const price = gameData.recipe.price;
+            const reputation = gameData.reputation / 100;
+            
+            // Sweetness scoring - people like moderately sweet lemonade
+            let sweetnessScore;
+            if (sweetness < 3) {
+                sweetnessScore = 0.2; // Too sour
+            } else if (sweetness >= 3 && sweetness <= 7) {
+                sweetnessScore = 0.8 + (sweetness - 3) * 0.05; // Sweet spot
+            } else if (sweetness <= 9) {
+                sweetnessScore = 1.0 - (sweetness - 7) * 0.1; // Getting too sweet
+            } else {
+                sweetnessScore = 0.7; // Too sweet
+            }
+            
+            // Sourness scoring - people like balanced sourness
+            let sournessScore;
+            if (sourness < 2) {
+                sournessScore = 0.3; // Not sour enough
+            } else if (sourness >= 2 && sourness <= 6) {
+                sournessScore = 0.7 + (sourness - 2) * 0.05; // Good sourness
+            } else if (sourness <= 8) {
+                sournessScore = 1.0 - (sourness - 6) * 0.15; // Getting too sour
+            } else {
+                sournessScore = 0.4; // Too sour
+            }
+            
+            // Price scoring - people prefer reasonable prices
+            let priceScore;
+            if (price < 0.8) {
+                priceScore = 0.9; // Great price
+            } else if (price <= 2.0) {
+                priceScore = 1.0 - (price - 0.8) * 0.08; // Good price range
+            } else if (price <= 3.5) {
+                priceScore = 0.8 - (price - 2.0) * 0.2; // Getting expensive
+            } else {
+                priceScore = 0.3; // Too expensive
+            }
+            
+            // Balance bonus - perfect sweet/sour balance gives extra points
+            const balanceBonus = 1.0 - Math.abs(sweetness - sourness) / 10;
+            
+            // Ingredient quality bonus - more ingredients = better quality potential
+            const ingredientBonus = Math.min(0.2, (gameData.lemons + gameData.sugar + gameData.ice + gameData.cups) / 200);
+            
+            const totalScore = (sweetnessScore + sournessScore + priceScore + reputation + balanceBonus + ingredientBonus) / 6;
+            return Math.max(0, Math.min(1.2, totalScore)); // Can go up to 120% with perfect ingredients
+        }
+        
+        function getWeatherBonus() {
+            const weather = weatherTypes.find(w => w.type === gameData.weather);
+            return weather ? weather.bonus : 1;
+        }
+        
+        function changeWeather() {
+            const randomWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+            gameData.weather = randomWeather.type;
+            
+            const indicator = document.getElementById('weatherIndicator');
+            indicator.innerHTML = `${randomWeather.emoji} ${randomWeather.name} - Sales: ${randomWeather.bonus > 1 ? '+' : ''}${Math.round((randomWeather.bonus - 1) * 100)}%`;
+        }
+        
+        function showMoneyFloat(amount) {
+            const moneyFloat = document.createElement('div');
+            moneyFloat.className = 'money-float';
+            moneyFloat.textContent = `+$${amount.toFixed(2)}`;
+            moneyFloat.style.left = (Math.random() * window.innerWidth) + 'px';
+            moneyFloat.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(moneyFloat);
+            
+            setTimeout(() => {
+                if (moneyFloat.parentNode) {
+                    moneyFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function updateRecipeQuality() {
+            const satisfaction = calculateSatisfaction();
+            const qualityPercent = Math.round(satisfaction * 100);
+            
+            document.getElementById('qualityScore').textContent = qualityPercent;
+            document.getElementById('qualityBar').style.width = Math.min(100, qualityPercent) + '%';
+            
+            // Show ingredient bonus
+            const totalIngredients = gameData.lemons + gameData.sugar + gameData.ice + gameData.cups;
+            const ingredientBonus = Math.min(20, Math.round(totalIngredients / 5));
+            if (ingredientBonus > 0) {
+                document.getElementById('ingredientBonus').textContent = `(+${ingredientBonus}% bonus)`;
+            } else {
+                document.getElementById('ingredientBonus').textContent = '';
+            }
+            
+            // Update recipe tip based on current settings
+            const sweetness = gameData.recipe.sweetness;
+            const sourness = gameData.recipe.sourness;
+            const price = gameData.recipe.price;
+            
+            let tip = '';
+            if (sweetness < 3) {
+                tip = '🍯 Add more sugar - too sour!';
+            } else if (sweetness > 8) {
+                tip = '🍯 Too sweet - reduce sugar!';
+            } else if (sourness < 2) {
+                tip = '🍋 Add more lemons - not sour enough!';
+            } else if (sourness > 7) {
+                tip = '🍋 Too sour - reduce lemons!';
+            } else if (price > 3) {
+                tip = '💰 Price too high - customers won\'t pay!';
+            } else if (Math.abs(sweetness - sourness) > 3) {
+                tip = '⚖️ Balance sweetness and sourness!';
+            } else if (satisfaction > 1.0) {
+                tip = '🌟 LEGENDARY! Best lemonade ever!';
+            } else if (satisfaction > 0.8) {
+                tip = '🌟 Perfect recipe! Customers will love it!';
+            } else {
+                tip = '🎯 Good balance - try fine-tuning!';
+            }
+            
+            // Add ingredient bonus info
+            if (totalIngredients > 50) {
+                tip += ' 📦 Great ingredient stock!';
+            } else if (totalIngredients < 20) {
+                tip += ' ⚠️ Low on ingredients!';
+            }
+            
+            document.getElementById('recipeTip').textContent = tip;
+        }
+        
+        function checkBankruptcy() {
+            if (gameData.money < 0) {
+                showBankruptcyScreen();
+            }
+        }
+        
+        function showBankruptcyScreen() {
+            document.getElementById('finalProfit').textContent = gameData.totalProfit.toFixed(2);
+            document.getElementById('finalCustomers').textContent = gameData.customersServed;
+            document.getElementById('bankruptcyScreen').style.display = 'flex';
+        }
+        
+        function restartGame() {
+            gameData = {
+                money: 100,
+                lemons: 10,
+                sugar: 10,
+                ice: 10,
+                cups: 10,
+                reputation: 50,
+                todaySales: 0,
+                totalProfit: 0,
+                customersServed: 0,
+                standLevel: 1,
+                recipe: {
+                    sweetness: 5,
+                    sourness: 5,
+                    price: 1.00
+                },
+                weather: 'sunny',
+                customers: [],
+                lemonadeMade: 0,
+                salesSinceLastRating: 0,
+                standRating: 3.0,
+                totalRatings: 0,
+                ratingCount: 0,
+                facebookUnlocked: false,
+                youtubeUnlocked: false,
+                fameUnlocked: false
+            };
+            
+            // Hide bankruptcy screen
+            const bankruptcyScreen = document.getElementById('bankruptcyScreen');
+            bankruptcyScreen.style.display = 'none';
+            
+            // Reset recipe sliders
+            document.getElementById('sweetnessSlider').value = 5;
+            document.getElementById('sournessSlider').value = 5;
+            document.getElementById('priceSlider').value = 1;
+            
+            // Clear any floating elements
+            const floatingElements = document.querySelectorAll('.money-float, .lemon, .customer');
+            floatingElements.forEach(element => {
+                if (element.parentNode) {
+                    element.remove();
+                }
+            });
+            
+            updateUI();
+            showNotification('🔄 Fresh start! Good luck!');
+        }
+        
+        function calculateRating(satisfaction) {
+            // Convert satisfaction (0-1.2) to rating (0.1-5.9)
+            const rating = Math.max(0.1, Math.min(5.9, satisfaction * 5));
+            return Math.round(rating * 10) / 10; // Round to 1 decimal place
+        }
+        
+        function updateStandRating(newRating) {
+            gameData.totalRatings += newRating;
+            gameData.ratingCount++;
+            gameData.standRating = gameData.totalRatings / gameData.ratingCount;
+            
+            // Update reputation based on rating
+            if (newRating >= 4.0) {
+                gameData.reputation += 5;
+                showNotification('⭐ Great rating! Reputation increased!');
+            } else if (newRating >= 3.0) {
+                gameData.reputation += 2;
+                showNotification('⭐ Good rating! Reputation increased!');
+            } else if (newRating < 2.0) {
+                gameData.reputation -= 3;
+                showNotification('⭐ Poor rating! Reputation decreased!');
+            }
+            
+            // Check for social media unlocks
+            checkSocialMediaUnlocks();
+        }
+        
+        function showRatingNotification(rating, satisfaction) {
+            const ratingNotification = document.createElement('div');
+            ratingNotification.className = 'rating-notification';
+            
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 >= 0.5;
+            
+            for (let i = 0; i < fullStars; i++) {
+                stars += '⭐';
+            }
+            if (hasHalfStar) {
+                stars += '⭐';
+            }
+            
+            let message = '';
+            if (rating >= 5.0) {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n🌟 LEGENDARY LEMONADE! 🌟`;
+            } else if (rating >= 4.0) {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n😍 EXCELLENT RECIPE! 😍`;
+            } else if (rating >= 3.0) {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n😊 GOOD LEMONADE! 😊`;
+            } else if (rating >= 2.0) {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n😐 NEEDS IMPROVEMENT 😐`;
+            } else if (rating >= 1.0) {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n😖 NOT VERY GOOD 😖`;
+            } else {
+                message = `👑 ROYAL RATER SAYS:\n${stars}\n${rating}/5.9\n🤮 TERRIBLE! 🤮`;
+            }
+            
+            ratingNotification.innerHTML = message.replace(/\n/g, '<br>');
+            document.body.appendChild(ratingNotification);
+            
+            setTimeout(() => {
+                if (ratingNotification.parentNode) {
+                    ratingNotification.remove();
+                }
+            }, 4000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function checkSocialMediaUnlocks() {
+            const facebookBtn = document.getElementById('facebookBtn');
+            const youtubeBtn = document.getElementById('youtubeBtn');
+            const fameBtn = document.getElementById('fameBtn');
+            
+            if (gameData.standRating >= 3.5 && !gameData.facebookUnlocked) {
+                facebookBtn.style.display = 'inline-block';
+                gameData.facebookUnlocked = true;
+                showSocialNotification('📘 Facebook unlocked! You can now post about your amazing lemonade stand!');
+            }
+            
+            if (gameData.standRating >= 4.5 && !gameData.youtubeUnlocked) {
+                youtubeBtn.style.display = 'inline-block';
+                gameData.youtubeUnlocked = true;
+                showSocialNotification('📺 YouTube unlocked! Time to make a tutorial video!');
+            }
+            
+            if (gameData.standRating >= 5.0 && !gameData.fameUnlocked) {
+                fameBtn.style.display = 'inline-block';
+                gameData.fameUnlocked = true;
+                showSocialNotification('🌟 LEGENDARY STATUS! You\'re more famous than MrBeast now!');
+            }
+        }
+        
+        function showSocialNotification(message) {
+            const socialNotification = document.createElement('div');
+            socialNotification.className = 'social-notification';
+            socialNotification.textContent = message;
+            document.body.appendChild(socialNotification);
+            
+            setTimeout(() => {
+                if (socialNotification.parentNode) {
+                    socialNotification.remove();
+                }
+            }, 4000);
+        }
+        
+        function postToFacebook() {
+            const message = `🍋 Check out my AMAZING lemonade stand! Rated ${gameData.standRating.toFixed(1)}/5.0 stars! The Royal Rater said it's LEGENDARY! 🌟 #BestLemonadeEver #LemonadeStand #RoyalRater`;
+            showSocialNotification(`📘 Posted to Facebook!\n"${message}"\n\nYour post went viral! +100 reputation!`);
+            gameData.reputation += 100;
+            updateUI();
+        }
+        
+        function makeYouTubeVideo() {
+            const videoTitle = `HOW TO MAKE ${gameData.standRating.toFixed(1)} STAR LEMONADE - LEGENDARY RECIPE!`;
+            showSocialNotification(`📺 YouTube Video Created!\n"${videoTitle}"\n\nYour video got 10M views! +500 reputation!`);
+            gameData.reputation += 500;
+            updateUI();
+        }
+        
+        function becomeFamous() {
+            showSocialNotification(`🌟 YOU'RE FAMOUS!\n\nYou're now more famous than MrBeast!\n\nYour lemonade stand is WORLD FAMOUS!\n+1000 reputation!`);
+            gameData.reputation += 1000;
+            updateUI();
+        }
+        
+        // Event listeners for recipe sliders
+        document.getElementById('sweetnessSlider').addEventListener('input', (e) => {
+            gameData.recipe.sweetness = parseInt(e.target.value);
+            updateUI();
+        });
+        
+        document.getElementById('sournessSlider').addEventListener('input', (e) => {
+            gameData.recipe.sourness = parseInt(e.target.value);
+            updateUI();
+        });
+        
+        document.getElementById('priceSlider').addEventListener('input', (e) => {
+            gameData.recipe.price = parseFloat(e.target.value);
+            updateUI();
+        });
+        
+        function gameLoop() {
+            // Create customers occasionally
+            if (Math.random() < 0.02) {
+                createCustomer();
+            }
+            
+            // Change weather occasionally
+            if (Math.random() < 0.001) {
+                changeWeather();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        updateUI();
+        gameLoop();
+        
+        console.log('🍋 Lemonade Stand Tycoon loaded! Make the best lemonade in the world!');
+    </script>
+</body>
+</html>

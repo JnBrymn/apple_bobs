@@ -1,0 +1,858 @@
+<!--
+Bee Adventure Game
+- Control a bee character with keyboard (WASD/Arrow keys)
+- Fly around collecting pollen from flowers
+- Avoid obstacles like spiders and wasps
+- Complete missions and challenges
+- Active gameplay with real-time controls
+- Beautiful animated environment
+- Score-based progression system
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐝 Bee Adventure - Fly & Collect!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+            cursor: none;
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 50px;
+            right: 100px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #FFD700;
+            animation: sunPulse 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: cloudFloat 20s linear infinite;
+        }
+        
+        .cloud::before {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+        }
+        
+        @keyframes cloudFloat {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #8FBC8F, #98FB98);
+            z-index: 3;
+        }
+        
+        .player-bee {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 10;
+            transition: all 0.1s ease;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+            animation: beeWings 0.2s ease-in-out infinite;
+        }
+        
+        .player-bee::before {
+            content: '🐝';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 44px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        @keyframes beeWings {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .flower {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 5;
+            animation: flowerBloom 4s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+        
+        .flower::before {
+            content: '🌸';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 40px;
+        }
+        
+        .flower.collected {
+            opacity: 0.3;
+            transform: scale(0.5);
+        }
+        
+        @keyframes flowerBloom {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+        }
+        
+        .obstacle {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            z-index: 8;
+            animation: obstacleMove 8s linear infinite;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .spider::before {
+            content: '🕷️';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 45px;
+        }
+        
+        .wasp::before {
+            content: '🐝';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 45px;
+            filter: hue-rotate(180deg);
+        }
+        
+        @keyframes obstacleMove {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(calc(100vw + 50px)); }
+        }
+        
+        .pollen-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 9;
+            animation: pollenFloat 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+        
+        @keyframes pollenFloat {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-width: 200px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .mission-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .score-float {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 16px;
+            animation: scoreFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes scoreFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .game-over-content {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: gameOverShow 1s ease-out;
+        }
+        
+        @keyframes gameOverShow {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .game-over-content h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .game-over-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+        
+        .restart-btn {
+            background: white;
+            color: #FF6B6B;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        .power-up {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            z-index: 7;
+            animation: powerUpFloat 3s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+        
+        .speed-boost::before {
+            content: '⚡';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 30px;
+        }
+        
+        .shield::before {
+            content: '🛡️';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 30px;
+        }
+        
+        @keyframes powerUpFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="sun"></div>
+            <div class="cloud" style="top: 50px; width: 80px; height: 40px; animation-delay: 0s;"></div>
+            <div class="cloud" style="top: 100px; width: 60px; height: 30px; animation-delay: 5s;"></div>
+            <div class="cloud" style="top: 30px; width: 100px; height: 50px; animation-delay: 10s;"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="player-bee" id="playerBee"></div>
+        
+        <div class="ui-panel">
+            <h3>🐝 Bee Adventure</h3>
+            <div class="resource">
+                <span>🌼 Pollen Collected:</span>
+                <span id="pollenCollected">0</span>
+            </div>
+            <div class="resource">
+                <span>🌸 Flowers Found:</span>
+                <span id="flowersFound">0</span>
+            </div>
+            <div class="resource">
+                <span>🏆 Score:</span>
+                <span id="score">0</span>
+            </div>
+            <div class="resource">
+                <span>❤️ Lives:</span>
+                <span id="lives">3</span>
+            </div>
+            <div class="resource">
+                <span>⚡ Speed:</span>
+                <span id="speed">1.0</span>
+            </div>
+        </div>
+        
+        <div class="controls-panel">
+            <h3>🎮 Controls</h3>
+            <div style="font-size: 12px; margin-bottom: 10px;">
+                <div>WASD or Arrow Keys</div>
+                <div>Space = Boost</div>
+                <div>Collect 🌸 flowers</div>
+                <div>Avoid 🕷️ spiders</div>
+                <div>Dodge 🐝 wasps</div>
+            </div>
+            <button class="btn" onclick="pauseGame()">⏸️ Pause</button>
+            <button class="btn" onclick="restartGame()">🔄 Restart</button>
+        </div>
+        
+        <div class="mission-panel">
+            <h4>🎯 Current Mission</h4>
+            <div id="missionText">Collect 10 flowers to complete the mission!</div>
+            <div class="resource">
+                <span>Progress:</span>
+                <span id="missionProgress">0/10</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-over-screen" id="gameOverScreen">
+        <div class="game-over-content">
+            <h2>😵 Game Over!</h2>
+            <p>Your bee adventure has ended!</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Flowers Collected: <span id="finalFlowers">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">🔄 Try Again!</button>
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            playerX: window.innerWidth / 2,
+            playerY: window.innerHeight / 2,
+            playerSpeed: 5,
+            pollenCollected: 0,
+            flowersFound: 0,
+            score: 0,
+            lives: 3,
+            speed: 1.0,
+            missionTarget: 10,
+            missionProgress: 0,
+            gameRunning: true,
+            keys: {},
+            flowers: [],
+            obstacles: [],
+            powerUps: [],
+            lastFlowerSpawn: 0,
+            lastObstacleSpawn: 0,
+            lastPowerUpSpawn: 0,
+            shieldActive: false,
+            speedBoostActive: false
+        };
+        
+        function updateUI() {
+            document.getElementById('pollenCollected').textContent = gameData.pollenCollected;
+            document.getElementById('flowersFound').textContent = gameData.flowersFound;
+            document.getElementById('score').textContent = gameData.score;
+            document.getElementById('lives').textContent = gameData.lives;
+            document.getElementById('speed').textContent = gameData.speed.toFixed(1);
+            document.getElementById('missionProgress').textContent = `${gameData.missionProgress}/${gameData.missionTarget}`;
+        }
+        
+        function updateMission() {
+            const missions = [
+                "Collect 10 flowers to complete the mission!",
+                "Collect 25 flowers while avoiding 3 obstacles!",
+                "Collect 50 flowers and survive for 2 minutes!",
+                "Collect 100 flowers and reach 1000 points!",
+                "Collect 200 flowers and complete the ultimate challenge!"
+            ];
+            
+            const missionIndex = Math.floor(gameData.score / 500);
+            if (missionIndex < missions.length) {
+                document.getElementById('missionText').textContent = missions[missionIndex];
+                gameData.missionTarget = [10, 25, 50, 100, 200][missionIndex];
+            }
+            
+            gameData.missionProgress = gameData.flowersFound;
+        }
+        
+        function handleInput() {
+            const speed = gameData.playerSpeed * gameData.speed;
+            
+            if (gameData.keys['w'] || gameData.keys['ArrowUp']) {
+                gameData.playerY = Math.max(50, gameData.playerY - speed);
+            }
+            if (gameData.keys['s'] || gameData.keys['ArrowDown']) {
+                gameData.playerY = Math.min(window.innerHeight - 50, gameData.playerY + speed);
+            }
+            if (gameData.keys['a'] || gameData.keys['ArrowLeft']) {
+                gameData.playerX = Math.max(25, gameData.playerX - speed);
+            }
+            if (gameData.keys['d'] || gameData.keys['ArrowRight']) {
+                gameData.playerX = Math.min(window.innerWidth - 25, gameData.playerX + speed);
+            }
+            
+            // Update player position
+            const player = document.getElementById('playerBee');
+            player.style.left = (gameData.playerX - 20) + 'px';
+            player.style.top = (gameData.playerY - 20) + 'px';
+        }
+        
+        function spawnFlower() {
+            if (Date.now() - gameData.lastFlowerSpawn > 2000) {
+                const flower = {
+                    id: Date.now(),
+                    x: Math.random() * (window.innerWidth - 60) + 30,
+                    y: Math.random() * (window.innerHeight - 200) + 100,
+                    collected: false
+                };
+                
+                gameData.flowers.push(flower);
+                createFlowerElement(flower);
+                gameData.lastFlowerSpawn = Date.now();
+            }
+        }
+        
+        function createFlowerElement(flower) {
+            const flowerElement = document.createElement('div');
+            flowerElement.className = 'flower';
+            flowerElement.id = `flower-${flower.id}`;
+            flowerElement.style.left = flower.x + 'px';
+            flowerElement.style.top = flower.y + 'px';
+            document.querySelector('.game-container').appendChild(flowerElement);
+        }
+        
+        function spawnObstacle() {
+            if (Date.now() - gameData.lastObstacleSpawn > 3000) {
+                const obstacle = {
+                    id: Date.now(),
+                    x: -50,
+                    y: Math.random() * (window.innerHeight - 100) + 50,
+                    type: Math.random() < 0.5 ? 'spider' : 'wasp'
+                };
+                
+                gameData.obstacles.push(obstacle);
+                createObstacleElement(obstacle);
+                gameData.lastObstacleSpawn = Date.now();
+            }
+        }
+        
+        function createObstacleElement(obstacle) {
+            const obstacleElement = document.createElement('div');
+            obstacleElement.className = `obstacle ${obstacle.type}`;
+            obstacleElement.id = `obstacle-${obstacle.id}`;
+            obstacleElement.style.left = obstacle.x + 'px';
+            obstacleElement.style.top = obstacle.y + 'px';
+            document.querySelector('.game-container').appendChild(obstacleElement);
+        }
+        
+        function spawnPowerUp() {
+            if (Date.now() - gameData.lastPowerUpSpawn > 10000) {
+                const powerUp = {
+                    id: Date.now(),
+                    x: Math.random() * (window.innerWidth - 50) + 25,
+                    y: Math.random() * (window.innerHeight - 100) + 50,
+                    type: Math.random() < 0.5 ? 'speed-boost' : 'shield'
+                };
+                
+                gameData.powerUps.push(powerUp);
+                createPowerUpElement(powerUp);
+                gameData.lastPowerUpSpawn = Date.now();
+            }
+        }
+        
+        function createPowerUpElement(powerUp) {
+            const powerUpElement = document.createElement('div');
+            powerUpElement.className = `power-up ${powerUp.type}`;
+            powerUpElement.id = `powerup-${powerUp.id}`;
+            powerUpElement.style.left = powerUp.x + 'px';
+            powerUpElement.style.top = powerUp.y + 'px';
+            document.querySelector('.game-container').appendChild(powerUpElement);
+        }
+        
+        function checkCollisions() {
+            // Check flower collisions
+            gameData.flowers.forEach((flower, index) => {
+                if (!flower.collected) {
+                    const distance = Math.sqrt(
+                        Math.pow(gameData.playerX - flower.x, 2) + Math.pow(gameData.playerY - flower.y, 2)
+                    );
+                    
+                    if (distance < 30) {
+                        collectFlower(flower, index);
+                    }
+                }
+            });
+            
+            // Check obstacle collisions
+            if (!gameData.shieldActive) {
+                gameData.obstacles.forEach((obstacle, index) => {
+                    const distance = Math.sqrt(
+                        Math.pow(gameData.playerX - obstacle.x, 2) + Math.pow(gameData.playerY - obstacle.y, 2)
+                    );
+                    
+                    if (distance < 30) {
+                        hitObstacle(obstacle, index);
+                    }
+                });
+            }
+            
+            // Check power-up collisions
+            gameData.powerUps.forEach((powerUp, index) => {
+                const distance = Math.sqrt(
+                    Math.pow(gameData.playerX - powerUp.x, 2) + Math.pow(gameData.playerY - powerUp.y, 2)
+                );
+                
+                if (distance < 25) {
+                    collectPowerUp(powerUp, index);
+                }
+            });
+        }
+        
+        function collectFlower(flower, index) {
+            flower.collected = true;
+            gameData.flowersFound++;
+            gameData.pollenCollected += 10;
+            gameData.score += 50;
+            
+            // Visual effects
+            const flowerElement = document.getElementById(`flower-${flower.id}`);
+            if (flowerElement) {
+                flowerElement.classList.add('collected');
+                createPollenParticles(flower.x, flower.y);
+                showScoreFloat(50, flower.x, flower.y);
+            }
+            
+            showNotification('🌸 Flower collected! +50 points');
+            updateUI();
+            updateMission();
+            
+            // Remove flower after animation
+            setTimeout(() => {
+                if (flowerElement && flowerElement.parentNode) {
+                    flowerElement.remove();
+                }
+                gameData.flowers.splice(index, 1);
+            }, 1000);
+        }
+        
+        function hitObstacle(obstacle, index) {
+            gameData.lives--;
+            gameData.score = Math.max(0, gameData.score - 100);
+            
+            const obstacleElement = document.getElementById(`obstacle-${obstacle.id}`);
+            if (obstacleElement) {
+                obstacleElement.remove();
+            }
+            gameData.obstacles.splice(index, 1);
+            
+            showNotification('💥 Hit by obstacle! -1 life, -100 points');
+            updateUI();
+            
+            if (gameData.lives <= 0) {
+                gameOver();
+            }
+        }
+        
+        function collectPowerUp(powerUp, index) {
+            const powerUpElement = document.getElementById(`powerup-${powerUp.id}`);
+            if (powerUpElement) {
+                powerUpElement.remove();
+            }
+            gameData.powerUps.splice(index, 1);
+            
+            if (powerUp.type === 'speed-boost') {
+                gameData.speedBoostActive = true;
+                gameData.speed = 2.0;
+                showNotification('⚡ Speed boost activated!');
+                
+                setTimeout(() => {
+                    gameData.speedBoostActive = false;
+                    gameData.speed = 1.0;
+                    showNotification('⚡ Speed boost ended');
+                }, 5000);
+            } else if (powerUp.type === 'shield') {
+                gameData.shieldActive = true;
+                showNotification('🛡️ Shield activated!');
+                
+                setTimeout(() => {
+                    gameData.shieldActive = false;
+                    showNotification('🛡️ Shield ended');
+                }, 8000);
+            }
+            
+            updateUI();
+        }
+        
+        function createPollenParticles(x, y) {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'pollen-particle';
+                particle.style.left = (x + Math.random() * 20 - 10) + 'px';
+                particle.style.top = (y + Math.random() * 20 - 10) + 'px';
+                document.querySelector('.game-container').appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.remove();
+                    }
+                }, 2000);
+            }
+        }
+        
+        function showScoreFloat(score, x, y) {
+            const scoreFloat = document.createElement('div');
+            scoreFloat.className = 'score-float';
+            scoreFloat.textContent = `+${score}`;
+            scoreFloat.style.left = x + 'px';
+            scoreFloat.style.top = y + 'px';
+            document.querySelector('.game-container').appendChild(scoreFloat);
+            
+            setTimeout(() => {
+                if (scoreFloat.parentNode) {
+                    scoreFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 2000);
+        }
+        
+        function gameOver() {
+            gameData.gameRunning = false;
+            document.getElementById('finalScore').textContent = gameData.score;
+            document.getElementById('finalFlowers').textContent = gameData.flowersFound;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+        
+        function restartGame() {
+            gameData = {
+                playerX: window.innerWidth / 2,
+                playerY: window.innerHeight / 2,
+                playerSpeed: 5,
+                pollenCollected: 0,
+                flowersFound: 0,
+                score: 0,
+                lives: 3,
+                speed: 1.0,
+                missionTarget: 10,
+                missionProgress: 0,
+                gameRunning: true,
+                keys: {},
+                flowers: [],
+                obstacles: [],
+                powerUps: [],
+                lastFlowerSpawn: 0,
+                lastObstacleSpawn: 0,
+                lastPowerUpSpawn: 0,
+                shieldActive: false,
+                speedBoostActive: false
+            };
+            
+            // Clear all game elements
+            document.querySelectorAll('.flower, .obstacle, .power-up, .pollen-particle, .score-float').forEach(element => {
+                if (element.parentNode) {
+                    element.remove();
+                }
+            });
+            
+            // Hide game over screen
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            updateUI();
+            updateMission();
+            showNotification('🔄 New game started! Good luck!');
+        }
+        
+        function pauseGame() {
+            gameData.gameRunning = !gameData.gameRunning;
+            showNotification(gameData.gameRunning ? '▶️ Game resumed!' : '⏸️ Game paused!');
+        }
+        
+        function gameLoop() {
+            if (gameData.gameRunning) {
+                handleInput();
+                checkCollisions();
+                spawnFlower();
+                spawnObstacle();
+                spawnPowerUp();
+                
+                // Move obstacles
+                gameData.obstacles.forEach((obstacle, index) => {
+                    obstacle.x += 2;
+                    const obstacleElement = document.getElementById(`obstacle-${obstacle.id}`);
+                    if (obstacleElement) {
+                        obstacleElement.style.left = obstacle.x + 'px';
+                        
+                        if (obstacle.x > window.innerWidth + 50) {
+                            obstacleElement.remove();
+                            gameData.obstacles.splice(index, 1);
+                        }
+                    }
+                });
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            gameData.keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            gameData.keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Initialize
+        updateUI();
+        updateMission();
+        gameLoop();
+        
+        console.log('🐝 Bee Adventure loaded! Use WASD or arrow keys to fly!');
+    </script>
+</body>
+</html>

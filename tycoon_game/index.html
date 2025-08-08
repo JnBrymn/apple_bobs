@@ -1,0 +1,748 @@
+<!-- Dream Factory Tycoon - Collect dreams and build a magical dream empire! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Factory Tycoon</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0c0c3c 0%, #1a1a5c 25%, #4a1a5c 50%, #5c1a4a 75%, #3c0c0c 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #1a1a5c 0%, #0c0c3c 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+                radial-gradient(2px 2px at 160px 30px, #fff, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .dream {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            animation: float 4s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dream:hover {
+            transform: scale(1.2);
+        }
+
+        .dream.happy {
+            background: radial-gradient(circle, #ffd700, #ff6b9d);
+            box-shadow: 0 0 20px #ffd700, 0 0 40px #ff6b9d;
+        }
+
+        .dream.adventure {
+            background: radial-gradient(circle, #00ffff, #0066ff);
+            box-shadow: 0 0 20px #00ffff, 0 0 40px #0066ff;
+        }
+
+        .dream.friend {
+            background: radial-gradient(circle, #00ff00, #66ff66);
+            box-shadow: 0 0 20px #00ff00, 0 0 40px #66ff66;
+        }
+
+        .dream.nightmare {
+            background: radial-gradient(circle, #ff0000, #800080);
+            box-shadow: 0 0 20px #ff0000, 0 0 40px #800080;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .dream-worker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            animation: fly 2s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        .dream-worker::before {
+            content: '🧚';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+        }
+
+        @keyframes fly {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        .dream-machine {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .dream-machine.catcher {
+            background: linear-gradient(45deg, #ff6b9d, #ffd700);
+            box-shadow: 0 0 30px #ff6b9d;
+        }
+
+        .dream-machine.processor {
+            background: linear-gradient(45deg, #00ffff, #0066ff);
+            box-shadow: 0 0 30px #00ffff;
+        }
+
+        .dream-machine.storage {
+            background: linear-gradient(45deg, #00ff00, #66ff66);
+            box-shadow: 0 0 30px #00ff00;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 30px currentColor; }
+            50% { box-shadow: 0 0 50px currentColor, 0 0 70px currentColor; }
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1.5s linear forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) rotate(360deg) translateY(-30px);
+            }
+        }
+
+        .beam {
+            position: absolute;
+            width: 4px;
+            height: 120px;
+            background: linear-gradient(to bottom, #ffd700, transparent);
+            transform-origin: top;
+            animation: beam 0.8s linear forwards;
+        }
+
+        @keyframes beam {
+            0% {
+                opacity: 1;
+                transform: scaleY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(1);
+            }
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            border: 3px solid #ffd700;
+            min-width: 250px;
+        }
+
+        #stats {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background: linear-gradient(45deg, #ffd700, #ff6b9d);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .resource-counter {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            border-left: 4px solid #ffd700;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 1000;
+            text-shadow: 0 0 15px #ffd700;
+            animation: message 3s ease-out forwards;
+            text-align: center;
+        }
+
+        @keyframes message {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .dream-trail {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: trail 2s linear forwards;
+        }
+
+        @keyframes trail {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="stars"></div>
+        
+        <div id="ui">
+            <div id="stats">
+                <div class="resource-counter">💰 Dream Coins: <span id="moneyCount">0</span></div>
+                <div class="resource-counter">🧚 Dream Workers: <span id="workerCount">1</span></div>
+                <div class="resource-counter">🎯 Dream Catchers: <span id="catcherCount">1</span></div>
+                <div class="resource-counter">⚙️ Dream Processors: <span id="processorCount">0</span></div>
+                <div class="resource-counter">📦 Dream Storage: <span id="storageCount">0</span></div>
+                <br>
+                <div class="resource-counter">💭 Happy Dreams: <span id="happyCount">0</span></div>
+                <div class="resource-counter">🌟 Adventure Dreams: <span id="adventureCount">0</span></div>
+                <div class="resource-counter">👥 Friend Dreams: <span id="friendCount">0</span></div>
+                <div class="resource-counter">😴 Processed Dreams: <span id="processedCount">0</span></div>
+            </div>
+            
+            <button class="button" onclick="hireWorker()">Hire Dream Worker ($100)</button>
+            <button class="button" onclick="buyCatcher()">Buy Dream Catcher ($200)</button>
+            <button class="button" onclick="buyProcessor()">Buy Dream Processor ($500)</button>
+            <button class="button" onclick="buyStorage()">Buy Dream Storage ($300)</button>
+            <button class="button" onclick="spawnDreams()">Spawn Dreams</button>
+            <button class="button" onclick="clearAll()">Reset Factory</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let dreams = [];
+        let workers = [];
+        let machines = [];
+        let money = 0;
+        let happyDreams = 0;
+        let adventureDreams = 0;
+        let friendDreams = 0;
+        let processedDreams = 0;
+        
+        // Dream types
+        const dreamTypes = {
+            happy: { emoji: '💭', color: '#ffd700', value: 10 },
+            adventure: { emoji: '🌟', color: '#00ffff', value: 15 },
+            friend: { emoji: '👥', color: '#00ff00', value: 12 },
+            nightmare: { emoji: '😱', color: '#ff0000', value: 5 }
+        };
+        
+        // Machine types
+        const machineTypes = {
+            catcher: { emoji: '🎯', cost: 200, produces: 'dreams' },
+            processor: { emoji: '⚙️', cost: 500, produces: 'processed' },
+            storage: { emoji: '📦', cost: 300, produces: 'storage' }
+        };
+        
+        // Initialize first worker
+        function createWorker(x, y) {
+            const worker = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                target: null,
+                speed: 2,
+                direction: Math.random() * Math.PI * 2
+            };
+            
+            workers.push(worker);
+            return worker;
+        }
+        
+        // Create initial worker
+        createWorker(100, 100);
+        
+        // Create initial dream catcher
+        function createMachine(x, y, type) {
+            const machine = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type
+            };
+            
+            machines.push(machine);
+            return machine;
+        }
+        
+        createMachine(200, 150, 'catcher');
+        
+        // Create dreams
+        function createDream(x, y, type) {
+            const dream = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type,
+                collected: false
+            };
+            
+            dreams.push(dream);
+            return dream;
+        }
+        
+        // Spawn some initial dreams
+        for (let i = 0; i < 8; i++) {
+            const types = Object.keys(dreamTypes);
+            const type = types[Math.floor(Math.random() * types.length)];
+            createDream(
+                Math.random() * (window.innerWidth - 100) + 50,
+                Math.random() * (window.innerHeight - 100) + 50,
+                type
+            );
+        }
+        
+        // Game loop
+        function gameLoop() {
+            updateWorkers();
+            updateMachines();
+            updateDreams();
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateWorkers() {
+            workers.forEach(worker => {
+                // Find nearest dream if not targeting anything
+                if (!worker.target) {
+                    const nearest = findNearestDream(worker.x, worker.y);
+                    if (nearest) {
+                        worker.target = nearest;
+                    }
+                }
+                
+                // Move towards target
+                if (worker.target) {
+                    const dx = worker.target.x - worker.x;
+                    const dy = worker.target.y - worker.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 10) {
+                        // Collect dream
+                        if (worker.target.type === 'dream') {
+                            collectDream(worker.target);
+                            worker.target = null;
+                            createSparkle(worker.x, worker.y);
+                            createDreamTrail(worker.x, worker.y);
+                        }
+                    } else {
+                        // Move towards target
+                        worker.x += (dx / distance) * worker.speed;
+                        worker.y += (dy / distance) * worker.speed;
+                    }
+                } else {
+                    // Wander around
+                    worker.x += Math.cos(worker.direction) * worker.speed * 0.3;
+                    worker.y += Math.sin(worker.direction) * worker.speed * 0.3;
+                    
+                    // Bounce off walls
+                    if (worker.x < 0 || worker.x > window.innerWidth - 30) {
+                        worker.direction = Math.PI - worker.direction;
+                    }
+                    if (worker.y < 0 || worker.y > window.innerHeight - 30) {
+                        worker.direction = -worker.direction;
+                    }
+                }
+                
+                // Update worker visual
+                updateWorkerVisual(worker);
+            });
+        }
+        
+        function findNearestDream(x, y) {
+            let nearest = null;
+            let minDistance = Infinity;
+            
+            dreams.forEach(dream => {
+                if (!dream.collected) {
+                    const dx = dream.x - x;
+                    const dy = dream.y - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearest = dream;
+                    }
+                }
+            });
+            
+            return nearest;
+        }
+        
+        function collectDream(dream) {
+            dream.collected = true;
+            money += dreamTypes[dream.type].value;
+            
+            // Add to inventory
+            switch(dream.type) {
+                case 'happy': happyDreams++; break;
+                case 'adventure': adventureDreams++; break;
+                case 'friend': friendDreams++; break;
+            }
+            
+            // Process nightmares into happy dreams
+            if (dream.type === 'nightmare') {
+                happyDreams += 2;
+                createMessage('Nightmare → Happy Dream!');
+            }
+            
+            createMessage(`Collected ${dream.type} dream!`);
+        }
+        
+        function updateMachines() {
+            machines.forEach(machine => {
+                // Machines process dreams over time
+                if (Math.random() < 0.02) {
+                    if (machine.type === 'processor' && (happyDreams > 0 || adventureDreams > 0 || friendDreams > 0)) {
+                        // Process dreams into money
+                        if (happyDreams > 0) {
+                            happyDreams--;
+                            processedDreams++;
+                            money += 25;
+                        } else if (adventureDreams > 0) {
+                            adventureDreams--;
+                            processedDreams++;
+                            money += 35;
+                        } else if (friendDreams > 0) {
+                            friendDreams--;
+                            processedDreams++;
+                            money += 30;
+                        }
+                        
+                        createSparkle(machine.x + 40, machine.y + 40);
+                        createBeam(machine.x + 40, machine.y + 40);
+                    }
+                }
+            });
+        }
+        
+        function updateDreams() {
+            // Remove collected dreams
+            dreams = dreams.filter(dream => !dream.collected);
+            
+            // Update dream visuals
+            updateDreamVisuals();
+        }
+        
+        function updateWorkerVisual(worker) {
+            let workerElement = document.querySelector(`[data-worker-id="${worker.id}"]`);
+            
+            if (!workerElement) {
+                workerElement = document.createElement('div');
+                workerElement.className = 'dream-worker';
+                workerElement.setAttribute('data-worker-id', worker.id);
+                document.getElementById('gameContainer').appendChild(workerElement);
+            }
+            
+            workerElement.style.left = worker.x + 'px';
+            workerElement.style.top = worker.y + 'px';
+            
+            // Add rainbow trail effect
+            if (worker.target) {
+                workerElement.style.boxShadow = '0 0 20px #ffd700';
+            } else {
+                workerElement.style.boxShadow = 'none';
+            }
+        }
+        
+        function updateDreamVisuals() {
+            // Clear old dream visuals
+            document.querySelectorAll('.dream').forEach(el => el.remove());
+            
+            // Create new dream visuals
+            dreams.forEach(dream => {
+                if (!dream.collected) {
+                    const dreamElement = document.createElement('div');
+                    dreamElement.className = `dream ${dream.type}`;
+                    dreamElement.style.left = dream.x + 'px';
+                    dreamElement.style.top = dream.y + 'px';
+                    dreamElement.innerHTML = dreamTypes[dream.type].emoji;
+                    dreamElement.setAttribute('data-dream-id', dream.id);
+                    
+                    // Add click to collect
+                    dreamElement.onclick = () => {
+                        collectDream(dream);
+                        dreamElement.remove();
+                    };
+                    
+                    document.getElementById('gameContainer').appendChild(dreamElement);
+                }
+            });
+        }
+        
+        function updateMachineVisuals() {
+            // Clear old machine visuals
+            document.querySelectorAll('.dream-machine').forEach(el => el.remove());
+            
+            // Create new machine visuals
+            machines.forEach(machine => {
+                const machineElement = document.createElement('div');
+                machineElement.className = `dream-machine ${machine.type}`;
+                machineElement.style.left = machine.x + 'px';
+                machineElement.style.top = machine.y + 'px';
+                machineElement.innerHTML = machineTypes[machine.type].emoji;
+                machineElement.setAttribute('data-machine-id', machine.id);
+                document.getElementById('gameContainer').appendChild(machineElement);
+            });
+        }
+        
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1500);
+        }
+        
+        function createBeam(x, y) {
+            const beam = document.createElement('div');
+            beam.className = 'beam';
+            beam.style.left = x + 'px';
+            beam.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(beam);
+            
+            setTimeout(() => {
+                beam.remove();
+            }, 800);
+        }
+        
+        function createDreamTrail(x, y) {
+            const trail = document.createElement('div');
+            trail.className = 'dream-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(trail);
+            
+            setTimeout(() => {
+                trail.remove();
+            }, 2000);
+        }
+        
+        function createMessage(text) {
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.textContent = text;
+            document.getElementById('gameContainer').appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+        }
+        
+        function updateUI() {
+            document.getElementById('moneyCount').textContent = Math.floor(money);
+            document.getElementById('workerCount').textContent = workers.length;
+            document.getElementById('catcherCount').textContent = machines.filter(m => m.type === 'catcher').length;
+            document.getElementById('processorCount').textContent = machines.filter(m => m.type === 'processor').length;
+            document.getElementById('storageCount').textContent = machines.filter(m => m.type === 'storage').length;
+            document.getElementById('happyCount').textContent = happyDreams;
+            document.getElementById('adventureCount').textContent = adventureDreams;
+            document.getElementById('friendCount').textContent = friendDreams;
+            document.getElementById('processedCount').textContent = processedDreams;
+        }
+        
+        // UI Functions
+        function hireWorker() {
+            if (money >= 100) {
+                money -= 100;
+                createWorker(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50
+                );
+                createMessage('New Dream Worker Hired! ✨');
+            }
+        }
+        
+        function buyCatcher() {
+            if (money >= 200) {
+                money -= 200;
+                createMachine(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'catcher'
+                );
+                createMessage('Dream Catcher Built! 🎯');
+            }
+        }
+        
+        function buyProcessor() {
+            if (money >= 500) {
+                money -= 500;
+                createMachine(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'processor'
+                );
+                createMessage('Dream Processor Built! ⚙️');
+            }
+        }
+        
+        function buyStorage() {
+            if (money >= 300) {
+                money -= 300;
+                createMachine(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'storage'
+                );
+                createMessage('Dream Storage Built! 📦');
+            }
+        }
+        
+        function spawnDreams() {
+            for (let i = 0; i < 5; i++) {
+                const types = Object.keys(dreamTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                createDream(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    type
+                );
+            }
+            createMessage('New Dreams Spawned! 💭');
+        }
+        
+        function clearAll() {
+            dreams = [];
+            workers = [];
+            machines = [];
+            money = 0;
+            happyDreams = 0;
+            adventureDreams = 0;
+            friendDreams = 0;
+            processedDreams = 0;
+            
+            // Clear visuals
+            document.querySelectorAll('.dream, .dream-worker, .dream-machine').forEach(el => el.remove());
+            
+            // Recreate initial setup
+            createWorker(100, 100);
+            createMachine(200, 150, 'catcher');
+            
+            // Spawn initial dreams
+            for (let i = 0; i < 8; i++) {
+                const types = Object.keys(dreamTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                createDream(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    type
+                );
+            }
+            
+            createMessage('Dream Factory Reset! 🌙');
+        }
+        
+        // Start the game
+        gameLoop();
+        
+        // Update visuals periodically
+        setInterval(() => {
+            updateDreamVisuals();
+            updateMachineVisuals();
+        }, 500);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Keep workers within bounds
+            workers.forEach(worker => {
+                if (worker.x > window.innerWidth - 30) worker.x = window.innerWidth - 30;
+                if (worker.y > window.innerHeight - 30) worker.y = window.innerHeight - 30;
+            });
+        });
+    </script>
+</body>
+</html>

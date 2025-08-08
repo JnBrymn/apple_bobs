@@ -1,0 +1,801 @@
+<!-- Amazing Digital Circus 3D Tycoon - You are Pomni running the circus! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazing Digital Circus 3D Tycoon</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ffd700 25%, #00ffff 50%, #ff6b9d 75%, #ffd700 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at center, #ff6b9d 0%, #ffd700 50%, #00ffff 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+            perspective: 1200px;
+            transform-style: preserve-3d;
+        }
+
+        .digital-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 10s linear infinite;
+            transform: rotateX(60deg) rotateZ(45deg);
+            transform-style: preserve-3d;
+        }
+
+        @keyframes grid-move {
+            0% { transform: rotateX(60deg) rotateZ(45deg) translateY(0px) translateZ(0px); }
+            50% { transform: rotateX(60deg) rotateZ(45deg) translateY(25px) translateZ(50px); }
+            100% { transform: rotateX(60deg) rotateZ(45deg) translateY(50px) translateZ(0px); }
+        }
+
+        .floating-cube {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #ff6b9d, #ffd700, #00ffff);
+            border: 2px solid white;
+            animation: cube-rotate 8s linear infinite;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes cube-rotate {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) translateZ(0px); }
+            25% { transform: rotateX(90deg) rotateY(45deg) rotateZ(45deg) translateZ(50px); }
+            50% { transform: rotateX(180deg) rotateY(90deg) rotateZ(90deg) translateZ(100px); }
+            75% { transform: rotateX(270deg) rotateY(135deg) rotateZ(135deg) translateZ(50px); }
+            100% { transform: rotateX(360deg) rotateY(180deg) rotateZ(180deg) translateZ(0px); }
+        }
+
+        .pomni {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            background: linear-gradient(45deg, #ff6b9d, #ffd700);
+            border-radius: 20px 20px 10px 10px;
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px #ff6b9d;
+            transform-style: preserve-3d;
+            animation: pomni-bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes pomni-bounce {
+            0%, 100% { transform: translateZ(0px) rotateY(0deg); }
+            50% { transform: translateZ(20px) rotateY(10deg); }
+        }
+
+        .pomni::before {
+            content: '🎭';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+        }
+
+        .pomni::after {
+            content: 'Pomni';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .character {
+            position: absolute;
+            width: 35px;
+            height: 50px;
+            border-radius: 15px;
+            animation: float 3s ease-in-out infinite;
+            z-index: 10;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .character:hover {
+            transform: scale(1.2);
+        }
+
+        .character.ragatha {
+            background: linear-gradient(45deg, #ff6b9d, #ff8fab);
+            box-shadow: 0 0 15px #ff6b9d;
+        }
+
+        .character.jax {
+            background: linear-gradient(45deg, #800080, #9932cc);
+            box-shadow: 0 0 15px #800080;
+        }
+
+        .character.gangle {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            box-shadow: 0 0 15px #ffd700;
+        }
+
+        .character.zooble {
+            background: linear-gradient(45deg, #00ffff, #40e0d0);
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .character.kinger {
+            background: linear-gradient(45deg, #ff4500, #ff6347);
+            box-shadow: 0 0 15px #ff4500;
+        }
+
+        .character.abstracted {
+            background: linear-gradient(45deg, #ff0000, #800000);
+            box-shadow: 0 0 20px #ff0000;
+            animation: glitch 0.5s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            25% { transform: translate(-2px, 2px); }
+            50% { transform: translate(2px, -2px); }
+            75% { transform: translate(-2px, -2px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateZ(0px) rotateY(0deg); }
+            25% { transform: translateY(-10px) translateZ(30px) rotateY(90deg); }
+            50% { transform: translateY(-15px) translateZ(50px) rotateY(180deg); }
+            75% { transform: translateY(-10px) translateZ(30px) rotateY(270deg); }
+            100% { transform: translateY(0px) translateZ(0px) rotateY(360deg); }
+        }
+
+        .circus-attraction {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            animation: glow 2s ease-in-out infinite;
+            z-index: 5;
+            transform-style: preserve-3d;
+            animation: glow 2s ease-in-out infinite, attraction-float 4s ease-in-out infinite;
+        }
+
+        @keyframes attraction-float {
+            0%, 100% { transform: translateZ(0px) rotateX(0deg); }
+            50% { transform: translateZ(40px) rotateX(15deg); }
+        }
+
+        .circus-attraction.tent {
+            background: linear-gradient(45deg, #ff6b9d, #ffd700);
+            box-shadow: 0 0 30px #ff6b9d;
+        }
+
+        .circus-attraction.stage {
+            background: linear-gradient(45deg, #00ffff, #0066ff);
+            box-shadow: 0 0 30px #00ffff;
+        }
+
+        .circus-attraction.games {
+            background: linear-gradient(45deg, #00ff00, #66ff66);
+            box-shadow: 0 0 30px #00ff00;
+        }
+
+        .circus-attraction.food {
+            background: linear-gradient(45deg, #ff4500, #ff6347);
+            box-shadow: 0 0 30px #ff4500;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 30px currentColor; }
+            50% { box-shadow: 0 0 50px currentColor, 0 0 70px currentColor; }
+        }
+
+        .exit-door {
+            position: absolute;
+            width: 60px;
+            height: 100px;
+            background: linear-gradient(45deg, #ff0000, #800000);
+            border: 3px solid #ff0000;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: door-pulse 2s ease-in-out infinite;
+            z-index: 50;
+            cursor: pointer;
+        }
+
+        .exit-door:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes door-pulse {
+            0%, 100% { box-shadow: 0 0 20px #ff0000; }
+            50% { box-shadow: 0 0 40px #ff0000, 0 0 60px #ff0000; }
+        }
+
+        .void-warning {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #ff0000;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #ff0000;
+            font-size: 18px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1.5s linear forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) rotate(360deg) translateY(-30px);
+            }
+        }
+
+        .glitch-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,0,0,0.1) 50%, transparent 70%);
+            animation: glitch-scan 3s linear infinite;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        @keyframes glitch-scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            border: 3px solid #ff6b9d;
+            min-width: 280px;
+        }
+
+        #stats {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background: linear-gradient(45deg, #ff6b9d, #ffd700);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255,107,157,0.4);
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .resource-counter {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            border-left: 4px solid #ff6b9d;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffd700;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 1000;
+            text-shadow: 0 0 15px #ffd700;
+            animation: message 3s ease-out forwards;
+            text-align: center;
+        }
+
+        @keyframes message {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .character-name {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="digital-grid"></div>
+        
+        <!-- Add floating 3D cubes -->
+        <div class="floating-cube" style="left: 10%; top: 20%;"></div>
+        <div class="floating-cube" style="left: 80%; top: 30%;"></div>
+        <div class="floating-cube" style="left: 60%; top: 70%;"></div>
+        <div class="floating-cube" style="left: 20%; top: 80%;"></div>
+        <div class="floating-cube" style="left: 90%; top: 60%;"></div>
+        
+        <div id="ui">
+            <div id="stats">
+                <div class="resource-counter">🎪 Circus Coins: <span id="moneyCount">0</span></div>
+                <div class="resource-counter">🎭 Characters: <span id="characterCount">5</span></div>
+                <div class="resource-counter">🎪 Attractions: <span id="attractionCount">1</span></div>
+                <div class="resource-counter">😱 Abstracted: <span id="abstractedCount">0</span></div>
+                <div class="resource-counter">🎯 Happiness: <span id="happinessCount">100</span>%</div>
+                <br>
+                <div class="resource-counter">🎪 Circus Tents: <span id="tentCount">1</span></div>
+                <div class="resource-counter">🎭 Stages: <span id="stageCount">0</span></div>
+                <div class="resource-counter">🎮 Games: <span id="gamesCount">0</span></div>
+                <div class="resource-counter">🍿 Food Stands: <span id="foodCount">0</span></div>
+            </div>
+            
+            <button class="button" onclick="hireCharacter()">Hire Character ($200)</button>
+            <button class="button" onclick="buildTent()">Build Tent ($300)</button>
+            <button class="button" onclick="buildStage()">Build Stage ($400)</button>
+            <button class="button" onclick="buildGames()">Build Games ($250)</button>
+            <button class="button" onclick="buildFood()">Build Food Stand ($150)</button>
+            <button class="button" onclick="fixAbstraction()">Fix Abstraction ($500)</button>
+            <button class="button" onclick="clearAll()">Reset Circus</button>
+        </div>
+
+        <div class="exit-door" onclick="tryExit()">🚪</div>
+        <div class="void-warning" id="voidWarning">
+            <h3>⚠️ VOID WARNING ⚠️</h3>
+            <p>The exit door leads to the VOID!</p>
+            <p>You'll be trapped in nothingness forever!</p>
+            <p>Are you sure you want to enter?</p>
+            <button onclick="enterVoid()" style="background: #ff0000; color: white; border: none; padding: 10px; margin: 5px; border-radius: 5px;">YES - Enter Void</button>
+            <button onclick="closeVoidWarning()" style="background: #00ff00; color: white; border: none; padding: 10px; margin: 5px; border-radius: 5px;">NO - Stay Safe</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let pomni = { x: 100, y: 100 };
+        let characters = [];
+        let attractions = [];
+        let money = 0;
+        let happiness = 100;
+        let abstractedCount = 0;
+        
+        // Character types
+        const characterTypes = {
+            ragatha: { emoji: '🧸', name: 'Ragatha', cost: 200, happiness: 80 },
+            jax: { emoji: '🐰', name: 'Jax', cost: 200, happiness: 70 },
+            gangle: { emoji: '🎭', name: 'Gangle', cost: 200, happiness: 90 },
+            zooble: { emoji: '🧩', name: 'Zooble', cost: 200, happiness: 75 },
+            kinger: { emoji: '👑', name: 'Kinger', cost: 200, happiness: 60 }
+        };
+        
+        // Attraction types
+        const attractionTypes = {
+            tent: { emoji: '🎪', cost: 300, produces: 50 },
+            stage: { emoji: '🎭', cost: 400, produces: 75 },
+            games: { emoji: '🎮', cost: 250, produces: 40 },
+            food: { emoji: '🍿', cost: 150, produces: 30 }
+        };
+        
+        // Initialize Pomni
+        function updatePomni() {
+            let pomniElement = document.querySelector('.pomni');
+            if (!pomniElement) {
+                pomniElement = document.createElement('div');
+                pomniElement.className = 'pomni';
+                document.getElementById('gameContainer').appendChild(pomniElement);
+            }
+            
+            pomniElement.style.left = pomni.x + 'px';
+            pomniElement.style.top = pomni.y + 'px';
+        }
+        
+        // Initialize characters
+        function createCharacter(x, y, type) {
+            const character = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type,
+                abstracted: false,
+                happiness: characterTypes[type].happiness,
+                direction: Math.random() * Math.PI * 2
+            };
+            
+            characters.push(character);
+            return character;
+        }
+        
+        // Create initial characters
+        createCharacter(200, 150, 'ragatha');
+        createCharacter(300, 200, 'jax');
+        createCharacter(400, 150, 'gangle');
+        createCharacter(500, 250, 'zooble');
+        createCharacter(600, 200, 'kinger');
+        
+        // Create initial tent
+        function createAttraction(x, y, type) {
+            const attraction = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type
+            };
+            
+            attractions.push(attraction);
+            return attraction;
+        }
+        
+        createAttraction(350, 300, 'tent');
+        
+        // Position exit door
+        document.querySelector('.exit-door').style.left = (window.innerWidth - 80) + 'px';
+        document.querySelector('.exit-door').style.top = (window.innerHeight - 120) + 'px';
+        
+        // Game loop
+        function gameLoop() {
+            updateCharacters();
+            updateAttractions();
+            updateHappiness();
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateCharacters() {
+            characters.forEach(character => {
+                // Move characters around
+                character.x += Math.cos(character.direction) * 0.5;
+                character.y += Math.sin(character.direction) * 0.5;
+                
+                // Bounce off walls
+                if (character.x < 0 || character.x > window.innerWidth - 35) {
+                    character.direction = Math.PI - character.direction;
+                }
+                if (character.y < 0 || character.y > window.innerHeight - 50) {
+                    character.direction = -character.direction;
+                }
+                
+                // Random direction changes
+                if (Math.random() < 0.01) {
+                    character.direction += (Math.random() - 0.5) * Math.PI;
+                }
+                
+                // Check for abstraction
+                if (!character.abstracted && Math.random() < 0.001) {
+                    character.abstracted = true;
+                    abstractedCount++;
+                    createMessage(`${characterTypes[character.type].name} got ABSTRACTED! 😱`);
+                    createGlitchEffect();
+                }
+                
+                // Update character visual
+                updateCharacterVisual(character);
+            });
+        }
+        
+        function updateAttractions() {
+            attractions.forEach(attraction => {
+                // Attractions produce money
+                if (Math.random() < 0.02) {
+                    money += attractionTypes[attraction.type].produces;
+                    createSparkle(attraction.x + 40, attraction.y + 40);
+                }
+            });
+        }
+        
+        function updateHappiness() {
+            // Calculate overall happiness
+            let totalHappiness = 0;
+            characters.forEach(char => {
+                if (!char.abstracted) {
+                    totalHappiness += char.happiness;
+                }
+            });
+            
+            happiness = Math.max(0, Math.min(100, totalHappiness / characters.length));
+            
+            // Low happiness increases abstraction risk
+            if (happiness < 30) {
+                characters.forEach(char => {
+                    if (!char.abstracted && Math.random() < 0.005) {
+                        char.abstracted = true;
+                        abstractedCount++;
+                        createMessage(`${characterTypes[char.type].name} got ABSTRACTED from low happiness! 😱`);
+                        createGlitchEffect();
+                    }
+                });
+            }
+        }
+        
+        function updateCharacterVisual(character) {
+            let charElement = document.querySelector(`[data-character-id="${character.id}"]`);
+            
+            if (!charElement) {
+                charElement = document.createElement('div');
+                charElement.className = `character ${character.type}`;
+                charElement.setAttribute('data-character-id', character.id);
+                document.getElementById('gameContainer').appendChild(charElement);
+                
+                // Add character name
+                const nameElement = document.createElement('div');
+                nameElement.className = 'character-name';
+                nameElement.textContent = characterTypes[character.type].name;
+                charElement.appendChild(nameElement);
+            }
+            
+            charElement.style.left = character.x + 'px';
+            charElement.style.top = character.y + 'px';
+            charElement.innerHTML = characterTypes[character.type].emoji;
+            
+            if (character.abstracted) {
+                charElement.classList.add('abstracted');
+            } else {
+                charElement.classList.remove('abstracted');
+            }
+        }
+        
+        function updateAttractionVisuals() {
+            // Clear old attraction visuals
+            document.querySelectorAll('.circus-attraction').forEach(el => el.remove());
+            
+            // Create new attraction visuals
+            attractions.forEach(attraction => {
+                const attractionElement = document.createElement('div');
+                attractionElement.className = `circus-attraction ${attraction.type}`;
+                attractionElement.style.left = attraction.x + 'px';
+                attractionElement.style.top = attraction.y + 'px';
+                attractionElement.innerHTML = attractionTypes[attraction.type].emoji;
+                attractionElement.setAttribute('data-attraction-id', attraction.id);
+                document.getElementById('gameContainer').appendChild(attractionElement);
+            });
+        }
+        
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1500);
+        }
+        
+        function createGlitchEffect() {
+            const glitch = document.createElement('div');
+            glitch.className = 'glitch-effect';
+            document.getElementById('gameContainer').appendChild(glitch);
+            
+            setTimeout(() => {
+                glitch.remove();
+            }, 3000);
+        }
+        
+        function createMessage(text) {
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.textContent = text;
+            document.getElementById('gameContainer').appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+        }
+        
+        function updateUI() {
+            document.getElementById('moneyCount').textContent = Math.floor(money);
+            document.getElementById('characterCount').textContent = characters.length;
+            document.getElementById('attractionCount').textContent = attractions.length;
+            document.getElementById('abstractedCount').textContent = abstractedCount;
+            document.getElementById('happinessCount').textContent = Math.floor(happiness);
+            document.getElementById('tentCount').textContent = attractions.filter(a => a.type === 'tent').length;
+            document.getElementById('stageCount').textContent = attractions.filter(a => a.type === 'stage').length;
+            document.getElementById('gamesCount').textContent = attractions.filter(a => a.type === 'games').length;
+            document.getElementById('foodCount').textContent = attractions.filter(a => a.type === 'food').length;
+        }
+        
+        // UI Functions
+        function hireCharacter() {
+            if (money >= 200) {
+                money -= 200;
+                const types = Object.keys(characterTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                createCharacter(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    type
+                );
+                createMessage(`Hired ${characterTypes[type].name}! 🎭`);
+            }
+        }
+        
+        function buildTent() {
+            if (money >= 300) {
+                money -= 300;
+                createAttraction(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'tent'
+                );
+                createMessage('Circus Tent Built! 🎪');
+            }
+        }
+        
+        function buildStage() {
+            if (money >= 400) {
+                money -= 400;
+                createAttraction(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'stage'
+                );
+                createMessage('Stage Built! 🎭');
+            }
+        }
+        
+        function buildGames() {
+            if (money >= 250) {
+                money -= 250;
+                createAttraction(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'games'
+                );
+                createMessage('Games Built! 🎮');
+            }
+        }
+        
+        function buildFood() {
+            if (money >= 150) {
+                money -= 150;
+                createAttraction(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    'food'
+                );
+                createMessage('Food Stand Built! 🍿');
+            }
+        }
+        
+        function fixAbstraction() {
+            if (money >= 500 && abstractedCount > 0) {
+                money -= 500;
+                const abstracted = characters.filter(c => c.abstracted);
+                if (abstracted.length > 0) {
+                    const randomChar = abstracted[Math.floor(Math.random() * abstracted.length)];
+                    randomChar.abstracted = false;
+                    abstractedCount--;
+                    createMessage(`Fixed ${characterTypes[randomChar.type].name}! ✨`);
+                }
+            }
+        }
+        
+        function tryExit() {
+            document.getElementById('voidWarning').style.display = 'block';
+        }
+        
+        function enterVoid() {
+            createMessage('You entered the VOID! 😱');
+            createGlitchEffect();
+            setTimeout(() => {
+                clearAll();
+                createMessage('You escaped the void... somehow! 🌟');
+            }, 3000);
+            closeVoidWarning();
+        }
+        
+        function closeVoidWarning() {
+            document.getElementById('voidWarning').style.display = 'none';
+        }
+        
+        function clearAll() {
+            characters = [];
+            attractions = [];
+            money = 0;
+            happiness = 100;
+            abstractedCount = 0;
+            
+            // Clear visuals
+            document.querySelectorAll('.character, .circus-attraction').forEach(el => el.remove());
+            
+            // Recreate initial setup
+            createCharacter(200, 150, 'ragatha');
+            createCharacter(300, 200, 'jax');
+            createCharacter(400, 150, 'gangle');
+            createCharacter(500, 250, 'zooble');
+            createCharacter(600, 200, 'kinger');
+            createAttraction(350, 300, 'tent');
+            
+            createMessage('Circus Reset! 🎪');
+        }
+        
+        // Mouse movement for Pomni
+        document.addEventListener('mousemove', (e) => {
+            pomni.x = e.clientX - 20;
+            pomni.y = e.clientY - 30;
+            updatePomni();
+        });
+        
+        // Start the game
+        gameLoop();
+        updatePomni();
+        
+        // Update visuals periodically
+        setInterval(() => {
+            updateAttractionVisuals();
+        }, 500);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            document.querySelector('.exit-door').style.left = (window.innerWidth - 80) + 'px';
+            document.querySelector('.exit-door').style.top = (window.innerHeight - 120) + 'px';
+        });
+    </script>
+</body>
+</html>

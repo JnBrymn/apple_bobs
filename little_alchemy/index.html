@@ -1,0 +1,2278 @@
+<!-- 
+Little Alchemy Game
+A game where you combine basic elements (water, air, gas, land, fire) to create new things
+Features: drag and drop combining, element collection, fun combinations
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Little Alchemy 🧪</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(138, 43, 226, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0, 255, 255, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%, 300% 300%, 200% 200%, 400% 400%;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            animation: backgroundShift 20s ease infinite;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; }
+            50% { background-position: 100% 50%, 100% 100%, 50% 50%, 50% 50%; }
+            100% { background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #ffd700, #ff6347, #00ced1, #9370db);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 4s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .workspace {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            min-height: 500px;
+            position: relative;
+        }
+
+        #workspaceArea {
+            width: 100%;
+            height: 100%;
+            min-height: 460px;
+            position: relative;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .workspace h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ffd700;
+            font-size: 1.5em;
+        }
+
+        .element {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            cursor: grab;
+            position: absolute;
+            user-select: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .element:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .element.dragging {
+            opacity: 0.8;
+            transform: scale(1.2);
+            z-index: 1000;
+        }
+
+        .element.water { background: linear-gradient(45deg, #1e90ff, #00bfff); }
+        .element.air { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.gas { background: linear-gradient(45deg, #dda0dd, #e6e6fa); }
+        .element.land { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.fire { background: linear-gradient(45deg, #ff4500, #ff6347); }
+        .element.steam { background: linear-gradient(45deg, #f0f8ff, #e6e6fa); }
+        .element.earth { background: linear-gradient(45deg, #228b22, #32cd32); }
+        .element.lava { background: linear-gradient(45deg, #ff4500, #ff0000); }
+        .element.energy { background: linear-gradient(45deg, #ffff00, #ffd700); }
+        .element.plant { background: linear-gradient(45deg, #228b22, #90ee90); }
+        .element.tree { background: linear-gradient(45deg, #006400, #228b22); }
+        .element.forest { background: linear-gradient(45deg, #228b22, #32cd32); }
+        .element.animal { background: linear-gradient(45deg, #cd853f, #deb887); }
+        .element.human { background: linear-gradient(45deg, #ffb6c1, #ffc0cb); }
+        .element.tool { background: linear-gradient(45deg, #696969, #808080); }
+        .element.machine { background: linear-gradient(45deg, #4169e1, #6495ed); }
+        .element.robot { background: linear-gradient(45deg, #708090, #778899); }
+        .element.house { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.city { background: linear-gradient(45deg, #2f4f4f, #696969); }
+        .element.planet { background: linear-gradient(45deg, #4169e1, #1e90ff); }
+        .element.space { background: linear-gradient(45deg, #191970, #000080); }
+        .element.star { background: linear-gradient(45deg, #ffd700, #ffff00); }
+        .element.sun { background: linear-gradient(45deg, #ff4500, #ffd700); }
+        .element.moon { background: linear-gradient(45deg, #c0c0c0, #e6e6fa); }
+        .element.time { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.life { background: linear-gradient(45deg, #32cd32, #90ee90); }
+        .element.death { background: linear-gradient(45deg, #2f4f4f, #000000); }
+        .element.philosophy { background: linear-gradient(45deg, #daa520, #ffd700); }
+        .element.knife { background: linear-gradient(45deg, #c0c0c0, #808080); }
+        .element.sword { background: linear-gradient(45deg, #c0c0c0, #696969); }
+        .element.earth { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.stone { background: linear-gradient(45deg, #696969, #808080); }
+        .element.sand { background: linear-gradient(45deg, #f4a460, #deb887); }
+        .element.metal { background: linear-gradient(45deg, #c0c0c0, #a9a9a9); }
+        .element.moss { background: linear-gradient(45deg, #228b22, #32cd32); }
+        .element.algae { background: linear-gradient(45deg, #228b22, #90ee90); }
+        .element.ash { background: linear-gradient(45deg, #696969, #a9a9a9); }
+        .element.seed { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.dandelion { background: linear-gradient(45deg, #ffff00, #ffd700); }
+        .element.fertilizer { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.charcoal { background: linear-gradient(45deg, #2f4f4f, #696969); }
+        .element.ink { background: linear-gradient(45deg, #000000, #2f4f4f); }
+        .element.coal { background: linear-gradient(45deg, #2f4f4f, #696969); }
+        .element.diamond { background: linear-gradient(45deg, #b9f2ff, #e6e6fa); }
+        .element.gem { background: linear-gradient(45deg, #ff69b4, #da70d6); }
+        .element.crystal { background: linear-gradient(45deg, #e6e6fa, #b9f2ff); }
+        .element.sparkle { background: linear-gradient(45deg, #ffff00, #ffd700); }
+        .element.light { background: linear-gradient(45deg, #ffff00, #ffd700); }
+        .element.pearl { background: linear-gradient(45deg, #f0f8ff, #e6e6fa); }
+        .element.oyster { background: linear-gradient(45deg, #f5f5dc, #deb887); }
+        .element.shell { background: linear-gradient(45deg, #f5f5dc, #deb887); }
+        .element.food { background: linear-gradient(45deg, #ff6347, #ff4500); }
+        .element.lime { background: linear-gradient(45deg, #32cd32, #90ee90); }
+        .element.cement { background: linear-gradient(45deg, #696969, #808080); }
+        .element.concrete { background: linear-gradient(45deg, #696969, #a9a9a9); }
+        .element.glass { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.building { background: linear-gradient(45deg, #696969, #808080); }
+        .element.brick { background: linear-gradient(45deg, #cd5c5c, #dc143c); }
+        .element.house { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.ruins { background: linear-gradient(45deg, #696969, #2f4f4f); }
+        .element.skyscraper { background: linear-gradient(45deg, #4169e1, #6495ed); }
+        .element.home { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.community { background: linear-gradient(45deg, #32cd32, #90ee90); }
+        .element.windmill { background: linear-gradient(45deg, #8b4513, #a0522d); }
+        .element.breeze { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.love { background: linear-gradient(45deg, #ff69b4, #ff1493); }
+        .element.warmth { background: linear-gradient(45deg, #ff4500, #ff6347); }
+        .element.heart { background: linear-gradient(45deg, #ff69b4, #ff1493); }
+        .element.garden { background: linear-gradient(45deg, #228b22, #32cd32); }
+        .element.passion { background: linear-gradient(45deg, #ff4500, #ff6347); }
+        .element.romance { background: linear-gradient(45deg, #ff69b4, #ff1493); }
+        .element.soul { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.spirit { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.breath { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.ghost { background: linear-gradient(45deg, #e6e6fa, #f0f8ff); }
+        .element.demon { background: linear-gradient(45deg, #8b0000, #dc143c); }
+        .element.angel { background: linear-gradient(45deg, #f0f8ff, #e6e6fa); }
+        .element.fairy { background: linear-gradient(45deg, #ff69b4, #da70d6); }
+        .element.phantom { background: linear-gradient(45deg, #e6e6fa, #f0f8ff); }
+        .element.haunting { background: linear-gradient(45deg, #2f4f4f, #696969); }
+        .element.hell { background: linear-gradient(45deg, #8b0000, #ff4500); }
+        .element.evil { background: linear-gradient(45deg, #8b0000, #dc143c); }
+        .element.devil { background: linear-gradient(45deg, #8b0000, #ff4500); }
+        .element.darkness { background: linear-gradient(45deg, #2f4f4f, #000000); }
+        .element.heaven { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.divine { background: linear-gradient(45deg, #ffd700, #ffff00); }
+        .element.blessing { background: linear-gradient(45deg, #ffd700, #ffff00); }
+        .element.magic { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.enchantment { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.wings { background: linear-gradient(45deg, #f0f8ff, #e6e6fa); }
+        .element.spell { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.sorcery { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.potion { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.ritual { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.incantation { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.charm { background: linear-gradient(45deg, #ff69b4, #da70d6); }
+        .element.elixir { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.medicine { background: linear-gradient(45deg, #32cd32, #90ee90); }
+        .element.explosion { background: linear-gradient(45deg, #ff4500, #ff6347); }
+        .element.bubble { background: linear-gradient(45deg, #87ceeb, #b0e0e6); }
+        .element.power { background: linear-gradient(45deg, #ffff00, #ffd700); }
+        .element.infinity { background: linear-gradient(45deg, #9370db, #8a2be2); }
+        .element.space { background: linear-gradient(45deg, #191970, #000080); }
+        .element.cosmos { background: linear-gradient(45deg, #191970, #000080); }
+        .element.void { background: linear-gradient(45deg, #2f4f4f, #000000); }
+        .element.black_hole { background: linear-gradient(45deg, #000000, #2f4f4f); }
+        .element.monster { background: linear-gradient(45deg, #8b0000, #dc143c); }
+        .element.doom { background: linear-gradient(45deg, #8b0000, #000000); }
+        .element.apocalypse { background: linear-gradient(45deg, #8b0000, #ff4500); }
+        .element.nothingness { background: linear-gradient(45deg, #2f4f4f, #000000); }
+        .element.chaos { background: linear-gradient(45deg, #ff4500, #8b0000); }
+
+        .inventory {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .inventory h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ffd700;
+            font-size: 1.5em;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .inventory-element {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: grab;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .inventory-element:hover {
+            transform: scale(1.1);
+        }
+
+        .stats {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .combination-log {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .new-discovery {
+            background: linear-gradient(45deg, #ffd700, #ff6347) !important;
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes victory-dance {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            25% { transform: translate(-50%, -50%) scale(1.2) rotate(5deg); }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(-5deg); }
+            75% { transform: translate(-50%, -50%) scale(1.2) rotate(5deg); }
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #ff6347, #dc143c);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .inventory {
+                order: -1;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Little Alchemy 🧪</h1>
+        
+        <div class="game-area">
+            <div class="workspace">
+                <h3>🔬 Workspace</h3>
+                <div id="workspaceArea">
+                    <!-- Elements will be dragged here -->
+                </div>
+            </div>
+
+            <div class="inventory">
+                <h3>📦 Inventory</h3>
+                <div class="inventory-grid" id="inventoryGrid">
+                    <!-- Starting elements -->
+                </div>
+                
+                <div class="stats">
+                    <h4>📊 Discoveries</h4>
+                    <div id="discoveryCount">0</div>
+                </div>
+                
+                <div class="combination-log">
+                    <h4>📝 Recent Combinations</h4>
+                    <div id="logEntries"></div>
+                </div>
+                
+                <button class="reset-btn" onclick="resetGame()">
+                    🔄 Reset Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let game = {
+            discoveredElements: new Set(),
+            workspaceElements: [],
+            combinations: {},
+            discoveryCount: 0
+        };
+
+        // Define all possible combinations
+        const combinations = {
+            'water+fire': 'steam',
+            'water+air': 'rain',
+            'water+land': 'mud',
+            'fire+land': 'lava',
+            'fire+air': 'energy',
+            'air+land': 'dust',
+            'water+steam': 'cloud',
+            'fire+lava': 'volcano',
+            'land+plant': 'forest',
+            'water+plant': 'tree',
+            'air+energy': 'lightning',
+            'fire+energy': 'plasma',
+            'land+animal': 'human',
+            'plant+animal': 'herbivore',
+            'human+tool': 'worker',
+            'fire+tool': 'weapon',
+            'water+machine': 'steam_engine',
+            'energy+machine': 'robot',
+            'human+house': 'family',
+            'house+house': 'village',
+            'village+village': 'city',
+            'city+city': 'country',
+            'country+country': 'continent',
+            'continent+continent': 'planet',
+            'planet+planet': 'solar_system',
+            'solar_system+solar_system': 'galaxy',
+            'galaxy+galaxy': 'universe',
+            'fire+star': 'sun',
+            'air+moon': 'night',
+            'sun+night': 'day',
+            'day+night': 'time',
+            'human+time': 'philosophy',
+            'plant+time': 'evolution',
+            'animal+evolution': 'human',
+            'human+philosophy': 'wisdom',
+            'wisdom+time': 'immortality',
+            'fire+immortality': 'phoenix',
+            'water+phoenix': 'life',
+            'life+death': 'cycle',
+            'cycle+time': 'eternity',
+            'fire+metal': 'knife',
+            'earth+metal': 'sword',
+            'water+earth': 'mud',
+            'fire+earth': 'lava',
+            'air+earth': 'dust',
+            'water+stone': 'sand',
+            'fire+stone': 'metal',
+            'air+stone': 'sand',
+            'plant+stone': 'moss',
+            'water+plant': 'algae',
+            'fire+plant': 'ash',
+            'air+plant': 'seed',
+            'water+seed': 'plant',
+            'earth+seed': 'plant',
+            'fire+seed': 'ash',
+            'air+seed': 'dandelion',
+            'water+ash': 'mud',
+            'earth+ash': 'fertilizer',
+            'fire+ash': 'charcoal',
+            'air+ash': 'dust',
+            'water+charcoal': 'ink',
+            'earth+charcoal': 'coal',
+            'fire+charcoal': 'diamond',
+            'air+charcoal': 'smoke',
+            'water+smoke': 'cloud',
+            'earth+smoke': 'fog',
+            'fire+smoke': 'fire',
+            'air+smoke': 'cloud',
+            'water+fog': 'rain',
+            'earth+fog': 'mud',
+            'fire+fog': 'steam',
+            'air+fog': 'cloud',
+            'water+cloud': 'rain',
+            'earth+cloud': 'fog',
+            'fire+cloud': 'lightning',
+            'air+cloud': 'storm',
+            'water+storm': 'tsunami',
+            'earth+storm': 'earthquake',
+            'fire+storm': 'lightning',
+            'air+storm': 'hurricane',
+            'water+tsunami': 'ocean',
+            'earth+tsunami': 'island',
+            'fire+tsunami': 'steam',
+            'air+tsunami': 'storm',
+            'water+ocean': 'sea',
+            'earth+ocean': 'continent',
+            'fire+ocean': 'steam',
+            'air+ocean': 'wind',
+            'water+sea': 'ocean',
+            'earth+sea': 'beach',
+            'fire+sea': 'steam',
+            'air+sea': 'breeze',
+            'water+beach': 'sand',
+            'earth+beach': 'coast',
+            'fire+beach': 'glass',
+            'air+beach': 'sand',
+            'water+coast': 'beach',
+            'earth+coast': 'cliff',
+            'fire+coast': 'lava',
+            'air+coast': 'wind',
+            'water+cliff': 'waterfall',
+            'earth+cliff': 'mountain',
+            'fire+cliff': 'volcano',
+            'air+cliff': 'wind',
+            'water+waterfall': 'river',
+            'earth+waterfall': 'canyon',
+            'fire+waterfall': 'steam',
+            'air+waterfall': 'mist',
+            'water+river': 'stream',
+            'earth+river': 'valley',
+            'fire+river': 'steam',
+            'air+river': 'breeze',
+            'water+stream': 'brook',
+            'earth+stream': 'creek',
+            'fire+stream': 'steam',
+            'air+stream': 'breeze',
+            'water+brook': 'pond',
+            'earth+brook': 'marsh',
+            'fire+brook': 'steam',
+            'air+brook': 'breeze',
+            'water+pond': 'lake',
+            'earth+pond': 'swamp',
+            'fire+pond': 'steam',
+            'air+pond': 'breeze',
+            'water+lake': 'ocean',
+            'earth+lake': 'island',
+            'fire+lake': 'steam',
+            'air+lake': 'breeze',
+            'water+swamp': 'marsh',
+            'earth+swamp': 'bog',
+            'fire+swamp': 'steam',
+            'air+swamp': 'fog',
+            'water+marsh': 'swamp',
+            'earth+marsh': 'wetland',
+            'fire+marsh': 'steam',
+            'air+marsh': 'fog',
+            'water+wetland': 'marsh',
+            'earth+wetland': 'bog',
+            'fire+wetland': 'steam',
+            'air+wetland': 'fog',
+            'water+bog': 'swamp',
+            'earth+bog': 'peat',
+            'fire+bog': 'steam',
+            'air+bog': 'fog',
+            'water+peat': 'bog',
+            'earth+peat': 'coal',
+            'fire+peat': 'charcoal',
+            'air+peat': 'dust',
+            'water+coal': 'steam',
+            'earth+coal': 'diamond',
+            'fire+coal': 'charcoal',
+            'air+coal': 'smoke',
+            'water+diamond': 'gem',
+            'earth+diamond': 'crystal',
+            'fire+diamond': 'sparkle',
+            'air+diamond': 'light',
+            'water+gem': 'pearl',
+            'earth+gem': 'crystal',
+            'fire+gem': 'sparkle',
+            'air+gem': 'light',
+            'water+pearl': 'oyster',
+            'earth+pearl': 'shell',
+            'fire+pearl': 'sparkle',
+            'air+pearl': 'light',
+            'water+oyster': 'pearl',
+            'earth+oyster': 'shell',
+            'fire+oyster': 'food',
+            'air+oyster': 'shell',
+            'water+shell': 'pearl',
+            'earth+shell': 'sand',
+            'fire+shell': 'lime',
+            'air+shell': 'wind',
+            'water+lime': 'cement',
+            'earth+lime': 'concrete',
+            'fire+lime': 'glass',
+            'air+lime': 'dust',
+            'water+cement': 'concrete',
+            'earth+cement': 'building',
+            'fire+cement': 'brick',
+            'air+cement': 'dust',
+            'water+concrete': 'building',
+            'earth+concrete': 'house',
+            'fire+concrete': 'brick',
+            'air+concrete': 'dust',
+            'water+building': 'house',
+            'earth+building': 'city',
+            'fire+building': 'ruins',
+            'air+building': 'skyscraper',
+            'water+house': 'home',
+            'earth+house': 'village',
+            'fire+house': 'ruins',
+            'air+house': 'windmill',
+            'water+home': 'family',
+            'earth+home': 'community',
+            'fire+home': 'ruins',
+            'air+home': 'breeze',
+            'water+family': 'love',
+            'earth+family': 'community',
+            'fire+family': 'warmth',
+            'air+family': 'breeze',
+            'water+love': 'heart',
+            'earth+love': 'garden',
+            'fire+love': 'passion',
+            'air+love': 'romance',
+            'water+heart': 'life',
+            'earth+heart': 'soul',
+            'fire+heart': 'passion',
+            'air+heart': 'spirit',
+            'water+life': 'soul',
+            'earth+life': 'spirit',
+            'fire+life': 'energy',
+            'air+life': 'breath',
+            'water+soul': 'spirit',
+            'earth+soul': 'ghost',
+            'fire+soul': 'demon',
+            'air+soul': 'angel',
+            'water+spirit': 'ghost',
+            'earth+spirit': 'demon',
+            'fire+spirit': 'angel',
+            'air+spirit': 'fairy',
+            'water+ghost': 'phantom',
+            'earth+ghost': 'haunting',
+            'fire+ghost': 'spirit',
+            'air+ghost': 'breeze',
+            'water+demon': 'hell',
+            'earth+demon': 'evil',
+            'fire+demon': 'devil',
+            'air+demon': 'darkness',
+            'water+angel': 'heaven',
+            'earth+angel': 'divine',
+            'fire+angel': 'light',
+            'air+angel': 'blessing',
+            'water+fairy': 'magic',
+            'earth+fairy': 'enchantment',
+            'fire+fairy': 'sparkle',
+            'air+fairy': 'wings',
+            'water+magic': 'spell',
+            'earth+magic': 'enchantment',
+            'fire+magic': 'wizard',
+            'air+magic': 'sorcery',
+            'water+spell': 'potion',
+            'earth+spell': 'ritual',
+            'fire+spell': 'incantation',
+            'air+spell': 'charm',
+            'water+potion': 'elixir',
+            'earth+potion': 'medicine',
+            'fire+potion': 'explosion',
+            'air+potion': 'bubble',
+            'water+elixir': 'immortality',
+            'earth+elixir': 'life',
+            'fire+elixir': 'power',
+            'air+elixir': 'wisdom',
+            'water+immortality': 'eternity',
+            'earth+immortality': 'infinity',
+            'fire+immortality': 'phoenix',
+            'air+immortality': 'spirit',
+            'water+eternity': 'time',
+            'earth+eternity': 'space',
+            'fire+eternity': 'universe',
+            'air+eternity': 'cosmos',
+            'water+infinity': 'eternity',
+            'earth+infinity': 'universe',
+            'fire+infinity': 'cosmos',
+            'air+infinity': 'void',
+            'water+void': 'black_hole',
+            'earth+void': 'darkness',
+            'fire+void': 'chaos',
+            'air+void': 'nothingness',
+            'water+black_hole': 'monster',
+            'earth+black_hole': 'doom',
+            'fire+black_hole': 'apocalypse',
+            'air+black_hole': 'void',
+            'water+monster': 'sea_serpent',
+            'fire+monster': 'dragon',
+            'air+monster': 'griffin',
+            'earth+monster': 'troll',
+            'water+dragon': 'sea_dragon',
+            'fire+dragon': 'fire_dragon',
+            'air+dragon': 'wind_dragon',
+            'earth+dragon': 'cave_dragon',
+            'water+griffin': 'sea_griffin',
+            'fire+griffin': 'fire_griffin',
+            'air+griffin': 'storm_griffin',
+            'earth+griffin': 'mountain_griffin',
+            'water+troll': 'river_troll',
+            'fire+troll': 'fire_troll',
+            'air+troll': 'cloud_troll',
+            'earth+troll': 'mountain_troll',
+            'water+sea_serpent': 'leviathan',
+            'fire+sea_serpent': 'sea_dragon',
+            'air+sea_serpent': 'storm_serpent',
+            'earth+sea_serpent': 'lake_serpent',
+            'water+leviathan': 'kraken',
+            'fire+leviathan': 'sea_dragon',
+            'air+leviathan': 'storm_leviathan',
+            'earth+leviathan': 'lake_monster',
+            'water+kraken': 'deep_sea_monster',
+            'fire+kraken': 'fire_kraken',
+            'air+kraken': 'storm_kraken',
+            'earth+kraken': 'lake_kraken',
+            'water+deep_sea_monster': 'abyss_creature',
+            'fire+deep_sea_monster': 'volcanic_creature',
+            'air+deep_sea_monster': 'storm_creature',
+            'earth+deep_sea_monster': 'cave_creature',
+            'water+abyss_creature': 'eldritch_horror',
+            'fire+abyss_creature': 'hell_beast',
+            'air+abyss_creature': 'void_creature',
+            'earth+abyss_creature': 'ancient_evil',
+            'water+eldritch_horror': 'cosmic_horror',
+            'fire+eldritch_horror': 'infernal_horror',
+            'air+eldritch_horror': 'void_horror',
+            'earth+eldritch_horror': 'primordial_evil',
+            'water+cosmic_horror': 'space_monster',
+            'fire+cosmic_horror': 'star_monster',
+            'air+cosmic_horror': 'nebula_monster',
+            'earth+cosmic_horror': 'planet_monster',
+            'water+space_monster': 'galaxy_monster',
+            'fire+space_monster': 'supernova_monster',
+            'air+space_monster': 'cosmic_storm',
+            'earth+space_monster': 'asteroid_monster',
+            'water+galaxy_monster': 'universe_monster',
+            'fire+galaxy_monster': 'big_bang',
+            'air+galaxy_monster': 'cosmic_wind',
+            'earth+galaxy_monster': 'cosmic_dust',
+            'water+universe_monster': 'multiverse',
+            'fire+universe_monster': 'creation',
+            'air+universe_monster': 'existence',
+            'earth+universe_monster': 'reality',
+            'water+multiverse': 'dimension',
+            'fire+multiverse': 'timeline',
+            'air+multiverse': 'parallel_world',
+            'earth+multiverse': 'alternate_reality',
+            'water+dimension': 'pocket_dimension',
+            'fire+dimension': 'time_dimension',
+            'air+dimension': 'space_dimension',
+            'earth+dimension': 'reality_dimension',
+            'water+pocket_dimension': 'micro_universe',
+            'fire+pocket_dimension': 'quantum_realm',
+            'air+pocket_dimension': 'subspace',
+            'earth+pocket_dimension': 'mini_world',
+            'water+micro_universe': 'atom',
+            'fire+micro_universe': 'molecule',
+            'air+micro_universe': 'particle',
+            'earth+micro_universe': 'cell',
+            'water+atom': 'hydrogen',
+            'fire+atom': 'helium',
+            'air+atom': 'oxygen',
+            'earth+atom': 'carbon',
+            'water+hydrogen': 'deuterium',
+            'fire+hydrogen': 'tritium',
+            'air+hydrogen': 'hydrogen_gas',
+            'earth+hydrogen': 'hydrogen_compound',
+            'water+oxygen': 'ozone',
+            'fire+oxygen': 'carbon_dioxide',
+            'air+oxygen': 'nitrogen',
+            'earth+oxygen': 'oxide',
+            'water+carbon': 'organic_matter',
+            'fire+carbon': 'carbon_dioxide',
+            'air+carbon': 'carbon_monoxide',
+            'earth+carbon': 'coal',
+            'water+organic_matter': 'protein',
+            'fire+organic_matter': 'ash',
+            'air+organic_matter': 'gas',
+            'earth+organic_matter': 'soil',
+            'water+protein': 'enzyme',
+            'fire+protein': 'amino_acid',
+            'air+protein': 'hormone',
+            'earth+protein': 'tissue',
+            'water+enzyme': 'catalyst',
+            'fire+enzyme': 'reaction',
+            'air+enzyme': 'process',
+            'earth+enzyme': 'function',
+            'water+catalyst': 'reaction',
+            'fire+catalyst': 'explosion',
+            'air+catalyst': 'chain_reaction',
+            'earth+catalyst': 'transformation',
+            'water+reaction': 'chemical',
+            'fire+reaction': 'explosion',
+            'air+reaction': 'gas',
+            'earth+reaction': 'compound',
+            'water+chemical': 'acid',
+            'fire+chemical': 'base',
+            'air+chemical': 'solution',
+            'earth+chemical': 'mixture',
+            'water+acid': 'corrosion',
+            'fire+acid': 'reaction',
+            'air+acid': 'vapor',
+            'earth+acid': 'erosion',
+            'water+base': 'neutralization',
+            'fire+base': 'reaction',
+            'air+base': 'gas',
+            'earth+base': 'salt',
+            'water+salt': 'brine',
+            'fire+salt': 'sodium',
+            'air+salt': 'crystal',
+            'earth+salt': 'mineral',
+            'water+brine': 'ocean',
+            'fire+brine': 'salt_crystal',
+            'air+brine': 'salt_air',
+            'earth+brine': 'salt_deposit',
+            'water+sodium': 'sodium_hydroxide',
+            'fire+sodium': 'sodium_chloride',
+            'air+sodium': 'sodium_gas',
+            'earth+sodium': 'sodium_compound',
+            'water+crystal': 'gem',
+            'fire+crystal': 'sparkle',
+            'air+crystal': 'light',
+            'earth+crystal': 'mineral',
+            'water+mineral': 'ore',
+            'fire+mineral': 'metal',
+            'air+mineral': 'dust',
+            'earth+mineral': 'rock',
+            'water+ore': 'metal',
+            'fire+ore': 'alloy',
+            'air+ore': 'dust',
+            'earth+ore': 'deposit',
+            'water+alloy': 'steel',
+            'fire+alloy': 'bronze',
+            'air+alloy': 'rust',
+            'earth+alloy': 'metal',
+            'water+steel': 'rust',
+            'fire+steel': 'molten_steel',
+            'air+steel': 'oxidation',
+            'earth+steel': 'corrosion',
+            'water+rust': 'iron_oxide',
+            'fire+rust': 'iron',
+            'air+rust': 'oxidation',
+            'earth+rust': 'corrosion',
+            'water+iron': 'rust',
+            'fire+iron': 'molten_iron',
+            'air+iron': 'iron_oxide',
+            'earth+iron': 'iron_ore',
+            'water+molten_iron': 'steel',
+            'fire+molten_iron': 'cast_iron',
+            'air+molten_iron': 'iron_gas',
+            'earth+molten_iron': 'iron_deposit',
+            'water+cast_iron': 'rust',
+            'fire+cast_iron': 'wrought_iron',
+            'air+cast_iron': 'iron_oxide',
+            'earth+cast_iron': 'iron_ore',
+            'water+wrought_iron': 'rust',
+            'fire+wrought_iron': 'steel',
+            'air+wrought_iron': 'iron_oxide',
+            'earth+wrought_iron': 'iron_deposit',
+            'water+bronze': 'patina',
+            'fire+bronze': 'molten_bronze',
+            'air+bronze': 'oxidation',
+            'earth+bronze': 'bronze_deposit',
+            'water+patina': 'copper_oxide',
+            'fire+patina': 'copper',
+            'air+patina': 'oxidation',
+            'earth+patina': 'corrosion',
+            'water+copper': 'patina',
+            'fire+copper': 'molten_copper',
+            'air+copper': 'copper_oxide',
+            'earth+copper': 'copper_ore',
+            'water+molten_copper': 'bronze',
+            'fire+molten_copper': 'copper_alloy',
+            'air+molten_copper': 'copper_gas',
+            'earth+molten_copper': 'copper_deposit',
+            'water+copper_alloy': 'brass',
+            'fire+copper_alloy': 'bronze',
+            'air+copper_alloy': 'oxidation',
+            'earth+copper_alloy': 'alloy_deposit',
+            'water+brass': 'patina',
+            'fire+brass': 'molten_brass',
+            'air+brass': 'oxidation',
+            'earth+brass': 'brass_deposit',
+            'water+molten_brass': 'brass_alloy',
+            'fire+molten_brass': 'brass_metal',
+            'air+molten_brass': 'brass_gas',
+            'earth+molten_brass': 'brass_deposit',
+            'water+brass_alloy': 'patina',
+            'fire+brass_alloy': 'brass',
+            'air+brass_alloy': 'oxidation',
+            'earth+brass_alloy': 'alloy_deposit',
+            'water+brass_metal': 'patina',
+            'fire+brass_metal': 'molten_brass',
+            'air+brass_metal': 'oxidation',
+            'earth+brass_metal': 'metal_deposit',
+            'water+brass_gas': 'condensation',
+            'fire+brass_gas': 'plasma',
+            'air+brass_gas': 'gas',
+            'earth+brass_gas': 'deposit',
+            'water+condensation': 'liquid',
+            'fire+condensation': 'steam',
+            'air+condensation': 'cloud',
+            'earth+condensation': 'dew',
+            'water+liquid': 'fluid',
+            'fire+liquid': 'vapor',
+            'air+liquid': 'mist',
+            'earth+liquid': 'mud',
+            'water+fluid': 'liquid',
+            'fire+fluid': 'gas',
+            'air+fluid': 'vapor',
+            'earth+fluid': 'sludge',
+            'water+vapor': 'steam',
+            'fire+vapor': 'gas',
+            'air+vapor': 'cloud',
+            'earth+vapor': 'fog',
+            'water+gas': 'vapor',
+            'fire+gas': 'plasma',
+            'air+gas': 'atmosphere',
+            'earth+gas': 'volcanic_gas',
+            'water+plasma': 'energy',
+            'fire+plasma': 'fusion',
+            'air+plasma': 'lightning',
+            'earth+plasma': 'magma',
+            'water+fusion': 'star',
+            'fire+fusion': 'supernova',
+            'air+fusion': 'stellar_wind',
+            'earth+fusion': 'nuclear_reaction',
+            'water+star': 'solar_system',
+            'fire+star': 'supernova',
+            'air+star': 'stellar_wind',
+            'earth+star': 'planet',
+            'water+supernova': 'black_hole',
+            'fire+supernova': 'neutron_star',
+            'air+supernova': 'cosmic_ray',
+            'earth+supernova': 'stellar_remnant',
+            'water+black_hole': 'singularity',
+            'fire+black_hole': 'event_horizon',
+            'air+black_hole': 'accretion_disk',
+            'earth+black_hole': 'gravitational_lens',
+            'water+singularity': 'quantum_foam',
+            'fire+singularity': 'spacetime',
+            'air+singularity': 'dimension',
+            'earth+singularity': 'reality',
+            'water+quantum_foam': 'virtual_particle',
+            'fire+quantum_foam': 'quantum_field',
+            'air+quantum_foam': 'quantum_state',
+            'earth+quantum_foam': 'quantum_matter',
+            'water+virtual_particle': 'antimatter',
+            'fire+virtual_particle': 'matter',
+            'air+virtual_particle': 'energy',
+            'earth+virtual_particle': 'particle',
+            'water+antimatter': 'annihilation',
+            'fire+antimatter': 'matter',
+            'air+antimatter': 'energy',
+            'earth+antimatter': 'particle',
+            'water+annihilation': 'energy',
+            'fire+annihilation': 'radiation',
+            'air+annihilation': 'gamma_ray',
+            'earth+annihilation': 'particle',
+            'water+energy': 'power',
+            'fire+energy': 'heat',
+            'air+energy': 'motion',
+            'earth+energy': 'potential',
+            'water+power': 'electricity',
+            'fire+power': 'nuclear_power',
+            'air+power': 'wind_power',
+            'earth+power': 'geothermal',
+            'water+electricity': 'lightning',
+            'fire+electricity': 'plasma',
+            'air+electricity': 'static',
+            'earth+electricity': 'ground',
+            'water+lightning': 'thunder',
+            'fire+lightning': 'plasma',
+            'air+lightning': 'storm',
+            'earth+lightning': 'ground_strike',
+            'water+thunder': 'sound',
+            'fire+thunder': 'shock_wave',
+            'air+thunder': 'pressure_wave',
+            'earth+thunder': 'vibration',
+            'water+sound': 'wave',
+            'fire+sound': 'heat_wave',
+            'air+sound': 'pressure',
+            'earth+sound': 'vibration',
+            'water+wave': 'tide',
+            'fire+wave': 'heat_wave',
+            'air+wave': 'wind',
+            'earth+wave': 'earthquake',
+            'water+tide': 'ocean',
+            'fire+tide': 'steam',
+            'air+tide': 'wind',
+            'earth+tide': 'coast',
+            'water+heat_wave': 'steam',
+            'fire+heat_wave': 'radiation',
+            'air+heat_wave': 'hot_air',
+            'earth+heat_wave': 'hot_ground',
+            'water+radiation': 'radioactivity',
+            'fire+radiation': 'gamma_ray',
+            'air+radiation': 'cosmic_ray',
+            'earth+radiation': 'nuclear_waste',
+            'water+radioactivity': 'decay',
+            'fire+radioactivity': 'fission',
+            'air+radioactivity': 'particle',
+            'earth+radioactivity': 'waste',
+            'water+decay': 'rot',
+            'fire+decay': 'ash',
+            'air+decay': 'gas',
+            'earth+decay': 'compost',
+            'water+rot': 'mold',
+            'fire+rot': 'ash',
+            'air+rot': 'gas',
+            'earth+rot': 'soil',
+            'water+mold': 'fungus',
+            'fire+mold': 'ash',
+            'air+mold': 'spore',
+            'earth+mold': 'decomposer',
+            'water+fungus': 'mushroom',
+            'fire+fungus': 'ash',
+            'air+fungus': 'spore',
+            'earth+fungus': 'decomposer',
+            'water+mushroom': 'toadstool',
+            'fire+mushroom': 'ash',
+            'air+mushroom': 'spore',
+            'earth+mushroom': 'decomposer',
+            'water+toadstool': 'poison',
+            'fire+toadstool': 'ash',
+            'air+toadstool': 'spore',
+            'earth+toadstool': 'decomposer',
+            'water+poison': 'toxin',
+            'fire+poison': 'venom',
+            'air+poison': 'gas',
+            'earth+poison': 'contamination',
+            'water+toxin': 'poison',
+            'fire+toxin': 'venom',
+            'air+toxin': 'gas',
+            'earth+toxin': 'contamination',
+            'water+venom': 'poison',
+            'fire+venom': 'toxin',
+            'air+venom': 'gas',
+            'earth+venom': 'contamination',
+            'water+contamination': 'pollution',
+            'fire+contamination': 'waste',
+            'air+contamination': 'smog',
+            'earth+contamination': 'toxic_waste',
+            'water+pollution': 'contamination',
+            'fire+pollution': 'smog',
+            'air+pollution': 'acid_rain',
+            'earth+pollution': 'toxic_waste',
+            'water+smog': 'acid_rain',
+            'fire+smog': 'pollution',
+            'air+smog': 'haze',
+            'earth+smog': 'toxic_waste',
+            'water+acid_rain': 'corrosion',
+            'fire+acid_rain': 'pollution',
+            'air+acid_rain': 'smog',
+            'earth+acid_rain': 'erosion',
+            'water+corrosion': 'rust',
+            'fire+corrosion': 'oxidation',
+            'air+corrosion': 'erosion',
+            'earth+corrosion': 'decay',
+            'water+erosion': 'sediment',
+            'fire+erosion': 'ash',
+            'air+erosion': 'dust',
+            'earth+erosion': 'soil',
+            'water+sediment': 'rock',
+            'fire+sediment': 'stone',
+            'air+sediment': 'dust',
+            'earth+sediment': 'soil',
+            'water+rock': 'stone',
+            'fire+rock': 'lava',
+            'air+rock': 'dust',
+            'earth+rock': 'mountain',
+            'water+stone': 'pebble',
+            'fire+stone': 'metal',
+            'air+stone': 'sand',
+            'earth+stone': 'mineral',
+            'water+pebble': 'sand',
+            'fire+pebble': 'stone',
+            'air+pebble': 'dust',
+            'earth+pebble': 'gravel',
+            'water+gravel': 'sand',
+            'fire+gravel': 'stone',
+            'air+gravel': 'dust',
+            'earth+gravel': 'soil',
+            'water+soil': 'mud',
+            'fire+soil': 'ash',
+            'air+soil': 'dust',
+            'earth+soil': 'dirt',
+            'water+dirt': 'mud',
+            'fire+dirt': 'ash',
+            'air+dirt': 'dust',
+            'earth+dirt': 'soil',
+            'water+mud': 'clay',
+            'fire+mud': 'brick',
+            'air+mud': 'dust',
+            'earth+mud': 'soil',
+            'water+clay': 'ceramic',
+            'fire+clay': 'pottery',
+            'air+clay': 'dust',
+            'earth+clay': 'soil',
+            'water+ceramic': 'tile',
+            'fire+ceramic': 'porcelain',
+            'air+ceramic': 'dust',
+            'earth+ceramic': 'material',
+            'water+tile': 'mosaic',
+            'fire+tile': 'ceramic',
+            'air+tile': 'dust',
+            'earth+tile': 'material',
+            'water+mosaic': 'art',
+            'fire+mosaic': 'tile',
+            'air+mosaic': 'pattern',
+            'earth+mosaic': 'design',
+            'water+art': 'beauty',
+            'fire+art': 'inspiration',
+            'air+art': 'creativity',
+            'earth+art': 'culture',
+            'water+beauty': 'aesthetics',
+            'fire+beauty': 'passion',
+            'air+beauty': 'elegance',
+            'earth+beauty': 'nature',
+            'water+aesthetics': 'design',
+            'fire+aesthetics': 'style',
+            'air+aesthetics': 'form',
+            'earth+aesthetics': 'structure',
+            'water+design': 'architecture',
+            'fire+design': 'engineering',
+            'air+design': 'innovation',
+            'earth+design': 'construction',
+            'water+architecture': 'building',
+            'fire+architecture': 'structure',
+            'air+architecture': 'form',
+            'earth+architecture': 'foundation',
+            'water+engineering': 'technology',
+            'fire+engineering': 'innovation',
+            'air+engineering': 'science',
+            'earth+engineering': 'construction',
+            'water+technology': 'computer',
+            'fire+technology': 'electronics',
+            'air+technology': 'communication',
+            'earth+technology': 'infrastructure',
+            'water+computer': 'software',
+            'fire+computer': 'hardware',
+            'air+computer': 'data',
+            'earth+computer': 'network',
+            'water+software': 'program',
+            'fire+software': 'code',
+            'air+software': 'algorithm',
+            'earth+software': 'system',
+            'water+program': 'application',
+            'fire+program': 'software',
+            'air+program': 'function',
+            'earth+program': 'process',
+            'water+application': 'app',
+            'fire+application': 'program',
+            'air+application': 'interface',
+            'earth+application': 'platform',
+            'water+app': 'mobile',
+            'fire+app': 'application',
+            'air+app': 'interface',
+            'earth+app': 'device',
+            'water+mobile': 'phone',
+            'fire+mobile': 'app',
+            'air+mobile': 'communication',
+            'earth+mobile': 'device',
+            'water+phone': 'communication',
+            'fire+phone': 'mobile',
+            'air+phone': 'signal',
+            'earth+phone': 'device',
+            'water+communication': 'language',
+            'fire+communication': 'signal',
+            'air+communication': 'message',
+            'earth+communication': 'network',
+            'water+language': 'speech',
+            'fire+language': 'communication',
+            'air+language': 'sound',
+            'earth+language': 'culture',
+            'water+speech': 'conversation',
+            'fire+speech': 'language',
+            'air+speech': 'voice',
+            'earth+speech': 'communication',
+            'water+conversation': 'dialogue',
+            'fire+conversation': 'speech',
+            'air+conversation': 'discussion',
+            'earth+conversation': 'interaction',
+            'water+dialogue': 'debate',
+            'fire+dialogue': 'conversation',
+            'air+dialogue': 'discussion',
+            'earth+dialogue': 'exchange',
+            'water+debate': 'argument',
+            'fire+debate': 'dialogue',
+            'air+debate': 'discussion',
+            'earth+debate': 'conflict',
+            'water+argument': 'conflict',
+            'fire+argument': 'debate',
+            'air+argument': 'disagreement',
+            'earth+argument': 'tension',
+            'water+conflict': 'war',
+            'fire+conflict': 'argument',
+            'air+conflict': 'battle',
+            'earth+conflict': 'destruction',
+            'water+war': 'destruction',
+            'fire+war': 'conflict',
+            'air+war': 'battle',
+            'earth+war': 'devastation',
+            'water+destruction': 'ruins',
+            'fire+destruction': 'war',
+            'air+destruction': 'devastation',
+            'earth+destruction': 'wasteland',
+            'water+ruins': 'remains',
+            'fire+ruins': 'destruction',
+            'air+ruins': 'decay',
+            'earth+ruins': 'archaeology',
+            'water+remains': 'fossil',
+            'fire+remains': 'ruins',
+            'air+remains': 'dust',
+            'earth+remains': 'archaeology',
+            'water+fossil': 'dinosaur',
+            'fire+fossil': 'remains',
+            'air+fossil': 'bone',
+            'earth+fossil': 'archaeology',
+            'water+dinosaur': 'extinction',
+            'fire+dinosaur': 'fossil',
+            'air+dinosaur': 'prehistoric',
+            'earth+dinosaur': 'ancient',
+            'water+extinction': 'evolution',
+            'fire+extinction': 'dinosaur',
+            'air+extinction': 'survival',
+            'earth+extinction': 'adaptation',
+            'water+evolution': 'adaptation',
+            'fire+evolution': 'extinction',
+            'air+evolution': 'survival',
+            'earth+evolution': 'change',
+            'water+adaptation': 'survival',
+            'fire+adaptation': 'evolution',
+            'air+adaptation': 'change',
+            'earth+adaptation': 'mutation',
+            'water+survival': 'life',
+            'fire+survival': 'adaptation',
+            'air+survival': 'existence',
+            'earth+survival': 'persistence',
+            'water+life': 'existence',
+            'fire+life': 'survival',
+            'air+life': 'breath',
+            'earth+life': 'nature',
+            'water+existence': 'reality',
+            'fire+existence': 'life',
+            'air+existence': 'being',
+            'earth+existence': 'presence',
+            'water+reality': 'truth',
+            'fire+reality': 'existence',
+            'air+reality': 'perception',
+            'earth+reality': 'fact',
+            'water+truth': 'knowledge',
+            'fire+truth': 'reality',
+            'air+truth': 'wisdom',
+            'earth+truth': 'fact',
+            'water+knowledge': 'wisdom',
+            'fire+knowledge': 'truth',
+            'air+knowledge': 'understanding',
+            'earth+knowledge': 'learning',
+            'water+wisdom': 'philosophy',
+            'fire+wisdom': 'knowledge',
+            'air+wisdom': 'insight',
+            'earth+wisdom': 'understanding',
+            'water+philosophy': 'thinking',
+            'fire+philosophy': 'wisdom',
+            'air+philosophy': 'reasoning',
+            'earth+philosophy': 'logic',
+            'water+thinking': 'thought',
+            'fire+thinking': 'philosophy',
+            'air+thinking': 'mind',
+            'earth+thinking': 'brain',
+            'water+thought': 'idea',
+            'fire+thought': 'thinking',
+            'air+thought': 'concept',
+            'earth+thought': 'mind',
+            'water+idea': 'concept',
+            'fire+idea': 'thought',
+            'air+idea': 'inspiration',
+            'earth+idea': 'mind',
+            'water+concept': 'theory',
+            'fire+concept': 'idea',
+            'air+concept': 'abstraction',
+            'earth+concept': 'understanding',
+            'water+theory': 'science',
+            'fire+theory': 'concept',
+            'air+theory': 'hypothesis',
+            'earth+theory': 'knowledge',
+            'water+science': 'research',
+            'fire+science': 'theory',
+            'air+science': 'experiment',
+            'earth+science': 'discovery',
+            'water+research': 'experiment',
+            'fire+research': 'science',
+            'air+research': 'investigation',
+            'earth+research': 'study',
+            'water+experiment': 'discovery',
+            'fire+experiment': 'research',
+            'air+experiment': 'observation',
+            'earth+experiment': 'test',
+            'water+discovery': 'invention',
+            'fire+discovery': 'experiment',
+            'air+discovery': 'finding',
+            'earth+discovery': 'breakthrough',
+            'water+invention': 'innovation',
+            'fire+invention': 'discovery',
+            'air+invention': 'creation',
+            'earth+invention': 'technology',
+            'water+innovation': 'progress',
+            'fire+innovation': 'invention',
+            'air+innovation': 'advancement',
+            'earth+innovation': 'development',
+            'water+progress': 'advancement',
+            'fire+progress': 'innovation',
+            'air+progress': 'evolution',
+            'earth+progress': 'development',
+            'water+advancement': 'civilization',
+            'fire+advancement': 'progress',
+            'air+advancement': 'evolution',
+            'earth+advancement': 'development',
+            'water+civilization': 'society',
+            'fire+civilization': 'advancement',
+            'air+civilization': 'culture',
+            'earth+civilization': 'development',
+            'water+society': 'community',
+            'fire+society': 'civilization',
+            'air+society': 'culture',
+            'earth+society': 'population',
+            'water+community': 'family',
+            'fire+community': 'society',
+            'air+community': 'group',
+            'earth+community': 'neighborhood',
+            'water+family': 'love',
+            'fire+family': 'community',
+            'air+family': 'breeze',
+            'earth+family': 'home',
+            'water+love': 'heart',
+            'fire+love': 'passion',
+            'air+love': 'romance',
+            'earth+love': 'garden',
+            'water+heart': 'soul',
+            'fire+heart': 'passion',
+            'air+heart': 'spirit',
+            'earth+heart': 'life',
+            'water+soul': 'spirit',
+            'fire+soul': 'demon',
+            'air+soul': 'angel',
+            'earth+soul': 'ghost',
+            'water+spirit': 'magic',
+            'fire+spirit': 'angel',
+            'air+spirit': 'fairy',
+            'earth+spirit': 'demon',
+            'water+magic': 'spell',
+            'fire+magic': 'wizard',
+            'air+magic': 'sorcery',
+            'earth+magic': 'enchantment',
+            'water+spell': 'potion',
+            'fire+spell': 'incantation',
+            'air+spell': 'charm',
+            'earth+spell': 'ritual',
+            'water+potion': 'elixir',
+            'fire+potion': 'explosion',
+            'air+potion': 'bubble',
+            'earth+potion': 'medicine',
+            'water+elixir': 'immortality',
+            'fire+elixir': 'power',
+            'air+elixir': 'wisdom',
+            'earth+elixir': 'life',
+            'water+immortality': 'eternity',
+            'fire+immortality': 'phoenix',
+            'air+immortality': 'spirit',
+            'earth+immortality': 'infinity',
+            'water+eternity': 'time',
+            'fire+eternity': 'universe',
+            'air+eternity': 'cosmos',
+            'earth+eternity': 'space',
+            'water+time': 'clock',
+            'fire+time': 'hourglass',
+            'air+time': 'moment',
+            'earth+time': 'age',
+            'water+clock': 'timepiece',
+            'fire+clock': 'timer',
+            'air+clock': 'measurement',
+            'earth+clock': 'mechanism',
+            'water+timepiece': 'watch',
+            'fire+timepiece': 'clock',
+            'air+timepiece': 'measurement',
+            'earth+timepiece': 'device',
+            'water+watch': 'time',
+            'fire+watch': 'timepiece',
+            'air+watch': 'measurement',
+            'earth+watch': 'device',
+            'water+measurement': 'precision',
+            'fire+measurement': 'accuracy',
+            'air+measurement': 'calculation',
+            'earth+measurement': 'science',
+            'water+precision': 'accuracy',
+            'fire+precision': 'perfection',
+            'air+precision': 'exactness',
+            'earth+precision': 'detail',
+            'water+accuracy': 'perfection',
+            'fire+accuracy': 'precision',
+            'air+accuracy': 'exactness',
+            'earth+accuracy': 'detail',
+            'water+perfection': 'beauty',
+            'fire+perfection': 'accuracy',
+            'air+perfection': 'elegance',
+            'earth+perfection': 'harmony',
+            'water+beauty': 'aesthetics',
+            'fire+beauty': 'passion',
+            'air+beauty': 'elegance',
+            'earth+beauty': 'nature',
+            'water+aesthetics': 'design',
+            'fire+aesthetics': 'style',
+            'air+aesthetics': 'form',
+            'earth+aesthetics': 'structure',
+            'water+design': 'architecture',
+            'fire+design': 'engineering',
+            'air+design': 'innovation',
+            'earth+design': 'construction',
+            'water+architecture': 'building',
+            'fire+architecture': 'structure',
+            'air+architecture': 'form',
+            'earth+architecture': 'foundation',
+            'water+building': 'house',
+            'fire+building': 'structure',
+            'air+building': 'form',
+            'earth+building': 'foundation',
+            'water+house': 'home',
+            'fire+house': 'building',
+            'air+house': 'shelter',
+            'earth+house': 'foundation',
+            'water+home': 'family',
+            'fire+home': 'house',
+            'air+home': 'shelter',
+            'earth+home': 'foundation',
+            'water+family': 'love',
+            'fire+family': 'warmth',
+            'air+family': 'breeze',
+            'earth+family': 'community',
+            'water+love': 'heart',
+            'fire+love': 'passion',
+            'air+love': 'romance',
+            'earth+love': 'garden',
+            'water+heart': 'life',
+            'fire+heart': 'passion',
+            'air+heart': 'spirit',
+            'earth+heart': 'soul',
+            'water+life': 'soul',
+            'fire+life': 'energy',
+            'air+life': 'breath',
+            'earth+life': 'spirit',
+            'water+soul': 'spirit',
+            'fire+soul': 'demon',
+            'air+soul': 'angel',
+            'earth+soul': 'ghost',
+            'water+spirit': 'ghost',
+            'fire+spirit': 'angel',
+            'air+spirit': 'fairy',
+            'earth+spirit': 'demon',
+            'water+ghost': 'phantom',
+            'fire+ghost': 'spirit',
+            'air+ghost': 'breeze',
+            'earth+ghost': 'haunting',
+            'water+phantom': 'specter',
+            'fire+phantom': 'ghost',
+            'air+phantom': 'breeze',
+            'earth+phantom': 'haunting',
+            'water+specter': 'wraith',
+            'fire+specter': 'phantom',
+            'air+specter': 'breeze',
+            'earth+specter': 'haunting',
+            'water+wraith': 'shadow',
+            'fire+wraith': 'specter',
+            'air+wraith': 'breeze',
+            'earth+wraith': 'haunting',
+            'water+shadow': 'darkness',
+            'fire+shadow': 'wraith',
+            'air+shadow': 'breeze',
+            'earth+shadow': 'haunting',
+            'water+darkness': 'void',
+            'fire+darkness': 'shadow',
+            'air+darkness': 'night',
+            'earth+darkness': 'abyss',
+            'water+void': 'black_hole',
+            'fire+void': 'chaos',
+            'air+void': 'nothingness',
+            'earth+void': 'abyss',
+            'water+black_hole': 'monster',
+            'earth+black_hole': 'doom',
+            'fire+black_hole': 'apocalypse',
+            'air+black_hole': 'void'
+        };
+
+        // Element properties
+        const elementProps = {
+            water: { emoji: '💧', name: 'Water' },
+            air: { emoji: '💨', name: 'Air' },
+            gas: { emoji: '☁️', name: 'Gas' },
+            land: { emoji: '🏔️', name: 'Land' },
+            fire: { emoji: '🔥', name: 'Fire' },
+            steam: { emoji: '💨', name: 'Steam' },
+            rain: { emoji: '🌧️', name: 'Rain' },
+            mud: { emoji: '🌊', name: 'Mud' },
+            lava: { emoji: '🌋', name: 'Lava' },
+            energy: { emoji: '⚡', name: 'Energy' },
+            dust: { emoji: '💨', name: 'Dust' },
+            cloud: { emoji: '☁️', name: 'Cloud' },
+            volcano: { emoji: '🌋', name: 'Volcano' },
+            forest: { emoji: '🌲', name: 'Forest' },
+            tree: { emoji: '🌳', name: 'Tree' },
+            lightning: { emoji: '⚡', name: 'Lightning' },
+            plasma: { emoji: '🔥', name: 'Plasma' },
+            human: { emoji: '👤', name: 'Human' },
+            herbivore: { emoji: '🦌', name: 'Herbivore' },
+            worker: { emoji: '👷', name: 'Worker' },
+            weapon: { emoji: '⚔️', name: 'Weapon' },
+            steam_engine: { emoji: '🚂', name: 'Steam Engine' },
+            robot: { emoji: '🤖', name: 'Robot' },
+            family: { emoji: '👨‍👩‍👧‍👦', name: 'Family' },
+            village: { emoji: '🏘️', name: 'Village' },
+            city: { emoji: '🏙️', name: 'City' },
+            country: { emoji: '🏛️', name: 'Country' },
+            continent: { emoji: '🗺️', name: 'Continent' },
+            planet: { emoji: '🌍', name: 'Planet' },
+            solar_system: { emoji: '🌌', name: 'Solar System' },
+            galaxy: { emoji: '🌌', name: 'Galaxy' },
+            universe: { emoji: '🌌', name: 'Universe' },
+            sun: { emoji: '☀️', name: 'Sun' },
+            night: { emoji: '🌙', name: 'Night' },
+            day: { emoji: '☀️', name: 'Day' },
+            time: { emoji: '⏰', name: 'Time' },
+            philosophy: { emoji: '🤔', name: 'Philosophy' },
+            evolution: { emoji: '🧬', name: 'Evolution' },
+            wisdom: { emoji: '🧠', name: 'Wisdom' },
+            immortality: { emoji: '💎', name: 'Immortality' },
+            phoenix: { emoji: '🦅', name: 'Phoenix' },
+            life: { emoji: '🌱', name: 'Life' },
+            death: { emoji: '💀', name: 'Death' },
+            cycle: { emoji: '🔄', name: 'Cycle' },
+            eternity: { emoji: '♾️', name: 'Eternity' },
+            knife: { emoji: '🔪', name: 'Knife' },
+            sword: { emoji: '⚔️', name: 'Sword' },
+            earth: { emoji: '🌍', name: 'Earth' },
+            stone: { emoji: '🪨', name: 'Stone' },
+            sand: { emoji: '🏖️', name: 'Sand' },
+            metal: { emoji: '🔩', name: 'Metal' },
+            moss: { emoji: '🌿', name: 'Moss' },
+            algae: { emoji: '🌱', name: 'Algae' },
+            ash: { emoji: '💨', name: 'Ash' },
+            seed: { emoji: '🌱', name: 'Seed' },
+            dandelion: { emoji: '🌼', name: 'Dandelion' },
+            fertilizer: { emoji: '💩', name: 'Fertilizer' },
+            charcoal: { emoji: '🪵', name: 'Charcoal' },
+            ink: { emoji: '🖋️', name: 'Ink' },
+            coal: { emoji: '🪨', name: 'Coal' },
+            diamond: { emoji: '💎', name: 'Diamond' },
+            gem: { emoji: '💎', name: 'Gem' },
+            crystal: { emoji: '💎', name: 'Crystal' },
+            sparkle: { emoji: '✨', name: 'Sparkle' },
+            light: { emoji: '💡', name: 'Light' },
+            pearl: { emoji: '🦪', name: 'Pearl' },
+            oyster: { emoji: '🦪', name: 'Oyster' },
+            shell: { emoji: '🐚', name: 'Shell' },
+            food: { emoji: '🍽️', name: 'Food' },
+            lime: { emoji: '🍋', name: 'Lime' },
+            cement: { emoji: '🏗️', name: 'Cement' },
+            concrete: { emoji: '🏗️', name: 'Concrete' },
+            glass: { emoji: '🥃', name: 'Glass' },
+            building: { emoji: '🏢', name: 'Building' },
+            brick: { emoji: '🧱', name: 'Brick' },
+            house: { emoji: '🏠', name: 'House' },
+            ruins: { emoji: '🏚️', name: 'Ruins' },
+            skyscraper: { emoji: '🏙️', name: 'Skyscraper' },
+            home: { emoji: '🏠', name: 'Home' },
+            community: { emoji: '👥', name: 'Community' },
+            windmill: { emoji: '🏭', name: 'Windmill' },
+            breeze: { emoji: '💨', name: 'Breeze' },
+            love: { emoji: '❤️', name: 'Love' },
+            warmth: { emoji: '🔥', name: 'Warmth' },
+            heart: { emoji: '❤️', name: 'Heart' },
+            garden: { emoji: '🌺', name: 'Garden' },
+            passion: { emoji: '🔥', name: 'Passion' },
+            romance: { emoji: '💕', name: 'Romance' },
+            soul: { emoji: '👻', name: 'Soul' },
+            spirit: { emoji: '👻', name: 'Spirit' },
+            breath: { emoji: '💨', name: 'Breath' },
+            ghost: { emoji: '👻', name: 'Ghost' },
+            demon: { emoji: '👹', name: 'Demon' },
+            angel: { emoji: '👼', name: 'Angel' },
+            fairy: { emoji: '🧚', name: 'Fairy' },
+            phantom: { emoji: '👻', name: 'Phantom' },
+            haunting: { emoji: '👻', name: 'Haunting' },
+            hell: { emoji: '🔥', name: 'Hell' },
+            evil: { emoji: '👹', name: 'Evil' },
+            devil: { emoji: '😈', name: 'Devil' },
+            darkness: { emoji: '🌑', name: 'Darkness' },
+            heaven: { emoji: '☁️', name: 'Heaven' },
+            divine: { emoji: '👼', name: 'Divine' },
+            blessing: { emoji: '🙏', name: 'Blessing' },
+            magic: { emoji: '✨', name: 'Magic' },
+            enchantment: { emoji: '✨', name: 'Enchantment' },
+            wings: { emoji: '🦋', name: 'Wings' },
+            spell: { emoji: '🔮', name: 'Spell' },
+            sorcery: { emoji: '🔮', name: 'Sorcery' },
+            potion: { emoji: '🧪', name: 'Potion' },
+            ritual: { emoji: '🔮', name: 'Ritual' },
+            incantation: { emoji: '📜', name: 'Incantation' },
+            charm: { emoji: '✨', name: 'Charm' },
+            elixir: { emoji: '🧪', name: 'Elixir' },
+            medicine: { emoji: '💊', name: 'Medicine' },
+            explosion: { emoji: '💥', name: 'Explosion' },
+            bubble: { emoji: '🫧', name: 'Bubble' },
+            power: { emoji: '⚡', name: 'Power' },
+            infinity: { emoji: '♾️', name: 'Infinity' },
+            space: { emoji: '🌌', name: 'Space' },
+            cosmos: { emoji: '🌌', name: 'Cosmos' },
+            void: { emoji: '🌑', name: 'Void' },
+            black_hole: { emoji: '🕳️', name: 'Black Hole' },
+            monster: { emoji: '👹', name: 'Monster' },
+            doom: { emoji: '💀', name: 'Doom' },
+            apocalypse: { emoji: '☠️', name: 'Apocalypse' },
+            nothingness: { emoji: '🌑', name: 'Nothingness' },
+            chaos: { emoji: '🌀', name: 'Chaos' },
+            sea_serpent: { emoji: '🐍', name: 'Sea Serpent' },
+            dragon: { emoji: '🐉', name: 'Dragon' },
+            griffin: { emoji: '🦅', name: 'Griffin' },
+            troll: { emoji: '👹', name: 'Troll' },
+            sea_dragon: { emoji: '🐉', name: 'Sea Dragon' },
+            fire_dragon: { emoji: '🐉', name: 'Fire Dragon' },
+            wind_dragon: { emoji: '🐉', name: 'Wind Dragon' },
+            cave_dragon: { emoji: '🐉', name: 'Cave Dragon' },
+            sea_griffin: { emoji: '🦅', name: 'Sea Griffin' },
+            fire_griffin: { emoji: '🦅', name: 'Fire Griffin' },
+            storm_griffin: { emoji: '🦅', name: 'Storm Griffin' },
+            mountain_griffin: { emoji: '🦅', name: 'Mountain Griffin' },
+            river_troll: { emoji: '👹', name: 'River Troll' },
+            fire_troll: { emoji: '👹', name: 'Fire Troll' },
+            cloud_troll: { emoji: '👹', name: 'Cloud Troll' },
+            mountain_troll: { emoji: '👹', name: 'Mountain Troll' },
+            leviathan: { emoji: '🐋', name: 'Leviathan' },
+            kraken: { emoji: '🦑', name: 'Kraken' },
+            deep_sea_monster: { emoji: '🐙', name: 'Deep Sea Monster' },
+            abyss_creature: { emoji: '👹', name: 'Abyss Creature' },
+            eldritch_horror: { emoji: '👹', name: 'Eldritch Horror' },
+            cosmic_horror: { emoji: '👹', name: 'Cosmic Horror' },
+            space_monster: { emoji: '👹', name: 'Space Monster' },
+            galaxy_monster: { emoji: '👹', name: 'Galaxy Monster' },
+            universe_monster: { emoji: '👹', name: 'Universe Monster' },
+            multiverse: { emoji: '🌌', name: 'Multiverse' },
+            dimension: { emoji: '🌌', name: 'Dimension' },
+            pocket_dimension: { emoji: '🌌', name: 'Pocket Dimension' },
+            micro_universe: { emoji: '🌌', name: 'Micro Universe' },
+            atom: { emoji: '⚛️', name: 'Atom' },
+            hydrogen: { emoji: '⚛️', name: 'Hydrogen' },
+            oxygen: { emoji: '⚛️', name: 'Oxygen' },
+            carbon: { emoji: '⚛️', name: 'Carbon' },
+            organic_matter: { emoji: '🧬', name: 'Organic Matter' },
+            protein: { emoji: '🧬', name: 'Protein' },
+            enzyme: { emoji: '🧬', name: 'Enzyme' },
+            catalyst: { emoji: '⚗️', name: 'Catalyst' },
+            reaction: { emoji: '⚗️', name: 'Reaction' },
+            chemical: { emoji: '⚗️', name: 'Chemical' },
+            acid: { emoji: '⚗️', name: 'Acid' },
+            base: { emoji: '⚗️', name: 'Base' },
+            salt: { emoji: '🧂', name: 'Salt' },
+            brine: { emoji: '🌊', name: 'Brine' },
+            sodium: { emoji: '⚛️', name: 'Sodium' },
+            ore: { emoji: '🪨', name: 'Ore' },
+            alloy: { emoji: '🔩', name: 'Alloy' },
+            steel: { emoji: '🔩', name: 'Steel' },
+            rust: { emoji: '🔩', name: 'Rust' },
+            iron: { emoji: '🔩', name: 'Iron' },
+            molten_iron: { emoji: '🔩', name: 'Molten Iron' },
+            cast_iron: { emoji: '🔩', name: 'Cast Iron' },
+            wrought_iron: { emoji: '🔩', name: 'Wrought Iron' },
+            bronze: { emoji: '🔩', name: 'Bronze' },
+            patina: { emoji: '🔩', name: 'Patina' },
+            copper: { emoji: '🔩', name: 'Copper' },
+            molten_copper: { emoji: '🔩', name: 'Molten Copper' },
+            copper_alloy: { emoji: '🔩', name: 'Copper Alloy' },
+            brass: { emoji: '🔩', name: 'Brass' },
+            molten_brass: { emoji: '🔩', name: 'Molten Brass' },
+            brass_alloy: { emoji: '🔩', name: 'Brass Alloy' },
+            brass_metal: { emoji: '🔩', name: 'Brass Metal' },
+            brass_gas: { emoji: '🔩', name: 'Brass Gas' },
+            condensation: { emoji: '💧', name: 'Condensation' },
+            liquid: { emoji: '💧', name: 'Liquid' },
+            fluid: { emoji: '💧', name: 'Fluid' },
+            vapor: { emoji: '💨', name: 'Vapor' },
+            fusion: { emoji: '☢️', name: 'Fusion' },
+            neutron_star: { emoji: '⭐', name: 'Neutron Star' },
+            cosmic_ray: { emoji: '☢️', name: 'Cosmic Ray' },
+            stellar_remnant: { emoji: '⭐', name: 'Stellar Remnant' },
+            singularity: { emoji: '🕳️', name: 'Singularity' },
+            event_horizon: { emoji: '🕳️', name: 'Event Horizon' },
+            accretion_disk: { emoji: '🕳️', name: 'Accretion Disk' },
+            gravitational_lens: { emoji: '🕳️', name: 'Gravitational Lens' },
+            quantum_foam: { emoji: '⚛️', name: 'Quantum Foam' },
+            spacetime: { emoji: '🌌', name: 'Spacetime' },
+            virtual_particle: { emoji: '⚛️', name: 'Virtual Particle' },
+            antimatter: { emoji: '⚛️', name: 'Antimatter' },
+            annihilation: { emoji: '💥', name: 'Annihilation' },
+            radiation: { emoji: '☢️', name: 'Radiation' },
+            gamma_ray: { emoji: '☢️', name: 'Gamma Ray' },
+            electricity: { emoji: '⚡', name: 'Electricity' },
+            thunder: { emoji: '⚡', name: 'Thunder' },
+            sound: { emoji: '🔊', name: 'Sound' },
+            wave: { emoji: '🌊', name: 'Wave' },
+            tide: { emoji: '🌊', name: 'Tide' },
+            heat_wave: { emoji: '🔥', name: 'Heat Wave' },
+            radioactivity: { emoji: '☢️', name: 'Radioactivity' },
+            decay: { emoji: '💀', name: 'Decay' },
+            rot: { emoji: '💀', name: 'Rot' },
+            mold: { emoji: '🍄', name: 'Mold' },
+            fungus: { emoji: '🍄', name: 'Fungus' },
+            mushroom: { emoji: '🍄', name: 'Mushroom' },
+            toadstool: { emoji: '🍄', name: 'Toadstool' },
+            poison: { emoji: '☠️', name: 'Poison' },
+            toxin: { emoji: '☠️', name: 'Toxin' },
+            venom: { emoji: '☠️', name: 'Venom' },
+            contamination: { emoji: '☠️', name: 'Contamination' },
+            pollution: { emoji: '☠️', name: 'Pollution' },
+            smog: { emoji: '☁️', name: 'Smog' },
+            acid_rain: { emoji: '🌧️', name: 'Acid Rain' },
+            erosion: { emoji: '🏔️', name: 'Erosion' },
+            sediment: { emoji: '🏔️', name: 'Sediment' },
+            pebble: { emoji: '🪨', name: 'Pebble' },
+            gravel: { emoji: '🪨', name: 'Gravel' },
+            dirt: { emoji: '🏔️', name: 'Dirt' },
+            clay: { emoji: '🏔️', name: 'Clay' },
+            ceramic: { emoji: '🏺', name: 'Ceramic' },
+            tile: { emoji: '🧱', name: 'Tile' },
+            mosaic: { emoji: '🎨', name: 'Mosaic' },
+            art: { emoji: '🎨', name: 'Art' },
+            beauty: { emoji: '✨', name: 'Beauty' },
+            aesthetics: { emoji: '✨', name: 'Aesthetics' },
+            design: { emoji: '🎨', name: 'Design' },
+            architecture: { emoji: '🏛️', name: 'Architecture' },
+            engineering: { emoji: '⚙️', name: 'Engineering' },
+            technology: { emoji: '💻', name: 'Technology' },
+            computer: { emoji: '💻', name: 'Computer' },
+            software: { emoji: '💻', name: 'Software' },
+            program: { emoji: '💻', name: 'Program' },
+            application: { emoji: '📱', name: 'Application' },
+            app: { emoji: '📱', name: 'App' },
+            mobile: { emoji: '📱', name: 'Mobile' },
+            phone: { emoji: '📱', name: 'Phone' },
+            communication: { emoji: '📞', name: 'Communication' },
+            language: { emoji: '🗣️', name: 'Language' },
+            speech: { emoji: '🗣️', name: 'Speech' },
+            conversation: { emoji: '💬', name: 'Conversation' },
+            dialogue: { emoji: '💬', name: 'Dialogue' },
+            debate: { emoji: '💬', name: 'Debate' },
+            argument: { emoji: '💬', name: 'Argument' },
+            conflict: { emoji: '⚔️', name: 'Conflict' },
+            war: { emoji: '⚔️', name: 'War' },
+            destruction: { emoji: '💥', name: 'Destruction' },
+            remains: { emoji: '💀', name: 'Remains' },
+            fossil: { emoji: '🦴', name: 'Fossil' },
+            dinosaur: { emoji: '🦕', name: 'Dinosaur' },
+            extinction: { emoji: '💀', name: 'Extinction' },
+            evolution: { emoji: '🧬', name: 'Evolution' },
+            adaptation: { emoji: '🧬', name: 'Adaptation' },
+            survival: { emoji: '🛡️', name: 'Survival' },
+            existence: { emoji: '🌍', name: 'Existence' },
+            reality: { emoji: '🌍', name: 'Reality' },
+            truth: { emoji: '✨', name: 'Truth' },
+            knowledge: { emoji: '📚', name: 'Knowledge' },
+            wisdom: { emoji: '🧠', name: 'Wisdom' },
+            philosophy: { emoji: '🤔', name: 'Philosophy' },
+            thinking: { emoji: '🧠', name: 'Thinking' },
+            thought: { emoji: '🧠', name: 'Thought' },
+            idea: { emoji: '💡', name: 'Idea' },
+            concept: { emoji: '💭', name: 'Concept' },
+            theory: { emoji: '📚', name: 'Theory' },
+            science: { emoji: '🔬', name: 'Science' },
+            research: { emoji: '🔬', name: 'Research' },
+            experiment: { emoji: '🧪', name: 'Experiment' },
+            discovery: { emoji: '🔍', name: 'Discovery' },
+            invention: { emoji: '⚙️', name: 'Invention' },
+            innovation: { emoji: '💡', name: 'Innovation' },
+            progress: { emoji: '📈', name: 'Progress' },
+            advancement: { emoji: '📈', name: 'Advancement' },
+            civilization: { emoji: '🏛️', name: 'Civilization' },
+            society: { emoji: '👥', name: 'Society' },
+            community: { emoji: '👥', name: 'Community' },
+            family: { emoji: '👨‍👩‍👧‍👦', name: 'Family' },
+            love: { emoji: '❤️', name: 'Love' },
+            heart: { emoji: '❤️', name: 'Heart' },
+            soul: { emoji: '👻', name: 'Soul' },
+            spirit: { emoji: '👻', name: 'Spirit' },
+            ghost: { emoji: '👻', name: 'Ghost' },
+            phantom: { emoji: '👻', name: 'Phantom' },
+            specter: { emoji: '👻', name: 'Specter' },
+            wraith: { emoji: '👻', name: 'Wraith' },
+            shadow: { emoji: '👻', name: 'Shadow' },
+            darkness: { emoji: '🌑', name: 'Darkness' },
+            void: { emoji: '🌑', name: 'Void' },
+            black_hole: { emoji: '🕳️', name: 'Black Hole' },
+            monster: { emoji: '👹', name: 'Monster' },
+            doom: { emoji: '💀', name: 'Doom' },
+            apocalypse: { emoji: '☠️', name: 'Apocalypse' }
+        };
+
+        // Initialize starting elements
+        const startingElements = ['water', 'air', 'gas', 'land', 'fire'];
+        
+        // Boss battle state
+        let bossBattle = {
+            active: false,
+            monsterHealth: 100,
+            blackHoleActive: false
+        };
+
+        // Create element in workspace
+        function createWorkspaceElement(type, x, y) {
+            const workspace = document.getElementById('workspaceArea');
+            const element = document.createElement('div');
+            element.className = `element ${type}`;
+            element.textContent = elementProps[type].emoji;
+            element.style.left = x + 'px';
+            element.style.top = y + 'px';
+            
+            // Add drag functionality
+            element.draggable = true;
+            element.addEventListener('dragstart', handleDragStart);
+            element.addEventListener('dragend', handleDragEnd);
+            element.addEventListener('dragover', handleDragOver);
+            element.addEventListener('drop', handleDrop);
+            
+            workspace.appendChild(element);
+            
+            return {
+                type: type,
+                element: element,
+                x: x,
+                y: y
+            };
+        }
+
+        // Add drop functionality to workspace area
+        function setupWorkspaceDrop() {
+            const workspace = document.getElementById('workspaceArea');
+            console.log('Setting up workspace drop, workspace element:', workspace);
+            if (workspace) {
+                workspace.addEventListener('dragover', handleDragOver);
+                workspace.addEventListener('drop', handleWorkspaceDrop);
+                console.log('Workspace drop handlers added successfully');
+                
+                // Add click handler as backup for testing
+                workspace.addEventListener('click', function(e) {
+                    console.log('Workspace clicked at:', e.clientX, e.clientY);
+                });
+            } else {
+                console.error('Workspace element not found!');
+            }
+        }
+
+        // Handle dropping elements from inventory to workspace
+        function handleWorkspaceDrop(e) {
+            e.preventDefault();
+            console.log('Workspace drop event triggered');
+            const draggedType = e.dataTransfer.getData('text/plain');
+            console.log('Dragged type:', draggedType);
+            
+            if (draggedType) {
+                // Get drop position relative to workspace
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                console.log('Drop position:', x, y);
+                
+                // Create element in workspace
+                const newElement = createWorkspaceElement(draggedType, x, y);
+                game.workspaceElements.push(newElement);
+                console.log('Element created in workspace:', newElement);
+                
+                // Reset opacity of dragged element
+                const draggedElement = document.querySelector('.inventory-element.dragging');
+                if (draggedElement) {
+                    draggedElement.style.opacity = '1';
+                    draggedElement.classList.remove('dragging');
+                }
+            }
+        }
+
+        // Add click-to-place functionality as backup
+        function setupClickToPlace() {
+            const workspace = document.getElementById('workspaceArea');
+            let selectedElement = null;
+            
+            // Add click handlers to inventory elements
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('inventory-element')) {
+                    selectedElement = e.target.className.split(' ')[1];
+                    e.target.style.border = '3px solid #ffd700';
+                    addLogEntry(`Selected ${elementProps[selectedElement].name}. Click in workspace to place it!`, false);
+                }
+            });
+            
+            // Add click handler to workspace
+            workspace.addEventListener('click', function(e) {
+                if (selectedElement && e.target === workspace) {
+                    const rect = workspace.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const newElement = createWorkspaceElement(selectedElement, x, y);
+                    game.workspaceElements.push(newElement);
+                    
+                    // Reset selection
+                    const selectedInventoryElement = document.querySelector('.inventory-element[style*="border: 3px solid rgb(255, 215, 0)"]');
+                    if (selectedInventoryElement) {
+                        selectedInventoryElement.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+                    }
+                    selectedElement = null;
+                    
+                    addLogEntry(`Placed ${elementProps[newElement.type].name} in workspace!`, false);
+                }
+            });
+            
+            // Add click-to-combine functionality for workspace elements
+            workspace.addEventListener('click', function(e) {
+                if (e.target.classList.contains('element') && !selectedElement) {
+                    // If clicking on a workspace element, try to combine with nearby elements
+                    const clickedElement = game.workspaceElements.find(el => el.element === e.target);
+                    if (clickedElement) {
+                        // Find nearby elements to combine with
+                        const nearbyElements = game.workspaceElements.filter(el => {
+                            if (el === clickedElement) return false;
+                            const rect1 = clickedElement.element.getBoundingClientRect();
+                            const rect2 = el.element.getBoundingClientRect();
+                            const distance = Math.sqrt(
+                                Math.pow(rect1.left - rect2.left, 2) + 
+                                Math.pow(rect1.top - rect2.top, 2)
+                            );
+                            return distance < 100; // Within 100 pixels
+                        });
+                        
+                        if (nearbyElements.length > 0) {
+                            // Try to combine with the first nearby element
+                            const targetElement = nearbyElements[0];
+                            const rect = clickedElement.element.getBoundingClientRect();
+                            const workspaceRect = workspace.getBoundingClientRect();
+                            const x = rect.left - workspaceRect.left;
+                            const y = rect.top - workspaceRect.top;
+                            
+                            tryCombine(clickedElement, targetElement, x, y);
+                        } else {
+                            addLogEntry(`Click another element near ${elementProps[clickedElement.type].name} to combine!`, false);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create inventory element
+        function createInventoryElement(type) {
+            const inventory = document.getElementById('inventoryGrid');
+            const element = document.createElement('div');
+            element.className = `inventory-element ${type}`;
+            element.textContent = elementProps[type].emoji;
+            element.title = elementProps[type].name;
+            
+            // Add drag functionality
+            element.draggable = true;
+            element.addEventListener('dragstart', handleInventoryDragStart);
+            
+            inventory.appendChild(element);
+        }
+
+        // Drag and drop handlers
+        function handleInventoryDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.className.split(' ')[1]);
+            e.target.style.opacity = '0.5';
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.className.split(' ')[1]);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        // Try to combine two elements
+        function tryCombine(element1, element2, x, y) {
+            const type1 = element1.type || element1.className.split(' ')[1];
+            const type2 = element2.type || element2.className.split(' ')[1];
+            
+            if (type1 && type2 && type1 !== type2) {
+                const combination = [type1, type2].sort().join('+');
+                const result = combinations[combination];
+                
+                if (result && !game.discoveredElements.has(result)) {
+                    // Create new element
+                    const newElement = createWorkspaceElement(result, x, y);
+                    game.workspaceElements.push(newElement);
+                    
+                    // Add to discovered elements
+                    game.discoveredElements.add(result);
+                    game.discoveryCount++;
+                    
+                    // Add to inventory
+                    createInventoryElement(result);
+                    
+                    // Update stats
+                    document.getElementById('discoveryCount').textContent = game.discoveryCount;
+                    
+                    // Add to log
+                    addLogEntry(`${elementProps[type1].name} + ${elementProps[type2].name} = ${elementProps[result].name}`, true);
+                    
+                    // Remove original elements
+                    if (element1.element) element1.element.remove();
+                    if (element2.element) element2.element.remove();
+                    if (typeof element1 === 'object' && element1.remove) element1.remove();
+                    if (typeof element2 === 'object' && element2.remove) element2.remove();
+                    
+                    // Clean up workspace elements array
+                    game.workspaceElements = game.workspaceElements.filter(el => 
+                        el.element !== element1 && el.element !== element2
+                    );
+                    
+                    // Check for boss battle
+                    checkForBossBattle();
+                    return true;
+                } else if (result) {
+                    addLogEntry(`${elementProps[type1].name} + ${elementProps[type2].name} = ${elementProps[result].name} (already discovered)`, false);
+                } else {
+                    addLogEntry(`${elementProps[type1].name} + ${elementProps[type2].name} = Nothing happens`, false);
+                }
+            }
+            return false;
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const draggedType = e.dataTransfer.getData('text/plain');
+            const targetType = e.target.className.split(' ')[1];
+            
+            if (draggedType && targetType && draggedType !== targetType) {
+                const rect = e.target.getBoundingClientRect();
+                const workspaceRect = document.getElementById('workspaceArea').getBoundingClientRect();
+                const x = rect.left - workspaceRect.left + Math.random() * 50;
+                const y = rect.top - workspaceRect.top + Math.random() * 50;
+                
+                // Find the dragged element in workspace
+                const draggedElement = game.workspaceElements.find(el => el.type === draggedType);
+                
+                if (draggedElement) {
+                    tryCombine(draggedElement, e.target, x, y);
+                }
+            }
+        }
+
+        // Add log entry
+        function addLogEntry(message, isNew) {
+            const logContainer = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${isNew ? 'new-discovery' : ''}`;
+            entry.textContent = message;
+            
+            logContainer.insertBefore(entry, logContainer.firstChild);
+            
+            // Keep only last 10 entries
+            while (logContainer.children.length > 10) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+            
+            if (isNew) {
+                setTimeout(() => {
+                    entry.classList.remove('new-discovery');
+                }, 2000);
+            }
+        }
+
+        // Check if all combinations discovered
+        function checkForBossBattle() {
+            const totalCombinations = Object.keys(combinations).length;
+            const discoveredCount = game.discoveredElements.size;
+            
+            if (discoveredCount >= totalCombinations && !bossBattle.active) {
+                startBossBattle();
+            }
+        }
+
+        // Start boss battle
+        function startBossBattle() {
+            bossBattle.active = true;
+            bossBattle.monsterHealth = 100;
+            
+            // Create monster and black hole
+            const workspace = document.getElementById('workspaceArea');
+            
+            // Create black hole
+            const blackHole = document.createElement('div');
+            blackHole.className = 'element black_hole';
+            blackHole.textContent = '🕳️';
+            blackHole.style.left = '50%';
+            blackHole.style.top = '50%';
+            blackHole.style.transform = 'translate(-50%, -50%)';
+            blackHole.style.width = '120px';
+            blackHole.style.height = '120px';
+            blackHole.style.fontSize = '3em';
+            blackHole.style.zIndex = '1000';
+            blackHole.style.animation = 'pulse 1s infinite';
+            workspace.appendChild(blackHole);
+            
+            // Create monster
+            const monster = document.createElement('div');
+            monster.className = 'element monster';
+            monster.textContent = '👹';
+            monster.style.left = '30%';
+            monster.style.top = '30%';
+            monster.style.width = '100px';
+            monster.style.height = '100px';
+            monster.style.fontSize = '2.5em';
+            monster.style.zIndex = '1001';
+            monster.style.cursor = 'pointer';
+            monster.addEventListener('click', attackMonster);
+            workspace.appendChild(monster);
+            
+            // Add boss battle UI
+            const bossUI = document.createElement('div');
+            bossUI.id = 'bossUI';
+            bossUI.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(139, 0, 0, 0.9);
+                color: white;
+                padding: 20px;
+                border-radius: 15px;
+                border: 3px solid #ff4500;
+                z-index: 10000;
+                text-align: center;
+                font-size: 1.2em;
+                font-weight: bold;
+            `;
+            bossUI.innerHTML = `
+                <div>👹 MONSTER BATTLE! 👹</div>
+                <div>Monster Health: <span id="monsterHealth">100</span></div>
+                <div>Click the monster to attack with your knife!</div>
+            `;
+            document.body.appendChild(bossUI);
+            
+            addLogEntry('🚨 A MONSTER HAS APPEARED FROM THE BLACK HOLE! 🚨', true);
+            addLogEntry('⚔️ Click the monster to attack with your knife! ⚔️', true);
+        }
+
+        // Attack monster
+        function attackMonster() {
+            if (!bossBattle.active) return;
+            
+            const damage = Math.floor(Math.random() * 20) + 10; // 10-30 damage
+            bossBattle.monsterHealth -= damage;
+            
+            // Update health display
+            document.getElementById('monsterHealth').textContent = bossBattle.monsterHealth;
+            
+            // Visual feedback
+            const monster = document.querySelector('.monster');
+            monster.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                monster.style.transform = 'scale(1)';
+            }, 200);
+            
+            addLogEntry(`⚔️ You hit the monster for ${damage} damage! ⚔️`, false);
+            
+            // Check if monster is defeated
+            if (bossBattle.monsterHealth <= 0) {
+                defeatMonster();
+            }
+        }
+
+        // Defeat monster
+        function defeatMonster() {
+            bossBattle.active = false;
+            
+            // Remove monster and black hole
+            const monster = document.querySelector('.monster');
+            const blackHole = document.querySelector('.black_hole');
+            if (monster) monster.remove();
+            if (blackHole) blackHole.remove();
+            
+            // Remove boss UI
+            const bossUI = document.getElementById('bossUI');
+            if (bossUI) bossUI.remove();
+            
+            // Victory celebration
+            const workspace = document.getElementById('workspaceArea');
+            const victory = document.createElement('div');
+            victory.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 3em;
+                color: #ffd700;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+                z-index: 1000;
+                animation: victory-dance 2s ease-in-out;
+            `;
+            victory.textContent = '🎉 VICTORY! 🎉';
+            workspace.appendChild(victory);
+            
+            addLogEntry('🎉 YOU DEFEATED THE MONSTER! 🎉', true);
+            addLogEntry('🏆 You have completed Little Alchemy! 🏆', true);
+            
+            setTimeout(() => {
+                victory.remove();
+            }, 3000);
+        }
+
+        // Reset game
+        function resetGame() {
+            if (confirm('Are you sure you want to reset the game? This will clear all discoveries.')) {
+                // Clear workspace
+                document.getElementById('workspaceArea').innerHTML = '';
+                
+                // Clear inventory
+                document.getElementById('inventoryGrid').innerHTML = '';
+                
+                // Clear log
+                document.getElementById('logEntries').innerHTML = '';
+                
+                // Remove boss battle elements
+                const bossUI = document.getElementById('bossUI');
+                if (bossUI) bossUI.remove();
+                
+                // Reset game state
+                game = {
+                    discoveredElements: new Set(),
+                    workspaceElements: [],
+                    combinations: {},
+                    discoveryCount: 0
+                };
+                
+                // Reset boss battle state
+                bossBattle = {
+                    active: false,
+                    monsterHealth: 100,
+                    blackHoleActive: false
+                };
+                
+                // Recreate starting elements
+                startingElements.forEach(type => {
+                    game.discoveredElements.add(type);
+                    createInventoryElement(type);
+                });
+                
+                document.getElementById('discoveryCount').textContent = '0';
+                
+                alert('Game reset! Start discovering new combinations!');
+            }
+        }
+
+        // Initialize game
+        function init() {
+            console.log('Initializing game...');
+            startingElements.forEach(type => {
+                game.discoveredElements.add(type);
+                createInventoryElement(type);
+            });
+            
+            // Setup workspace drop functionality
+            setupWorkspaceDrop();
+            
+            // Setup click-to-place functionality as backup
+            setupClickToPlace();
+            
+            addLogEntry('Welcome to Little Alchemy! Drag elements to workspace or click them then click workspace to place!', false);
+            console.log('Game initialization complete');
+        }
+
+        // Start the game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+        });
+    </script>
+</body>
+</html>

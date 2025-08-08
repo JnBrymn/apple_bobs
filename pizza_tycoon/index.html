@@ -1,0 +1,1247 @@
+<!--
+Pizza Empire Tycoon Game
+- Start with a small pizza stand and build a pizza empire
+- Buy ingredients, make pizzas, and sell them for profit
+- Hire delivery drivers and staff
+- Open new restaurant locations
+- Upgrade equipment and recipes
+- Research new pizza types and toppings
+- Manage multiple restaurants across the city
+- Beautiful animated pizzas and customers
+- Strategic business management gameplay
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍕 Pizza Empire Tycoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 50px;
+            right: 100px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #FFD700;
+            animation: sunPulse 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #8FBC8F, #98FB98);
+            z-index: 3;
+        }
+        
+        .pizza-stand {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 120px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 15px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: standGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes standGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255, 69, 0, 0.3); }
+            50% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255, 69, 0, 0.6); }
+        }
+        
+        .stand-sign {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #FF4500, #FF6347);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            animation: signBounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes signBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0px) rotate(-1deg); }
+            50% { transform: translateX(-50%) translateY(-5px) rotate(1deg); }
+        }
+        
+        .pizza-oven {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(45deg, #696969, #808080);
+            border-radius: 10px;
+            border: 3px solid #FF4500;
+            animation: ovenGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes ovenGlow {
+            0%, 100% { border-color: #FF4500; }
+            50% { border-color: #FFD700; }
+        }
+        
+        .customer {
+            position: absolute;
+            bottom: 50px;
+            width: 30px;
+            height: 50px;
+            background: linear-gradient(45deg, #333, #555);
+            border-radius: 15px 15px 0 0;
+            z-index: 5;
+            animation: customerWalk 6s linear infinite;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .customer::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 5px;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #FFB6C1, #FF69B4);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .customer::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 8px;
+            width: 14px;
+            height: 25px;
+            background: linear-gradient(45deg, #4A90E2, #357ABD);
+            border-radius: 7px 7px 0 0;
+        }
+        
+        @keyframes customerWalk {
+            0% { transform: translateX(-50px) scale(0.8); opacity: 0; }
+            10% { transform: translateX(0px) scale(1); opacity: 1; }
+            45% { transform: translateX(calc(50vw - 75px)) scale(1); opacity: 1; }
+            55% { transform: translateX(calc(50vw - 60px)) scale(1.1); opacity: 1; }
+            90% { transform: translateX(calc(100vw - 50px)) scale(1); opacity: 1; }
+            100% { transform: translateX(calc(100vw + 50px)) scale(0.8); opacity: 0; }
+        }
+        
+        .delivery-car {
+            position: absolute;
+            bottom: 80px;
+            width: 40px;
+            height: 25px;
+            background: linear-gradient(45deg, #FF4500, #FF6347);
+            border-radius: 8px;
+            z-index: 6;
+            animation: deliveryDrive 8s linear infinite;
+            box-shadow: 0 5px 15px rgba(255, 69, 0, 0.5);
+        }
+        
+        .delivery-car::before {
+            content: '🚗';
+            position: absolute;
+            top: -8px;
+            left: 2px;
+            font-size: 20px;
+        }
+        
+        @keyframes deliveryDrive {
+            0% { transform: translateX(-50px) scale(0.8); opacity: 0; }
+            10% { transform: translateX(0px) scale(1); opacity: 1; }
+            90% { transform: translateX(calc(100vw - 50px)) scale(1); opacity: 1; }
+            100% { transform: translateX(calc(100vw + 50px)) scale(0.8); opacity: 0; }
+        }
+        
+        .pizza {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 8;
+            animation: pizzaFloat 3s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .pizza::before {
+            content: '🍕';
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            font-size: 20px;
+        }
+        
+        @keyframes pizzaFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            25% { transform: translateY(-10px) rotate(90deg) scale(1.1); }
+            50% { transform: translateY(-15px) rotate(180deg) scale(1.2); }
+            75% { transform: translateY(-10px) rotate(270deg) scale(1.1); }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .shop-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-width: 280px;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .restaurant-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .money-float {
+            position: absolute;
+            color: #2ECC71;
+            font-weight: bold;
+            font-size: 16px;
+            animation: moneyFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes moneyFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .pizza-recipe {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .recipe-quality {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .quality-bar {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .quality-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #26DE81);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .restaurant {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 10px;
+            z-index: 9;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            animation: restaurantGlow 4s ease-in-out infinite;
+        }
+        
+        @keyframes restaurantGlow {
+            0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 10px rgba(255, 69, 0, 0.3); }
+            50% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(255, 69, 0, 0.6); }
+        }
+        
+        .upgrade-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            display: none;
+        }
+        
+        .pizza-creator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 400px;
+            display: none;
+        }
+        
+        .topping-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .topping-option:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .topping-option.selected {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .pizza-preview {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upgrade-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="sun"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="pizza-stand">
+            <div class="stand-sign">🍕 PIZZA STAND 🍕</div>
+            <div class="pizza-oven"></div>
+        </div>
+        
+        <div class="ui-panel">
+            <h3>💰 Pizza Empire Stats</h3>
+            <div class="resource">
+                <span>💵 Money:</span>
+                <span id="money">100</span>
+            </div>
+            <div class="resource">
+                <span>🍕 Pizzas Made:</span>
+                <span id="pizzasMade">0</span>
+            </div>
+            <div class="resource">
+                <span>👥 Customers Served:</span>
+                <span id="customersServed">0</span>
+            </div>
+            <div class="resource">
+                <span>🏪 Restaurants:</span>
+                <span id="restaurants">1</span>
+            </div>
+            <div class="resource">
+                <span>🚗 Delivery Cars:</span>
+                <span id="deliveryCars">0</span>
+            </div>
+            <div class="resource">
+                <span>👨‍🍳 Chefs:</span>
+                <span id="chefs">1</span>
+            </div>
+            <div class="resource">
+                <span>⭐ Reputation:</span>
+                <span id="reputation">50</span>
+            </div>
+        </div>
+        
+        <div class="shop-panel">
+            <h3>🛒 Shop</h3>
+            <div class="shop-item">
+                <span>🍕 Make Pizza ($5 cost)</span>
+                <button class="btn" onclick="makePizza()">Make!</button>
+            </div>
+            <div class="shop-item">
+                <span>🚗 Buy Delivery Car ($50)</span>
+                <button class="btn" onclick="buyDeliveryCar()">Buy!</button>
+            </div>
+            <div class="shop-item">
+                <span>👨‍🍳 Hire Chef ($100)</span>
+                <button class="btn" onclick="hireChef()">Hire!</button>
+            </div>
+            <div class="shop-item">
+                <span>🏪 Open Restaurant ($500)</span>
+                <button class="btn" onclick="openRestaurant()">Open!</button>
+            </div>
+            <div class="shop-item">
+                <span>🔥 Upgrade Oven ($200)</span>
+                <button class="btn" onclick="upgradeOven()">Upgrade!</button>
+            </div>
+                         <div class="shop-item">
+                 <span>📚 Research Recipe ($300)</span>
+                 <button class="btn" onclick="researchRecipe()">Research!</button>
+             </div>
+             <div class="shop-item">
+                 <span>🍕 Create Custom Pizza ($500)</span>
+                 <button class="btn" onclick="showPizzaCreator()">Create!</button>
+             </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn" onclick="showUpgrades()">⬆️ Upgrades</button>
+                <button class="btn" onclick="manageEmpire()">🏢 Manage Empire</button>
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <h4>📊 Business Stats</h4>
+            <div class="resource">
+                <span>Today's Sales:</span>
+                <span id="todaySales">0</span>
+            </div>
+            <div class="resource">
+                <span>Total Profit:</span>
+                <span id="totalProfit">0</span>
+            </div>
+            <div class="resource">
+                <span>Pizzas per Minute:</span>
+                <span id="pizzasPerMinute">0</span>
+            </div>
+            <div class="resource">
+                <span>Customer Rating:</span>
+                <span id="customerRating">3.0</span> / 5.0
+            </div>
+        </div>
+        
+        <div class="restaurant-panel">
+            <h4>🍕 Pizza Recipe</h4>
+            <div class="pizza-recipe">
+                <div>Current Recipe: <span id="currentRecipe">Classic Margherita</span></div>
+                <div>Quality: <span id="recipeQuality">50</span>%</div>
+                <div class="quality-bar">
+                    <div class="quality-fill" id="qualityBar" style="width: 50%"></div>
+                </div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Better recipes = happier customers = more money!
+                </div>
+            </div>
+        </div>
+    </div>
+    
+         <div class="upgrade-panel" id="upgradePanel">
+         <h3>⬆️ Empire Upgrades</h3>
+         <div class="upgrade-item" onclick="buyUpgrade('marketing')">
+             <span>📢 Marketing Campaign</span>
+             <span>$1000</span>
+         </div>
+         <div class="upgrade-item" onclick="buyUpgrade('franchise')">
+             <span>🏢 Franchise System</span>
+             <span>$5000</span>
+         </div>
+         <div class="upgrade-item" onclick="buyUpgrade('technology')">
+             <span>💻 Online Ordering</span>
+             <span>$2000</span>
+         </div>
+         <div class="upgrade-item" onclick="buyUpgrade('quality')">
+             <span>⭐ Premium Ingredients</span>
+             <span>$1500</span>
+         </div>
+         <div class="upgrade-item" onclick="buyUpgrade('training')">
+             <span>🎓 Staff Training</span>
+             <span>$800</span>
+         </div>
+         <div style="margin-top: 15px; text-align: center;">
+             <button class="btn" onclick="hideUpgrades()">Close</button>
+         </div>
+     </div>
+     
+     <div class="pizza-creator" id="pizzaCreator">
+         <h3>🍕 Create Your Own Pizza!</h3>
+         <div class="pizza-preview" id="pizzaPreview">🍕</div>
+         
+         <h4>🍅 Choose Your Sauce:</h4>
+         <div class="topping-option" data-type="sauce" data-value="tomato">
+             <span>🍅 Tomato Sauce</span>
+             <span>+10 Quality</span>
+         </div>
+         <div class="topping-option" data-type="sauce" data-value="bbq">
+             <span>🍯 BBQ Sauce</span>
+             <span>+15 Quality</span>
+         </div>
+         <div class="topping-option" data-type="sauce" data-value="white">
+             <span>🥛 White Sauce</span>
+             <span>+20 Quality</span>
+         </div>
+         <div class="topping-option" data-type="sauce" data-value="pesto">
+             <span>🌿 Pesto Sauce</span>
+             <span>+25 Quality</span>
+         </div>
+         
+         <h4>🧀 Choose Your Cheese:</h4>
+         <div class="topping-option" data-type="cheese" data-value="mozzarella">
+             <span>🧀 Mozzarella</span>
+             <span>+10 Quality</span>
+         </div>
+         <div class="topping-option" data-type="cheese" data-value="cheddar">
+             <span>🧀 Cheddar</span>
+             <span>+15 Quality</span>
+         </div>
+         <div class="topping-option" data-type="cheese" data-value="parmesan">
+             <span>🧀 Parmesan</span>
+             <span>+20 Quality</span>
+         </div>
+         <div class="topping-option" data-type="cheese" data-value="gorgonzola">
+             <span>🧀 Gorgonzola</span>
+             <span>+25 Quality</span>
+         </div>
+         
+         <h4>🥩 Choose Your Meat:</h4>
+         <div class="topping-option" data-type="meat" data-value="pepperoni">
+             <span>🍖 Pepperoni</span>
+             <span>+15 Quality</span>
+         </div>
+         <div class="topping-option" data-type="meat" data-value="sausage">
+             <span>🌭 Sausage</span>
+             <span>+20 Quality</span>
+         </div>
+         <div class="topping-option" data-type="meat" data-value="bacon">
+             <span>🥓 Bacon</span>
+             <span>+25 Quality</span>
+         </div>
+         <div class="topping-option" data-type="meat" data-value="chicken">
+             <span>🍗 Chicken</span>
+             <span>+30 Quality</span>
+         </div>
+         
+         <h4>🥬 Choose Your Veggies:</h4>
+         <div class="topping-option" data-type="veggie" data-value="mushrooms">
+             <span>🍄 Mushrooms</span>
+             <span>+10 Quality</span>
+         </div>
+         <div class="topping-option" data-type="veggie" data-value="peppers">
+             <span>🫑 Bell Peppers</span>
+             <span>+15 Quality</span>
+         </div>
+         <div class="topping-option" data-type="veggie" data-value="olives">
+             <span>🫒 Olives</span>
+             <span>+20 Quality</span>
+         </div>
+         <div class="topping-option" data-type="veggie" data-value="truffle">
+             <span>🍄 Truffle</span>
+             <span>+40 Quality</span>
+         </div>
+         
+         <h4>🍕 Choose Your Style:</h4>
+         <div class="topping-option" data-type="style" data-value="classic">
+             <span>🍕 Classic Round</span>
+             <span>+5 Quality</span>
+         </div>
+         <div class="topping-option" data-type="style" data-value="deep-dish">
+             <span>🥧 Deep Dish</span>
+             <span>+15 Quality</span>
+         </div>
+         <div class="topping-option" data-type="style" data-value="thin-crust">
+             <span>🥨 Thin Crust</span>
+             <span>+10 Quality</span>
+         </div>
+         <div class="topping-option" data-type="style" data-value="stuffed-crust">
+             <span>🧀 Stuffed Crust</span>
+             <span>+20 Quality</span>
+         </div>
+         
+         <div style="margin-top: 20px; text-align: center;">
+             <div style="margin-bottom: 10px;">
+                 <label>Pizza Name: <input type="text" id="pizzaName" placeholder="Enter pizza name..." style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;"></label>
+             </div>
+             <div style="margin-bottom: 15px;">
+                 <strong>Total Quality: <span id="totalQuality">0</span>%</strong>
+             </div>
+             <button class="btn" onclick="createCustomPizza()">🍕 Create Pizza!</button>
+             <button class="btn" onclick="hidePizzaCreator()">Cancel</button>
+         </div>
+     </div>
+
+    <script>
+        let gameData = {
+            money: 100,
+            pizzasMade: 0,
+            customersServed: 0,
+            restaurants: 1,
+            deliveryCars: 0,
+            chefs: 1,
+            reputation: 50,
+            todaySales: 0,
+            totalProfit: 0,
+            pizzasPerMinute: 0,
+            customerRating: 3.0,
+            currentRecipe: 'Classic Margherita',
+            recipeQuality: 50,
+            ovenLevel: 1,
+            researchLevel: 1,
+            upgrades: {
+                marketing: false,
+                franchise: false,
+                technology: false,
+                quality: false,
+                training: false
+            },
+                         recipes: [
+                 { name: 'Classic Margherita', quality: 50, cost: 5, price: 12 },
+                 { name: 'Pepperoni Supreme', quality: 60, cost: 7, price: 15 },
+                 { name: 'Veggie Delight', quality: 70, cost: 8, price: 18 },
+                 { name: 'BBQ Chicken', quality: 80, cost: 10, price: 22 },
+                 { name: 'Truffle Mushroom', quality: 90, cost: 15, price: 30 }
+             ],
+             customPizzas: [],
+            currentRecipeIndex: 0,
+            autoProduction: false,
+            lastAutoProduction: 0
+        };
+        
+        function updateUI() {
+            document.getElementById('money').textContent = gameData.money.toFixed(2);
+            document.getElementById('pizzasMade').textContent = gameData.pizzasMade;
+            document.getElementById('customersServed').textContent = gameData.customersServed;
+            document.getElementById('restaurants').textContent = gameData.restaurants;
+            document.getElementById('deliveryCars').textContent = gameData.deliveryCars;
+            document.getElementById('chefs').textContent = gameData.chefs;
+            document.getElementById('reputation').textContent = gameData.reputation;
+            document.getElementById('todaySales').textContent = gameData.todaySales.toFixed(2);
+            document.getElementById('totalProfit').textContent = gameData.totalProfit.toFixed(2);
+            document.getElementById('pizzasPerMinute').textContent = gameData.pizzasPerMinute;
+            document.getElementById('customerRating').textContent = gameData.customerRating.toFixed(1);
+            document.getElementById('currentRecipe').textContent = gameData.currentRecipe;
+            document.getElementById('recipeQuality').textContent = gameData.recipeQuality;
+            document.getElementById('qualityBar').style.width = gameData.recipeQuality + '%';
+        }
+        
+        function makePizza() {
+            const recipe = gameData.recipes[gameData.currentRecipeIndex];
+            if (gameData.money >= recipe.cost) {
+                gameData.money -= recipe.cost;
+                gameData.pizzasMade++;
+                
+                // Calculate profit based on recipe quality and reputation
+                const qualityBonus = gameData.recipeQuality / 100;
+                const reputationBonus = gameData.reputation / 100;
+                const profit = recipe.price * (1 + qualityBonus + reputationBonus);
+                
+                gameData.money += profit;
+                gameData.todaySales += profit;
+                gameData.totalProfit += profit;
+                gameData.customersServed++;
+                
+                createPizza();
+                showMoneyFloat(profit);
+                showNotification(`🍕 Made ${recipe.name}! +$${profit.toFixed(2)}`);
+                updateUI();
+            } else {
+                showNotification('❌ Not enough money to make pizza!');
+            }
+        }
+        
+        function createPizza() {
+            const pizza = document.createElement('div');
+            pizza.className = 'pizza';
+            pizza.style.left = Math.random() * window.innerWidth + 'px';
+            pizza.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(pizza);
+            
+            setTimeout(() => {
+                if (pizza.parentNode) {
+                    pizza.remove();
+                }
+            }, 3000);
+        }
+        
+        function buyDeliveryCar() {
+            if (gameData.money >= 50) {
+                gameData.money -= 50;
+                gameData.deliveryCars++;
+                showNotification('🚗 Delivery car purchased!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+        function hireChef() {
+            if (gameData.money >= 100) {
+                gameData.money -= 100;
+                gameData.chefs++;
+                gameData.pizzasPerMinute += 2;
+                showNotification('👨‍🍳 Chef hired! Pizza production increased!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+        function openRestaurant() {
+            if (gameData.money >= 500) {
+                gameData.money -= 500;
+                gameData.restaurants++;
+                gameData.reputation += 10;
+                showNotification('🏪 New restaurant opened! Reputation increased!');
+                createRestaurant();
+                updateUI();
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+        function createRestaurant() {
+            const restaurant = document.createElement('div');
+            restaurant.className = 'restaurant';
+            restaurant.textContent = '🍕';
+            restaurant.style.left = (Math.random() * (window.innerWidth - 100)) + 'px';
+            restaurant.style.bottom = (Math.random() * 200 + 50) + 'px';
+            document.querySelector('.game-container').appendChild(restaurant);
+        }
+        
+        function upgradeOven() {
+            if (gameData.money >= 200) {
+                gameData.money -= 200;
+                gameData.ovenLevel++;
+                gameData.recipeQuality += 10;
+                gameData.pizzasPerMinute += 1;
+                showNotification('🔥 Oven upgraded! Better pizza quality!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+                 function researchRecipe() {
+             if (gameData.money >= 300 && gameData.currentRecipeIndex < gameData.recipes.length - 1) {
+                 gameData.money -= 300;
+                 gameData.currentRecipeIndex++;
+                 gameData.currentRecipe = gameData.recipes[gameData.currentRecipeIndex].name;
+                 gameData.recipeQuality = gameData.recipes[gameData.currentRecipeIndex].quality;
+                 showNotification(`📚 New recipe discovered: ${gameData.currentRecipe}!`);
+                 updateUI();
+             } else if (gameData.currentRecipeIndex >= gameData.recipes.length - 1) {
+                 showNotification('📚 All recipes discovered!');
+             } else {
+                 showNotification('❌ Not enough money!');
+             }
+         }
+         
+         function showPizzaCreator() {
+             if (gameData.money >= 500) {
+                 document.getElementById('pizzaCreator').style.display = 'block';
+                 setupPizzaCreator();
+             } else {
+                 showNotification('❌ Need $500 to create custom pizza!');
+             }
+         }
+         
+         function hidePizzaCreator() {
+             document.getElementById('pizzaCreator').style.display = 'none';
+         }
+         
+         function setupPizzaCreator() {
+             // Reset all selections
+             document.querySelectorAll('.topping-option').forEach(option => {
+                 option.classList.remove('selected');
+             });
+             
+             // Add click listeners
+             document.querySelectorAll('.topping-option').forEach(option => {
+                 option.addEventListener('click', function() {
+                     const type = this.dataset.type;
+                     
+                     // Remove other selections of same type
+                     document.querySelectorAll(`[data-type="${type}"]`).forEach(opt => {
+                         opt.classList.remove('selected');
+                     });
+                     
+                     // Select this option
+                     this.classList.add('selected');
+                     updatePizzaPreview();
+                 });
+             });
+             
+             updatePizzaPreview();
+         }
+         
+         function updatePizzaPreview() {
+             const selectedToppings = {};
+             let totalQuality = 50; // Base quality
+             let pizzaEmoji = '🍕';
+             
+             // Get selected toppings
+             document.querySelectorAll('.topping-option.selected').forEach(option => {
+                 const type = option.dataset.type;
+                 const value = option.dataset.value;
+                 selectedToppings[type] = value;
+                 
+                 // Add quality based on topping
+                 const qualityMap = {
+                     sauce: { tomato: 10, bbq: 15, white: 20, pesto: 25 },
+                     cheese: { mozzarella: 10, cheddar: 15, parmesan: 20, gorgonzola: 25 },
+                     meat: { pepperoni: 15, sausage: 20, bacon: 25, chicken: 30 },
+                     veggie: { mushrooms: 10, peppers: 15, olives: 20, truffle: 40 },
+                     style: { classic: 5, 'deep-dish': 15, 'thin-crust': 10, 'stuffed-crust': 20 }
+                 };
+                 
+                 if (qualityMap[type] && qualityMap[type][value]) {
+                     totalQuality += qualityMap[type][value];
+                 }
+             });
+             
+             // Update pizza emoji based on style
+             if (selectedToppings.style === 'deep-dish') {
+                 pizzaEmoji = '🥧';
+             } else if (selectedToppings.style === 'thin-crust') {
+                 pizzaEmoji = '🥨';
+             } else if (selectedToppings.style === 'stuffed-crust') {
+                 pizzaEmoji = '🧀';
+             }
+             
+             document.getElementById('pizzaPreview').textContent = pizzaEmoji;
+             document.getElementById('totalQuality').textContent = totalQuality;
+         }
+         
+         function createCustomPizza() {
+             const pizzaName = document.getElementById('pizzaName').value.trim();
+             if (!pizzaName) {
+                 showNotification('❌ Please enter a pizza name!');
+                 return;
+             }
+             
+             const selectedToppings = {};
+             let totalQuality = 50;
+             let totalCost = 8;
+             
+             // Calculate quality and cost
+             document.querySelectorAll('.topping-option.selected').forEach(option => {
+                 const type = option.dataset.type;
+                 const value = option.dataset.value;
+                 selectedToppings[type] = value;
+                 
+                 const qualityMap = {
+                     sauce: { tomato: 10, bbq: 15, white: 20, pesto: 25 },
+                     cheese: { mozzarella: 10, cheddar: 15, parmesan: 20, gorgonzola: 25 },
+                     meat: { pepperoni: 15, sausage: 20, bacon: 25, chicken: 30 },
+                     veggie: { mushrooms: 10, peppers: 15, olives: 20, truffle: 40 },
+                     style: { classic: 5, 'deep-dish': 15, 'thin-crust': 10, 'stuffed-crust': 20 }
+                 };
+                 
+                 const costMap = {
+                     sauce: { tomato: 1, bbq: 2, white: 3, pesto: 4 },
+                     cheese: { mozzarella: 2, cheddar: 3, parmesan: 4, gorgonzola: 5 },
+                     meat: { pepperoni: 3, sausage: 4, bacon: 5, chicken: 6 },
+                     veggie: { mushrooms: 2, peppers: 2, olives: 3, truffle: 10 },
+                     style: { classic: 1, 'deep-dish': 3, 'thin-crust': 2, 'stuffed-crust': 4 }
+                 };
+                 
+                 if (qualityMap[type] && qualityMap[type][value]) {
+                     totalQuality += qualityMap[type][value];
+                 }
+                 
+                 if (costMap[type] && costMap[type][value]) {
+                     totalCost += costMap[type][value];
+                 }
+             });
+             
+             // Calculate price based on quality
+             const price = Math.floor(totalQuality * 0.4);
+             
+             // Create custom pizza
+             const customPizza = {
+                 name: pizzaName,
+                 quality: totalQuality,
+                 cost: totalCost,
+                 price: price,
+                 toppings: selectedToppings,
+                 isCustom: true
+             };
+             
+             gameData.money -= 500;
+             gameData.customPizzas.push(customPizza);
+             gameData.recipes.push(customPizza);
+             
+             // Switch to the new custom pizza
+             gameData.currentRecipeIndex = gameData.recipes.length - 1;
+             gameData.currentRecipe = customPizza.name;
+             gameData.recipeQuality = customPizza.quality;
+             
+             hidePizzaCreator();
+             showNotification(`🍕 Custom pizza "${pizzaName}" created! Quality: ${totalQuality}%`);
+             updateUI();
+         }
+        
+        function showUpgrades() {
+            document.getElementById('upgradePanel').style.display = 'block';
+        }
+        
+        function hideUpgrades() {
+            document.getElementById('upgradePanel').style.display = 'none';
+        }
+        
+        function buyUpgrade(type) {
+            const costs = {
+                marketing: 1000,
+                franchise: 5000,
+                technology: 2000,
+                quality: 1500,
+                training: 800
+            };
+            
+            if (!gameData.upgrades[type] && gameData.money >= costs[type]) {
+                gameData.money -= costs[type];
+                gameData.upgrades[type] = true;
+                
+                switch(type) {
+                    case 'marketing':
+                        gameData.reputation += 20;
+                        showNotification('📢 Marketing campaign launched! Reputation +20!');
+                        break;
+                    case 'franchise':
+                        gameData.restaurants += 3;
+                        showNotification('🏢 Franchise system established! +3 restaurants!');
+                        break;
+                    case 'technology':
+                        gameData.pizzasPerMinute += 5;
+                        showNotification('💻 Online ordering system! Production +5!');
+                        break;
+                    case 'quality':
+                        gameData.recipeQuality += 20;
+                        showNotification('⭐ Premium ingredients! Quality +20!');
+                        break;
+                    case 'training':
+                        gameData.chefs += 2;
+                        gameData.pizzasPerMinute += 3;
+                        showNotification('🎓 Staff training completed! +2 chefs!');
+                        break;
+                }
+                
+                updateUI();
+            } else if (gameData.upgrades[type]) {
+                showNotification('❌ Already purchased!');
+            } else {
+                showNotification('❌ Not enough money!');
+            }
+        }
+        
+        function manageEmpire() {
+            showNotification('🏢 Empire Management: You have ' + gameData.restaurants + ' restaurants!');
+        }
+        
+        function createCustomer() {
+            if (gameData.pizzasMade > 0) {
+                const customer = document.createElement('div');
+                customer.className = 'customer';
+                customer.style.bottom = '50px';
+                customer.style.left = '-50px';
+                document.querySelector('.game-container').appendChild(customer);
+                
+                setTimeout(() => {
+                    if (customer.parentNode) {
+                        const satisfaction = Math.random() * 0.5 + 0.5; // 0.5 to 1.0
+                        const willBuy = Math.random() < satisfaction;
+                        
+                        if (willBuy) {
+                            const recipe = gameData.recipes[gameData.currentRecipeIndex];
+                            const profit = recipe.price * (1 + gameData.recipeQuality / 100);
+                            gameData.money += profit;
+                            gameData.todaySales += profit;
+                            gameData.totalProfit += profit;
+                            gameData.customersServed++;
+                            gameData.reputation += 1;
+                            
+                            showMoneyFloat(profit);
+                            showNotification(`😊 Customer loved the pizza! +$${profit.toFixed(2)}`);
+                        } else {
+                            gameData.reputation -= 1;
+                            showNotification('😞 Customer didn\'t like the pizza');
+                        }
+                        
+                        customer.remove();
+                        updateUI();
+                    }
+                }, 3000);
+            }
+        }
+        
+        function createDelivery() {
+            if (gameData.deliveryCars > 0) {
+                const delivery = document.createElement('div');
+                delivery.className = 'delivery-car';
+                delivery.style.bottom = '80px';
+                delivery.style.left = '-50px';
+                document.querySelector('.game-container').appendChild(delivery);
+                
+                setTimeout(() => {
+                    if (delivery.parentNode) {
+                        const recipe = gameData.recipes[gameData.currentRecipeIndex];
+                        const profit = recipe.price * 1.5; // Delivery bonus
+                        gameData.money += profit;
+                        gameData.todaySales += profit;
+                        gameData.totalProfit += profit;
+                        gameData.customersServed++;
+                        gameData.reputation += 2;
+                        
+                        showMoneyFloat(profit);
+                        showNotification(`🚗 Delivery completed! +$${profit.toFixed(2)}`);
+                        
+                        delivery.remove();
+                        updateUI();
+                    }
+                }, 4000);
+            }
+        }
+        
+        function showMoneyFloat(amount) {
+            const moneyFloat = document.createElement('div');
+            moneyFloat.className = 'money-float';
+            moneyFloat.textContent = `+$${amount.toFixed(2)}`;
+            moneyFloat.style.left = (Math.random() * window.innerWidth) + 'px';
+            moneyFloat.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(moneyFloat);
+            
+            setTimeout(() => {
+                if (moneyFloat.parentNode) {
+                    moneyFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function gameLoop() {
+            const now = Date.now();
+            
+            // Auto production from chefs
+            if (gameData.chefs > 1 && now - gameData.lastAutoProduction > 5000) {
+                const recipe = gameData.recipes[gameData.currentRecipeIndex];
+                const profit = recipe.price * (1 + gameData.recipeQuality / 100);
+                gameData.money += profit;
+                gameData.todaySales += profit;
+                gameData.totalProfit += profit;
+                gameData.pizzasMade++;
+                gameData.customersServed++;
+                
+                createPizza();
+                gameData.lastAutoProduction = now;
+                updateUI();
+            }
+            
+            // Create customers occasionally
+            if (Math.random() < 0.01) {
+                createCustomer();
+            }
+            
+            // Create deliveries occasionally
+            if (Math.random() < 0.005) {
+                createDelivery();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        updateUI();
+        gameLoop();
+        
+        console.log('🍕 Pizza Empire Tycoon loaded! Build your pizza empire!');
+    </script>
+</body>
+</html>

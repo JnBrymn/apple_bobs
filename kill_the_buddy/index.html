@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kill the Buddy</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        #buddy {
+            position: absolute;
+            width: 80px;
+            height: 120px;
+            background: #FFB366;
+            border-radius: 40px 40px 20px 20px;
+            cursor: grab;
+            transition: transform 0.1s;
+            z-index: 10;
+        }
+
+        #buddy:active {
+            cursor: grabbing;
+        }
+
+        #buddy::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: #FFB366;
+            border-radius: 50%;
+        }
+
+        /* Eyes */
+        #buddy::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 15px;
+            width: 12px;
+            height: 12px;
+            background: black;
+            border-radius: 50%;
+            box-shadow: 18px 0 0 black;
+        }
+
+        /* Nose */
+        .nose {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 8px solid #FF69B4;
+        }
+
+        /* Mouth */
+        .mouth {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 12px;
+            background: black;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Arms */
+        .arm {
+            position: absolute;
+            top: 70px;
+            width: 15px;
+            height: 30px;
+            background: #FFB366;
+            border-radius: 7px;
+        }
+
+        .arm.left {
+            left: -10px;
+        }
+
+        .arm.right {
+            right: -10px;
+        }
+
+        /* Legs */
+        .leg {
+            position: absolute;
+            bottom: -15px;
+            width: 20px;
+            height: 25px;
+            background: #FFB366;
+            border-radius: 10px;
+        }
+
+        .leg.left {
+            left: 15px;
+        }
+
+        .leg.right {
+            right: 15px;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        #money {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2E8B57;
+            margin-bottom: 10px;
+        }
+
+        #stats {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .upgrade {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .upgrade:hover {
+            background: #45a049;
+        }
+
+        .upgrade:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .weapon {
+            background: #FF4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .weapon:hover {
+            background: #CC0000;
+        }
+
+        .weapon:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .damage {
+            position: absolute;
+            color: #FF0000;
+            font-weight: bold;
+            font-size: 20px;
+            pointer-events: none;
+            animation: damageFloat 1s linear forwards;
+        }
+
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        .blood {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #8B0000;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: bloodSplatter 0.5s linear forwards;
+        }
+
+        @keyframes bloodSplatter {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        .explosion {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #FFD700, #FF6B35, #FF0000);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: explosion 0.8s linear forwards;
+        }
+
+        @keyframes explosion {
+            0% {
+                opacity: 1;
+                transform: scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(2);
+            }
+        }
+
+        @keyframes laser {
+            0% {
+                opacity: 1;
+                transform: rotate(45deg) scaleY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: rotate(45deg) scaleY(1);
+            }
+        }
+
+        @keyframes fire {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-20px);
+            }
+        }
+
+        #dizzyEffect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #FF6B6B;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1s linear forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-20px);
+            }
+        }
+
+        .dizzy {
+            animation: dizzy 0.5s infinite;
+        }
+
+        @keyframes dizzy {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="buddy">
+            <div class="nose"></div>
+            <div class="mouth"></div>
+            <div class="arm left"></div>
+            <div class="arm right"></div>
+            <div class="leg left"></div>
+            <div class="leg right"></div>
+        </div>
+        
+        <div id="ui">
+            <div id="money">💰 $0</div>
+            <div id="stats">
+                Spins: <span id="spinCount">0</span><br>
+                Dizzy Time: <span id="dizzyTime">0</span>s<br>
+                Buddy Health: <span id="buddyHealth">100</span>%<br>
+                Damage: <span id="damage">0</span><br>
+                Speed: <span id="speed">1</span>x<br>
+                Gravity: <span id="gravityDisplay">1</span>x<br>
+                Dizzy Power: <span id="dizzyPower">1</span>x<br>
+                Bounce: <span id="bounce">0.5</span>x<br>
+                Friction: <span id="friction">0.98</span>x<br>
+                Spin Multiplier: <span id="spinMultiplier">1</span>x
+            </div>
+            
+            <div style="margin: 10px 0; padding: 10px; background: rgba(255,0,0,0.1); border-radius: 5px;">
+                <strong>WEAPONS:</strong><br>
+                <button class="weapon" onclick="buyWeapon('sword')">🗡️ Sword ($50)</button>
+                <button class="weapon" onclick="buyWeapon('bomb')">💣 Bomb ($100)</button>
+                <button class="weapon" onclick="buyWeapon('laser')">🔫 Laser ($150)</button>
+                <button class="weapon" onclick="buyWeapon('chainsaw')">🪚 Chainsaw ($200)</button>
+                <button class="weapon" onclick="buyWeapon('flamethrower')">🔥 Flamethrower ($300)</button>
+                <button class="weapon" onclick="buyWeapon('nuke')">☢️ Nuke ($500)</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 200px; overflow-y: auto;">
+                <button class="upgrade" onclick="buyUpgrade('speed')">Speed Boost ($15)</button>
+                <button class="upgrade" onclick="buyUpgrade('gravity')">Heavy Gravity ($20)</button>
+                <button class="upgrade" onclick="buyUpgrade('dizzy')">Dizzy Master ($30)</button>
+                <button class="upgrade" onclick="buyUpgrade('bounce')">Bouncy Buddy ($25)</button>
+                <button class="upgrade" onclick="buyUpgrade('friction')">Slippery ($35)</button>
+                <button class="upgrade" onclick="buyUpgrade('spinMultiplier')">Spin Master ($40)</button>
+                <button class="upgrade" onclick="buyUpgrade('dizzyThreshold')">Easy Dizzy ($50)</button>
+                <button class="upgrade" onclick="buyUpgrade('moneyMultiplier')">Money Magnet ($75)</button>
+                <button class="upgrade" onclick="buyUpgrade('autoSpin')">Auto Spinner ($100)</button>
+                <button class="upgrade" onclick="buyUpgrade('megaBounce')">Mega Bounce ($150)</button>
+                <button class="upgrade" onclick="buyUpgrade('timeWarp')">Time Warp ($200)</button>
+                <button class="upgrade" onclick="buyUpgrade('buddySize')">Big Buddy ($125)</button>
+                <button class="upgrade" onclick="buyUpgrade('sparkleRain')">Sparkle Rain ($80)</button>
+                <button class="upgrade" onclick="buyUpgrade('dizzyDuration')">Dizzy Forever ($90)</button>
+                <button class="upgrade" onclick="buyUpgrade('wallDamage')">Wall Crusher ($120)</button>
+                <button class="upgrade" onclick="buyUpgrade('gravityWell')">Gravity Well ($180)</button>
+            </div>
+        </div>
+        
+        <div id="dizzyEffect">💫</div>
+    </div>
+
+    <script>
+        // Game state
+        let money = 0;
+        let spinCount = 0;
+        let dizzyTime = 0;
+        let buddyHealth = 100;
+        let totalDamage = 0;
+        let speed = 1;
+        let gravity = 1;
+        let dizzyMultiplier = 1;
+        let bounce = 0.5;
+        let friction = 0.98;
+        let spinMultiplier = 1;
+        let dizzyThreshold = 10;
+        let moneyMultiplier = 1;
+        let autoSpin = 0;
+        let megaBounce = 0;
+        let timeWarp = 1;
+        let buddySize = 1;
+        let sparkleRain = false;
+        let dizzyDuration = 1;
+        let wallDamage = 0;
+        let gravityWell = false;
+        
+        // Weapons
+        let weapons = {
+            sword: { owned: false, damage: 10, cooldown: 0 },
+            bomb: { owned: false, damage: 25, cooldown: 0 },
+            laser: { owned: false, damage: 15, cooldown: 0 },
+            chainsaw: { owned: false, damage: 20, cooldown: 0 },
+            flamethrower: { owned: false, damage: 30, cooldown: 0 },
+            nuke: { owned: false, damage: 100, cooldown: 0 }
+        };
+        
+        // Physics
+        let velocityX = 0;
+        let velocityY = 0;
+        let rotation = 0;
+        let rotationSpeed = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let lastX = 0;
+        let lastY = 0;
+        let isDizzy = false;
+        let dizzyStartTime = 0;
+        
+        // DOM elements
+        const buddy = document.getElementById('buddy');
+        const gameContainer = document.getElementById('gameContainer');
+        const dizzyEffect = document.getElementById('dizzyEffect');
+        
+        // Initialize buddy position
+        let buddyX = window.innerWidth / 2 - 40;
+        let buddyY = window.innerHeight / 2 - 60;
+        updateBuddyPosition();
+        
+        // Mouse events
+        buddy.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', endDrag);
+        
+        // Weapon attack on right click
+        buddy.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            attackBuddy(e);
+        });
+        
+        // Keyboard weapon controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1': if (weapons.sword.owned) attackWithWeapon('sword'); break;
+                case '2': if (weapons.bomb.owned) attackWithWeapon('bomb'); break;
+                case '3': if (weapons.laser.owned) attackWithWeapon('laser'); break;
+                case '4': if (weapons.chainsaw.owned) attackWithWeapon('chainsaw'); break;
+                case '5': if (weapons.flamethrower.owned) attackWithWeapon('flamethrower'); break;
+                case '6': if (weapons.nuke.owned) attackWithWeapon('nuke'); break;
+            }
+        });
+        
+        function startDrag(e) {
+            isDragging = true;
+            dragStartX = e.clientX - buddyX;
+            dragStartY = e.clientY - buddyY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            buddy.style.cursor = 'grabbing';
+        }
+        
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - lastX;
+            const deltaY = e.clientY - lastY;
+            
+            velocityX = deltaX * speed;
+            velocityY = deltaY * speed;
+            rotationSpeed += Math.abs(deltaX) + Math.abs(deltaY);
+            
+            lastX = e.clientX;
+            lastY = e.clientY;
+            
+            // Add sparkles when moving fast
+            if (Math.abs(deltaX) + Math.abs(deltaY) > 5) {
+                createSparkle(e.clientX, e.clientY);
+            }
+        }
+        
+        function endDrag() {
+            isDragging = false;
+            buddy.style.cursor = 'grab';
+        }
+        
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            gameContainer.appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1000);
+        }
+        
+        function attackBuddy(e) {
+            // Find the strongest weapon owned
+            let bestWeapon = null;
+            let maxDamage = 0;
+            
+            for (let weapon in weapons) {
+                if (weapons[weapon].owned && weapons[weapon].damage > maxDamage) {
+                    bestWeapon = weapon;
+                    maxDamage = weapons[weapon].damage;
+                }
+            }
+            
+            if (bestWeapon) {
+                attackWithWeapon(bestWeapon, e);
+            }
+        }
+        
+        function attackWithWeapon(weaponType, e = null) {
+            const weapon = weapons[weaponType];
+            if (!weapon.owned || weapon.cooldown > 0) return;
+            
+            // Set cooldown
+            weapon.cooldown = 10;
+            
+            // Calculate damage
+            const damage = weapon.damage;
+            buddyHealth -= damage;
+            totalDamage += damage;
+            
+            // Create damage effect
+            const x = e ? e.clientX : buddyX + 40;
+            const y = e ? e.clientY : buddyY + 60;
+            
+            createDamageEffect(x, y, damage, weaponType);
+            
+            // Special effects for different weapons
+            switch(weaponType) {
+                case 'sword':
+                    createBloodSplatter(x, y, 3);
+                    break;
+                case 'bomb':
+                    createExplosion(x, y);
+                    createBloodSplatter(x, y, 8);
+                    break;
+                case 'laser':
+                    createLaserEffect(x, y);
+                    break;
+                case 'chainsaw':
+                    createBloodSplatter(x, y, 5);
+                    break;
+                case 'flamethrower':
+                    createFireEffect(x, y);
+                    createBloodSplatter(x, y, 4);
+                    break;
+                case 'nuke':
+                    createNukeEffect(x, y);
+                    createBloodSplatter(x, y, 15);
+                    break;
+            }
+            
+            // Check if buddy is dead
+            if (buddyHealth <= 0) {
+                buddyHealth = 0;
+                buddy.style.filter = 'grayscale(100%)';
+                buddy.style.opacity = '0.5';
+            }
+        }
+        
+        function createDamageEffect(x, y, damage, weaponType) {
+            const damageText = document.createElement('div');
+            damageText.className = 'damage';
+            damageText.textContent = `-${damage}`;
+            damageText.style.left = x + 'px';
+            damageText.style.top = y + 'px';
+            gameContainer.appendChild(damageText);
+            
+            setTimeout(() => {
+                damageText.remove();
+            }, 1000);
+        }
+        
+        function createBloodSplatter(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const blood = document.createElement('div');
+                blood.className = 'blood';
+                blood.style.left = (x + Math.random() * 40 - 20) + 'px';
+                blood.style.top = (y + Math.random() * 40 - 20) + 'px';
+                gameContainer.appendChild(blood);
+                
+                setTimeout(() => {
+                    blood.remove();
+                }, 500);
+            }
+        }
+        
+        function createExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.style.left = (x - 50) + 'px';
+            explosion.style.top = (y - 50) + 'px';
+            gameContainer.appendChild(explosion);
+            
+            setTimeout(() => {
+                explosion.remove();
+            }, 800);
+        }
+        
+        function createLaserEffect(x, y) {
+            const laser = document.createElement('div');
+            laser.style.position = 'absolute';
+            laser.style.left = x + 'px';
+            laser.style.top = y + 'px';
+            laser.style.width = '4px';
+            laser.style.height = '100px';
+            laser.style.background = 'linear-gradient(to bottom, #FF0000, #FF6B6B)';
+            laser.style.transform = 'rotate(45deg)';
+            laser.style.animation = 'laser 0.3s linear forwards';
+            gameContainer.appendChild(laser);
+            
+            setTimeout(() => {
+                laser.remove();
+            }, 300);
+        }
+        
+        function createFireEffect(x, y) {
+            for (let i = 0; i < 5; i++) {
+                const fire = document.createElement('div');
+                fire.style.position = 'absolute';
+                fire.style.left = (x + Math.random() * 20 - 10) + 'px';
+                fire.style.top = (y + Math.random() * 20 - 10) + 'px';
+                fire.style.width = '10px';
+                fire.style.height = '10px';
+                fire.style.background = '#FF6B35';
+                fire.style.borderRadius = '50%';
+                fire.style.animation = 'fire 0.5s linear forwards';
+                gameContainer.appendChild(fire);
+                
+                setTimeout(() => {
+                    fire.remove();
+                }, 500);
+            }
+        }
+        
+        function createNukeEffect(x, y) {
+            // Create multiple explosions
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    createExplosion(x + Math.random() * 100 - 50, y + Math.random() * 100 - 50);
+                }, i * 200);
+            }
+        }
+        
+        function updateBuddyPosition() {
+            buddy.style.left = buddyX + 'px';
+            buddy.style.top = buddyY + 'px';
+            buddy.style.transform = `rotate(${rotation}deg) scale(${buddySize})`;
+        }
+        
+        function gameLoop() {
+            // Apply gravity
+            velocityY += 0.5 * gravity * timeWarp;
+            
+            // Apply friction
+            velocityX *= friction;
+            velocityY *= friction;
+            rotationSpeed *= 0.95;
+            
+            // Auto spin effect
+            if (autoSpin > 0) {
+                rotationSpeed += autoSpin * 0.1;
+            }
+            
+            // Update position
+            buddyX += velocityX * timeWarp;
+            buddyY += velocityY * timeWarp;
+            rotation += rotationSpeed * timeWarp;
+            
+            // Bounce off walls with damage
+            if (buddyX < 0) {
+                buddyX = 0;
+                velocityX *= -bounce;
+                if (wallDamage > 0) {
+                    money += wallDamage;
+                    createSparkle(0, buddyY);
+                }
+            }
+            if (buddyX > window.innerWidth - 80 * buddySize) {
+                buddyX = window.innerWidth - 80 * buddySize;
+                velocityX *= -bounce;
+                if (wallDamage > 0) {
+                    money += wallDamage;
+                    createSparkle(window.innerWidth, buddyY);
+                }
+            }
+            if (buddyY > window.innerHeight - 120 * buddySize) {
+                buddyY = window.innerHeight - 120 * buddySize;
+                velocityY *= -bounce;
+                if (wallDamage > 0) {
+                    money += wallDamage;
+                    createSparkle(buddyX, window.innerHeight);
+                }
+            }
+            
+            // Mega bounce effect
+            if (megaBounce > 0 && Math.abs(velocityY) > 5) {
+                velocityY *= -1.5;
+                createSparkle(buddyX, buddyY);
+            }
+            
+            // Count spins (much slower money earning)
+            if (Math.abs(rotationSpeed) > 2) {
+                spinCount += Math.abs(rotationSpeed) / 100;
+                money += (Math.abs(rotationSpeed) / 1000) * spinMultiplier * moneyMultiplier;
+                
+                // Check for dizzy state
+                if (Math.abs(rotationSpeed) > dizzyThreshold && !isDizzy) {
+                    isDizzy = true;
+                    dizzyStartTime = Date.now();
+                    buddy.classList.add('dizzy');
+                    dizzyEffect.style.opacity = '1';
+                    money += 2 * moneyMultiplier; // Smaller bonus for making buddy dizzy
+                }
+            }
+            
+            // Update dizzy state
+            if (isDizzy) {
+                dizzyTime = (Date.now() - dizzyStartTime) / 1000;
+                if (Math.abs(rotationSpeed) < 2 || dizzyTime > 10 * dizzyDuration) {
+                    isDizzy = false;
+                    buddy.classList.remove('dizzy');
+                    dizzyEffect.style.opacity = '0';
+                }
+            }
+            
+            // Sparkle rain effect
+            if (sparkleRain && Math.random() < 0.1) {
+                createSparkle(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
+            }
+            
+            // Update weapon cooldowns
+            for (let weapon in weapons) {
+                if (weapons[weapon].cooldown > 0) {
+                    weapons[weapon].cooldown--;
+                }
+            }
+            
+            updateBuddyPosition();
+            updateUI();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateUI() {
+            document.getElementById('money').textContent = `💰 $${Math.floor(money)}`;
+            document.getElementById('spinCount').textContent = Math.floor(spinCount);
+            document.getElementById('dizzyTime').textContent = dizzyTime.toFixed(1);
+            document.getElementById('buddyHealth').textContent = Math.max(0, Math.floor(buddyHealth));
+            document.getElementById('damage').textContent = Math.floor(totalDamage);
+            document.getElementById('speed').textContent = speed.toFixed(1);
+            document.getElementById('gravityDisplay').textContent = gravity.toFixed(1);
+            document.getElementById('dizzyPower').textContent = dizzyMultiplier.toFixed(1);
+            document.getElementById('bounce').textContent = bounce.toFixed(1);
+            document.getElementById('friction').textContent = friction.toFixed(2);
+            document.getElementById('spinMultiplier').textContent = spinMultiplier.toFixed(1);
+        }
+        
+        function buyWeapon(weaponType) {
+            const weapon = weapons[weaponType];
+            const costs = {
+                sword: 50,
+                bomb: 100,
+                laser: 150,
+                chainsaw: 200,
+                flamethrower: 300,
+                nuke: 500
+            };
+            
+            const cost = costs[weaponType];
+            
+            if (money >= cost && !weapon.owned) {
+                money -= cost;
+                weapon.owned = true;
+                
+                // Visual feedback
+                const button = event.target;
+                button.style.background = '#2E8B57';
+                button.textContent = `✅ ${button.textContent.split(' ')[0]} (OWNED)`;
+                button.disabled = true;
+                
+                // Show weapon acquired message
+                const message = document.createElement('div');
+                message.style.position = 'absolute';
+                message.style.top = '50%';
+                message.style.left = '50%';
+                message.style.transform = 'translate(-50%, -50%)';
+                message.style.color = '#FFD700';
+                message.style.fontSize = '24px';
+                message.style.fontWeight = 'bold';
+                message.style.zIndex = '1000';
+                message.textContent = `WEAPON ACQUIRED: ${weaponType.toUpperCase()}!`;
+                gameContainer.appendChild(message);
+                
+                setTimeout(() => {
+                    message.remove();
+                }, 2000);
+            }
+        }
+        
+        function buyUpgrade(type) {
+            let cost = 0;
+            let canAfford = false;
+            
+            switch(type) {
+                case 'speed':
+                    cost = 15;
+                    if (money >= cost) {
+                        money -= cost;
+                        speed += 0.3;
+                        canAfford = true;
+                    }
+                    break;
+                case 'gravity':
+                    cost = 20;
+                    if (money >= cost) {
+                        money -= cost;
+                        gravity += 0.2;
+                        canAfford = true;
+                    }
+                    break;
+                case 'dizzy':
+                    cost = 30;
+                    if (money >= cost) {
+                        money -= cost;
+                        dizzyMultiplier += 0.3;
+                        canAfford = true;
+                    }
+                    break;
+                case 'bounce':
+                    cost = 25;
+                    if (money >= cost) {
+                        money -= cost;
+                        bounce += 0.1;
+                        canAfford = true;
+                    }
+                    break;
+                case 'friction':
+                    cost = 35;
+                    if (money >= cost) {
+                        money -= cost;
+                        friction += 0.01;
+                        canAfford = true;
+                    }
+                    break;
+                case 'spinMultiplier':
+                    cost = 40;
+                    if (money >= cost) {
+                        money -= cost;
+                        spinMultiplier += 0.2;
+                        canAfford = true;
+                    }
+                    break;
+                case 'dizzyThreshold':
+                    cost = 50;
+                    if (money >= cost) {
+                        money -= cost;
+                        dizzyThreshold -= 1;
+                        canAfford = true;
+                    }
+                    break;
+                case 'moneyMultiplier':
+                    cost = 75;
+                    if (money >= cost) {
+                        money -= cost;
+                        moneyMultiplier += 0.5;
+                        canAfford = true;
+                    }
+                    break;
+                case 'autoSpin':
+                    cost = 100;
+                    if (money >= cost) {
+                        money -= cost;
+                        autoSpin += 0.5;
+                        canAfford = true;
+                    }
+                    break;
+                case 'megaBounce':
+                    cost = 150;
+                    if (money >= cost) {
+                        money -= cost;
+                        megaBounce += 1;
+                        canAfford = true;
+                    }
+                    break;
+                case 'timeWarp':
+                    cost = 200;
+                    if (money >= cost) {
+                        money -= cost;
+                        timeWarp += 0.2;
+                        canAfford = true;
+                    }
+                    break;
+                case 'buddySize':
+                    cost = 125;
+                    if (money >= cost) {
+                        money -= cost;
+                        buddySize += 0.2;
+                        canAfford = true;
+                    }
+                    break;
+                case 'sparkleRain':
+                    cost = 80;
+                    if (money >= cost) {
+                        money -= cost;
+                        sparkleRain = true;
+                        canAfford = true;
+                    }
+                    break;
+                case 'dizzyDuration':
+                    cost = 90;
+                    if (money >= cost) {
+                        money -= cost;
+                        dizzyDuration += 0.5;
+                        canAfford = true;
+                    }
+                    break;
+                case 'wallDamage':
+                    cost = 120;
+                    if (money >= cost) {
+                        money -= cost;
+                        wallDamage += 1;
+                        canAfford = true;
+                    }
+                    break;
+                case 'gravityWell':
+                    cost = 180;
+                    if (money >= cost) {
+                        money -= cost;
+                        gravityWell = true;
+                        canAfford = true;
+                    }
+                    break;
+            }
+            
+            if (canAfford) {
+                // Visual feedback
+                const button = event.target;
+                button.style.background = '#2E8B57';
+                setTimeout(() => {
+                    button.style.background = '#4CAF50';
+                }, 200);
+            }
+        }
+        
+        // Start the game
+        gameLoop();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (buddyX > window.innerWidth - 80) {
+                buddyX = window.innerWidth - 80;
+            }
+            if (buddyY > window.innerHeight - 120) {
+                buddyY = window.innerHeight - 120;
+            }
+        });
+    </script>
+</body>
+</html>

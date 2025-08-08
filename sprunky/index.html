@@ -1,0 +1,640 @@
+<!--
+Sprunky Horror Game
+- Dark, spooky environment with limited visibility
+- Player character that moves around with WASD keys
+- Scary entities that chase the player
+- Flashlight mechanic for limited light
+- Collectible items to progress
+- Heartbeat sound effects and creepy atmosphere
+- Jump scares and survival mechanics
+- Multiple rooms to explore
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprunky - Horror Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            color: #fff;
+            cursor: none;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 70%);
+            overflow: hidden;
+        }
+        
+        .player {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 100;
+            transition: all 0.1s ease;
+            box-shadow: 0 0 20px #fff, 0 0 40px #fff;
+        }
+        
+        .flashlight {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 40%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            transition: all 0.1s ease;
+        }
+        
+        .entity {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ff0000;
+            border-radius: 50%;
+            z-index: 80;
+            animation: entityGlow 2s ease-in-out infinite;
+            box-shadow: 0 0 30px #ff0000;
+        }
+        
+        @keyframes entityGlow {
+            0%, 100% { box-shadow: 0 0 30px #ff0000; }
+            50% { box-shadow: 0 0 50px #ff0000, 0 0 70px #ff0000; }
+        }
+        
+        .item {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #00ff00;
+            border-radius: 50%;
+            z-index: 60;
+            animation: itemPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        
+        @keyframes itemPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .wall {
+            position: absolute;
+            background: #333;
+            z-index: 40;
+            box-shadow: inset 0 0 10px #000;
+        }
+        
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            font-family: 'Creepster', cursive;
+            font-size: 18px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        
+        .health {
+            margin-bottom: 10px;
+        }
+        
+        .items {
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 200;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-family: 'Creepster', cursive;
+        }
+        
+        .game-over-content {
+            text-align: center;
+            color: #ff0000;
+            font-size: 2rem;
+            text-shadow: 0 0 20px #ff0000;
+        }
+        
+        .restart-btn {
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Creepster', cursive;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+        
+        .victory {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-family: 'Creepster', cursive;
+        }
+        
+        .victory-content {
+            text-align: center;
+            color: #00ff00;
+            font-size: 2rem;
+            text-shadow: 0 0 20px #00ff00;
+        }
+        
+        .heartbeat {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,0,0,0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 30;
+            opacity: 0;
+            animation: heartbeat 1s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+        }
+        
+        .fog {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+            z-index: 45;
+        }
+        
+        .jumpscare {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ff0000;
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Creepster', cursive;
+            font-size: 4rem;
+            color: #000;
+            text-shadow: 0 0 20px #fff;
+            animation: jumpscareShake 0.5s ease-in-out;
+        }
+        
+        @keyframes jumpscareShake {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-2deg); }
+            50% { transform: scale(1.2) rotate(2deg); }
+            75% { transform: scale(1.1) rotate(-1deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .jumpscare-text {
+            text-align: center;
+            animation: textFlicker 0.1s ease-in-out infinite;
+        }
+        
+        @keyframes textFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="fog"></div>
+        <div class="heartbeat" id="heartbeat"></div>
+        <div class="player" id="player"></div>
+        <div class="flashlight" id="flashlight"></div>
+        
+        <div class="ui">
+            <div class="health">❤️ Health: <span id="health">100</span></div>
+            <div class="items">🔑 Items: <span id="items">0</span>/3</div>
+            <div class="score">👻 Entities Avoided: <span id="score">0</span></div>
+        </div>
+        
+        <div class="instructions">
+            <p>WASD to move | Avoid red entities | Collect green items | Survive!</p>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h1>💀 YOU DIED! 💀</h1>
+            <p>The entities got you...</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Try Again</button>
+        </div>
+    </div>
+    
+    <div class="victory" id="victory">
+        <div class="victory-content">
+            <h1>🎉 YOU ESCAPED! 🎉</h1>
+            <p>You survived Sprunky!</p>
+            <p>Final Score: <span id="victoryScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+    
+    <div class="jumpscare" id="jumpscare">
+        <div class="jumpscare-text" id="jumpscareText">
+            BOO! 👻
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            playerX: window.innerWidth / 2,
+            playerY: window.innerHeight / 2,
+            health: 100,
+            items: 0,
+            score: 0,
+            entities: [],
+            items: [],
+            walls: [],
+            gameRunning: true,
+            keys: {},
+            lastJumpscare: 0
+        };
+        
+        const player = document.getElementById('player');
+        const flashlight = document.getElementById('flashlight');
+        const heartbeat = document.getElementById('heartbeat');
+        const gameOverScreen = document.getElementById('gameOver');
+        const victoryScreen = document.getElementById('victory');
+        const jumpscareScreen = document.getElementById('jumpscare');
+        const jumpscareText = document.getElementById('jumpscareText');
+        
+        // Create walls
+        function createWalls() {
+            const wallData = [
+                { x: 100, y: 100, width: 200, height: 20 },
+                { x: 400, y: 200, width: 20, height: 150 },
+                { x: 600, y: 300, width: 150, height: 20 },
+                { x: 200, y: 400, width: 20, height: 100 },
+                { x: 800, y: 100, width: 20, height: 200 },
+                { x: 100, y: 600, width: 300, height: 20 },
+                { x: 700, y: 500, width: 200, height: 20 }
+            ];
+            
+            wallData.forEach(wall => {
+                const wallElement = document.createElement('div');
+                wallElement.className = 'wall';
+                wallElement.style.left = wall.x + 'px';
+                wallElement.style.top = wall.y + 'px';
+                wallElement.style.width = wall.width + 'px';
+                wallElement.style.height = wall.height + 'px';
+                document.querySelector('.game-container').appendChild(wallElement);
+                gameData.walls.push(wallElement);
+            });
+        }
+        
+        // Create items
+        function createItems() {
+            const itemPositions = [
+                { x: 150, y: 150 },
+                { x: 450, y: 250 },
+                { x: 650, y: 350 }
+            ];
+            
+            itemPositions.forEach((pos, index) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.style.left = pos.x + 'px';
+                item.style.top = pos.y + 'px';
+                item.id = 'item' + index;
+                document.querySelector('.game-container').appendChild(item);
+                gameData.items.push(item);
+            });
+        }
+        
+        // Create entities
+        function createEntities() {
+            for (let i = 0; i < 5; i++) {
+                const entity = document.createElement('div');
+                entity.className = 'entity';
+                entity.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+                entity.style.top = Math.random() * (window.innerHeight - 50) + 'px';
+                document.querySelector('.game-container').appendChild(entity);
+                gameData.entities.push(entity);
+            }
+        }
+        
+        // Move player
+        function movePlayer() {
+            const speed = 5;
+            let newX = gameData.playerX;
+            let newY = gameData.playerY;
+            
+            if (gameData.keys['w'] || gameData.keys['W']) newY -= speed;
+            if (gameData.keys['s'] || gameData.keys['S']) newY += speed;
+            if (gameData.keys['a'] || gameData.keys['A']) newX -= speed;
+            if (gameData.keys['d'] || gameData.keys['D']) newX += speed;
+            
+            // Keep player in bounds
+            newX = Math.max(10, Math.min(window.innerWidth - 10, newX));
+            newY = Math.max(10, Math.min(window.innerHeight - 10, newY));
+            
+            // Check wall collisions
+            if (!checkWallCollision(newX, newY)) {
+                gameData.playerX = newX;
+                gameData.playerY = newY;
+            }
+            
+            player.style.left = gameData.playerX + 'px';
+            player.style.top = gameData.playerY + 'px';
+            
+            // Update flashlight position
+            flashlight.style.left = (gameData.playerX - 100) + 'px';
+            flashlight.style.top = (gameData.playerY - 100) + 'px';
+        }
+        
+        // Check wall collision
+        function checkWallCollision(x, y) {
+            const playerSize = 20;
+            return gameData.walls.some(wall => {
+                const wallRect = wall.getBoundingClientRect();
+                return x < wallRect.right && x + playerSize > wallRect.left &&
+                       y < wallRect.bottom && y + playerSize > wallRect.top;
+            });
+        }
+        
+        // Move entities towards player
+        function moveEntities() {
+            gameData.entities.forEach(entity => {
+                const entityRect = entity.getBoundingClientRect();
+                const entityX = entityRect.left + entityRect.width / 2;
+                const entityY = entityRect.top + entityRect.height / 2;
+                
+                const dx = gameData.playerX - entityX;
+                const dy = gameData.playerY - entityY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    const speed = 2;
+                    const newX = entityX + (dx / distance) * speed;
+                    const newY = entityY + (dy / distance) * speed;
+                    
+                    entity.style.left = newX + 'px';
+                    entity.style.top = newY + 'px';
+                }
+            });
+        }
+        
+        // Check collisions
+        function checkCollisions() {
+            const playerRect = player.getBoundingClientRect();
+            
+            // Check entity collisions
+            gameData.entities.forEach(entity => {
+                const entityRect = entity.getBoundingClientRect();
+                if (playerRect.left < entityRect.right &&
+                    playerRect.right > entityRect.left &&
+                    playerRect.top < entityRect.bottom &&
+                    playerRect.bottom > entityRect.top) {
+                    gameData.health -= 10;
+                    if (gameData.health <= 0) {
+                        gameOver();
+                    }
+                }
+            });
+            
+            // Check item collisions
+            gameData.items.forEach((item, index) => {
+                if (item.parentNode) {
+                    const itemRect = item.getBoundingClientRect();
+                    if (playerRect.left < itemRect.right &&
+                        playerRect.right > itemRect.left &&
+                        playerRect.top < itemRect.bottom &&
+                        playerRect.bottom > itemRect.top) {
+                        item.remove();
+                        gameData.items.splice(index, 1);
+                        gameData.score += 50;
+                        showNotification('🔑 Item collected!');
+                        
+                        if (gameData.items.length === 0) {
+                            victory();
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update UI
+        function updateUI() {
+            document.getElementById('health').textContent = gameData.health;
+            document.getElementById('items').textContent = (3 - gameData.items.length);
+            document.getElementById('score').textContent = gameData.score;
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.position = 'fixed';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.background = 'rgba(255, 0, 0, 0.8)';
+            notification.style.color = 'white';
+            notification.style.padding = '20px';
+            notification.style.borderRadius = '10px';
+            notification.style.fontFamily = 'Creepster, cursive';
+            notification.style.fontSize = '1.5rem';
+            notification.style.zIndex = '1000';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 2000);
+        }
+        
+        // Jump scare system
+        function triggerJumpscare() {
+            if (!gameData.gameRunning) return;
+            
+            const jumpscares = [
+                'BOO! 👻',
+                'GOTCHA! 💀',
+                'BEHIND YOU! 👹',
+                'RUN! 🏃‍♂️',
+                'DIE! ☠️',
+                'SCARY! 😱',
+                'AHHH! 😨',
+                'NO ESCAPE! 🔪',
+                'YOU\'RE MINE! 🦹‍♂️',
+                'SPOOKY! 🕷️'
+            ];
+            
+            const randomJumpscare = jumpscares[Math.floor(Math.random() * jumpscares.length)];
+            jumpscareText.textContent = randomJumpscare;
+            
+            jumpscareScreen.style.display = 'flex';
+            
+            // Hide jumpscare after 0.5 seconds
+            setTimeout(() => {
+                jumpscareScreen.style.display = 'none';
+            }, 500);
+        }
+        
+        // Game over
+        function gameOver() {
+            gameData.gameRunning = false;
+            document.getElementById('finalScore').textContent = gameData.score;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Victory
+        function victory() {
+            gameData.gameRunning = false;
+            document.getElementById('victoryScore').textContent = gameData.score;
+            victoryScreen.style.display = 'flex';
+        }
+        
+        // Restart game
+        function restartGame() {
+            gameData = {
+                playerX: window.innerWidth / 2,
+                playerY: window.innerHeight / 2,
+                health: 100,
+                items: 0,
+                score: 0,
+                entities: [],
+                items: [],
+                walls: [],
+                gameRunning: true,
+                keys: {},
+                lastJumpscare: 0
+            };
+            
+            // Clear existing elements
+            gameData.entities.forEach(entity => entity.remove());
+            gameData.items.forEach(item => item.remove());
+            gameData.walls.forEach(wall => wall.remove());
+            
+            gameData.entities = [];
+            gameData.items = [];
+            gameData.walls = [];
+            
+            // Hide screens
+            gameOverScreen.style.display = 'none';
+            victoryScreen.style.display = 'none';
+            
+            // Recreate game elements
+            createWalls();
+            createItems();
+            createEntities();
+            
+            updateUI();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameData.gameRunning) return;
+            
+            movePlayer();
+            moveEntities();
+            checkCollisions();
+            updateUI();
+            
+            // Check for jumpscare every 5 seconds
+            const now = Date.now();
+            if (now - gameData.lastJumpscare > 5000) {
+                triggerJumpscare();
+                gameData.lastJumpscare = now;
+            }
+            
+            // Update heartbeat based on nearby entities
+            const nearbyEntities = gameData.entities.filter(entity => {
+                const entityRect = entity.getBoundingClientRect();
+                const entityX = entityRect.left + entityRect.width / 2;
+                const entityY = entityRect.top + entityRect.height / 2;
+                const distance = Math.sqrt(
+                    Math.pow(gameData.playerX - entityX, 2) + 
+                    Math.pow(gameData.playerY - entityY, 2)
+                );
+                return distance < 200;
+            });
+            
+            if (nearbyEntities.length > 0) {
+                heartbeat.style.animationDuration = (1 - nearbyEntities.length * 0.1) + 's';
+                heartbeat.style.opacity = '1';
+            } else {
+                heartbeat.style.opacity = '0';
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            gameData.keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            gameData.keys[e.key] = false;
+        });
+        
+        // Initialize game
+        createWalls();
+        createItems();
+        createEntities();
+        gameLoop();
+        
+        console.log('👻 Sprunky horror game loaded! Survive if you can...');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1119 @@
+<!-- HYDRAULIC PRESS RECYCLING FACTORY - Industrial Simulation Game -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 HYDRAULIC PRESS FACTORY</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: #34495e;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+            border: 3px solid #95a5a6;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            color: #e74c3c;
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            text-align: center;
+            flex: 1;
+            font-weight: bold;
+        }
+
+        .factory-area {
+            position: relative;
+            flex: 1;
+            background: linear-gradient(to bottom, #2c3e50 0%, #34495e 100%);
+            border: 3px solid #95a5a6;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .conveyor-belt {
+            position: absolute;
+            bottom: 100px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: repeating-linear-gradient(
+                90deg,
+                #8B4513 0px,
+                #8B4513 20px,
+                #A0522D 20px,
+                #A0522D 40px
+            );
+            border: 3px solid #654321;
+            z-index: 10;
+        }
+
+        .crusher-zone {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            border: 2px dashed #e74c3c;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .ball {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 20;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .ball.steel {
+            background: radial-gradient(circle, #C0C0C0, #808080);
+            border: 2px solid #696969;
+        }
+
+        .ball.gold {
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border: 2px solid #FF8C00;
+            animation: goldGlow 1s ease-in-out infinite alternate;
+        }
+
+        .ball.diamond {
+            background: radial-gradient(circle, #B9F2FF, #87CEEB);
+            border: 2px solid #4682B4;
+            animation: diamondSparkle 0.5s ease-in-out infinite alternate;
+        }
+
+        .ball.rubber {
+            background: radial-gradient(circle, #000000, #333333);
+            border: 2px solid #000000;
+        }
+
+        .ball.glass {
+            background: radial-gradient(circle, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
+            border: 2px solid rgba(255,255,255,0.5);
+            animation: glassShine 2s ease-in-out infinite;
+        }
+
+        @keyframes goldGlow {
+            from { box-shadow: 0 0 10px #FFD700; }
+            to { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFA500; }
+        }
+
+        @keyframes diamondSparkle {
+            from { box-shadow: 0 0 10px #B9F2FF; }
+            to { box-shadow: 0 0 20px #B9F2FF, 0 0 30px #87CEEB; }
+        }
+
+        @keyframes glassShine {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .ball.crushed {
+            animation: crushEffect 0.5s ease-out forwards;
+        }
+
+        @keyframes crushEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.3); }
+            100% { transform: scale(0.1); opacity: 0; }
+        }
+
+        .hydraulic-press {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 300px;
+            z-index: 30;
+        }
+
+        .machine {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            border: 3px solid #95a5a6;
+            border-radius: 8px;
+            z-index: 20;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .machine:hover {
+            transform: scale(1.1);
+        }
+
+        .shredder {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            bottom: 200px;
+            left: 100px;
+        }
+
+        .shredder::before {
+            content: '🔪';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .melter {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            bottom: 200px;
+            right: 100px;
+        }
+
+        .melter::before {
+            content: '🔥';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .compressor {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            bottom: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .compressor::before {
+            content: '🗜️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .separator {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            bottom: 280px;
+            left: 200px;
+        }
+
+        .separator::before {
+            content: '🔀';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 25px;
+        }
+
+        .machine.locked {
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .machine.locked::before {
+            content: '🔒';
+        }
+
+        .press-base {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 40px;
+            background: linear-gradient(45deg, #696969, #808080);
+            border: 3px solid #333;
+            border-radius: 5px;
+        }
+
+        .press-piston {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 200px;
+            background: linear-gradient(45deg, #A0A0A0, #C0C0C0);
+            border: 3px solid #696969;
+            border-radius: 10px;
+            transition: top 0.5s ease-in-out;
+        }
+
+        .press-piston.crushing {
+            top: 180px;
+        }
+
+        .press-arm {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 20px;
+            background: linear-gradient(45deg, #696969, #808080);
+            border: 3px solid #333;
+            border-radius: 10px;
+        }
+
+        .recycle-bin {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            width: 100px;
+            height: 80px;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            border: 3px solid #229954;
+            border-radius: 10px;
+            z-index: 15;
+        }
+
+        .recycle-bin::before {
+            content: '♻️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+        }
+
+        .recycle-bin.full {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border-color: #c0392b;
+        }
+
+        .recycle-bin.full::before {
+            content: '💰';
+        }
+
+        .money-particle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFD700;
+            border: 2px solid #FFA500;
+            border-radius: 50%;
+            z-index: 60;
+            animation: moneyFloat 2s ease-out forwards;
+        }
+
+        .money-particle::before {
+            content: '$';
+            position: absolute;
+            top: 1px;
+            left: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+
+        @keyframes moneyFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+
+        .upgrade-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(52, 73, 94, 0.9);
+            border: 2px solid #95a5a6;
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            z-index: 50;
+            max-width: 250px;
+        }
+
+        .upgrade-item {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: 2px solid #2980b9;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upgrade-item:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+
+        .upgrade-item.affordable {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            border-color: #229954;
+        }
+
+        .upgrade-item.affordable:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+
+        .upgrade-item.expensive {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border-color: #c0392b;
+            opacity: 0.7;
+        }
+
+        .ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            border-radius: 8px;
+            border: 2px solid #95a5a6;
+            flex-shrink: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 8px 15px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: 2px solid #c0392b;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #ecf0f1;
+            font-weight: bold;
+        }
+
+        .instructions {
+            background: rgba(236, 240, 241, 0.9);
+            color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            flex-shrink: 0;
+            border: 2px solid #95a5a6;
+        }
+
+        .instructions h3 {
+            color: #e74c3c;
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+
+        .instructions p {
+            margin: 4px 0;
+            font-size: 12px;
+        }
+
+        .ball-spawner {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            border: 3px solid #8e44ad;
+            border-radius: 50%;
+            z-index: 25;
+            animation: spawnerPulse 2s ease-in-out infinite;
+        }
+
+        .ball-spawner::before {
+            content: '⚽';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+        }
+
+        @keyframes spawnerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 20px;
+            background: #2c3e50;
+            border: 2px solid #95a5a6;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+            border: 3px solid #229954;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🏭 HYDRAULIC PRESS FACTORY</h1>
+        </div>
+        
+        <div class="instructions">
+            <h3>⚙️ INDUSTRIAL RECYCLING SIMULATION</h3>
+            <p><strong>Click balls</strong> to crush them | <strong>Drag to recycle bin</strong> | <strong>Upgrade your factory</strong> | <strong>Make money!</strong></p>
+        </div>
+
+        <div class="ui">
+            <div class="controls">
+                <button class="control-btn" onclick="spawnBall()">Spawn Ball</button>
+                <button class="control-btn" onclick="autoSpawn()">Auto Spawn</button>
+                <button class="control-btn" onclick="resetGame()">Reset</button>
+            </div>
+            <div class="stats">
+                <div>Money: $<span id="money">0</span></div>
+                <div>Balls Crushed: <span id="ballsCrushed">0</span></div>
+                <div>Recycled: <span id="recycled">0</span></div>
+                <div>Level: <span id="level">1</span></div>
+                <div>Efficiency: <span id="efficiency">100</span>%</div>
+            </div>
+        </div>
+
+        <div class="factory-area" id="factoryArea">
+            <div class="ball-spawner" id="ballSpawner"></div>
+            
+            <div class="hydraulic-press" id="hydraulicPress">
+                <div class="press-arm"></div>
+                <div class="press-piston" id="pressPiston"></div>
+                <div class="press-base"></div>
+            </div>
+            
+            <div class="crusher-zone" id="crusherZone"></div>
+            <div class="conveyor-belt"></div>
+            <div class="recycle-bin" id="recycleBin"></div>
+            
+            <!-- Machines -->
+            <div class="machine shredder locked" id="shredder" onclick="buyMachine('shredder')"></div>
+            <div class="machine melter locked" id="melter" onclick="buyMachine('melter')"></div>
+            <div class="machine compressor locked" id="compressor" onclick="buyMachine('compressor')"></div>
+            <div class="machine separator locked" id="separator" onclick="buyMachine('separator')"></div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="upgrade-panel" id="upgradePanel">
+            <h3>🏭 UPGRADES</h3>
+            <div class="upgrade-item" onclick="buyUpgrade('pressSpeed')">
+                <strong>Faster Press</strong><br>
+                Speed: <span id="pressSpeedLevel">1</span> | Cost: $<span id="pressSpeedCost">100</span>
+            </div>
+            <div class="upgrade-item" onclick="buyUpgrade('autoCrush')">
+                <strong>Auto Crush</strong><br>
+                Level: <span id="autoCrushLevel">0</span> | Cost: $<span id="autoCrushCost">500</span>
+            </div>
+            <div class="upgrade-item" onclick="buyUpgrade('ballValue')">
+                <strong>Ball Value</strong><br>
+                Multiplier: <span id="ballValueLevel">1</span>x | Cost: $<span id="ballValueCost">200</span>
+            </div>
+            <div class="upgrade-item" onclick="buyUpgrade('recycleEfficiency')">
+                <strong>Recycle Efficiency</strong><br>
+                Level: <span id="recycleEfficiencyLevel">1</span> | Cost: $<span id="recycleEfficiencyCost">300</span>
+            </div>
+            <div class="upgrade-item" onclick="buyUpgrade('conveyorSpeed')">
+                <strong>Conveyor Speed</strong><br>
+                Level: <span id="conveyorSpeedLevel">1</span> | Cost: $<span id="conveyorSpeedCost">150</span>
+            </div>
+            <div class="upgrade-item" onclick="buyRecycleBin()">
+                <strong>Extra Recycle Bin</strong><br>
+                Bins: <span id="recycleBinCount">1</span> | Cost: $<span id="recycleBinCost">800</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Game variables
+        let money = 0;
+        let ballsCrushed = 0;
+        let recycled = 0;
+        let level = 1;
+        let efficiency = 100;
+        let balls = [];
+        let upgrades = {
+            pressSpeed: 1,
+            autoCrush: 0,
+            ballValue: 1,
+            recycleEfficiency: 1,
+            conveyorSpeed: 1
+        };
+        let upgradeCosts = {
+            pressSpeed: 100,
+            autoCrush: 500,
+            ballValue: 200,
+            recycleEfficiency: 300,
+            conveyorSpeed: 150
+        };
+        
+        let machines = {
+            shredder: { unlocked: false, level: 0, cost: 1000 },
+            melter: { unlocked: false, level: 0, cost: 1500 },
+            compressor: { unlocked: false, level: 0, cost: 2000 },
+            separator: { unlocked: false, level: 0, cost: 2500 }
+        };
+        
+        let recycleBins = [
+            { x: 'right: 50px', y: 'bottom: 50px', active: true }
+        ];
+        let recycleBinCost = 800;
+        let autoSpawnActive = false;
+        let autoSpawnInterval;
+        let isDragging = false;
+        let draggedBall = null;
+        let recycleBinFull = false;
+        let recycleProgress = 0;
+
+        // Ball types and their values
+        const ballTypes = [
+            { type: 'steel', value: 10, color: '#C0C0C0', emoji: '⚙️' },
+            { type: 'gold', value: 50, color: '#FFD700', emoji: '💰' },
+            { type: 'diamond', value: 100, color: '#B9F2FF', emoji: '💎' },
+            { type: 'rubber', value: 5, color: '#000000', emoji: '🔘' },
+            { type: 'glass', value: 25, color: 'rgba(255,255,255,0.8)', emoji: '🔮' }
+        ];
+
+        function spawnBall() {
+            const factoryArea = document.getElementById('factoryArea');
+            const ballType = ballTypes[Math.floor(Math.random() * ballTypes.length)];
+            
+            const ball = document.createElement('div');
+            ball.className = `ball ${ballType.type}`;
+            ball.style.left = '80px';
+            ball.style.top = '80px';
+            ball.dataset.type = ballType.type;
+            ball.dataset.value = ballType.value;
+            ball.dataset.emoji = ballType.emoji;
+            
+            factoryArea.appendChild(ball);
+            balls.push(ball);
+            
+            // Add click event to crush ball
+            ball.addEventListener('click', () => crushBall(ball));
+            
+            // Add drag events
+            ball.addEventListener('mousedown', startDrag);
+            ball.addEventListener('touchstart', startDrag);
+            
+            // Move ball to conveyor
+            moveBallToConveyor(ball);
+        }
+
+        function moveBallToConveyor(ball) {
+            const factoryArea = document.getElementById('factoryArea');
+            const areaHeight = factoryArea.offsetHeight;
+            const conveyorY = areaHeight - 120;
+            
+            ball.style.transition = 'all 2s ease-in-out';
+            ball.style.left = '50%';
+            ball.style.top = conveyorY + 'px';
+            
+            // Move ball along conveyor to crusher zone
+            setTimeout(() => {
+                ball.style.left = '45%';
+                ball.style.top = (conveyorY - 20) + 'px';
+            }, 1000);
+            
+            setTimeout(() => {
+                ball.style.left = '50%';
+                ball.style.top = (conveyorY - 40) + 'px';
+            }, 2000);
+            
+            // Position ball above conveyor belt
+            ball.style.zIndex = '25';
+        }
+
+        function crushBall(ball) {
+            if (ball.classList.contains('crushed')) return;
+            
+            // Always allow crushing for now - remove zone restriction
+            ball.classList.add('crushed');
+            const piston = document.getElementById('pressPiston');
+            piston.classList.add('crushing');
+            
+            // Get ball value
+            const value = parseInt(ball.dataset.value) * upgrades.ballValue;
+            money += value;
+            ballsCrushed++;
+            
+            // Update UI
+            updateUI();
+            
+            // Create money particles
+            createMoneyParticles(ball, value);
+            
+            // Remove ball after animation
+            setTimeout(() => {
+                ball.remove();
+                balls = balls.filter(b => b !== ball);
+                piston.classList.remove('crushing');
+            }, 500);
+            
+            // Check for level up
+            checkLevelUp();
+        }
+
+        function createMoneyParticles(ball, value) {
+            const factoryArea = document.getElementById('factoryArea');
+            const ballRect = ball.getBoundingClientRect();
+            const factoryRect = factoryArea.getBoundingClientRect();
+            
+            const particleCount = Math.min(5, Math.floor(value / 10));
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'money-particle';
+                particle.style.left = (ballRect.left - factoryRect.left + Math.random() * 30) + 'px';
+                particle.style.top = (ballRect.top - factoryRect.top + Math.random() * 30) + 'px';
+                
+                factoryArea.appendChild(particle);
+                setTimeout(() => particle.remove(), 2000);
+            }
+        }
+
+        function startDrag(event) {
+            event.preventDefault();
+            isDragging = true;
+            draggedBall = event.target;
+            draggedBall.style.zIndex = '100';
+        }
+
+        function handleDrag(event) {
+            if (!isDragging || !draggedBall) return;
+            
+            const factoryArea = document.getElementById('factoryArea');
+            const factoryRect = factoryArea.getBoundingClientRect();
+            const clientX = event.clientX || event.touches[0].clientX;
+            const clientY = event.clientY || event.touches[0].clientY;
+            
+            draggedBall.style.left = (clientX - factoryRect.left - 15) + 'px';
+            draggedBall.style.top = (clientY - factoryRect.top - 15) + 'px';
+        }
+
+        function endDrag(event) {
+            if (!isDragging || !draggedBall) return;
+            
+            const recycleBin = document.getElementById('recycleBin');
+            const binRect = recycleBin.getBoundingClientRect();
+            const clientX = event.clientX || event.changedTouches[0].clientX;
+            const clientY = event.clientY || event.changedTouches[0].clientY;
+            
+            if (clientX >= binRect.left && clientX <= binRect.right &&
+                clientY >= binRect.top && clientY <= binRect.bottom) {
+                recycleBall(draggedBall);
+            }
+            
+            isDragging = false;
+            draggedBall.style.zIndex = '20';
+            draggedBall = null;
+        }
+
+        function recycleBall(ball) {
+            if (ball.classList.contains('crushed')) return;
+            
+            const value = parseInt(ball.dataset.value) * upgrades.recycleEfficiency;
+            money += value;
+            recycled++;
+            
+            ball.remove();
+            balls = balls.filter(b => b !== ball);
+            
+            // Add to recycle progress
+            recycleProgress += 10;
+            if (recycleProgress >= 100) {
+                recycleBinFull = true;
+                document.getElementById('recycleBin').classList.add('full');
+                showNotification('Recycle bin full! Bonus money!');
+                money += 500;
+                recycleProgress = 0;
+                setTimeout(() => {
+                    document.getElementById('recycleBin').classList.remove('full');
+                    recycleBinFull = false;
+                }, 2000);
+            }
+            
+            updateUI();
+            createMoneyParticles(ball, value);
+            checkLevelUp();
+        }
+
+        function autoSpawn() {
+            if (autoSpawnActive) {
+                clearInterval(autoSpawnInterval);
+                autoSpawnActive = false;
+                document.querySelector('.control-btn:nth-child(2)').textContent = 'Auto Spawn';
+            } else {
+                autoSpawnActive = true;
+                document.querySelector('.control-btn:nth-child(2)').textContent = 'Stop Auto';
+                autoSpawnInterval = setInterval(() => {
+                    if (balls.length < 10) {
+                        spawnBall();
+                    }
+                }, 2000 / upgrades.conveyorSpeed);
+            }
+        }
+
+        function buyUpgrade(type) {
+            const cost = upgradeCosts[type];
+            if (money >= cost) {
+                money -= cost;
+                upgrades[type]++;
+                upgradeCosts[type] = Math.floor(upgradeCosts[type] * 1.5);
+                
+                updateUI();
+                updateUpgradePanel();
+                showNotification(`${type} upgraded to level ${upgrades[type]}!`);
+                
+                // Auto crush functionality
+                if (type === 'autoCrush' && upgrades.autoCrush === 1) {
+                    setInterval(() => {
+                        if (balls.length > 0) {
+                            const ball = balls[0];
+                            if (!ball.classList.contains('crushed')) {
+                                crushBall(ball);
+                            }
+                        }
+                    }, 3000 / upgrades.pressSpeed);
+                }
+            }
+        }
+
+        function buyMachine(type) {
+            const machine = machines[type];
+            if (money >= machine.cost) {
+                money -= machine.cost;
+                machine.unlocked = true;
+                machine.level = 1;
+                machine.cost = Math.floor(machine.cost * 2);
+                
+                // Unlock machine visually
+                const machineElement = document.getElementById(type);
+                machineElement.classList.remove('locked');
+                machineElement.onclick = () => upgradeMachine(type);
+                
+                updateUI();
+                showNotification(`${type} machine unlocked!`);
+                
+                // Machine effects
+                activateMachine(type);
+            }
+        }
+
+        function upgradeMachine(type) {
+            const machine = machines[type];
+            const upgradeCost = machine.cost;
+            
+            if (money >= upgradeCost) {
+                money -= upgradeCost;
+                machine.level++;
+                machine.cost = Math.floor(machine.cost * 1.5);
+                
+                updateUI();
+                showNotification(`${type} machine upgraded to level ${machine.level}!`);
+                
+                // Enhanced machine effects
+                activateMachine(type);
+            }
+        }
+
+        function activateMachine(type) {
+            const machine = machines[type];
+            if (!machine.unlocked) return;
+            
+            switch(type) {
+                case 'shredder':
+                    // Shredder processes balls faster
+                    upgrades.ballValue += machine.level * 0.5;
+                    break;
+                case 'melter':
+                    // Melter increases recycle efficiency
+                    upgrades.recycleEfficiency += machine.level * 0.3;
+                    break;
+                case 'compressor':
+                    // Compressor increases press speed
+                    upgrades.pressSpeed += machine.level * 0.2;
+                    break;
+                case 'separator':
+                    // Separator gives bonus money
+                    money += machine.level * 100;
+                    break;
+            }
+            
+            updateUI();
+            updateUpgradePanel();
+        }
+
+        function buyRecycleBin() {
+            if (money >= recycleBinCost) {
+                money -= recycleBinCost;
+                
+                // Add new recycle bin
+                const newBin = {
+                    x: getRandomPosition(),
+                    y: getRandomPosition(),
+                    active: true
+                };
+                recycleBins.push(newBin);
+                
+                // Create visual bin
+                createRecycleBin(newBin);
+                
+                // Increase cost for next bin
+                recycleBinCost = Math.floor(recycleBinCost * 1.5);
+                
+                updateUI();
+                updateUpgradePanel();
+                showNotification(`New recycle bin added! Total: ${recycleBins.length}`);
+            }
+        }
+
+        function getRandomPosition() {
+            const positions = [
+                'left: 50px', 'left: 150px', 'left: 250px',
+                'right: 50px', 'right: 150px', 'right: 250px'
+            ];
+            return positions[Math.floor(Math.random() * positions.length)];
+        }
+
+        function createRecycleBin(binData) {
+            const factoryArea = document.getElementById('factoryArea');
+            const bin = document.createElement('div');
+            bin.className = 'recycle-bin';
+            bin.style[binData.x.includes('left') ? 'left' : 'right'] = binData.x.split(': ')[1];
+            bin.style[binData.y.includes('top') ? 'top' : 'bottom'] = binData.y.split(': ')[1];
+            bin.dataset.binId = recycleBins.length - 1;
+            
+            factoryArea.appendChild(bin);
+        }
+
+        function updateUI() {
+            document.getElementById('money').textContent = money.toLocaleString();
+            document.getElementById('ballsCrushed').textContent = ballsCrushed;
+            document.getElementById('recycled').textContent = recycled;
+            document.getElementById('level').textContent = level;
+            document.getElementById('efficiency').textContent = efficiency;
+            document.getElementById('progressFill').style.width = recycleProgress + '%';
+        }
+
+        function updateUpgradePanel() {
+            document.getElementById('pressSpeedLevel').textContent = upgrades.pressSpeed;
+            document.getElementById('pressSpeedCost').textContent = upgradeCosts.pressSpeed;
+            
+            document.getElementById('autoCrushLevel').textContent = upgrades.autoCrush;
+            document.getElementById('autoCrushCost').textContent = upgradeCosts.autoCrush;
+            
+            document.getElementById('ballValueLevel').textContent = upgrades.ballValue;
+            document.getElementById('ballValueCost').textContent = upgradeCosts.ballValue;
+            
+            document.getElementById('recycleEfficiencyLevel').textContent = upgrades.recycleEfficiency;
+            document.getElementById('recycleEfficiencyCost').textContent = upgradeCosts.recycleEfficiency;
+            
+            document.getElementById('conveyorSpeedLevel').textContent = upgrades.conveyorSpeed;
+            document.getElementById('conveyorSpeedCost').textContent = upgradeCosts.conveyorSpeed;
+            
+            document.getElementById('recycleBinCount').textContent = recycleBins.length;
+            document.getElementById('recycleBinCost').textContent = recycleBinCost;
+            
+            // Update upgrade button styles
+            updateUpgradeButtonStyles();
+        }
+
+        function updateUpgradeButtonStyles() {
+            const upgradeItems = document.querySelectorAll('.upgrade-item');
+            upgradeItems.forEach((item, index) => {
+                const upgradeTypes = ['pressSpeed', 'autoCrush', 'ballValue', 'recycleEfficiency', 'conveyorSpeed', 'recycleBin'];
+                let cost;
+                
+                if (index < 5) {
+                    const type = upgradeTypes[index];
+                    cost = upgradeCosts[type];
+                } else {
+                    cost = recycleBinCost;
+                }
+                
+                item.classList.remove('affordable', 'expensive');
+                if (money >= cost) {
+                    item.classList.add('affordable');
+                } else {
+                    item.classList.add('expensive');
+                }
+            });
+        }
+
+        function checkLevelUp() {
+            const newLevel = Math.floor((ballsCrushed + recycled) / 50) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                efficiency = Math.min(200, 100 + level * 10);
+                showNotification(`Level up! You're now level ${level}!`);
+                updateUI();
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+
+        function resetGame() {
+            money = 0;
+            ballsCrushed = 0;
+            recycled = 0;
+            level = 1;
+            efficiency = 100;
+            recycleProgress = 0;
+            
+            upgrades = {
+                pressSpeed: 1,
+                autoCrush: 0,
+                ballValue: 1,
+                recycleEfficiency: 1,
+                conveyorSpeed: 1
+            };
+            
+            upgradeCosts = {
+                pressSpeed: 100,
+                autoCrush: 500,
+                ballValue: 200,
+                recycleEfficiency: 300,
+                conveyorSpeed: 150
+            };
+            
+            machines = {
+                shredder: { unlocked: false, level: 0, cost: 1000 },
+                melter: { unlocked: false, level: 0, cost: 1500 },
+                compressor: { unlocked: false, level: 0, cost: 2000 },
+                separator: { unlocked: false, level: 0, cost: 2500 }
+            };
+            
+            recycleBins = [
+                { x: 'right: 50px', y: 'bottom: 50px', active: true }
+            ];
+            recycleBinCost = 800;
+            
+            // Clear all balls
+            balls.forEach(ball => ball.remove());
+            balls = [];
+            
+            // Stop auto spawn
+            if (autoSpawnActive) {
+                clearInterval(autoSpawnInterval);
+                autoSpawnActive = false;
+                document.querySelector('.control-btn:nth-child(2)').textContent = 'Auto Spawn';
+            }
+            
+            // Reset recycle bin
+            document.getElementById('recycleBin').classList.remove('full');
+            recycleBinFull = false;
+            
+            // Remove extra recycle bins
+            document.querySelectorAll('.recycle-bin').forEach((bin, index) => {
+                if (index > 0) bin.remove();
+            });
+            
+            // Reset machines
+            Object.keys(machines).forEach(type => {
+                const machineElement = document.getElementById(type);
+                machineElement.classList.add('locked');
+                machineElement.onclick = () => buyMachine(type);
+            });
+            
+            updateUI();
+            updateUpgradePanel();
+            showNotification('Game reset! Start fresh!');
+        }
+
+        // Event listeners
+        document.addEventListener('mousemove', handleDrag);
+        document.addEventListener('touchmove', handleDrag);
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        // Initialize the game
+        window.addEventListener('load', () => {
+            updateUI();
+            updateUpgradePanel();
+            showNotification('Welcome to the Hydraulic Press Factory! Click balls when they reach the red zone!');
+            
+            // Add some initial balls for testing
+            setTimeout(() => spawnBall(), 1000);
+            setTimeout(() => spawnBall(), 3000);
+        });
+    </script>
+</body>
+</html>

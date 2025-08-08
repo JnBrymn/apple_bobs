@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolution Idle - Progress Through Ages!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                linear-gradient(135deg, #667eea 0%, #764ba2 30%, #f093fb 60%, #667eea 100%);
+            background-size: 400% 400%, 300% 300%, 200% 200%, 400% 400%;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+            animation: backgroundShift 25s ease infinite;
+        }
+
+        @keyframes backgroundShift {
+            0% { 
+                background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; 
+            }
+            25% { 
+                background-position: 100% 50%, 100% 100%, 50% 50%, 25% 50%; 
+            }
+            50% { 
+                background-position: 0% 50%, 0% 0%, 100% 100%, 50% 50%; 
+            }
+            75% { 
+                background-position: 100% 50%, 50% 50%, 0% 0%, 75% 50%; 
+            }
+            100% { 
+                background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; 
+            }
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+            border-radius: 50%;
+            animation: float 25s infinite linear;
+            box-shadow: 
+                0 0 15px rgba(255, 255, 255, 0.7),
+                0 0 30px rgba(255, 255, 255, 0.3);
+            filter: blur(0.5px);
+        }
+
+        .particle:nth-child(4n) {
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.9) 0%, rgba(255, 107, 107, 0.3) 50%, transparent 100%);
+            box-shadow: 
+                0 0 20px rgba(255, 107, 107, 0.8),
+                0 0 40px rgba(255, 107, 107, 0.4);
+        }
+
+        .particle:nth-child(4n+1) {
+            background: radial-gradient(circle, rgba(78, 205, 196, 0.9) 0%, rgba(78, 205, 196, 0.3) 50%, transparent 100%);
+            box-shadow: 
+                0 0 20px rgba(78, 205, 196, 0.8),
+                0 0 40px rgba(78, 205, 196, 0.4);
+        }
+
+        .particle:nth-child(4n+2) {
+            background: radial-gradient(circle, rgba(255, 167, 38, 0.9) 0%, rgba(255, 167, 38, 0.3) 50%, transparent 100%);
+            box-shadow: 
+                0 0 20px rgba(255, 167, 38, 0.8),
+                0 0 40px rgba(255, 167, 38, 0.4);
+        }
+
+        .particle:nth-child(4n+3) {
+            background: radial-gradient(circle, rgba(240, 147, 251, 0.9) 0%, rgba(240, 147, 251, 0.3) 50%, transparent 100%);
+            box-shadow: 
+                0 0 20px rgba(240, 147, 251, 0.8),
+                0 0 40px rgba(240, 147, 251, 0.4);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)),
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            border-radius: 30px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.4),
+                0 0 0 2px rgba(255, 255, 255, 0.15),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3),
+                0 0 30px rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 4.5em;
+            margin-bottom: 30px;
+            text-shadow: 
+                3px 3px 6px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(255, 255, 255, 0.4),
+                0 0 60px rgba(255, 255, 255, 0.2);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffa726, #f093fb, #667eea);
+            background-size: 250% 250%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 3s ease infinite;
+            position: relative;
+            font-weight: 900;
+            letter-spacing: 3px;
+            transform: translateZ(20px);
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 2px;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .age-display {
+            text-align: center;
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .age-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .resource-display {
+            text-align: center;
+            font-size: 2.8em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            border-radius: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resource-display::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: rotate 4s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .click-button {
+            display: block;
+            width: 250px;
+            height: 250px;
+            margin: 35px auto;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb);
+            background-size: 300% 300%;
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.4),
+                0 0 0 2px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: buttonGlow 3s ease-in-out infinite alternate;
+        }
+
+        .click-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            border-radius: 50%;
+        }
+
+        .click-button:hover::before {
+            opacity: 1;
+        }
+
+        .click-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+            animation: buttonGlow 0.5s ease-in-out infinite alternate;
+        }
+
+        .click-button:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes buttonGlow {
+            0% { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 107, 107, 0.3); }
+            100% { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 40px rgba(78, 205, 196, 0.5); }
+        }
+
+        .revolution-button {
+            display: block;
+            width: 100%;
+            padding: 25px;
+            margin: 25px 0;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa726, #ff6b6b);
+            background-size: 200% 200%;
+            color: white;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: revolutionGlow 2s ease-in-out infinite;
+        }
+
+        .revolution-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .revolution-button:hover::before {
+            left: 100%;
+        }
+
+        .revolution-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            animation: revolutionGlow 0.5s ease-in-out infinite;
+        }
+
+        .revolution-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            animation: none;
+        }
+
+        .restart-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .restart-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .restart-button:hover::before {
+            left: 100%;
+        }
+
+        .restart-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes revolutionGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 167, 38, 0.5); }
+        }
+
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 35px;
+        }
+
+        .upgrade {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .upgrade::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upgrade:hover::before {
+            opacity: 1;
+        }
+
+        .upgrade:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .upgrade h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+            font-size: 1.3em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrade p {
+            margin-bottom: 20px;
+            font-size: 1em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .upgrade button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .upgrade button:hover::before {
+            left: 100%;
+        }
+
+        .upgrade button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrade button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 35px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat h4 {
+            color: #4ecdc4;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat div {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .floating-number {
+            position: absolute;
+            color: #4ecdc4;
+            font-weight: bold;
+            font-size: 1.6em;
+            pointer-events: none;
+            animation: float-up 2.5s ease-out forwards;
+            text-shadow: 
+                3px 3px 6px rgba(0, 0, 0, 0.8),
+                0 0 15px rgba(78, 205, 196, 0.6),
+                0 0 30px rgba(78, 205, 196, 0.3);
+            z-index: 1000;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 10px rgba(78, 205, 196, 0.5));
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+            25% {
+                opacity: 1;
+                transform: translateY(-15px) scale(1.3) rotate(5deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-30px) scale(1.1) rotate(-3deg);
+            }
+            75% {
+                opacity: 0.7;
+                transform: translateY(-45px) scale(0.9) rotate(2deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(0.7) rotate(0deg);
+            }
+        }
+
+        .age-info {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            padding: 25px;
+            border-radius: 20px;
+            margin: 25px 0;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .age-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            animation: infoPulse 3s infinite;
+        }
+
+        @keyframes infoPulse {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .age-info h3 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .age-info p {
+            font-size: 1.1em;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        /* Celebration effects */
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff6b6b, #ffa726, #4ecdc4, #f093fb);
+            background-size: 300% 300%;
+            color: white;
+            padding: 50px;
+            border-radius: 30px;
+            font-size: 3em;
+            font-weight: bold;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                0 0 0 3px rgba(255, 255, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            animation: celebrationGlow 2s ease-in-out infinite alternate;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes celebrationGlow {
+            0% { 
+                box-shadow: 
+                    0 30px 60px rgba(0, 0, 0, 0.6),
+                    0 0 0 3px rgba(255, 255, 255, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                    0 0 40px rgba(255, 107, 107, 0.6);
+            }
+            50% { 
+                box-shadow: 
+                    0 30px 60px rgba(0, 0, 0, 0.6),
+                    0 0 0 3px rgba(255, 255, 255, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                    0 0 60px rgba(78, 205, 196, 0.7);
+            }
+            100% { 
+                box-shadow: 
+                    0 30px 60px rgba(0, 0, 0, 0.6),
+                    0 0 0 3px rgba(255, 255, 255, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                    0 0 50px rgba(240, 147, 251, 0.8);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+            
+            .click-button {
+                width: 180px;
+                height: 180px;
+                font-size: 1.5em;
+            }
+            
+            .upgrades {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <h1>🔄 Revolution Idle 🔄</h1>
+        
+        <div class="age-display" id="ageDisplay">
+            <div id="currentAge">Stone Age</div>
+            <div style="font-size: 0.6em; opacity: 0.8;" id="ageDescription">Hunt and gather to survive</div>
+        </div>
+
+        <div class="resource-display" id="resourceDisplay">
+            <div id="currentResource">0 Food</div>
+            <div style="font-size: 0.5em; opacity: 0.8;" id="resourcePerSecond">+0/s</div>
+        </div>
+
+        <button class="click-button" id="clickButton">Hunt!</button>
+
+        <button class="revolution-button" id="revolutionButton" onclick="revolution()">
+            🔄 Start Revolution! (Cost: 1000)
+        </button>
+
+        <button class="restart-button" id="restartButton" onclick="restartGame()">
+            🔄 Restart Game
+        </button>
+
+        <div class="age-info" id="ageInfo">
+            <h3>Stone Age</h3>
+            <p>Hunt animals and gather berries to survive. Build tools to become more efficient.</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <h4>Resource per Second</h4>
+                <div id="rps">0</div>
+            </div>
+            <div class="stat">
+                <h4>Total Clicks</h4>
+                <div id="totalClicks">0</div>
+            </div>
+            <div class="stat">
+                <h4>Age</h4>
+                <div id="ageNumber">1</div>
+            </div>
+        </div>
+
+        <div class="upgrades" id="upgrades">
+            <!-- Upgrades will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let game = {
+            age: 1,
+            resource: 0,
+            totalClicks: 0,
+            clickPower: 1,
+            rps: 0,
+            revolutionCost: 1000
+        };
+
+        // Age definitions
+        const ages = [
+            {
+                name: "Stone Age",
+                resource: "Food",
+                description: "Hunt animals and gather berries to survive. Build tools to become more efficient.",
+                clickText: "Hunt!",
+                upgrades: [
+                    { name: "Sharp Rock", cost: 10, baseCost: 10, effect: 1, type: "rps", description: "Better hunting tools" },
+                    { name: "Fire", cost: 50, baseCost: 50, effect: 3, type: "rps", description: "Cook food for better nutrition" },
+                    { name: "Spear", cost: 200, baseCost: 200, effect: 8, type: "rps", description: "Hunt bigger animals" },
+                    { name: "Bow", cost: 1000, baseCost: 1000, effect: 25, type: "rps", description: "Hunt from distance" }
+                ]
+            },
+            {
+                name: "Bronze Age",
+                resource: "Bronze",
+                description: "Mine copper and tin to create bronze tools and weapons. Build better structures.",
+                clickText: "Mine!",
+                upgrades: [
+                    { name: "Copper Pickaxe", cost: 15, baseCost: 15, effect: 2, type: "rps", description: "Mine copper faster" },
+                    { name: "Bronze Forge", cost: 75, baseCost: 75, effect: 5, type: "rps", description: "Create bronze tools" },
+                    { name: "Bronze Sword", cost: 300, baseCost: 300, effect: 12, type: "rps", description: "Better weapons" },
+                    { name: "Bronze Armor", cost: 1500, baseCost: 1500, effect: 35, type: "rps", description: "Protection for warriors" }
+                ]
+            },
+            {
+                name: "Iron Age",
+                resource: "Iron",
+                description: "Smelt iron ore to create stronger tools and weapons. Build cities and trade.",
+                clickText: "Smelt!",
+                upgrades: [
+                    { name: "Iron Pickaxe", cost: 25, baseCost: 25, effect: 4, type: "rps", description: "Mine iron faster" },
+                    { name: "Iron Forge", cost: 125, baseCost: 125, effect: 10, type: "rps", description: "Create iron tools" },
+                    { name: "Iron Sword", cost: 500, baseCost: 500, effect: 20, type: "rps", description: "Superior weapons" },
+                    { name: "Iron Armor", cost: 2500, baseCost: 2500, effect: 50, type: "rps", description: "Heavy protection" }
+                ]
+            },
+            {
+                name: "Medieval Age",
+                resource: "Gold",
+                description: "Build castles and trade gold. Develop advanced agriculture and crafts.",
+                clickText: "Trade!",
+                upgrades: [
+                    { name: "Market", cost: 50, baseCost: 50, effect: 8, type: "rps", description: "Trade goods" },
+                    { name: "Castle", cost: 250, baseCost: 250, effect: 20, type: "rps", description: "Defensive structure" },
+                    { name: "Bank", cost: 1000, baseCost: 1000, effect: 40, type: "rps", description: "Store wealth" },
+                    { name: "University", cost: 5000, baseCost: 5000, effect: 100, type: "rps", description: "Advanced knowledge" }
+                ]
+            },
+            {
+                name: "Renaissance Age",
+                resource: "Art",
+                description: "Revive classical knowledge and create masterpieces. Advance science and culture.",
+                clickText: "Create!",
+                upgrades: [
+                    { name: "Paintbrush", cost: 75, baseCost: 75, effect: 12, type: "rps", description: "Create beautiful art" },
+                    { name: "Telescope", cost: 400, baseCost: 400, effect: 25, type: "rps", description: "Study the stars" },
+                    { name: "Printing Press", cost: 1500, baseCost: 1500, effect: 50, type: "rps", description: "Spread knowledge" },
+                    { name: "Sculpture", cost: 7500, baseCost: 7500, effect: 125, type: "rps", description: "Masterpiece creation" }
+                ]
+            },
+            {
+                name: "Age of Discovery",
+                resource: "Spices",
+                description: "Explore new lands and trade exotic goods. Build ships and navigate oceans.",
+                clickText: "Sail!",
+                upgrades: [
+                    { name: "Compass", cost: 100, baseCost: 100, effect: 15, type: "rps", description: "Navigate better" },
+                    { name: "Galleon", cost: 600, baseCost: 600, effect: 30, type: "rps", description: "Large trading ship" },
+                    { name: "Trading Post", cost: 2000, baseCost: 2000, effect: 60, type: "rps", description: "Establish trade routes" },
+                    { name: "Colony", cost: 10000, baseCost: 10000, effect: 150, type: "rps", description: "New settlements" }
+                ]
+            },
+            {
+                name: "Industrial Age",
+                resource: "Steel",
+                description: "Build factories and machines. Harness steam power for mass production.",
+                clickText: "Produce!",
+                upgrades: [
+                    { name: "Steam Engine", cost: 150, baseCost: 150, effect: 20, type: "rps", description: "Power machines" },
+                    { name: "Factory", cost: 800, baseCost: 800, effect: 40, type: "rps", description: "Mass production" },
+                    { name: "Railroad", cost: 3000, baseCost: 3000, effect: 80, type: "rps", description: "Fast transportation" },
+                    { name: "Power Plant", cost: 15000, baseCost: 15000, effect: 200, type: "rps", description: "Electric power" }
+                ]
+            },
+            {
+                name: "Modern Age",
+                resource: "Oil",
+                description: "Harness fossil fuels and build skyscrapers. Develop advanced technology.",
+                clickText: "Drill!",
+                upgrades: [
+                    { name: "Oil Rig", cost: 200, baseCost: 200, effect: 25, type: "rps", description: "Extract oil" },
+                    { name: "Skyscraper", cost: 1000, baseCost: 1000, effect: 45, type: "rps", description: "Tall buildings" },
+                    { name: "Highway", cost: 4000, baseCost: 4000, effect: 90, type: "rps", description: "Fast roads" },
+                    { name: "Nuclear Plant", cost: 20000, baseCost: 20000, effect: 250, type: "rps", description: "Nuclear power" }
+                ]
+            },
+            {
+                name: "Atomic Age",
+                resource: "Uranium",
+                description: "Master nuclear power and develop advanced weapons. Explore atomic energy.",
+                clickText: "Split!",
+                upgrades: [
+                    { name: "Nuclear Reactor", cost: 300, baseCost: 300, effect: 35, type: "rps", description: "Nuclear energy" },
+                    { name: "Particle Accelerator", cost: 1500, baseCost: 1500, effect: 60, type: "rps", description: "Study particles" },
+                    { name: "Fusion Reactor", cost: 6000, baseCost: 6000, effect: 120, type: "rps", description: "Fusion power" },
+                    { name: "Quantum Lab", cost: 30000, baseCost: 30000, effect: 300, type: "rps", description: "Quantum research" }
+                ]
+            },
+            {
+                name: "Digital Age",
+                resource: "Data",
+                description: "Create computers and networks. Develop artificial intelligence and virtual reality.",
+                clickText: "Code!",
+                upgrades: [
+                    { name: "Computer", cost: 400, baseCost: 400, effect: 40, type: "rps", description: "Process information" },
+                    { name: "Internet", cost: 2000, baseCost: 2000, effect: 80, type: "rps", description: "Global network" },
+                    { name: "AI", cost: 8000, baseCost: 8000, effect: 160, type: "rps", description: "Artificial intelligence" },
+                    { name: "Quantum Computer", cost: 40000, baseCost: 40000, effect: 400, type: "rps", description: "Quantum processing" }
+                ]
+            },
+            {
+                name: "Information Age",
+                resource: "Knowledge",
+                description: "Share information globally and develop smart devices. Connect everything.",
+                clickText: "Share!",
+                upgrades: [
+                    { name: "Smartphone", cost: 500, baseCost: 500, effect: 45, type: "rps", description: "Mobile computing" },
+                    { name: "Cloud Server", cost: 2500, baseCost: 2500, effect: 90, type: "rps", description: "Cloud storage" },
+                    { name: "Social Network", cost: 10000, baseCost: 10000, effect: 180, type: "rps", description: "Connect people" },
+                    { name: "IoT Network", cost: 50000, baseCost: 50000, effect: 450, type: "rps", description: "Internet of Things" }
+                ]
+            },
+            {
+                name: "Biotech Age",
+                resource: "DNA",
+                description: "Manipulate genes and create life. Develop advanced medicine and biotechnology.",
+                clickText: "Modify!",
+                upgrades: [
+                    { name: "Gene Sequencer", cost: 600, baseCost: 600, effect: 50, type: "rps", description: "Read DNA" },
+                    { name: "CRISPR Lab", cost: 3000, baseCost: 3000, effect: 100, type: "rps", description: "Edit genes" },
+                    { name: "Synthetic Life", cost: 12000, baseCost: 12000, effect: 200, type: "rps", description: "Create life" },
+                    { name: "Bio Computer", cost: 60000, baseCost: 60000, effect: 500, type: "rps", description: "Living computers" }
+                ]
+            },
+            {
+                name: "Nanotech Age",
+                resource: "Nanobots",
+                description: "Build machines at the molecular level. Create microscopic robots and materials.",
+                clickText: "Assemble!",
+                upgrades: [
+                    { name: "Nanofactory", cost: 800, baseCost: 800, effect: 60, type: "rps", description: "Build nanobots" },
+                    { name: "Molecular Printer", cost: 4000, baseCost: 4000, effect: 120, type: "rps", description: "Print molecules" },
+                    { name: "Nano Swarm", cost: 15000, baseCost: 15000, effect: 240, type: "rps", description: "Swarm intelligence" },
+                    { name: "Quantum Nanobots", cost: 75000, baseCost: 75000, effect: 600, type: "rps", description: "Quantum nanobots" }
+                ]
+            },
+            {
+                name: "Space Age",
+                resource: "Energy",
+                description: "Explore space and harness cosmic energy. Build space stations and terraform planets.",
+                clickText: "Explore!",
+                upgrades: [
+                    { name: "Rocket", cost: 1000, baseCost: 1000, effect: 70, type: "rps", description: "Space travel" },
+                    { name: "Space Station", cost: 5000, baseCost: 5000, effect: 140, type: "rps", description: "Orbital base" },
+                    { name: "Solar Panel", cost: 20000, baseCost: 20000, effect: 280, type: "rps", description: "Solar energy" },
+                    { name: "Warp Drive", cost: 100000, baseCost: 100000, effect: 700, type: "rps", description: "Faster than light" }
+                ]
+            },
+            {
+                name: "Interstellar Age",
+                resource: "Stardust",
+                description: "Travel between stars and harvest cosmic resources. Build interstellar colonies.",
+                clickText: "Warp!",
+                upgrades: [
+                    { name: "Wormhole Generator", cost: 1500, baseCost: 1500, effect: 85, type: "rps", description: "Create wormholes" },
+                    { name: "Dyson Sphere", cost: 7500, baseCost: 7500, effect: 170, type: "rps", description: "Harvest star energy" },
+                    { name: "Interstellar Colony", cost: 30000, baseCost: 30000, effect: 340, type: "rps", description: "New star systems" },
+                    { name: "Stellar Engine", cost: 150000, baseCost: 150000, effect: 850, type: "rps", description: "Move stars" }
+                ]
+            },
+            {
+                name: "Galactic Age",
+                resource: "Dark Matter",
+                description: "Control entire galaxies and harness dark energy. Build galactic civilizations.",
+                clickText: "Conquer!",
+                upgrades: [
+                    { name: "Galaxy Harvester", cost: 2000, baseCost: 2000, effect: 100, type: "rps", description: "Harvest galaxies" },
+                    { name: "Black Hole Engine", cost: 10000, baseCost: 10000, effect: 200, type: "rps", description: "Black hole power" },
+                    { name: "Galactic Network", cost: 50000, baseCost: 50000, effect: 400, type: "rps", description: "Connect galaxies" },
+                    { name: "Reality Fabricator", cost: 250000, baseCost: 250000, effect: 1000, type: "rps", description: "Create reality" }
+                ]
+            },
+            {
+                name: "Cosmic Age",
+                resource: "Creation",
+                description: "Create universes and control the fabric of reality. Become a cosmic entity.",
+                clickText: "Create!",
+                upgrades: [
+                    { name: "Universe Forge", cost: 3000, baseCost: 3000, effect: 120, type: "rps", description: "Create universes" },
+                    { name: "Multiverse Gateway", cost: 15000, baseCost: 15000, effect: 240, type: "rps", description: "Travel dimensions" },
+                    { name: "Cosmic Consciousness", cost: 75000, baseCost: 75000, effect: 480, type: "rps", description: "Universal mind" },
+                    { name: "Existence Engine", cost: 500000, baseCost: 500000, effect: 1200, type: "rps", description: "Control existence" }
+                ]
+            },
+            {
+                name: "Transcendence Age",
+                resource: "Transcendence",
+                description: "Transcend physical form and become pure consciousness. Ascend beyond reality.",
+                clickText: "Transcend!",
+                upgrades: [
+                    { name: "Consciousness Matrix", cost: 5000, baseCost: 5000, effect: 150, type: "rps", description: "Pure thought" },
+                    { name: "Reality Transcender", cost: 25000, baseCost: 25000, effect: 300, type: "rps", description: "Beyond reality" },
+                    { name: "Omniscience Core", cost: 100000, baseCost: 100000, effect: 600, type: "rps", description: "All knowledge" },
+                    { name: "Divine Spark", cost: 1000000, baseCost: 1000000, effect: 1500, type: "rps", description: "Divine power" }
+                ]
+            },
+            {
+                name: "Infinity Age",
+                resource: "Infinity",
+                description: "You have reached the pinnacle of evolution. Harness the power of infinity itself.",
+                clickText: "Transcend!",
+                upgrades: [
+                    { name: "Infinity Core", cost: 10000, baseCost: 10000, effect: 200, type: "rps", description: "Infinite power source" },
+                    { name: "Reality Warper", cost: 50000, baseCost: 50000, effect: 400, type: "rps", description: "Bend reality" },
+                    { name: "Time Machine", cost: 250000, baseCost: 250000, effect: 800, type: "rps", description: "Control time" },
+                    { name: "Omnipotence", cost: 2000000, baseCost: 2000000, effect: 2000, type: "rps", description: "Ultimate power" }
+                ]
+            }
+        ];
+
+        // Create background particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 120; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 30 + 's';
+                particle.style.animationDuration = (Math.random() * 20 + 25) + 's';
+                particle.style.opacity = Math.random() * 0.6 + 0.2;
+                particle.style.transform = `scale(${Math.random() * 0.5 + 0.8})`;
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize upgrades for current age
+        function initializeUpgrades() {
+            const currentAge = ages[game.age - 1];
+            game.upgrades = {};
+            currentAge.upgrades.forEach(upgrade => {
+                game.upgrades[upgrade.name] = {
+                    count: 0,
+                    cost: upgrade.cost,
+                    baseCost: upgrade.baseCost,
+                    effect: upgrade.effect,
+                    type: upgrade.type
+                };
+            });
+        }
+
+        // Load saved game
+        function loadGame() {
+            const saved = localStorage.getItem('revolutionIdle');
+            if (saved) {
+                const savedGame = JSON.parse(saved);
+                game = { ...game, ...savedGame };
+                if (!game.upgrades) {
+                    initializeUpgrades();
+                }
+            } else {
+                initializeUpgrades();
+            }
+        }
+
+        // Save game
+        function saveGame() {
+            localStorage.setItem('revolutionIdle', JSON.stringify(game));
+        }
+
+        // Format large numbers
+        function formatNumber(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return Math.floor(num).toString();
+        }
+
+        // Update display
+        function updateDisplay() {
+            const currentAge = ages[game.age - 1];
+            
+            document.getElementById('currentAge').textContent = currentAge.name;
+            document.getElementById('ageDescription').textContent = currentAge.description;
+            document.getElementById('currentResource').textContent = formatNumber(game.resource) + ' ' + currentAge.resource;
+            document.getElementById('resourcePerSecond').textContent = '+' + formatNumber(game.rps) + '/s';
+            document.getElementById('clickButton').textContent = currentAge.clickText;
+            document.getElementById('rps').textContent = formatNumber(game.rps) + '/s';
+            document.getElementById('totalClicks').textContent = formatNumber(game.totalClicks);
+            document.getElementById('ageNumber').textContent = game.age;
+            
+            document.getElementById('ageInfo').innerHTML = `
+                <h3>${currentAge.name}</h3>
+                <p>${currentAge.description}</p>
+            `;
+
+            // Update revolution button
+            const revolutionBtn = document.getElementById('revolutionButton');
+            if (game.age < ages.length) {
+                revolutionBtn.textContent = `🔄 Start Revolution! (Cost: ${formatNumber(game.revolutionCost)} ${currentAge.resource})`;
+                revolutionBtn.disabled = game.resource < game.revolutionCost;
+            } else {
+                revolutionBtn.textContent = '🏆 You have reached the final age!';
+                revolutionBtn.disabled = true;
+            }
+
+            // Update upgrade buttons
+            const upgradesContainer = document.getElementById('upgrades');
+            upgradesContainer.innerHTML = '';
+            
+            currentAge.upgrades.forEach(upgrade => {
+                const upgradeData = game.upgrades[upgrade.name];
+                const upgradeDiv = document.createElement('div');
+                upgradeDiv.className = 'upgrade';
+                upgradeDiv.innerHTML = `
+                    <h3>${upgrade.name}</h3>
+                    <p>${upgrade.description}</p>
+                    <button onclick="buyUpgrade('${upgrade.name}')" ${game.resource < upgradeData.cost ? 'disabled' : ''}>
+                        Buy for ${formatNumber(upgradeData.cost)} ${currentAge.resource} (Owned: ${upgradeData.count})
+                    </button>
+                `;
+                upgradesContainer.appendChild(upgradeDiv);
+            });
+        }
+
+        // Click function with enhanced effects
+        function click() {
+            game.resource += game.clickPower;
+            game.totalClicks++;
+            
+            // Create multiple floating numbers for better effect
+            for (let i = 0; i < 3; i++) {
+                const floating = document.createElement('div');
+                floating.className = 'floating-number';
+                floating.textContent = '+' + game.clickPower;
+                floating.style.left = (Math.random() * 60 + 20) + '%';
+                floating.style.top = (Math.random() * 30 + 35) + '%';
+                floating.style.animationDelay = (i * 0.1) + 's';
+                document.body.appendChild(floating);
+                
+                setTimeout(() => {
+                    if (document.body.contains(floating)) {
+                        document.body.removeChild(floating);
+                    }
+                }, 1500);
+            }
+
+            // Add click button animation
+            const clickBtn = document.getElementById('clickButton');
+            clickBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                clickBtn.style.transform = 'scale(1)';
+            }, 100);
+
+            updateDisplay();
+            saveGame();
+        }
+
+        // Buy upgrade with enhanced effects
+        function buyUpgrade(upgradeName) {
+            const upgrade = game.upgrades[upgradeName];
+            if (game.resource >= upgrade.cost) {
+                game.resource -= upgrade.cost;
+                upgrade.count++;
+                
+                // Increase cost
+                upgrade.cost = Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.count));
+                
+                // Apply effects
+                if (upgrade.type === 'rps') {
+                    game.rps += upgrade.effect;
+                } else if (upgrade.type === 'click') {
+                    game.clickPower += upgrade.effect;
+                }
+                
+                // Add purchase effect
+                const upgradeElement = event.target.closest('.upgrade');
+                upgradeElement.style.transform = 'scale(1.05)';
+                upgradeElement.style.background = 'linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(69, 183, 209, 0.2))';
+                setTimeout(() => {
+                    upgradeElement.style.transform = '';
+                    upgradeElement.style.background = '';
+                }, 500);
+                
+                updateDisplay();
+                saveGame();
+            }
+        }
+
+        // Revolution function with enhanced celebration
+        function revolution() {
+            if (game.resource >= game.revolutionCost && game.age < ages.length) {
+                game.resource -= game.revolutionCost;
+                game.age++;
+                game.rps = 0;
+                game.clickPower = 1;
+                game.revolutionCost = Math.floor(game.revolutionCost * 2.5);
+                
+                initializeUpgrades();
+                updateDisplay();
+                saveGame();
+                
+                // Enhanced celebration
+                const celebration = document.createElement('div');
+                celebration.className = 'celebration';
+                celebration.textContent = `🎉 Welcome to ${ages[game.age - 1].name}! 🎉`;
+                document.body.appendChild(celebration);
+                
+                // Add enhanced confetti effect
+                for (let i = 0; i < 30; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#ffa726', '#96ceb4', '#f093fb'];
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.style.cssText = `
+                            position: fixed;
+                            width: ${Math.random() * 8 + 8}px;
+                            height: ${Math.random() * 8 + 8}px;
+                            background: ${color};
+                            left: ${Math.random() * 100}%;
+                            top: -20px;
+                            animation: confetti-fall ${Math.random() * 2 + 3}s linear forwards;
+                            z-index: 999;
+                            border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                            box-shadow: 0 0 10px ${color};
+                        `;
+                        document.body.appendChild(confetti);
+                        
+                        setTimeout(() => {
+                            if (document.body.contains(confetti)) {
+                                document.body.removeChild(confetti);
+                            }
+                        }, 5000);
+                    }, i * 50);
+                }
+                
+                setTimeout(() => {
+                    document.body.removeChild(celebration);
+                }, 3000);
+            }
+        }
+
+        // Restart game function
+        function restartGame() {
+            if (confirm('Are you sure you want to restart the game? This will reset all progress and start over from the beginning.')) {
+                game = {
+                    age: 1,
+                    resource: 0,
+                    totalClicks: 0,
+                    clickPower: 1,
+                    rps: 0,
+                    revolutionCost: 1000
+                };
+                initializeUpgrades();
+                updateDisplay();
+                saveGame();
+                alert('Game restarted! You are now back to the Stone Age.');
+            }
+        }
+
+        // Add enhanced confetti animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes confetti-fall {
+                0% {
+                    transform: translateY(-20px) rotate(0deg);
+                    opacity: 1;
+                }
+                50% {
+                    transform: translateY(50vh) rotate(180deg);
+                    opacity: 0.8;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Game loop
+        function gameLoop() {
+            game.resource += game.rps / 10; // Update 10 times per second
+            updateDisplay();
+            saveGame();
+        }
+
+        // Initialize game
+        function init() {
+            createParticles();
+            loadGame();
+            updateDisplay();
+            
+            // Set up event listeners
+            document.getElementById('clickButton').addEventListener('click', click);
+            
+            // Start game loop
+            setInterval(gameLoop, 100);
+            
+            // Auto-save every 30 seconds
+            setInterval(saveGame, 30000);
+        }
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1193 @@
+<!-- 
+Planet Ecosystem Simulator
+A simulation game where you create and manage a living planet ecosystem
+Features: plants, animals, weather, day/night cycle, natural disasters, and ecosystem balance
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Planet Ecosystem Simulator 🌍</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(34, 139, 34, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(135, 206, 235, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #1e3c72 0%, #2a5298 30%, #87ceeb 60%, #98fb98 100%);
+            background-size: 400% 400%, 300% 300%, 200% 200%, 400% 400%;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+            animation: backgroundShift 30s ease infinite;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; }
+            25% { background-position: 100% 50%, 100% 100%, 50% 50%, 25% 50%; }
+            50% { background-position: 0% 50%, 0% 0%, 100% 100%, 50% 50%; }
+            75% { background-position: 100% 50%, 50% 50%, 0% 0%, 75% 50%; }
+            100% { background-position: 0% 50%, 0% 0%, 0% 0%, 0% 50%; }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+        }
+
+        .star:nth-child(3n) {
+            animation-delay: 1s;
+            animation-duration: 4s;
+        }
+
+        .star:nth-child(3n+1) {
+            animation-delay: 2s;
+            animation-duration: 5s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(0px) translateX(0px);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(20px);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            border-radius: 25px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #98fb98, #87ceeb, #ffd700, #ff6347);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient 4s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .planet-view {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .planet-surface {
+            width: 100%;
+            height: 400px;
+            background: 
+                radial-gradient(circle at 30% 70%, #8fbc8f 0%, #228b22 30%, #006400 70%),
+                radial-gradient(circle at 70% 30%, #87ceeb 0%, #4682b4 50%),
+                linear-gradient(to bottom, #98fb98 0%, #32cd32 50%, #228b22 100%);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(255, 255, 255, 0.1);
+            animation: planet-glow 8s ease-in-out infinite;
+        }
+
+        @keyframes planet-glow {
+            0%, 100% { box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3), 0 0 50px rgba(255, 255, 255, 0.2); }
+        }
+
+        .entity {
+            position: absolute;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            animation: entity-float 3s ease-in-out infinite;
+        }
+
+        .entity:hover {
+            transform: scale(1.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+        }
+
+        @keyframes entity-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .plant {
+            background: 
+                radial-gradient(circle at 30% 30%, #98fb98, #32cd32 60%, #228b22);
+            border: 3px solid #006400;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(50, 205, 50, 0.3);
+            animation: plant-grow 4s ease-in-out infinite;
+        }
+
+        @keyframes plant-grow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .herbivore {
+            background: 
+                radial-gradient(circle at 25% 25%, #f4a460, #deb887 60%, #cd853f);
+            border: 3px solid #8b4513;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(222, 184, 135, 0.3);
+            animation: herbivore-walk 5s ease-in-out infinite;
+        }
+
+        @keyframes herbivore-walk {
+            0%, 100% { transform: translateX(0px) rotate(0deg); }
+            25% { transform: translateX(2px) rotate(2deg); }
+            75% { transform: translateX(-2px) rotate(-2deg); }
+        }
+
+        .carnivore {
+            background: 
+                radial-gradient(circle at 20% 20%, #ff6347, #dc143c 60%, #8b0000);
+            border: 3px solid #4b0082;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(220, 20, 60, 0.4);
+            animation: carnivore-hunt 6s ease-in-out infinite;
+        }
+
+        @keyframes carnivore-hunt {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .water {
+            background: 
+                radial-gradient(circle at 40% 40%, #87ceeb, #4682b4 70%, #1e90ff);
+            border: 3px solid #1e90ff;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 25px rgba(135, 206, 235, 0.5);
+            animation: water-flow 7s ease-in-out infinite;
+        }
+
+        @keyframes water-flow {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.02) rotate(1deg); }
+        }
+
+        .mountain {
+            background: 
+                radial-gradient(circle at 30% 30%, #a9a9a9, #696969 60%, #2f4f4f);
+            border: 3px solid #000000;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(105, 105, 105, 0.3);
+            animation: mountain-steady 10s ease-in-out infinite;
+        }
+
+        @keyframes mountain-steady {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .human {
+            background: 
+                radial-gradient(circle at 25% 25%, #ffc0cb, #ffb6c1 60%, #ff69b4);
+            border: 3px solid #c71585;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.4),
+                0 0 25px rgba(255, 105, 180, 0.4);
+            animation: human-think 8s ease-in-out infinite;
+        }
+
+        @keyframes human-think {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.02) rotate(1deg); }
+            75% { transform: scale(1.02) rotate(-1deg); }
+        }
+
+        .controls {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section h3 {
+            color: #98fb98;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(78, 205, 196, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(78, 205, 196, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .weather-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+        }
+
+        .disaster-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #4ecdc4, #45b7d1, #98fb98);
+            animation: stat-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes stat-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .stat h4 {
+            color: #98fb98;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+
+        .stat div {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .time-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .weather-display {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 15px 0;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(135, 206, 235, 0.3), rgba(135, 206, 235, 0.1));
+            border-radius: 10px;
+            border: 1px solid rgba(135, 206, 235, 0.3);
+        }
+
+        .ecosystem-health {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #ffa726, #4ecdc4, #98fb98);
+            transition: width 0.8s ease;
+            border-radius: 13px;
+            box-shadow: 
+                0 0 10px rgba(255, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .health-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: health-shine 2s ease-in-out infinite;
+        }
+
+        @keyframes health-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .floating-text {
+            position: absolute;
+            color: #98fb98;
+            font-weight: bold;
+            font-size: 1.2em;
+            pointer-events: none;
+            animation: float-up 3s ease-out forwards;
+            text-shadow: 
+                2px 2px 4px rgba(0, 0, 0, 0.8),
+                0 0 10px rgba(152, 251, 152, 0.5);
+            z-index: 1000;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+            25% {
+                opacity: 1;
+                transform: translateY(-10px) scale(1.1) rotate(2deg);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateY(-25px) scale(1.15) rotate(-1deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.3) rotate(0deg);
+            }
+        }
+
+        .day-night-cycle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd700, #ff8c00);
+            box-shadow: 
+                0 0 30px rgba(255, 215, 0, 0.8),
+                inset 0 0 15px rgba(255, 255, 255, 0.4),
+                0 0 50px rgba(255, 215, 0, 0.3);
+            animation: day-night 20s linear infinite;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .day-night-cycle::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: sun-spots 4s ease-in-out infinite;
+        }
+
+        @keyframes sun-spots {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes day-night {
+            0%, 50% {
+                background: radial-gradient(circle, #ffd700, #ff8c00);
+                box-shadow: 
+                    0 0 30px rgba(255, 215, 0, 0.8),
+                    0 0 50px rgba(255, 215, 0, 0.3);
+            }
+            50.1%, 100% {
+                background: radial-gradient(circle, #87ceeb, #4682b4);
+                box-shadow: 
+                    0 0 30px rgba(135, 206, 235, 0.8),
+                    0 0 50px rgba(135, 206, 235, 0.3);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                order: -1;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background stars -->
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <h1>🌍 Planet Ecosystem Simulator 🌍</h1>
+        
+        <div class="time-display" id="timeDisplay">
+            Day 1 - Morning
+        </div>
+
+        <div class="weather-display" id="weatherDisplay">
+            ☀️ Clear Skies
+        </div>
+
+        <div class="game-area">
+            <div class="planet-view">
+                <div class="day-night-cycle"></div>
+                <div class="planet-surface" id="planetSurface">
+                    <!-- Entities will be added here -->
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-section">
+                    <h3>🌱 Add Life</h3>
+                    <div class="button-group">
+                        <button class="control-btn" onclick="addEntity('plant')">🌿 Plant</button>
+                        <button class="control-btn" onclick="addEntity('herbivore')">🦌 Herbivore</button>
+                    </div>
+                    <div class="button-group">
+                        <button class="control-btn" onclick="addEntity('carnivore')">🐺 Carnivore</button>
+                        <button class="control-btn" onclick="addEntity('water')">💧 Water</button>
+                    </div>
+                    <button class="control-btn" onclick="addEntity('mountain')" style="width: 100%; margin-top: 10px;">⛰️ Mountain</button>
+                    <button class="control-btn" onclick="addEntity('human')" style="width: 100%; margin-top: 10px;">👤 Human</button>
+                </div>
+
+                <div class="control-section">
+                    <h3>🌤️ Weather</h3>
+                    <div class="button-group">
+                        <button class="weather-btn control-btn" onclick="changeWeather('rain')">🌧️ Rain</button>
+                        <button class="weather-btn control-btn" onclick="changeWeather('storm')">⛈️ Storm</button>
+                    </div>
+                    <div class="button-group">
+                        <button class="weather-btn control-btn" onclick="changeWeather('drought')">🌵 Drought</button>
+                        <button class="weather-btn control-btn" onclick="changeWeather('clear')">☀️ Clear</button>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>🌋 Disasters</h3>
+                    <div class="button-group">
+                        <button class="disaster-btn control-btn" onclick="triggerDisaster('volcano')">🌋 Volcano</button>
+                        <button class="disaster-btn control-btn" onclick="triggerDisaster('meteor')">☄️ Meteor</button>
+                    </div>
+                    <div class="button-group">
+                        <button class="disaster-btn control-btn" onclick="triggerDisaster('tsunami')">🌊 Tsunami</button>
+                        <button class="disaster-btn control-btn" onclick="triggerDisaster('earthquake')">🌍 Earthquake</button>
+                    </div>
+                </div>
+
+                <div class="ecosystem-health">
+                    <h3>🌿 Ecosystem Health</h3>
+                    <div class="health-bar">
+                        <div class="health-fill" id="healthFill" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <h4>🌿 Plants</h4>
+                        <div id="plantCount">0</div>
+                    </div>
+                    <div class="stat">
+                        <h4>🦌 Herbivores</h4>
+                        <div id="herbivoreCount">0</div>
+                    </div>
+                    <div class="stat">
+                        <h4>🐺 Carnivores</h4>
+                        <div id="carnivoreCount">0</div>
+                    </div>
+                    <div class="stat">
+                        <h4>💧 Water</h4>
+                        <div id="waterCount">0</div>
+                    </div>
+                    <div class="stat">
+                        <h4>👤 Humans</h4>
+                        <div id="humanCount">0</div>
+                    </div>
+                </div>
+
+                <button class="control-btn" onclick="resetPlanet()" style="width: 100%; margin-top: 20px; background: linear-gradient(45deg, #e74c3c, #c0392b);">
+                    🔄 Reset Planet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let game = {
+            day: 1,
+            time: 0, // 0-23 hours
+            weather: 'clear',
+            entities: [],
+            ecosystemHealth: 100,
+            disasters: [],
+            lastHumanDay: 0 // Track when humans last did something special
+        };
+
+        // Create background stars and particles
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            
+            // Create stars
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (2 + Math.random() * 3) + 's';
+                starsContainer.appendChild(star);
+            }
+            
+            // Create floating particles
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: ${2 + Math.random() * 3}px;
+                    height: ${2 + Math.random() * 3}px;
+                    background: rgba(255, 255, 255, ${0.1 + Math.random() * 0.3});
+                    border-radius: 50%;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation: particle-float ${10 + Math.random() * 20}s linear infinite;
+                    animation-delay: ${Math.random() * 10}s;
+                `;
+                starsContainer.appendChild(particle);
+            }
+        }
+
+        // Add entity to planet
+        function addEntity(type) {
+            const surface = document.getElementById('planetSurface');
+            const entity = document.createElement('div');
+            entity.className = `entity ${type}`;
+            
+            // Random position
+            const x = Math.random() * 80 + 10;
+            const y = Math.random() * 80 + 10;
+            
+            // Size based on type
+            let size = 20;
+            if (type === 'mountain') size = 40;
+            if (type === 'water') size = 30;
+            if (type === 'human') size = 25;
+            
+            entity.style.left = x + '%';
+            entity.style.top = y + '%';
+            entity.style.width = size + 'px';
+            entity.style.height = size + 'px';
+            
+            // Add to game state
+            game.entities.push({
+                type: type,
+                x: x,
+                y: y,
+                size: size,
+                health: 100,
+                age: 0,
+                element: entity
+            });
+            
+            surface.appendChild(entity);
+            
+            // Add floating text
+            const floating = document.createElement('div');
+            floating.className = 'floating-text';
+            floating.textContent = '+' + type;
+            floating.style.left = x + '%';
+            floating.style.top = y + '%';
+            surface.appendChild(floating);
+            
+            setTimeout(() => {
+                if (surface.contains(floating)) {
+                    surface.removeChild(floating);
+                }
+            }, 2000);
+            
+            updateStats();
+            updateEcosystemHealth();
+        }
+
+        // Change weather
+        function changeWeather(type) {
+            game.weather = type;
+            const weatherDisplay = document.getElementById('weatherDisplay');
+            
+            const weatherIcons = {
+                'clear': '☀️ Clear Skies',
+                'rain': '🌧️ Rainy',
+                'storm': '⛈️ Stormy',
+                'drought': '🌵 Drought'
+            };
+            
+            weatherDisplay.textContent = weatherIcons[type];
+            
+            // Weather effects
+            if (type === 'rain') {
+                game.ecosystemHealth = Math.min(100, game.ecosystemHealth + 5);
+            } else if (type === 'drought') {
+                game.ecosystemHealth = Math.max(0, game.ecosystemHealth - 10);
+            }
+            
+            updateEcosystemHealth();
+        }
+
+        // Trigger disaster
+        function triggerDisaster(type) {
+            const surface = document.getElementById('planetSurface');
+            
+            // Create disaster effect with enhanced visuals
+            const disaster = document.createElement('div');
+            let animationName = 'disaster-effect';
+            let background = '';
+            
+            if (type === 'volcano') {
+                background = 'radial-gradient(circle, rgba(255, 69, 0, 0.8), rgba(255, 0, 0, 0.5), rgba(255, 140, 0, 0.3))';
+                animationName = 'volcano-erupt';
+            } else if (type === 'meteor') {
+                background = 'radial-gradient(circle, rgba(255, 215, 0, 0.8), rgba(255, 69, 0, 0.6), rgba(255, 0, 0, 0.4))';
+                animationName = 'meteor-fall';
+            } else if (type === 'tsunami') {
+                background = 'radial-gradient(circle, rgba(0, 191, 255, 0.8), rgba(0, 0, 255, 0.5), rgba(135, 206, 235, 0.3))';
+                animationName = 'tsunami-wave';
+            } else if (type === 'earthquake') {
+                background = 'radial-gradient(circle, rgba(128, 128, 128, 0.8), rgba(64, 64, 64, 0.5), rgba(105, 105, 105, 0.3))';
+                animationName = 'earthquake-shake';
+                // Add shake effect to the whole surface
+                surface.style.animation = 'earthquake-shake 2s ease-in-out';
+                setTimeout(() => {
+                    surface.style.animation = '';
+                }, 2000);
+            }
+            
+            disaster.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: ${background};
+                border-radius: 15px;
+                animation: ${animationName} 3s ease-out;
+                z-index: 1000;
+                box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+            `;
+            
+            surface.appendChild(disaster);
+            
+            // Disaster effects
+            if (type === 'volcano') {
+                game.ecosystemHealth = Math.max(0, game.ecosystemHealth - 30);
+                removeRandomEntities(3);
+            } else if (type === 'meteor') {
+                game.ecosystemHealth = Math.max(0, game.ecosystemHealth - 40);
+                removeRandomEntities(5);
+            } else if (type === 'tsunami') {
+                game.ecosystemHealth = Math.max(0, game.ecosystemHealth - 20);
+                removeRandomEntities(2);
+            } else if (type === 'earthquake') {
+                game.ecosystemHealth = Math.max(0, game.ecosystemHealth - 15);
+                removeRandomEntities(1);
+            }
+            
+            setTimeout(() => {
+                if (surface.contains(disaster)) {
+                    surface.removeChild(disaster);
+                }
+            }, 3000);
+            
+            updateEcosystemHealth();
+            updateStats();
+        }
+
+        // Remove random entities
+        function removeRandomEntities(count) {
+            const entitiesToRemove = Math.min(count, game.entities.length);
+            for (let i = 0; i < entitiesToRemove; i++) {
+                const randomIndex = Math.floor(Math.random() * game.entities.length);
+                const entity = game.entities[randomIndex];
+                
+                if (entity.element.parentNode) {
+                    entity.element.parentNode.removeChild(entity.element);
+                }
+                game.entities.splice(randomIndex, 1);
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const counts = {
+                plant: 0,
+                herbivore: 0,
+                carnivore: 0,
+                water: 0,
+                human: 0
+            };
+            
+            game.entities.forEach(entity => {
+                if (counts.hasOwnProperty(entity.type)) {
+                    counts[entity.type]++;
+                }
+            });
+            
+            document.getElementById('plantCount').textContent = counts.plant;
+            document.getElementById('herbivoreCount').textContent = counts.herbivore;
+            document.getElementById('carnivoreCount').textContent = counts.carnivore;
+            document.getElementById('waterCount').textContent = counts.water;
+            document.getElementById('humanCount').textContent = counts.human;
+        }
+
+        // Update ecosystem health
+        function updateEcosystemHealth() {
+            const healthFill = document.getElementById('healthFill');
+            healthFill.style.width = game.ecosystemHealth + '%';
+            
+            // Color based on health
+            if (game.ecosystemHealth > 70) {
+                healthFill.style.background = 'linear-gradient(45deg, #98fb98, #32cd32)';
+            } else if (game.ecosystemHealth > 40) {
+                healthFill.style.background = 'linear-gradient(45deg, #ffa726, #ff8c00)';
+            } else {
+                healthFill.style.background = 'linear-gradient(45deg, #ff6b6b, #dc143c)';
+            }
+        }
+
+        // Human special events
+        function humanSpecialEvent() {
+            const surface = document.getElementById('planetSurface');
+            const humanCount = game.entities.filter(e => e.type === 'human').length;
+            
+            // Create special effect
+            const effect = document.createElement('div');
+            effect.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle, rgba(255, 182, 193, 0.4), rgba(255, 105, 180, 0.2));
+                border-radius: 15px;
+                animation: human-effect 3s ease-out;
+                z-index: 500;
+            `;
+            
+            surface.appendChild(effect);
+            
+            // Random special events based on human count
+            const events = [
+                'Humans built a house! 🏠',
+                'Humans planted a garden! 🌸',
+                'Humans made tools! 🔧',
+                'Humans discovered fire! 🔥',
+                'Humans created art! 🎨',
+                'Humans learned to farm! 🌾',
+                'Humans built a bridge! 🌉',
+                'Humans made music! 🎵'
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            
+            // Show floating text
+            const floating = document.createElement('div');
+            floating.className = 'floating-text';
+            floating.textContent = randomEvent;
+            floating.style.left = '50%';
+            floating.style.top = '50%';
+            floating.style.transform = 'translate(-50%, -50%)';
+            floating.style.fontSize = '1.5em';
+            floating.style.color = '#ff69b4';
+            surface.appendChild(floating);
+            
+            // Add benefits based on event
+            if (randomEvent.includes('garden') || randomEvent.includes('farm')) {
+                // Add extra plants
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => addEntity('plant'), i * 500);
+                }
+            } else if (randomEvent.includes('fire')) {
+                // Improve ecosystem health
+                game.ecosystemHealth = Math.min(100, game.ecosystemHealth + 10);
+                updateEcosystemHealth();
+            } else if (randomEvent.includes('tools') || randomEvent.includes('bridge')) {
+                // Add water sources
+                for (let i = 0; i < 2; i++) {
+                    setTimeout(() => addEntity('water'), i * 800);
+                }
+            }
+            
+            // Remove effects after animation
+            setTimeout(() => {
+                if (surface.contains(effect)) {
+                    surface.removeChild(effect);
+                }
+                if (surface.contains(floating)) {
+                    surface.removeChild(floating);
+                }
+            }, 3000);
+        }
+
+        // Update time
+        function updateTime() {
+            game.time = (game.time + 1) % 24;
+            
+            if (game.time === 0) {
+                game.day++;
+            }
+            
+            const timeDisplay = document.getElementById('timeDisplay');
+            const timeOfDay = game.time < 6 ? 'Night' : 
+                             game.time < 12 ? 'Morning' : 
+                             game.time < 18 ? 'Afternoon' : 'Evening';
+            
+            timeDisplay.textContent = `Day ${game.day} - ${timeOfDay}`;
+        }
+
+        // Natural events
+        function naturalEvents() {
+            // Random plant growth
+            if (Math.random() < 0.1 && game.ecosystemHealth > 50) {
+                addEntity('plant');
+            }
+            
+            // Random animal birth
+            if (Math.random() < 0.05 && game.ecosystemHealth > 70) {
+                const animalTypes = ['herbivore', 'carnivore'];
+                const randomType = animalTypes[Math.floor(Math.random() * animalTypes.length)];
+                addEntity(randomType);
+            }
+            
+            // Human special events (every day if 2+ humans)
+            const humanCount = game.entities.filter(e => e.type === 'human').length;
+            if (humanCount >= 2 && game.day > game.lastHumanDay) {
+                humanSpecialEvent();
+                game.lastHumanDay = game.day;
+            }
+            
+            // Ecosystem recovery
+            if (game.ecosystemHealth < 100 && Math.random() < 0.2) {
+                game.ecosystemHealth = Math.min(100, game.ecosystemHealth + 1);
+                updateEcosystemHealth();
+            }
+        }
+
+        // Reset planet
+        function resetPlanet() {
+            if (confirm('Are you sure you want to reset the planet? This will remove all life and start over.')) {
+                // Remove all entities
+                game.entities.forEach(entity => {
+                    if (entity.element.parentNode) {
+                        entity.element.parentNode.removeChild(entity.element);
+                    }
+                });
+                
+                // Reset game state
+                game = {
+                    day: 1,
+                    time: 0,
+                    weather: 'clear',
+                    entities: [],
+                    ecosystemHealth: 100,
+                    disasters: [],
+                    lastHumanDay: 0
+                };
+                
+                // Update displays
+                updateTime();
+                changeWeather('clear');
+                updateStats();
+                updateEcosystemHealth();
+                
+                alert('Planet reset! Start building your ecosystem again!');
+            }
+        }
+
+        // Add disaster effect animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes disaster-effect {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5) rotate(0deg);
+                }
+                25% {
+                    opacity: 0.8;
+                    transform: scale(1.1) rotate(5deg);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1.3) rotate(-3deg);
+                }
+                75% {
+                    opacity: 0.6;
+                    transform: scale(1.4) rotate(2deg);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.6) rotate(0deg);
+                }
+            }
+            
+            @keyframes human-effect {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.8);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1.1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.3);
+                }
+            }
+
+            @keyframes earthquake-shake {
+                0%, 100% { transform: translateX(0px); }
+                10% { transform: translateX(-5px); }
+                20% { transform: translateX(5px); }
+                30% { transform: translateX(-3px); }
+                40% { transform: translateX(3px); }
+                50% { transform: translateX(-2px); }
+                60% { transform: translateX(2px); }
+                70% { transform: translateX(-1px); }
+                80% { transform: translateX(1px); }
+                90% { transform: translateX(0px); }
+            }
+
+            @keyframes meteor-fall {
+                0% {
+                    opacity: 0;
+                    transform: translateY(-100px) scale(0.5);
+                }
+                50% {
+                    opacity: 1;
+                    transform: translateY(0px) scale(1.2);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(50px) scale(1.5);
+                }
+            }
+
+            @keyframes volcano-erupt {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.3) translateY(20px);
+                }
+                30% {
+                    opacity: 1;
+                    transform: scale(1.1) translateY(-10px);
+                }
+                70% {
+                    opacity: 0.8;
+                    transform: scale(1.3) translateY(-20px);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.5) translateY(-30px);
+                }
+            }
+
+            @keyframes tsunami-wave {
+                0% {
+                    opacity: 0;
+                    transform: scaleX(0.1) translateY(0px);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scaleX(1.2) translateY(-10px);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scaleX(1.5) translateY(-20px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Game loop
+        function gameLoop() {
+            updateTime();
+            naturalEvents();
+        }
+
+        // Initialize game
+        function init() {
+            createStars();
+            updateTime();
+            updateStats();
+            updateEcosystemHealth();
+            
+            // Start game loop (every 2 seconds)
+            setInterval(gameLoop, 2000);
+        }
+
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

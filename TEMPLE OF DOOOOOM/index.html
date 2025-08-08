@@ -1,0 +1,1650 @@
+<!-- TEMPLE OF DOOOOOM - Little Explorer Adventure Game -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏛️ TEMPLE OF DOOOOOM</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #2c1810 0%, #8B4513 50%, #654321 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: #1a0f0f;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            height: calc(100vh - 30px);
+            display: flex;
+            flex-direction: column;
+            border: 3px solid #8B4513;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            color: #FFD700;
+            font-size: 2em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            text-align: center;
+            flex: 1;
+        }
+
+        .subtitle {
+            color: #FF6B6B;
+            font-size: 1em;
+            margin: 0;
+            text-align: center;
+        }
+
+        .game-area {
+            position: relative;
+            flex: 1;
+            background: linear-gradient(to bottom, #2c1810 0%, #1a0f0f 100%);
+            border: 3px solid #8B4513;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: crosshair;
+            margin-bottom: 10px;
+        }
+
+        .temple-wall {
+            position: absolute;
+            background: linear-gradient(45deg, #654321, #8B4513);
+            border: 2px solid #A0522D;
+        }
+
+        .temple-floor {
+            position: absolute;
+            background: linear-gradient(to right, #8B4513, #A0522D);
+            border-top: 3px solid #CD853F;
+        }
+
+        .explorer {
+            position: absolute;
+            width: 25px;
+            height: 35px;
+            z-index: 100;
+            transition: none;
+            filter: drop-shadow(0 0 10px #FFD700);
+        }
+
+        .explorer.invincible {
+            animation: invincibleGlow 0.3s ease-in-out infinite alternate;
+        }
+
+        @keyframes invincibleGlow {
+            from { filter: drop-shadow(0 0 10px #FFD700) hue-rotate(0deg); }
+            to { filter: drop-shadow(0 0 20px #FFD700) hue-rotate(360deg); }
+        }
+
+        .explorer .head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 18px;
+            background: #FFE4B5;
+            border-radius: 50%;
+            border: 2px solid #8B4513;
+        }
+
+        .explorer .hat {
+            position: absolute;
+            top: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 8px;
+            background: #8B4513;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .explorer .body {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 15px;
+            background: #4169E1;
+            border: 2px solid #333;
+        }
+
+        .explorer .arms {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 4px;
+            background: #FFE4B5;
+        }
+
+        .explorer .legs {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 4px;
+            background: #8B4513;
+        }
+
+        .platform {
+            position: absolute;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border: 2px solid #CD853F;
+            border-radius: 5px;
+        }
+
+        .fake-wall {
+            background: linear-gradient(45deg, #654321, #8B4513);
+            border: 2px solid #A0522D;
+            opacity: 0.8;
+        }
+
+        .button {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FF0000;
+            border: 2px solid #8B0000;
+            border-radius: 50%;
+            z-index: 50;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #FF4444;
+        }
+
+        .hammer {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            background: #696969;
+            border: 3px solid #333;
+            border-radius: 5px;
+            z-index: 50;
+            transition: top 0.5s ease-in;
+        }
+
+        .hammer::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 15px;
+            background: #696969;
+            border: 2px solid #333;
+            border-radius: 3px;
+        }
+
+        .trampoline {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            background: linear-gradient(45deg, #FF69B4, #FF1493);
+            border: 2px solid #FF1493;
+            border-radius: 10px;
+            z-index: 50;
+            animation: bounce 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: scaleY(1); }
+            to { transform: scaleY(1.2); }
+        }
+
+        .spike {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FF0000;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 50;
+        }
+
+        .moving-platform {
+            background: linear-gradient(45deg, #4682B4, #5F9EA0);
+            border: 2px solid #4169E1;
+            animation: move 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes move {
+            from { transform: translateX(0); }
+            to { transform: translateX(100px); }
+        }
+
+        .fake-platform {
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border: 2px solid #CD853F;
+            opacity: 0.7;
+        }
+
+        .enemy {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: #FF0000;
+            border: 2px solid #8B0000;
+            border-radius: 50%;
+            z-index: 50;
+            animation: enemyMove 2s ease-in-out infinite alternate;
+        }
+
+        .enemy::before {
+            content: '👹';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 20px;
+        }
+
+        @keyframes enemyMove {
+            from { transform: translateX(0); }
+            to { transform: translateX(50px); }
+        }
+
+        .laser {
+            position: absolute;
+            width: 4px;
+            height: 200px;
+            background: linear-gradient(to bottom, #FF0000, #FF69B4);
+            z-index: 50;
+            animation: laserPulse 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes laserPulse {
+            from { opacity: 0.3; }
+            to { opacity: 1; }
+        }
+
+        .teleporter {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #00FFFF, #0080FF);
+            border: 3px solid #00FFFF;
+            border-radius: 50%;
+            z-index: 50;
+            animation: teleportSpin 1s linear infinite;
+        }
+
+        @keyframes teleportSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .powerup {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: 2px solid #FF8C00;
+            border-radius: 50%;
+            z-index: 50;
+            animation: powerupFloat 1s ease-in-out infinite alternate;
+        }
+
+        .powerup::before {
+            content: '⭐';
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            font-size: 18px;
+        }
+
+        @keyframes powerupFloat {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        .ice-platform {
+            background: linear-gradient(45deg, #87CEEB, #B0E0E6);
+            border: 2px solid #4682B4;
+            animation: iceSlide 0.1s ease-in-out infinite alternate;
+        }
+
+        @keyframes iceSlide {
+            from { transform: translateX(0); }
+            to { transform: translateX(2px); }
+        }
+
+        .explosion {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FF4500, #FF0000);
+            border-radius: 50%;
+            z-index: 60;
+            animation: explode 0.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: 2px solid #FF8C00;
+            border-radius: 50%;
+            z-index: 50;
+            animation: coinSpin 0.5s linear infinite;
+        }
+
+        .coin::before {
+            content: '$';
+            position: absolute;
+            top: 1px;
+            left: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #8B4513;
+        }
+
+        @keyframes coinSpin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        .bomb {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 50%;
+            z-index: 50;
+            animation: bombBounce 1s ease-in-out infinite;
+        }
+
+        .bomb::before {
+            content: '💣';
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            font-size: 18px;
+        }
+
+        @keyframes bombBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .tornado {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            background: conic-gradient(from 0deg, #87CEEB, #B0E0E6, #87CEEB);
+            border-radius: 50%;
+            z-index: 50;
+            animation: tornadoSpin 0.5s linear infinite;
+        }
+
+        @keyframes tornadoSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .blackhole {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #000, #1a1a1a);
+            border: 3px solid #333;
+            border-radius: 50%;
+            z-index: 50;
+            animation: blackholePulse 1s ease-in-out infinite alternate;
+        }
+
+        .blackhole::before {
+            content: '🌀';
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            font-size: 25px;
+        }
+
+        @keyframes blackholePulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.2); }
+        }
+
+        .rainbow-platform {
+            background: linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #9400D3);
+            border: 2px solid #FFF;
+            animation: rainbowShift 2s linear infinite;
+        }
+
+        @keyframes rainbowShift {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .bouncy-platform {
+            background: linear-gradient(45deg, #FF69B4, #FF1493);
+            border: 2px solid #FF1493;
+            animation: bouncyPlatform 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes bouncyPlatform {
+            from { transform: scaleY(1); }
+            to { transform: scaleY(1.3); }
+        }
+
+        .ghost {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            z-index: 50;
+            animation: ghostFloat 3s ease-in-out infinite;
+        }
+
+        .ghost::before {
+            content: '👻';
+            position: absolute;
+            top: -5px;
+            left: 2px;
+            font-size: 25px;
+        }
+
+        @keyframes ghostFloat {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-20px) scale(1.1); opacity: 1; }
+        }
+
+        .portal {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: conic-gradient(from 0deg, #FF00FF, #00FFFF, #FFFF00, #FF00FF);
+            border: 3px solid #FFF;
+            border-radius: 50%;
+            z-index: 50;
+            animation: portalSpin 0.3s linear infinite;
+        }
+
+        @keyframes portalSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .goal {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: 4px solid #FF8C00;
+            border-radius: 50%;
+            z-index: 50;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px #FFD700; }
+            to { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFA500; }
+        }
+
+        .ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: linear-gradient(45deg, #2c1810, #8B4513);
+            border-radius: 8px;
+            border: 2px solid #CD853F;
+            flex-shrink: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 8px 15px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            color: #FFD700;
+            border: 2px solid #CD853F;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #A0522D, #CD853F);
+            transform: scale(1.05);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.9);
+            color: #FFD700;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            flex-shrink: 0;
+            border: 2px solid #8B4513;
+        }
+
+        .instructions h3 {
+            color: #FF6B6B;
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+
+        .instructions p {
+            margin: 4px 0;
+            font-size: 12px;
+        }
+
+        .win-message, .death-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2c1810, #8B4513);
+            color: #FFD700;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            max-width: 500px;
+            border: 4px solid #CD853F;
+        }
+
+        .win-message button, .death-message button {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #8B4513;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .win-message button:hover, .death-message button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255,215,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🏛️ TEMPLE OF DOOOOOM</h1>
+        </div>
+        
+        <div class="subtitle">Little Explorer's Deadly Adventure!</div>
+        
+        <div class="instructions">
+            <h3>⚡ DANGEROUS TEMPLE AHEAD!</h3>
+            <p><strong>A/D:</strong> Move | <strong>Space:</strong> Jump | <strong>R:</strong> Restart | <strong>WATCH OUT FOR EVERYTHING!</strong></p>
+        </div>
+
+        <div class="ui">
+            <div class="controls">
+                <button class="control-btn" onclick="moveLeft()">← Left</button>
+                <button class="control-btn" onclick="moveRight()">Right →</button>
+                <button class="control-btn" onclick="jump()">Jump</button>
+                <button class="control-btn" onclick="restartLevel()">Restart</button>
+            </div>
+            <div class="stats">
+                <div>Deaths: <span id="deathCount">0</span></div>
+                <div>Time: <span id="timer">00:00</span></div>
+                <div>Progress: <span id="progress">0</span>%</div>
+                <div>Coins: <span id="coinCount">0</span> 💰</div>
+                <div id="powerupStatus" style="display: none;">⭐ INVINCIBLE! ⭐</div>
+                <div>Speed: <span id="gameSpeed">1x</span> 🚀</div>
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="explorer" id="player">
+                <div class="hat"></div>
+                <div class="head"></div>
+                <div class="body"></div>
+                <div class="arms"></div>
+                <div class="legs"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="win-message" id="winMessage">
+        <h2>🏆 TEMPLE CONQUERED!</h2>
+        <p>You survived the TEMPLE OF DOOOOOM!</p>
+        <p>Time: <span id="finalTime">00:00</span></p>
+        <p>Total Deaths: <span id="finalDeaths">0</span></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <div class="death-message" id="deathMessage">
+        <h2>💀 DOOMED!</h2>
+        <p>The temple claimed another victim!</p>
+        <button onclick="restartLevel()">Try Again</button>
+    </div>
+
+    <script>
+        // Game variables
+        let player = {
+            x: 50,
+            y: 500,
+            velocityX: 0,
+            velocityY: 0,
+            onGround: false,
+            width: 25,
+            height: 35
+        };
+
+        let keys = {};
+        let deathCount = 0;
+        let startTime = Date.now();
+        let gameTimer;
+        let platforms = [];
+        let buttons = [];
+        let hammers = [];
+        let trampolines = [];
+        let spikes = [];
+        let enemies = [];
+        let fakeWalls = [];
+        let movingPlatforms = [];
+        let fakePlatforms = [];
+        let lasers = [];
+        let teleporters = [];
+        let powerups = [];
+        let coins = [];
+        let bombs = [];
+        let tornados = [];
+        let blackholes = [];
+        let ghosts = [];
+        let portals = [];
+        let goal = null;
+        let gameRunning = true;
+        let templeProgress = 0;
+        let coinCount = 0;
+        let hasPowerup = false;
+        let powerupTimer = 0;
+        let gameSpeed = 1;
+        let screenShake = 0;
+
+        // Physics constants
+        const GRAVITY = 0.6;
+        const JUMP_FORCE = 15;
+        const MOVE_SPEED = 6;
+        const FRICTION = 0.8;
+
+        // Temple generation
+        function generateTemple() {
+            const gameArea = document.getElementById('gameArea');
+            const screenWidth = gameArea.offsetWidth || 1200;
+            const screenHeight = gameArea.offsetHeight || 600;
+            
+            // Clear everything
+            clearTemple();
+            
+            // Create temple structure
+            const templeWidth = screenWidth * 3; // 3x wider for exploration
+            const templeHeight = screenHeight;
+            
+            // Ground platforms
+            for (let x = 0; x < templeWidth; x += 100) {
+                createPlatform(x, templeHeight - 50, 80, 20);
+            }
+            
+            // Add tons of crazy traps and surprises
+            addTempleTraps(templeWidth, templeHeight);
+            
+            // Goal at the very end
+            createGoal(templeWidth - 100, templeHeight - 120, 40, 40);
+            
+            // Set player start
+            player.x = 80;
+            player.y = templeHeight - 100;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.onGround = false;
+        }
+
+        function addTempleTraps(width, height) {
+            // Hammer traps with buttons
+            for (let i = 0; i < 8; i++) {
+                const buttonX = 200 + i * 150 + Math.random() * 100;
+                const hammerX = buttonX + 50;
+                createButton(buttonX, height - 80, hammerX, height - 200);
+            }
+            
+            // Trampoline traps
+            for (let i = 0; i < 6; i++) {
+                const x = 300 + i * 200 + Math.random() * 150;
+                createTrampoline(x, height - 70);
+            }
+            
+            // Moving platforms
+            for (let i = 0; i < 5; i++) {
+                const x = 400 + i * 250;
+                createMovingPlatform(x, height - 150, 80, 20);
+            }
+            
+            // Fake walls
+            for (let i = 0; i < 4; i++) {
+                const x = 500 + i * 300;
+                createFakeWall(x, height - 200, 60, 100);
+            }
+            
+            // Spikes everywhere
+            for (let i = 0; i < 15; i++) {
+                const x = 150 + i * 100 + Math.random() * 50;
+                createSpike(x, height - 70);
+            }
+            
+            // Enemies patrolling
+            for (let i = 0; i < 7; i++) {
+                const x = 250 + i * 180;
+                createEnemy(x, height - 80);
+            }
+            
+            // Fake platforms (fall through)
+            for (let i = 0; i < 6; i++) {
+                const x = 350 + i * 220;
+                createFakePlatform(x, height - 120, 60, 20);
+            }
+            
+            // Floating platforms
+            for (let i = 0; i < 8; i++) {
+                const x = 200 + i * 140;
+                const y = height - 180 - Math.random() * 100;
+                createPlatform(x, y, 70, 20);
+            }
+            
+            // Add even MORE crazy stuff!
+            addMoreFunStuff(width, height);
+            
+            // Add INSANE stuff!
+            addInsaneStuff(width, height);
+        }
+
+        function clearTemple() {
+            document.querySelectorAll('.platform, .button, .hammer, .trampoline, .spike, .enemy, .fake-wall, .moving-platform, .fake-platform, .laser, .teleporter, .powerup, .coin, .bomb, .tornado, .blackhole, .ghost, .portal, .goal').forEach(el => el.remove());
+            platforms = [];
+            buttons = [];
+            hammers = [];
+            trampolines = [];
+            spikes = [];
+            enemies = [];
+            fakeWalls = [];
+            movingPlatforms = [];
+            fakePlatforms = [];
+            lasers = [];
+            teleporters = [];
+            powerups = [];
+            coins = [];
+            bombs = [];
+            tornados = [];
+            blackholes = [];
+            ghosts = [];
+            portals = [];
+            goal = null;
+        }
+
+        function createPlatform(x, y, width, height, type = 'normal') {
+            const platform = document.createElement('div');
+            platform.className = type === 'fake' ? 'platform fake-platform' : 'platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            platforms.push({ x, y, width, height, element: platform, isReal: type !== 'fake' });
+        }
+
+        function createButton(x, y, hammerX, hammerY) {
+            const button = document.createElement('div');
+            button.className = 'button';
+            button.style.left = x + 'px';
+            button.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(button);
+            buttons.push({ x, y, element: button, hammerX, hammerY, activated: false });
+        }
+
+        function createHammer(x, y) {
+            const hammer = document.createElement('div');
+            hammer.className = 'hammer';
+            hammer.style.left = x + 'px';
+            hammer.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(hammer);
+            hammers.push({ x, y, element: hammer, falling: false });
+        }
+
+        function createTrampoline(x, y) {
+            const trampoline = document.createElement('div');
+            trampoline.className = 'trampoline';
+            trampoline.style.left = x + 'px';
+            trampoline.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(trampoline);
+            trampolines.push({ x, y, element: trampoline });
+        }
+
+        function createSpike(x, y) {
+            const spike = document.createElement('div');
+            spike.className = 'spike';
+            spike.style.left = x + 'px';
+            spike.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(spike);
+            spikes.push({ x, y, element: spike });
+        }
+
+        function createEnemy(x, y) {
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.style.left = x + 'px';
+            enemy.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(enemy);
+            enemies.push({ x, y, element: enemy, direction: 1, startX: x });
+        }
+
+        function createFakeWall(x, y, width, height) {
+            const wall = document.createElement('div');
+            wall.className = 'temple-wall fake-wall';
+            wall.style.left = x + 'px';
+            wall.style.top = y + 'px';
+            wall.style.width = width + 'px';
+            wall.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(wall);
+            fakeWalls.push({ x, y, width, height, element: wall });
+        }
+
+        function createMovingPlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform moving-platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            movingPlatforms.push({ x, y, width, height, element: platform, startX: x });
+        }
+
+        function createFakePlatform(x, y, width, height) {
+            createPlatform(x, y, width, height, 'fake');
+        }
+
+        function addMoreFunStuff(width, height) {
+            // Lasers that shoot across the temple
+            for (let i = 0; i < 5; i++) {
+                const x = 300 + i * 250;
+                createLaser(x, height - 300);
+            }
+            
+            // Teleporters that move you around
+            for (let i = 0; i < 4; i++) {
+                const x = 400 + i * 300;
+                createTeleporter(x, height - 100);
+            }
+            
+            // Powerups that make you invincible
+            for (let i = 0; i < 3; i++) {
+                const x = 500 + i * 400;
+                createPowerup(x, height - 150);
+            }
+            
+            // Coins to collect
+            for (let i = 0; i < 12; i++) {
+                const x = 200 + i * 120 + Math.random() * 50;
+                const y = height - 120 - Math.random() * 100;
+                createCoin(x, y);
+            }
+            
+            // Ice platforms that are slippery
+            for (let i = 0; i < 4; i++) {
+                const x = 600 + i * 200;
+                createIcePlatform(x, height - 120, 60, 20);
+            }
+        }
+
+        function createLaser(x, y) {
+            const laser = document.createElement('div');
+            laser.className = 'laser';
+            laser.style.left = x + 'px';
+            laser.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(laser);
+            lasers.push({ x, y, element: laser });
+        }
+
+        function createTeleporter(x, y) {
+            const teleporter = document.createElement('div');
+            teleporter.className = 'teleporter';
+            teleporter.style.left = x + 'px';
+            teleporter.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(teleporter);
+            teleporters.push({ x, y, element: teleporter });
+        }
+
+        function createPowerup(x, y) {
+            const powerup = document.createElement('div');
+            powerup.className = 'powerup';
+            powerup.style.left = x + 'px';
+            powerup.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(powerup);
+            powerups.push({ x, y, element: powerup });
+        }
+
+        function createCoin(x, y) {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = x + 'px';
+            coin.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(coin);
+            coins.push({ x, y, element: coin });
+        }
+
+        function createIcePlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform ice-platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            platforms.push({ x, y, width, height, element: platform, isReal: true, isIce: true });
+        }
+
+        function createExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.style.left = (x - 30) + 'px';
+            explosion.style.top = (y - 30) + 'px';
+            document.getElementById('gameArea').appendChild(explosion);
+            setTimeout(() => explosion.remove(), 500);
+            
+            // Add screen shake
+            screenShake = 10;
+        }
+
+        function addInsaneStuff(width, height) {
+            // Bouncing bombs that explode when touched
+            for (let i = 0; i < 6; i++) {
+                const x = 350 + i * 200 + Math.random() * 100;
+                createBomb(x, height - 100);
+            }
+            
+            // Tornados that suck you in
+            for (let i = 0; i < 4; i++) {
+                const x = 450 + i * 300;
+                createTornado(x, height - 150);
+            }
+            
+            // Black holes that teleport you
+            for (let i = 0; i < 3; i++) {
+                const x = 550 + i * 400;
+                createBlackhole(x, height - 80);
+            }
+            
+            // Ghosts that chase you
+            for (let i = 0; i < 5; i++) {
+                const x = 250 + i * 250;
+                createGhost(x, height - 120);
+            }
+            
+            // Rainbow portals
+            for (let i = 0; i < 4; i++) {
+                const x = 650 + i * 200;
+                createPortal(x, height - 100);
+            }
+            
+            // Rainbow platforms
+            for (let i = 0; i < 3; i++) {
+                const x = 750 + i * 300;
+                createRainbowPlatform(x, height - 180, 80, 20);
+            }
+            
+            // Super bouncy platforms
+            for (let i = 0; i < 4; i++) {
+                const x = 850 + i * 250;
+                createBouncyPlatform(x, height - 140, 70, 20);
+            }
+        }
+
+        function createBomb(x, y) {
+            const bomb = document.createElement('div');
+            bomb.className = 'bomb';
+            bomb.style.left = x + 'px';
+            bomb.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(bomb);
+            bombs.push({ x, y, element: bomb });
+        }
+
+        function createTornado(x, y) {
+            const tornado = document.createElement('div');
+            tornado.className = 'tornado';
+            tornado.style.left = x + 'px';
+            tornado.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(tornado);
+            tornados.push({ x, y, element: tornado });
+        }
+
+        function createBlackhole(x, y) {
+            const blackhole = document.createElement('div');
+            blackhole.className = 'blackhole';
+            blackhole.style.left = x + 'px';
+            blackhole.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(blackhole);
+            blackholes.push({ x, y, element: blackhole });
+        }
+
+        function createGhost(x, y) {
+            const ghost = document.createElement('div');
+            ghost.className = 'ghost';
+            ghost.style.left = x + 'px';
+            ghost.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(ghost);
+            ghosts.push({ x, y, element: ghost });
+        }
+
+        function createPortal(x, y) {
+            const portal = document.createElement('div');
+            portal.className = 'portal';
+            portal.style.left = x + 'px';
+            portal.style.top = y + 'px';
+            document.getElementById('gameArea').appendChild(portal);
+            portals.push({ x, y, element: portal });
+        }
+
+        function createRainbowPlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform rainbow-platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            platforms.push({ x, y, width, height, element: platform, isReal: true, isRainbow: true });
+        }
+
+        function createBouncyPlatform(x, y, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform bouncy-platform';
+            platform.style.left = x + 'px';
+            platform.style.top = y + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(platform);
+            platforms.push({ x, y, width, height, element: platform, isReal: true, isBouncy: true });
+        }
+
+        function createGoal(x, y, width, height) {
+            const goalElement = document.createElement('div');
+            goalElement.className = 'goal';
+            goalElement.style.left = x + 'px';
+            goalElement.style.top = y + 'px';
+            goalElement.style.width = width + 'px';
+            goalElement.style.height = height + 'px';
+            document.getElementById('gameArea').appendChild(goalElement);
+            goal = { x, y, width, height, element: goalElement };
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('keydown', (event) => {
+                keys[event.code] = true;
+                if (event.code === 'KeyR') {
+                    restartLevel();
+                }
+            });
+
+            document.addEventListener('keyup', (event) => {
+                keys[event.code] = false;
+            });
+        }
+
+        function updatePlayer() {
+            if (!gameRunning) return;
+
+            // Handle input
+            if (keys['KeyA'] || keys['ArrowLeft']) {
+                player.velocityX = -MOVE_SPEED;
+            } else if (keys['KeyD'] || keys['ArrowRight']) {
+                player.velocityX = MOVE_SPEED;
+            } else {
+                player.velocityX *= FRICTION;
+            }
+
+            if ((keys['Space'] || keys['ArrowUp']) && player.onGround) {
+                player.velocityY = -JUMP_FORCE;
+                player.onGround = false;
+            }
+
+            // Apply gravity
+            player.velocityY += GRAVITY;
+
+            // Update position
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Check boundaries
+            const gameArea = document.getElementById('gameArea');
+            const areaWidth = gameArea.offsetWidth * 3; // 3x wider
+            const areaHeight = gameArea.offsetHeight;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x > areaWidth - player.width) player.x = areaWidth - player.width;
+            if (player.y > areaHeight - player.height) {
+                player.y = areaHeight - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+            }
+            
+            // Check if player fell off screen
+            if (player.y > areaHeight + 50) {
+                playerDeath();
+            }
+
+            // Check all collisions
+            checkPlatformCollisions();
+            checkButtonCollisions();
+            checkHammerCollisions();
+            checkTrampolineCollisions();
+            checkSpikeCollisions();
+            checkEnemyCollisions();
+            checkFakeWallCollisions();
+            checkLaserCollisions();
+            checkTeleporterCollisions();
+            checkPowerupCollisions();
+            checkCoinCollisions();
+            checkBombCollisions();
+            checkTornadoCollisions();
+            checkBlackholeCollisions();
+            checkGhostCollisions();
+            checkPortalCollisions();
+            checkGoalCollision();
+
+            // Update player position with screen shake
+            const playerElement = document.getElementById('player');
+            const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+            const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+            
+            playerElement.style.left = (player.x + shakeX) + 'px';
+            playerElement.style.top = (player.y + shakeY) + 'px';
+            
+            // Add invincible effect
+            if (hasPowerup) {
+                playerElement.classList.add('invincible');
+            } else {
+                playerElement.classList.remove('invincible');
+            }
+
+            // Update progress
+            updateProgress();
+        }
+
+        function checkPlatformCollisions() {
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height + 5 &&
+                    player.velocityY >= 0) {
+                    
+                    if (platform.isReal) {
+                        player.y = platform.y - player.height;
+                        player.velocityY = 0;
+                        player.onGround = true;
+                        
+                        // Ice platforms make you slide
+                        if (platform.isIce) {
+                            player.velocityX *= 1.1; // Keep sliding
+                        }
+                        
+                        // Rainbow platforms give you a boost
+                        if (platform.isRainbow) {
+                            player.velocityY = -JUMP_FORCE * 0.5;
+                            player.onGround = false;
+                        }
+                        
+                        // Bouncy platforms give super jump
+                        if (platform.isBouncy) {
+                            player.velocityY = -JUMP_FORCE * 2;
+                            player.onGround = false;
+                        }
+                    }
+                }
+            });
+        }
+
+        function checkButtonCollisions() {
+            buttons.forEach(button => {
+                if (player.x < button.x + 20 &&
+                    player.x + player.width > button.x &&
+                    player.y < button.y + 20 &&
+                    player.y + player.height > button.y &&
+                    !button.activated) {
+                    
+                    button.activated = true;
+                    button.element.style.background = '#00FF00';
+                    createHammer(button.hammerX, button.hammerY);
+                    
+                    // Hammer falls after delay
+                    setTimeout(() => {
+                        const hammer = hammers[hammers.length - 1];
+                        hammer.falling = true;
+                        hammer.element.style.top = (button.hammerY + 200) + 'px';
+                    }, 1000);
+                }
+            });
+        }
+
+        function checkHammerCollisions() {
+            hammers.forEach(hammer => {
+                if (hammer.falling && 
+                    player.x < hammer.x + 40 &&
+                    player.x + player.width > hammer.x &&
+                    player.y < hammer.y + 60 &&
+                    player.y + player.height > hammer.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkTrampolineCollisions() {
+            trampolines.forEach(trampoline => {
+                if (player.x < trampoline.x + 40 &&
+                    player.x + player.width > trampoline.x &&
+                    player.y + player.height >= trampoline.y &&
+                    player.y + player.height <= trampoline.y + 20 &&
+                    player.velocityY >= 0) {
+                    
+                    player.velocityY = -JUMP_FORCE * 1.5;
+                    player.onGround = false;
+                }
+            });
+        }
+
+        function checkSpikeCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            spikes.forEach(spike => {
+                if (player.x < spike.x + 20 &&
+                    player.x + player.width > spike.x &&
+                    player.y < spike.y + 20 &&
+                    player.y + player.height > spike.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkEnemyCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            enemies.forEach(enemy => {
+                if (player.x < enemy.x + 25 &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + 25 &&
+                    player.y + player.height > enemy.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkFakeWallCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            fakeWalls.forEach(wall => {
+                if (player.x < wall.x + wall.width &&
+                    player.x + player.width > wall.x &&
+                    player.y < wall.y + wall.height &&
+                    player.y + player.height > wall.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkLaserCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            lasers.forEach(laser => {
+                if (player.x < laser.x + 4 &&
+                    player.x + player.width > laser.x &&
+                    player.y < laser.y + 200 &&
+                    player.y + player.height > laser.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkTeleporterCollisions() {
+            teleporters.forEach(teleporter => {
+                if (player.x < teleporter.x + 30 &&
+                    player.x + player.width > teleporter.x &&
+                    player.y < teleporter.y + 30 &&
+                    player.y + player.height > teleporter.y) {
+                    
+                    // Teleport to random location
+                    const gameArea = document.getElementById('gameArea');
+                    const areaWidth = gameArea.offsetWidth * 3;
+                    const areaHeight = gameArea.offsetHeight;
+                    
+                    player.x = 100 + Math.random() * (areaWidth - 200);
+                    player.y = areaHeight - 150 - Math.random() * 100;
+                    
+                    createExplosion(teleporter.x + 15, teleporter.y + 15);
+                }
+            });
+        }
+
+        function checkPowerupCollisions() {
+            powerups.forEach((powerup, index) => {
+                if (player.x < powerup.x + 25 &&
+                    player.x + player.width > powerup.x &&
+                    player.y < powerup.y + 25 &&
+                    player.y + player.height > powerup.y) {
+                    
+                    // Collect powerup
+                    hasPowerup = true;
+                    powerupTimer = 300; // 5 seconds at 60fps
+                    powerup.element.remove();
+                    powerups.splice(index, 1);
+                    
+                    document.getElementById('powerupStatus').style.display = 'block';
+                    createExplosion(powerup.x + 12, powerup.y + 12);
+                }
+            });
+        }
+
+        function checkCoinCollisions() {
+            coins.forEach((coin, index) => {
+                if (player.x < coin.x + 20 &&
+                    player.x + player.width > coin.x &&
+                    player.y < coin.y + 20 &&
+                    player.y + player.height > coin.y) {
+                    
+                    // Collect coin
+                    coinCount++;
+                    document.getElementById('coinCount').textContent = coinCount;
+                    coin.element.remove();
+                    coins.splice(index, 1);
+                    
+                    createExplosion(coin.x + 10, coin.y + 10);
+                    
+                    // Speed up game every 5 coins
+                    if (coinCount % 5 === 0) {
+                        gameSpeed += 0.2;
+                        document.getElementById('gameSpeed').textContent = gameSpeed.toFixed(1) + 'x';
+                    }
+                }
+            });
+        }
+
+        function checkBombCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            bombs.forEach((bomb, index) => {
+                if (player.x < bomb.x + 25 &&
+                    player.x + player.width > bomb.x &&
+                    player.y < bomb.y + 25 &&
+                    player.y + player.height > bomb.y) {
+                    
+                    // Bomb explodes!
+                    createExplosion(bomb.x + 12, bomb.y + 12);
+                    bomb.element.remove();
+                    bombs.splice(index, 1);
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkTornadoCollisions() {
+            tornados.forEach(tornado => {
+                const distance = Math.sqrt((player.x - tornado.x) ** 2 + (player.y - tornado.y) ** 2);
+                if (distance < 50) {
+                    // Suck player towards tornado
+                    const angle = Math.atan2(tornado.y - player.y, tornado.x - player.x);
+                    player.velocityX += Math.cos(angle) * 0.5;
+                    player.velocityY += Math.sin(angle) * 0.5;
+                }
+            });
+        }
+
+        function checkBlackholeCollisions() {
+            blackholes.forEach(blackhole => {
+                if (player.x < blackhole.x + 50 &&
+                    player.x + player.width > blackhole.x &&
+                    player.y < blackhole.y + 50 &&
+                    player.y + player.height > blackhole.y) {
+                    
+                    // Teleport to random location
+                    const gameArea = document.getElementById('gameArea');
+                    const areaWidth = gameArea.offsetWidth * 3;
+                    const areaHeight = gameArea.offsetHeight;
+                    
+                    player.x = 100 + Math.random() * (areaWidth - 200);
+                    player.y = areaHeight - 150 - Math.random() * 100;
+                    
+                    createExplosion(blackhole.x + 25, blackhole.y + 25);
+                }
+            });
+        }
+
+        function checkGhostCollisions() {
+            if (hasPowerup) return; // Invincible!
+            
+            ghosts.forEach(ghost => {
+                if (player.x < ghost.x + 30 &&
+                    player.x + player.width > ghost.x &&
+                    player.y < ghost.y + 30 &&
+                    player.y + player.height > ghost.y) {
+                    playerDeath();
+                }
+            });
+        }
+
+        function checkPortalCollisions() {
+            portals.forEach(portal => {
+                if (player.x < portal.x + 40 &&
+                    player.x + player.width > portal.x &&
+                    player.y < portal.y + 40 &&
+                    player.y + player.height > portal.y) {
+                    
+                    // Rainbow portal effect
+                    const gameArea = document.getElementById('gameArea');
+                    const areaWidth = gameArea.offsetWidth * 3;
+                    const areaHeight = gameArea.offsetHeight;
+                    
+                    player.x = 200 + Math.random() * (areaWidth - 400);
+                    player.y = areaHeight - 200 - Math.random() * 150;
+                    
+                    // Multiple explosions
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            createExplosion(portal.x + 20 + Math.random() * 20, portal.y + 20 + Math.random() * 20);
+                        }, i * 100);
+                    }
+                }
+            });
+        }
+
+        function checkGoalCollision() {
+            if (goal && player.x < goal.x + goal.width &&
+                player.x + player.width > goal.x &&
+                player.y < goal.y + goal.height &&
+                player.y + player.height > goal.y) {
+                gameComplete();
+            }
+        }
+
+        function updateProgress() {
+            const gameArea = document.getElementById('gameArea');
+            const areaWidth = gameArea.offsetWidth * 3;
+            const progress = Math.min(100, Math.floor((player.x / areaWidth) * 100));
+            templeProgress = progress;
+            document.getElementById('progress').textContent = progress;
+        }
+
+        function playerDeath() {
+            deathCount++;
+            document.getElementById('deathCount').textContent = deathCount;
+            showDeathMessage();
+            gameRunning = false;
+        }
+
+        function gameComplete() {
+            gameRunning = false;
+            showWinMessage();
+        }
+
+        function showDeathMessage() {
+            document.getElementById('deathMessage').style.display = 'block';
+        }
+
+        function showWinMessage() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('finalTime').textContent = timeString;
+            document.getElementById('finalDeaths').textContent = deathCount;
+            
+            // Update win message with coin count
+            const winMessage = document.getElementById('winMessage');
+            winMessage.innerHTML = `
+                <h2>🏆 TEMPLE CONQUERED!</h2>
+                <p>You survived the TEMPLE OF DOOOOOM!</p>
+                <p>Time: <span id="finalTime">${timeString}</span></p>
+                <p>Total Deaths: <span id="finalDeaths">${deathCount}</span></p>
+                <p>Coins Collected: <span>${coinCount}</span> 💰</p>
+                <button onclick="restartGame()">Play Again</button>
+            `;
+            
+            winMessage.style.display = 'block';
+        }
+
+        function restartLevel() {
+            document.getElementById('deathMessage').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'none';
+            generateTemple();
+            gameRunning = true;
+        }
+
+        function restartGame() {
+            deathCount = 0;
+            coinCount = 0;
+            hasPowerup = false;
+            powerupTimer = 0;
+            gameSpeed = 1;
+            screenShake = 0;
+            document.getElementById('deathCount').textContent = '0';
+            document.getElementById('coinCount').textContent = '0';
+            document.getElementById('powerupStatus').style.display = 'none';
+            document.getElementById('gameSpeed').textContent = '1x';
+            startTime = Date.now();
+            document.getElementById('winMessage').style.display = 'none';
+            generateTemple();
+            gameRunning = true;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            gameTimer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('timer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function gameLoop() {
+            updatePlayer();
+            
+            // Update powerup timer
+            if (hasPowerup) {
+                powerupTimer--;
+                if (powerupTimer <= 0) {
+                    hasPowerup = false;
+                    document.getElementById('powerupStatus').style.display = 'none';
+                }
+            }
+            
+            // Update screen shake
+            if (screenShake > 0) {
+                screenShake--;
+            }
+            
+            // Apply game speed
+            if (gameSpeed > 1) {
+                setTimeout(() => requestAnimationFrame(gameLoop), 1000 / (60 * gameSpeed));
+            } else {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Control functions for buttons
+        function moveLeft() {
+            keys['KeyA'] = true;
+            setTimeout(() => keys['KeyA'] = false, 100);
+        }
+
+        function moveRight() {
+            keys['KeyD'] = true;
+            setTimeout(() => keys['KeyD'] = false, 100);
+        }
+
+        function jump() {
+            keys['Space'] = true;
+            setTimeout(() => keys['Space'] = false, 100);
+        }
+
+        // Initialize the game
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                generateTemple();
+                startTimer();
+                setupEventListeners();
+                gameLoop();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,840 @@
+<!--
+Bee Miner Game
+- Bees dig down into the ground to collect resources
+- Multiple mining levels with different resources
+- Upgrade bees, mining speed, and equipment
+- Idle mining gameplay with automatic collection
+- Beautiful animated bees digging tunnels
+- Strategic upgrades and resource management
+- Similar to Idle Miner but with bees as miners
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐝 Bee Miner - Dig Deep!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 80px;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 20px #FFD700;
+            animation: sunPulse 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .ground {
+            position: absolute;
+            top: 30%;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(to bottom, #8FBC8F, #A0522D, #8B4513, #654321, #2F1B14);
+            z-index: 3;
+        }
+        
+        .mining-shaft {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 70%;
+            background: linear-gradient(to bottom, #654321, #2F1B14, #000000);
+            border-radius: 20px 20px 0 0;
+            z-index: 4;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+        }
+        
+        .mining-level {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 40px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 5;
+            transition: all 0.3s ease;
+        }
+        
+        .mining-level.active {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+            animation: levelGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes levelGlow {
+            0%, 100% { box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 5px 15px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.6); }
+        }
+        
+        .bee-miner {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 6;
+            animation: beeDig 2s ease-in-out infinite;
+            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.6);
+        }
+        
+        .bee-miner::before {
+            content: '🐝';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 28px;
+        }
+        
+        @keyframes beeDig {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(90deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+            75% { transform: scale(1.1) rotate(270deg); }
+        }
+        
+        .resource {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            z-index: 5;
+            animation: resourceGlow 3s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        }
+        
+        .honey-resource::before {
+            content: '🍯';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 24px;
+        }
+        
+        .pollen-resource::before {
+            content: '🌼';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 24px;
+        }
+        
+        .crystal-resource::before {
+            content: '💎';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 24px;
+        }
+        
+        .gold-resource::before {
+            content: '🪙';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 24px;
+        }
+        
+        @keyframes resourceGlow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .resource-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .shop-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-width: 280px;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .upgrade-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .resource-float {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 16px;
+            animation: resourceFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes resourceFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+        
+        .level-info {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            display: none;
+        }
+        
+        .level-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .level-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .level-item.active {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="sun"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="mining-shaft">
+            <!-- Mining levels will be generated here -->
+        </div>
+        
+        <div class="ui-panel">
+            <h3>🐝 Bee Miner Stats</h3>
+            <div class="resource-display">
+                <span>🍯 Honey:</span>
+                <span id="honey">0</span>
+            </div>
+            <div class="resource-display">
+                <span>🌼 Pollen:</span>
+                <span id="pollen">0</span>
+            </div>
+            <div class="resource-display">
+                <span>💎 Crystals:</span>
+                <span id="crystals">0</span>
+            </div>
+            <div class="resource-display">
+                <span>🪙 Gold:</span>
+                <span id="gold">0</span>
+            </div>
+            <div class="resource-display">
+                <span>🐝 Miners:</span>
+                <span id="miners">1</span>
+            </div>
+            <div class="resource-display">
+                <span>⛏️ Current Level:</span>
+                <span id="currentLevel">1</span>
+            </div>
+            <div class="resource-display">
+                <span>⚡ Mining Speed:</span>
+                <span id="miningSpeed">1.0</span>
+            </div>
+        </div>
+        
+        <div class="shop-panel">
+            <h3>🛒 Miner Shop</h3>
+            <div class="shop-item">
+                <span>🐝 Hire Miner (50 honey)</span>
+                <button class="btn" onclick="hireMiner()">Hire!</button>
+            </div>
+            <div class="shop-item">
+                <span>⛏️ Upgrade Pickaxe (100 honey)</span>
+                <button class="btn" onclick="upgradePickaxe()">Upgrade!</button>
+            </div>
+            <div class="shop-item">
+                <span>🚀 Mining Speed (200 honey)</span>
+                <button class="btn" onclick="upgradeSpeed()">Upgrade!</button>
+            </div>
+            <div class="shop-item">
+                <span>💡 Auto-Collect (500 honey)</span>
+                <button class="btn" onclick="buyAutoCollect()">Buy!</button>
+            </div>
+            <div class="shop-item">
+                <span>🌟 Super Miner (1000 honey)</span>
+                <button class="btn" onclick="buySuperMiner()">Buy!</button>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn" onclick="showLevels()">📊 Levels</button>
+                <button class="btn" onclick="collectAll()">💰 Collect All!</button>
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <h4>📊 Mining Stats</h4>
+            <div class="resource-display">
+                <span>Total Mined:</span>
+                <span id="totalMined">0</span>
+            </div>
+            <div class="resource-display">
+                <span>Deepest Level:</span>
+                <span id="deepestLevel">1</span>
+            </div>
+            <div class="resource-display">
+                <span>Mining Efficiency:</span>
+                <span id="efficiency">100</span>%
+            </div>
+            <div class="resource-display">
+                <span>Auto-Collect:</span>
+                <span id="autoCollect">Off</span>
+            </div>
+        </div>
+        
+        <div class="upgrade-panel">
+            <h4>⬆️ Mining Upgrades</h4>
+            <div class="resource-display">
+                <span>⛏️ Pickaxe Level:</span>
+                <span id="pickaxeLevel">1</span>
+            </div>
+            <div class="resource-display">
+                <span>🚀 Speed Level:</span>
+                <span id="speedLevel">1</span>
+            </div>
+            <div class="resource-display">
+                <span>🌟 Super Miners:</span>
+                <span id="superMiners">0</span>
+            </div>
+            <button class="btn" onclick="upgradeEfficiency()">⚡ Efficiency +10% (🍯 150)</button>
+            <button class="btn" onclick="upgradeCapacity()">📦 Capacity +50% (🍯 200)</button>
+        </div>
+    </div>
+    
+    <div class="level-info" id="levelInfo">
+        <h3>📊 Mining Levels</h3>
+        <div id="levelList">
+            <!-- Levels will be generated here -->
+        </div>
+        <div style="margin-top: 15px; text-align: center;">
+            <button class="btn" onclick="hideLevels()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            honey: 0,
+            pollen: 0,
+            crystals: 0,
+            gold: 0,
+            miners: 1,
+            currentLevel: 1,
+            miningSpeed: 1.0,
+            totalMined: 0,
+            deepestLevel: 1,
+            efficiency: 100,
+            autoCollect: false,
+            pickaxeLevel: 1,
+            speedLevel: 1,
+            superMiners: 0,
+            lastUpdate: Date.now(),
+            upgrades: {
+                autoCollect: false,
+                superMiner: false
+            },
+            levels: [
+                { depth: 1, name: "Surface", resource: "honey", rate: 1, cost: 0 },
+                { depth: 2, name: "Shallow", resource: "pollen", rate: 2, cost: 10 },
+                { depth: 3, name: "Medium", resource: "honey", rate: 3, cost: 25 },
+                { depth: 4, name: "Deep", resource: "crystals", rate: 5, cost: 50 },
+                { depth: 5, name: "Very Deep", resource: "pollen", rate: 8, cost: 100 },
+                { depth: 6, name: "Crystal Cave", resource: "crystals", rate: 12, cost: 200 },
+                { depth: 7, name: "Gold Mine", resource: "gold", rate: 20, cost: 500 },
+                { depth: 8, name: "Diamond Layer", resource: "crystals", rate: 30, cost: 1000 },
+                { depth: 9, name: "Ancient Depths", resource: "gold", rate: 50, cost: 2000 },
+                { depth: 10, name: "Core", resource: "honey", rate: 100, cost: 5000 }
+            ]
+        };
+        
+        function updateUI() {
+            document.getElementById('honey').textContent = Math.floor(gameData.honey);
+            document.getElementById('pollen').textContent = Math.floor(gameData.pollen);
+            document.getElementById('crystals').textContent = Math.floor(gameData.crystals);
+            document.getElementById('gold').textContent = Math.floor(gameData.gold);
+            document.getElementById('miners').textContent = gameData.miners;
+            document.getElementById('currentLevel').textContent = gameData.currentLevel;
+            document.getElementById('miningSpeed').textContent = gameData.miningSpeed.toFixed(1);
+            document.getElementById('totalMined').textContent = Math.floor(gameData.totalMined);
+            document.getElementById('deepestLevel').textContent = gameData.deepestLevel;
+            document.getElementById('efficiency').textContent = gameData.efficiency;
+            document.getElementById('autoCollect').textContent = gameData.autoCollect ? "On" : "Off";
+            document.getElementById('pickaxeLevel').textContent = gameData.pickaxeLevel;
+            document.getElementById('speedLevel').textContent = gameData.speedLevel;
+            document.getElementById('superMiners').textContent = gameData.superMiners;
+        }
+        
+        function generateMiningLevels() {
+            const shaft = document.querySelector('.mining-shaft');
+            shaft.innerHTML = '';
+            
+            gameData.levels.forEach((level, index) => {
+                const levelElement = document.createElement('div');
+                levelElement.className = 'mining-level';
+                levelElement.textContent = `Level ${level.depth}: ${level.name}`;
+                levelElement.style.top = `${30 + (index * 7)}%`;
+                
+                if (level.depth === gameData.currentLevel) {
+                    levelElement.classList.add('active');
+                }
+                
+                levelElement.addEventListener('click', () => {
+                    if (gameData.honey >= level.cost) {
+                        gameData.currentLevel = level.depth;
+                        gameData.honey -= level.cost;
+                        updateMiningLevels();
+                        showNotification(`⛏️ Moved to Level ${level.depth}: ${level.name}!`);
+                        updateUI();
+                    } else {
+                        showNotification('❌ Not enough honey to reach this level!');
+                    }
+                });
+                
+                shaft.appendChild(levelElement);
+            });
+        }
+        
+        function updateMiningLevels() {
+            document.querySelectorAll('.mining-level').forEach((level, index) => {
+                level.classList.remove('active');
+                if (gameData.levels[index].depth === gameData.currentLevel) {
+                    level.classList.add('active');
+                }
+            });
+        }
+        
+        function hireMiner() {
+            if (gameData.honey >= 50) {
+                gameData.honey -= 50;
+                gameData.miners++;
+                createMiner();
+                showNotification('🐝 New miner hired!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradePickaxe() {
+            if (gameData.honey >= 100) {
+                gameData.honey -= 100;
+                gameData.pickaxeLevel++;
+                gameData.efficiency += 20;
+                showNotification('⛏️ Pickaxe upgraded! Efficiency +20%!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeSpeed() {
+            if (gameData.honey >= 200) {
+                gameData.honey -= 200;
+                gameData.speedLevel++;
+                gameData.miningSpeed += 0.5;
+                showNotification('🚀 Mining speed upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function buyAutoCollect() {
+            if (gameData.honey >= 500 && !gameData.upgrades.autoCollect) {
+                gameData.honey -= 500;
+                gameData.upgrades.autoCollect = true;
+                gameData.autoCollect = true;
+                showNotification('💡 Auto-collect enabled!');
+                updateUI();
+            } else if (gameData.upgrades.autoCollect) {
+                showNotification('❌ Already purchased!');
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function buySuperMiner() {
+            if (gameData.honey >= 1000) {
+                gameData.honey -= 1000;
+                gameData.superMiners++;
+                gameData.miners += 5;
+                showNotification('🌟 Super miner purchased! +5 miners!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeEfficiency() {
+            if (gameData.honey >= 150) {
+                gameData.honey -= 150;
+                gameData.efficiency += 10;
+                showNotification('⚡ Efficiency upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeCapacity() {
+            if (gameData.honey >= 200) {
+                gameData.honey -= 200;
+                gameData.miningSpeed += 1.0;
+                showNotification('📦 Capacity upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function createMiner() {
+            const miner = document.createElement('div');
+            miner.className = 'bee-miner';
+            miner.style.left = (Math.random() * 100 + 50) + 'px';
+            miner.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            miner.style.animationDelay = Math.random() * 2 + 's';
+            document.querySelector('.game-container').appendChild(miner);
+            
+            setTimeout(() => {
+                if (miner.parentNode) {
+                    miner.remove();
+                }
+            }, 3000);
+        }
+        
+        function createResource() {
+            const currentLevel = gameData.levels.find(l => l.depth === gameData.currentLevel);
+            const resource = document.createElement('div');
+            resource.className = `resource ${currentLevel.resource}-resource`;
+            resource.style.left = (Math.random() * 100 + 50) + 'px';
+            resource.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(resource);
+            
+            setTimeout(() => {
+                if (resource.parentNode) {
+                    resource.remove();
+                }
+            }, 2000);
+        }
+        
+        function showLevels() {
+            const levelInfo = document.getElementById('levelInfo');
+            const levelList = document.getElementById('levelList');
+            levelList.innerHTML = '';
+            
+            gameData.levels.forEach(level => {
+                const levelItem = document.createElement('div');
+                levelItem.className = 'level-item';
+                if (level.depth === gameData.currentLevel) {
+                    levelItem.classList.add('active');
+                }
+                
+                levelItem.innerHTML = `
+                    <span>Level ${level.depth}: ${level.name}</span>
+                    <span>${level.resource} (${level.rate}/s)</span>
+                `;
+                
+                levelItem.addEventListener('click', () => {
+                    if (gameData.honey >= level.cost) {
+                        gameData.currentLevel = level.depth;
+                        gameData.honey -= level.cost;
+                        updateMiningLevels();
+                        showNotification(`⛏️ Moved to Level ${level.depth}: ${level.name}!`);
+                        updateUI();
+                        hideLevels();
+                    } else {
+                        showNotification('❌ Not enough honey to reach this level!');
+                    }
+                });
+                
+                levelList.appendChild(levelItem);
+            });
+            
+            levelInfo.style.display = 'block';
+        }
+        
+        function hideLevels() {
+            document.getElementById('levelInfo').style.display = 'none';
+        }
+        
+        function collectAll() {
+            const total = gameData.honey + gameData.pollen + gameData.crystals + gameData.gold;
+            if (total > 0) {
+                showResourceFloat(total);
+                showNotification(`💰 Collected ${Math.floor(total)} total resources!`);
+                gameData.honey = 0;
+                gameData.pollen = 0;
+                gameData.crystals = 0;
+                gameData.gold = 0;
+                updateUI();
+            }
+        }
+        
+        function showResourceFloat(amount) {
+            const resourceFloat = document.createElement('div');
+            resourceFloat.className = 'resource-float';
+            resourceFloat.textContent = `+${Math.floor(amount)}`;
+            resourceFloat.style.left = (Math.random() * window.innerWidth) + 'px';
+            resourceFloat.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(resourceFloat);
+            
+            setTimeout(() => {
+                if (resourceFloat.parentNode) {
+                    resourceFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function gameLoop() {
+            const now = Date.now();
+            const deltaTime = (now - gameData.lastUpdate) / 1000;
+            
+            // Get current level info
+            const currentLevel = gameData.levels.find(l => l.depth === gameData.currentLevel);
+            if (currentLevel) {
+                const baseRate = currentLevel.rate;
+                const totalRate = baseRate * gameData.miners * (gameData.efficiency / 100) * gameData.miningSpeed;
+                const resourcesGained = totalRate * deltaTime;
+                
+                // Add resources based on current level
+                switch(currentLevel.resource) {
+                    case 'honey':
+                        gameData.honey += resourcesGained;
+                        break;
+                    case 'pollen':
+                        gameData.pollen += resourcesGained;
+                        break;
+                    case 'crystals':
+                        gameData.crystals += resourcesGained;
+                        break;
+                    case 'gold':
+                        gameData.gold += resourcesGained;
+                        break;
+                }
+                
+                gameData.totalMined += resourcesGained;
+                
+                // Auto-collect if enabled
+                if (gameData.autoCollect && Math.random() < 0.01) {
+                    collectAll();
+                }
+            }
+            
+            // Create visual effects occasionally
+            if (Math.random() < 0.02) {
+                createResource();
+            }
+            
+            if (Math.random() < 0.01) {
+                createMiner();
+            }
+            
+            gameData.lastUpdate = now;
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        generateMiningLevels();
+        updateUI();
+        gameLoop();
+        
+        console.log('🐝 Bee Miner loaded! Dig deep and collect resources!');
+    </script>
+</body>
+</html>

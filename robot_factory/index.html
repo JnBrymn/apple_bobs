@@ -1,0 +1,615 @@
+<!-- Robot Factory Simulation - Watch robots collect resources and build automatically! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Factory Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0a;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0,255,0,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,0,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .robot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #00ff00;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .robot::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .robot::after {
+            content: '🤖';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+        }
+
+        .resource {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .resource.metal {
+            background: #c0c0c0;
+            box-shadow: 0 0 10px #c0c0c0;
+        }
+
+        .resource.crystal {
+            background: #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .resource.energy {
+            background: #ffff00;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .building {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: build 1s ease-out;
+        }
+
+        .building.factory {
+            background: #ff6b35;
+            box-shadow: 0 0 20px #ff6b35;
+        }
+
+        .building.power {
+            background: #4ecdc4;
+            box-shadow: 0 0 20px #4ecdc4;
+        }
+
+        .building.storage {
+            background: #45b7d1;
+            box-shadow: 0 0 20px #45b7d1;
+        }
+
+        @keyframes build {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1s linear forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-20px);
+            }
+        }
+
+        .beam {
+            position: absolute;
+            width: 3px;
+            height: 100px;
+            background: linear-gradient(to bottom, #00ff00, transparent);
+            transform-origin: top;
+            animation: beam 0.5s linear forwards;
+        }
+
+        @keyframes beam {
+            0% {
+                opacity: 1;
+                transform: scaleY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleY(1);
+            }
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            color: white;
+            border: 2px solid #00ff00;
+        }
+
+        #stats {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 8px 12px;
+            margin: 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .button:hover {
+            background: #00cc00;
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .resource-counter {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            text-shadow: 0 0 10px #00ff00;
+            animation: message 2s ease-out forwards;
+        }
+
+        @keyframes message {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="grid"></div>
+        
+        <div id="ui">
+            <div id="stats">
+                <div class="resource-counter">🤖 Robots: <span id="robotCount">3</span></div>
+                <div class="resource-counter">🏭 Factories: <span id="factoryCount">0</span></div>
+                <div class="resource-counter">⚡ Power Plants: <span id="powerCount">0</span></div>
+                <div class="resource-counter">📦 Storage: <span id="storageCount">0</span></div>
+                <br>
+                <div class="resource-counter">💰 Money: <span id="moneyCount">0</span></div>
+                <div class="resource-counter">🔧 Metal: <span id="metalCount">0</span></div>
+                <div class="resource-counter">💎 Crystal: <span id="crystalCount">0</span></div>
+                <div class="resource-counter">⚡ Energy: <span id="energyCount">0</span></div>
+            </div>
+            
+            <button class="button" onclick="addRobot()">Add Robot ($50)</button>
+            <button class="button" onclick="addResource('metal')">Add Metal</button>
+            <button class="button" onclick="addResource('crystal')">Add Crystal</button>
+            <button class="button" onclick="addResource('energy')">Add Energy</button>
+            <button class="button" onclick="clearAll()">Clear All</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let robots = [];
+        let resources = [];
+        let buildings = [];
+        let metal = 0;
+        let crystal = 0;
+        let energy = 0;
+        let money = 0;
+        let robotCost = 50;
+        
+        // Robot types and their behaviors
+        const robotTypes = {
+            collector: { emoji: '🤖', color: '#00ff00', speed: 2 },
+            builder: { emoji: '🔨', color: '#ff6b35', speed: 1.5 },
+            miner: { emoji: '⛏️', color: '#ffd700', speed: 1.8 }
+        };
+        
+        // Building types
+        const buildingTypes = {
+            factory: { emoji: '🏭', cost: { metal: 10, crystal: 5 }, produces: 'metal' },
+            power: { emoji: '⚡', cost: { metal: 8, crystal: 8 }, produces: 'energy' },
+            storage: { emoji: '📦', cost: { metal: 5, crystal: 10 }, produces: 'crystal' }
+        };
+        
+        // Initialize robots
+        function createRobot(x, y, type = 'collector') {
+            const robot = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type,
+                target: null,
+                carrying: null,
+                speed: robotTypes[type].speed,
+                direction: Math.random() * Math.PI * 2
+            };
+            
+            robots.push(robot);
+            return robot;
+        }
+        
+        // Create initial robots
+        createRobot(100, 100, 'collector');
+        createRobot(200, 150, 'builder');
+        createRobot(150, 200, 'miner');
+        
+        // Create initial resources
+        function createResource(x, y, type) {
+            const resource = {
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                type: type
+            };
+            
+            resources.push(resource);
+            return resource;
+        }
+        
+        // Add some initial resources
+        for (let i = 0; i < 10; i++) {
+            const types = ['metal', 'crystal', 'energy'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            createResource(
+                Math.random() * (window.innerWidth - 100) + 50,
+                Math.random() * (window.innerHeight - 100) + 50,
+                type
+            );
+        }
+        
+        // Game loop
+        function gameLoop() {
+            updateRobots();
+            updateBuildings();
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateRobots() {
+            robots.forEach(robot => {
+                // Find nearest resource if not carrying anything
+                if (!robot.carrying && !robot.target) {
+                    const nearest = findNearestResource(robot.x, robot.y);
+                    if (nearest) {
+                        robot.target = nearest;
+                    }
+                }
+                
+                // Move towards target
+                if (robot.target) {
+                    const dx = robot.target.x - robot.x;
+                    const dy = robot.target.y - robot.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 5) {
+                        // Reached target
+                        if (robot.target.type === 'resource') {
+                            // Collect resource
+                            robot.carrying = robot.target.type;
+                            resources = resources.filter(r => r.id !== robot.target.id);
+                            robot.target = null;
+                            createSparkle(robot.x, robot.y);
+                            
+                            // Add to inventory
+                            switch(robot.carrying) {
+                                case 'metal': metal++; money += 5; break;
+                                case 'crystal': crystal++; money += 10; break;
+                                case 'energy': energy++; money += 8; break;
+                            }
+                        }
+                    } else {
+                        // Move towards target
+                        robot.x += (dx / distance) * robot.speed;
+                        robot.y += (dy / distance) * robot.speed;
+                    }
+                } else if (!robot.carrying) {
+                    // Wander around
+                    robot.x += Math.cos(robot.direction) * robot.speed * 0.5;
+                    robot.y += Math.sin(robot.direction) * robot.speed * 0.5;
+                    
+                    // Bounce off walls
+                    if (robot.x < 0 || robot.x > window.innerWidth - 30) {
+                        robot.direction = Math.PI - robot.direction;
+                    }
+                    if (robot.y < 0 || robot.y > window.innerHeight - 30) {
+                        robot.direction = -robot.direction;
+                    }
+                }
+                
+                // Try to build if carrying resources
+                if (robot.carrying && Math.random() < 0.01) {
+                    tryBuild(robot);
+                }
+                
+                // Update robot visual
+                updateRobotVisual(robot);
+            });
+        }
+        
+        function findNearestResource(x, y) {
+            let nearest = null;
+            let minDistance = Infinity;
+            
+            resources.forEach(resource => {
+                const dx = resource.x - x;
+                const dy = resource.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearest = resource;
+                }
+            });
+            
+            return nearest;
+        }
+        
+        function tryBuild(robot) {
+            // Check if we have enough resources for any building
+            for (let buildingType in buildingTypes) {
+                const building = buildingTypes[buildingType];
+                if (metal >= building.cost.metal && crystal >= building.cost.crystal) {
+                    // Build the building
+                    metal -= building.cost.metal;
+                    crystal -= building.cost.crystal;
+                    robot.carrying = null;
+                    
+                    const buildingObj = {
+                        id: Date.now() + Math.random(),
+                        x: robot.x,
+                        y: robot.y,
+                        type: buildingType
+                    };
+                    
+                    buildings.push(buildingObj);
+                    createBuildingVisual(buildingObj);
+                    createMessage(`Built ${buildingType}!`);
+                    return;
+                }
+            }
+        }
+        
+        function updateBuildings() {
+            buildings.forEach(building => {
+                // Buildings produce resources over time
+                if (Math.random() < 0.01) {
+                    const buildingType = buildingTypes[building.type];
+                    switch(buildingType.produces) {
+                        case 'metal': metal++; money += 3; break;
+                        case 'crystal': crystal++; money += 6; break;
+                        case 'energy': energy++; money += 4; break;
+                    }
+                    createSparkle(building.x + 30, building.y + 30);
+                }
+            });
+        }
+        
+        function updateRobotVisual(robot) {
+            let robotElement = document.querySelector(`[data-robot-id="${robot.id}"]`);
+            
+            if (!robotElement) {
+                robotElement = document.createElement('div');
+                robotElement.className = 'robot';
+                robotElement.setAttribute('data-robot-id', robot.id);
+                document.getElementById('gameContainer').appendChild(robotElement);
+            }
+            
+            robotElement.style.left = robot.x + 'px';
+            robotElement.style.top = robot.y + 'px';
+            robotElement.style.background = robotTypes[robot.type].color;
+            robotElement.innerHTML = robotTypes[robot.type].emoji;
+            
+            // Add carrying indicator
+            if (robot.carrying) {
+                robotElement.style.boxShadow = `0 0 20px ${robotTypes[robot.type].color}`;
+            } else {
+                robotElement.style.boxShadow = 'none';
+            }
+        }
+        
+        function createBuildingVisual(building) {
+            const buildingElement = document.createElement('div');
+            buildingElement.className = `building ${building.type}`;
+            buildingElement.style.left = building.x + 'px';
+            buildingElement.style.top = building.y + 'px';
+            buildingElement.innerHTML = buildingTypes[building.type].emoji;
+            buildingElement.setAttribute('data-building-id', building.id);
+            document.getElementById('gameContainer').appendChild(buildingElement);
+        }
+        
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            document.getElementById('gameContainer').appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 1000);
+        }
+        
+        function createMessage(text) {
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.textContent = text;
+            document.getElementById('gameContainer').appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 2000);
+        }
+        
+        function updateUI() {
+            document.getElementById('robotCount').textContent = robots.length;
+            document.getElementById('factoryCount').textContent = buildings.filter(b => b.type === 'factory').length;
+            document.getElementById('powerCount').textContent = buildings.filter(b => b.type === 'power').length;
+            document.getElementById('storageCount').textContent = buildings.filter(b => b.type === 'storage').length;
+            document.getElementById('moneyCount').textContent = Math.floor(money);
+            document.getElementById('metalCount').textContent = metal;
+            document.getElementById('crystalCount').textContent = crystal;
+            document.getElementById('energyCount').textContent = energy;
+        }
+        
+        // UI Functions
+        function addRobot() {
+            if (money >= robotCost) {
+                money -= robotCost;
+                const types = Object.keys(robotTypes);
+                const type = types[Math.floor(Math.random() * types.length)];
+                createRobot(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    type
+                );
+                createMessage('New Robot Added!');
+            }
+        }
+        
+        function addResource(type) {
+            createResource(
+                Math.random() * (window.innerWidth - 100) + 50,
+                Math.random() * (window.innerHeight - 100) + 50,
+                type
+            );
+            createMessage(`Added ${type}!`);
+        }
+        
+        function clearAll() {
+            robots = [];
+            resources = [];
+            buildings = [];
+            metal = 0;
+            crystal = 0;
+            energy = 0;
+            money = 0;
+            
+            // Clear visuals
+            document.querySelectorAll('.robot, .resource, .building').forEach(el => el.remove());
+            
+            // Recreate initial robots
+            createRobot(100, 100, 'collector');
+            createRobot(200, 150, 'builder');
+            createRobot(150, 200, 'miner');
+            
+            // Recreate initial resources
+            for (let i = 0; i < 10; i++) {
+                const types = ['metal', 'crystal', 'energy'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                createResource(
+                    Math.random() * (window.innerWidth - 100) + 50,
+                    Math.random() * (window.innerHeight - 100) + 50,
+                    type
+                );
+            }
+            
+            createMessage('Factory Reset!');
+        }
+        
+        // Update resource visuals
+        function updateResourceVisuals() {
+            // Clear old resource visuals
+            document.querySelectorAll('.resource').forEach(el => el.remove());
+            
+            // Create new resource visuals
+            resources.forEach(resource => {
+                const resourceElement = document.createElement('div');
+                resourceElement.className = `resource ${resource.type}`;
+                resourceElement.style.left = resource.x + 'px';
+                resourceElement.style.top = resource.y + 'px';
+                resourceElement.setAttribute('data-resource-id', resource.id);
+                document.getElementById('gameContainer').appendChild(resourceElement);
+            });
+        }
+        
+        // Start the game
+        gameLoop();
+        
+        // Update resource visuals periodically
+        setInterval(updateResourceVisuals, 1000);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Keep robots and resources within bounds
+            robots.forEach(robot => {
+                if (robot.x > window.innerWidth - 30) robot.x = window.innerWidth - 30;
+                if (robot.y > window.innerHeight - 30) robot.y = window.innerHeight - 30;
+            });
+        });
+    </script>
+</body>
+</html>

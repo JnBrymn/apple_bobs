@@ -1,0 +1,888 @@
+<!--
+Idle Bee Game
+- Manage a bee hive and collect honey
+- Buy more bees to increase honey production
+- Upgrade hive and equipment
+- Research new bee types and honey varieties
+- Expand to multiple hives
+- Beautiful animated bees and flowers
+- Idle gameplay with automatic honey collection
+- Strategic upgrades and bee management
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐝 Idle Bee Empire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 50%, #8FBC8F 100%);
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%);
+            z-index: 1;
+        }
+        
+        .sun {
+            position: absolute;
+            top: 50px;
+            right: 100px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #FFD700;
+            animation: sunPulse 3s ease-in-out infinite;
+            z-index: 2;
+        }
+        
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            animation: cloudFloat 20s linear infinite;
+        }
+        
+        .cloud::before {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+        }
+        
+        @keyframes cloudFloat {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #8FBC8F, #98FB98);
+            z-index: 3;
+        }
+        
+        .bee-hive {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border-radius: 20px;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #FFD700;
+            animation: hiveGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes hiveGlow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px rgba(255, 215, 0, 0.3); }
+            50% { box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255, 215, 0, 0.6); }
+        }
+        
+        .bee {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 8;
+            animation: beeFly 4s ease-in-out infinite;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.6);
+        }
+        
+        .bee::before {
+            content: '🐝';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 24px;
+        }
+        
+        @keyframes beeFly {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            25% { transform: translateY(-20px) rotate(90deg) scale(1.1); }
+            50% { transform: translateY(-30px) rotate(180deg) scale(1.2); }
+            75% { transform: translateY(-20px) rotate(270deg) scale(1.1); }
+        }
+        
+        .flower {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 7;
+            animation: flowerBloom 5s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+        }
+        
+        .flower::before {
+            content: '🌸';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 40px;
+        }
+        
+        @keyframes flowerBloom {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+        }
+        
+        .honey-drop {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 9;
+            animation: honeyDrip 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+        
+        .honey-drop::before {
+            content: '🍯';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 18px;
+        }
+        
+        @keyframes honeyDrip {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(5px) scale(1.1); }
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .resource {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .shop-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-width: 280px;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin: 2px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .stats-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .upgrade-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            animation: notificationShow 3s ease-in-out;
+        }
+        
+        @keyframes notificationShow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        .honey-float {
+            position: absolute;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 16px;
+            animation: honeyFloat 2s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes honeyFloat {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            25% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+            50% { opacity: 1; transform: translateY(-25px) scale(1.1); }
+            75% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+        
+        .bee-queen {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            z-index: 11;
+            animation: queenFloat 6s ease-in-out infinite;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.8);
+        }
+        
+        .bee-queen::before {
+            content: '👑🐝';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 30px;
+        }
+        
+        @keyframes queenFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            25% { transform: translateY(-15px) rotate(90deg) scale(1.1); }
+            50% { transform: translateY(-25px) rotate(180deg) scale(1.2); }
+            75% { transform: translateY(-15px) rotate(270deg) scale(1.1); }
+        }
+        
+        .honey-jar {
+            position: absolute;
+            width: 25px;
+            height: 30px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 5px 5px 15px 15px;
+            z-index: 9;
+            animation: jarGlow 4s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .honey-jar::before {
+            content: '🍯';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            font-size: 25px;
+        }
+        
+        @keyframes jarGlow {
+            0%, 100% { box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.8); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="sky">
+            <div class="sun"></div>
+            <div class="cloud" style="top: 50px; width: 80px; height: 40px; animation-delay: 0s;"></div>
+            <div class="cloud" style="top: 100px; width: 60px; height: 30px; animation-delay: 5s;"></div>
+            <div class="cloud" style="top: 30px; width: 100px; height: 50px; animation-delay: 10s;"></div>
+        </div>
+        <div class="ground"></div>
+        
+        <div class="bee-hive" id="beeHive">
+            🏠
+        </div>
+        
+        <div class="ui-panel">
+            <h3>🐝 Bee Empire Stats</h3>
+            <div class="resource">
+                <span>🍯 Honey:</span>
+                <span id="honey">0</span>
+            </div>
+            <div class="resource">
+                <span>🐝 Worker Bees:</span>
+                <span id="workerBees">1</span>
+            </div>
+            <div class="resource">
+                <span>👑 Queen Bees:</span>
+                <span id="queenBees">0</span>
+            </div>
+            <div class="resource">
+                <span>🏠 Hives:</span>
+                <span id="hives">1</span>
+            </div>
+            <div class="resource">
+                <span>🌸 Flowers:</span>
+                <span id="flowers">5</span>
+            </div>
+            <div class="resource">
+                <span>⭐ Reputation:</span>
+                <span id="reputation">10</span>
+            </div>
+            <div class="resource">
+                <span>⚡ Honey per Second:</span>
+                <span id="honeyPerSecond">0.1</span>
+            </div>
+        </div>
+        
+        <div class="shop-panel">
+            <h3>🛒 Bee Shop</h3>
+            <div class="shop-item">
+                <span>🐝 Buy Worker Bee (10 honey)</span>
+                <button class="btn" onclick="buyWorkerBee()">Buy!</button>
+            </div>
+            <div class="shop-item">
+                <span>👑 Buy Queen Bee (100 honey)</span>
+                <button class="btn" onclick="buyQueenBee()">Buy!</button>
+            </div>
+            <div class="shop-item">
+                <span>🏠 Build New Hive (500 honey)</span>
+                <button class="btn" onclick="buildHive()">Build!</button>
+            </div>
+            <div class="shop-item">
+                <span>🌸 Plant Flowers (50 honey)</span>
+                <button class="btn" onclick="plantFlowers()">Plant!</button>
+            </div>
+            <div class="shop-item">
+                <span>🍯 Upgrade Honey Storage (200 honey)</span>
+                <button class="btn" onclick="upgradeStorage()">Upgrade!</button>
+            </div>
+            <div class="shop-item">
+                <span>🔬 Research New Bees (1000 honey)</span>
+                <button class="btn" onclick="researchBees()">Research!</button>
+            </div>
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn" onclick="showUpgrades()">⬆️ Upgrades</button>
+                <button class="btn" onclick="collectAllHoney()">🍯 Collect All!</button>
+            </div>
+        </div>
+        
+        <div class="stats-panel">
+            <h4>📊 Production Stats</h4>
+            <div class="resource">
+                <span>Total Honey Made:</span>
+                <span id="totalHoneyMade">0</span>
+            </div>
+            <div class="resource">
+                <span>Bees Working:</span>
+                <span id="beesWorking">1</span>
+            </div>
+            <div class="resource">
+                <span>Flowers Visited:</span>
+                <span id="flowersVisited">0</span>
+            </div>
+            <div class="resource">
+                <span>Honey Efficiency:</span>
+                <span id="honeyEfficiency">100</span>%
+            </div>
+        </div>
+        
+        <div class="upgrade-panel">
+            <h4>⬆️ Hive Upgrades</h4>
+            <div class="resource">
+                <span>🏠 Hive Level:</span>
+                <span id="hiveLevel">1</span>
+            </div>
+            <div class="resource">
+                <span>🍯 Storage Capacity:</span>
+                <span id="storageCapacity">1000</span>
+            </div>
+            <div class="resource">
+                <span>🌸 Flower Bonus:</span>
+                <span id="flowerBonus">10</span>%
+            </div>
+            <button class="btn" onclick="upgradeHive()">🏠 Upgrade Hive (🍯 300)</button>
+            <button class="btn" onclick="upgradeEfficiency()">⚡ Efficiency +10% (🍯 150)</button>
+            <button class="btn" onclick="upgradeFlowers()">🌸 Flower Power +5% (🍯 100)</button>
+        </div>
+    </div>
+    
+    <div class="upgrade-panel" id="upgradePanel" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;">
+        <h3>⬆️ Advanced Upgrades</h3>
+        <div class="shop-item">
+            <span>🌟 Golden Bees (2x production)</span>
+            <span>🍯 2000</span>
+            <button class="btn" onclick="buyUpgrade('goldenBees')">Buy!</button>
+        </div>
+        <div class="shop-item">
+            <span>🚀 Speed Bees (3x speed)</span>
+            <span>🍯 5000</span>
+            <button class="btn" onclick="buyUpgrade('speedBees')">Buy!</button>
+        </div>
+        <div class="shop-item">
+            <span>💎 Diamond Hive (5x storage)</span>
+            <span>🍯 10000</span>
+            <button class="btn" onclick="buyUpgrade('diamondHive')">Buy!</button>
+        </div>
+        <div class="shop-item">
+            <span>🌈 Rainbow Flowers (2x flower bonus)</span>
+            <span>🍯 3000</span>
+            <button class="btn" onclick="buyUpgrade('rainbowFlowers')">Buy!</button>
+        </div>
+        <div style="margin-top: 15px; text-align: center;">
+            <button class="btn" onclick="hideUpgrades()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            honey: 0,
+            workerBees: 1,
+            queenBees: 0,
+            hives: 1,
+            flowers: 5,
+            reputation: 10,
+            honeyPerSecond: 0.1,
+            totalHoneyMade: 0,
+            beesWorking: 1,
+            flowersVisited: 0,
+            honeyEfficiency: 100,
+            hiveLevel: 1,
+            storageCapacity: 1000,
+            flowerBonus: 10,
+            lastUpdate: Date.now(),
+            upgrades: {
+                goldenBees: false,
+                speedBees: false,
+                diamondHive: false,
+                rainbowFlowers: false
+            },
+            beeTypes: {
+                worker: { cost: 10, production: 0.1, speed: 1 },
+                queen: { cost: 100, production: 1, speed: 2 }
+            }
+        };
+        
+        function updateUI() {
+            document.getElementById('honey').textContent = Math.floor(gameData.honey);
+            document.getElementById('workerBees').textContent = gameData.workerBees;
+            document.getElementById('queenBees').textContent = gameData.queenBees;
+            document.getElementById('hives').textContent = gameData.hives;
+            document.getElementById('flowers').textContent = gameData.flowers;
+            document.getElementById('reputation').textContent = gameData.reputation;
+            document.getElementById('honeyPerSecond').textContent = gameData.honeyPerSecond.toFixed(1);
+            document.getElementById('totalHoneyMade').textContent = Math.floor(gameData.totalHoneyMade);
+            document.getElementById('beesWorking').textContent = gameData.beesWorking;
+            document.getElementById('flowersVisited').textContent = gameData.flowersVisited;
+            document.getElementById('honeyEfficiency').textContent = gameData.honeyEfficiency;
+            document.getElementById('hiveLevel').textContent = gameData.hiveLevel;
+            document.getElementById('storageCapacity').textContent = gameData.storageCapacity;
+            document.getElementById('flowerBonus').textContent = gameData.flowerBonus;
+        }
+        
+        function buyWorkerBee() {
+            if (gameData.honey >= 10) {
+                gameData.honey -= 10;
+                gameData.workerBees++;
+                gameData.beesWorking++;
+                updateHoneyProduction();
+                createBee();
+                showNotification('🐝 Worker bee purchased!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function buyQueenBee() {
+            if (gameData.honey >= 100) {
+                gameData.honey -= 100;
+                gameData.queenBees++;
+                gameData.beesWorking += 2;
+                updateHoneyProduction();
+                createQueenBee();
+                showNotification('👑 Queen bee purchased!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function buildHive() {
+            if (gameData.honey >= 500) {
+                gameData.honey -= 500;
+                gameData.hives++;
+                gameData.storageCapacity += 500;
+                createHive();
+                showNotification('🏠 New hive built!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function plantFlowers() {
+            if (gameData.honey >= 50) {
+                gameData.honey -= 50;
+                gameData.flowers += 3;
+                createFlowers();
+                updateHoneyProduction();
+                showNotification('🌸 Flowers planted!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeStorage() {
+            if (gameData.honey >= 200) {
+                gameData.honey -= 200;
+                gameData.storageCapacity += 1000;
+                showNotification('🍯 Storage upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function researchBees() {
+            if (gameData.honey >= 1000) {
+                gameData.honey -= 1000;
+                gameData.reputation += 20;
+                showNotification('🔬 New bee research completed! Reputation +20!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeHive() {
+            if (gameData.honey >= 300) {
+                gameData.honey -= 300;
+                gameData.hiveLevel++;
+                gameData.honeyEfficiency += 20;
+                updateHoneyProduction();
+                showNotification('🏠 Hive upgraded! Efficiency +20%!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeEfficiency() {
+            if (gameData.honey >= 150) {
+                gameData.honey -= 150;
+                gameData.honeyEfficiency += 10;
+                updateHoneyProduction();
+                showNotification('⚡ Efficiency upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function upgradeFlowers() {
+            if (gameData.honey >= 100) {
+                gameData.honey -= 100;
+                gameData.flowerBonus += 5;
+                updateHoneyProduction();
+                showNotification('🌸 Flower power upgraded!');
+                updateUI();
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function updateHoneyProduction() {
+            const baseProduction = gameData.workerBees * 0.1 + gameData.queenBees * 1;
+            const efficiencyBonus = gameData.honeyEfficiency / 100;
+            const flowerBonus = gameData.flowerBonus / 100;
+            const upgradeBonus = gameData.upgrades.goldenBees ? 2 : 1;
+            const speedBonus = gameData.upgrades.speedBees ? 3 : 1;
+            const rainbowBonus = gameData.upgrades.rainbowFlowers ? 2 : 1;
+            
+            gameData.honeyPerSecond = baseProduction * efficiencyBonus * (1 + flowerBonus) * upgradeBonus * speedBonus * rainbowBonus;
+        }
+        
+        function createBee() {
+            const bee = document.createElement('div');
+            bee.className = 'bee';
+            bee.style.left = (Math.random() * window.innerWidth) + 'px';
+            bee.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            bee.style.animationDelay = Math.random() * 2 + 's';
+            document.querySelector('.game-container').appendChild(bee);
+            
+            setTimeout(() => {
+                if (bee.parentNode) {
+                    bee.remove();
+                }
+            }, 4000);
+        }
+        
+        function createQueenBee() {
+            const queen = document.createElement('div');
+            queen.className = 'bee-queen';
+            queen.style.left = (Math.random() * window.innerWidth) + 'px';
+            queen.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            queen.style.animationDelay = Math.random() * 2 + 's';
+            document.querySelector('.game-container').appendChild(queen);
+            
+            setTimeout(() => {
+                if (queen.parentNode) {
+                    queen.remove();
+                }
+            }, 6000);
+        }
+        
+        function createHive() {
+            const hive = document.createElement('div');
+            hive.className = 'bee-hive';
+            hive.textContent = '🏠';
+            hive.style.left = (Math.random() * (window.innerWidth - 120)) + 'px';
+            hive.style.bottom = (Math.random() * 200 + 50) + 'px';
+            document.querySelector('.game-container').appendChild(hive);
+        }
+        
+        function createFlowers() {
+            for (let i = 0; i < 3; i++) {
+                const flower = document.createElement('div');
+                flower.className = 'flower';
+                flower.style.left = (Math.random() * window.innerWidth) + 'px';
+                flower.style.bottom = (Math.random() * 150 + 20) + 'px';
+                flower.style.animationDelay = Math.random() * 2 + 's';
+                document.querySelector('.game-container').appendChild(flower);
+            }
+        }
+        
+        function createHoneyDrop() {
+            const honeyDrop = document.createElement('div');
+            honeyDrop.className = 'honey-drop';
+            honeyDrop.style.left = (Math.random() * window.innerWidth) + 'px';
+            honeyDrop.style.bottom = (Math.random() * 200 + 50) + 'px';
+            document.querySelector('.game-container').appendChild(honeyDrop);
+            
+            setTimeout(() => {
+                if (honeyDrop.parentNode) {
+                    honeyDrop.remove();
+                }
+            }, 2000);
+        }
+        
+        function showUpgrades() {
+            document.getElementById('upgradePanel').style.display = 'block';
+        }
+        
+        function hideUpgrades() {
+            document.getElementById('upgradePanel').style.display = 'none';
+        }
+        
+        function buyUpgrade(type) {
+            const costs = {
+                goldenBees: 2000,
+                speedBees: 5000,
+                diamondHive: 10000,
+                rainbowFlowers: 3000
+            };
+            
+            if (!gameData.upgrades[type] && gameData.honey >= costs[type]) {
+                gameData.honey -= costs[type];
+                gameData.upgrades[type] = true;
+                
+                switch(type) {
+                    case 'goldenBees':
+                        showNotification('🌟 Golden bees unlocked! 2x production!');
+                        break;
+                    case 'speedBees':
+                        showNotification('🚀 Speed bees unlocked! 3x speed!');
+                        break;
+                    case 'diamondHive':
+                        gameData.storageCapacity *= 5;
+                        showNotification('💎 Diamond hive! 5x storage!');
+                        break;
+                    case 'rainbowFlowers':
+                        showNotification('🌈 Rainbow flowers! 2x flower bonus!');
+                        break;
+                }
+                
+                updateHoneyProduction();
+                updateUI();
+            } else if (gameData.upgrades[type]) {
+                showNotification('❌ Already purchased!');
+            } else {
+                showNotification('❌ Not enough honey!');
+            }
+        }
+        
+        function collectAllHoney() {
+            if (gameData.honey > 0) {
+                showHoneyFloat(gameData.honey);
+                showNotification(`🍯 Collected ${Math.floor(gameData.honey)} honey!`);
+                gameData.honey = 0;
+                updateUI();
+            }
+        }
+        
+        function showHoneyFloat(amount) {
+            const honeyFloat = document.createElement('div');
+            honeyFloat.className = 'honey-float';
+            honeyFloat.textContent = `+${Math.floor(amount)}`;
+            honeyFloat.style.left = (Math.random() * window.innerWidth) + 'px';
+            honeyFloat.style.top = (Math.random() * 200 + window.innerHeight - 300) + 'px';
+            document.querySelector('.game-container').appendChild(honeyFloat);
+            
+            setTimeout(() => {
+                if (honeyFloat.parentNode) {
+                    honeyFloat.remove();
+                }
+            }, 2000);
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        function gameLoop() {
+            const now = Date.now();
+            const deltaTime = (now - gameData.lastUpdate) / 1000;
+            
+            // Auto honey production
+            const honeyGained = gameData.honeyPerSecond * deltaTime;
+            gameData.honey += honeyGained;
+            gameData.totalHoneyMade += honeyGained;
+            
+            // Cap honey at storage capacity
+            if (gameData.honey > gameData.storageCapacity) {
+                gameData.honey = gameData.storageCapacity;
+            }
+            
+            // Create visual effects occasionally
+            if (Math.random() < 0.01) {
+                createHoneyDrop();
+            }
+            
+            if (Math.random() < 0.005) {
+                createBee();
+            }
+            
+            gameData.lastUpdate = now;
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize
+        updateUI();
+        gameLoop();
+        
+        console.log('🐝 Idle Bee Empire loaded! Build your buzzing empire!');
+    </script>
+</body>
+</html>
