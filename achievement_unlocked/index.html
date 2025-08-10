@@ -1,0 +1,1467 @@
+<!-- ACHIEVEMENT UNLOCKED GAME - Unlock all 99 achievements! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 ACHIEVEMENT UNLOCKED</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            height: calc(100vh - 40px);
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #fff;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: white;
+            font-size: 3em;
+            margin: 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .stats {
+            color: white;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        .main-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto;
+        }
+
+        .achievements-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            overflow-y: auto;
+        }
+
+        .achievement {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            border: 2px solid #95a5a6;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            color: white;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            cursor: pointer;
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            border-color: #d35400;
+            opacity: 1;
+            animation: achievementGlow 2s ease-in-out infinite alternate;
+            transform: scale(1.02);
+        }
+
+        @keyframes achievementGlow {
+            from { box-shadow: 0 0 10px #f39c12; }
+            to { box-shadow: 0 0 20px #f39c12, 0 0 30px #e67e22; }
+        }
+
+        .achievement-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .achievement-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .achievement-progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .achievement.unlocked .achievement-progress-fill {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+            border: 3px solid #229954;
+        }
+
+        .click-area {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: 3px solid #2980b9;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .click-area:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.02);
+        }
+
+        .click-area:active {
+            transform: scale(0.98);
+        }
+
+        .click-text {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .click-count {
+            font-size: 1.5em;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: 2px solid #c0392b;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+            transform: scale(1.05);
+        }
+
+        .control-btn:disabled {
+            background: #7f8c8d;
+            border-color: #95a5a6;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .platformer-area {
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+        }
+
+        .platformer-canvas {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            border: 3px solid #2c3e50;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player {
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            border: 2px solid #c0392b;
+            border-radius: 50%;
+            position: absolute;
+            top: 220px;
+            left: 20px;
+            transition: all 0.1s ease;
+            z-index: 10;
+        }
+
+        .platform {
+            width: 60px;
+            height: 10px;
+            background: linear-gradient(45deg, #8B4513, #A0522D);
+            border: 2px solid #654321;
+            border-radius: 5px;
+            position: absolute;
+            z-index: 5;
+        }
+
+        .enemy {
+            width: 15px;
+            height: 15px;
+            background: #9B59B6;
+            border: 2px solid #8E44AD;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 8;
+            animation: enemyMove 2s ease-in-out infinite;
+        }
+
+        @keyframes enemyMove {
+            0%, 100% { transform: translateX(0px); }
+            50% { transform: translateX(30px); }
+        }
+
+        .boss {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #FF4500, #DC143C);
+            border: 3px solid #B22222;
+            border-radius: 10px;
+            position: absolute;
+            z-index: 9;
+            animation: bossGlow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes bossGlow {
+            from { box-shadow: 0 0 10px #FF4500; }
+            to { box-shadow: 0 0 20px #FF4500, 0 0 30px #DC143C; }
+        }
+
+        .collectible {
+            width: 12px;
+            height: 12px;
+            background: #FFD700;
+            border: 2px solid #FFA500;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 7;
+            animation: collectibleFloat 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes collectibleFloat {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-5px); }
+        }
+
+        .secret-area {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #9400D3, #8A2BE2);
+            border: 2px solid #4B0082;
+            border-radius: 50%;
+            position: absolute;
+            z-index: 6;
+            animation: secretPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes secretPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .platformer-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .platformer-btn {
+            padding: 10px 15px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: 2px solid #2980b9;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .platformer-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+
+        .platformer-btn:active {
+            transform: scale(0.95);
+        }
+
+        .platformer-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .platformer-stat {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .platformer-stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #f39c12;
+        }
+
+        .platformer-stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .boss-fight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #FF4500, #DC143C);
+            border-radius: 10px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .boss-health {
+            width: 80%;
+            height: 20px;
+            background: #2c3e50;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .boss-health-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .boss-attack {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: 3px solid #c0392b;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .boss-attack:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+            transform: scale(1.1);
+        }
+
+        .boss-attack:active {
+            transform: scale(0.95);
+        }
+
+        .level-complete {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border-radius: 10px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .level-complete h3 {
+            color: white;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .level-complete-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: 3px solid #2980b9;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .level-complete-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🏆 ACHIEVEMENT UNLOCKED</h1>
+            <div class="stats">Unlock all 99 achievements to win! | Progress: <span id="progress">0</span>/99</div>
+        </div>
+        
+        <div class="main-area">
+            <div class="click-area" onclick="clickGame()">
+                <div class="click-text">🎯 CLICK ME!</div>
+                <div class="click-count">Clicks: <span id="clickCount">0</span></div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn" onclick="resetGame()">RESET GAME</button>
+                <button class="control-btn" onclick="exportSave()">EXPORT SAVE</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalClicks">0</div>
+                    <div class="stat-label">Total Clicks</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="playTime">0s</div>
+                    <div class="stat-label">Play Time</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="clickRate">0/s</div>
+                    <div class="stat-label">Click Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="resetCount">0</div>
+                    <div class="stat-label">Resets</div>
+                </div>
+            </div>
+
+            <div class="platformer-area">
+                <h3 style="color: white; text-align: center; margin-bottom: 15px;">🎮 PLATFORMER ADVENTURE</h3>
+                <div class="platformer-canvas" id="platformerCanvas">
+                    <div class="player" id="player"></div>
+                    <!-- Platforms, enemies, collectibles, and secret areas will be generated here -->
+                    
+                    <div class="boss-fight" id="bossFight">
+                        <h3 style="color: white; margin-bottom: 15px;">BOSS FIGHT!</h3>
+                        <div class="boss-health">
+                            <div class="boss-health-fill" id="bossHealth"></div>
+                        </div>
+                        <button class="boss-attack" onclick="attackBoss()">ATTACK BOSS!</button>
+                    </div>
+                    
+                    <div class="level-complete" id="levelComplete">
+                        <h3>🎉 LEVEL COMPLETE!</h3>
+                        <button class="level-complete-btn" onclick="nextLevel()">NEXT LEVEL</button>
+                    </div>
+                </div>
+                
+                <div class="platformer-controls">
+                    <button class="platformer-btn" onclick="moveLeft()">← LEFT</button>
+                    <button class="platformer-btn" onclick="jump()">JUMP</button>
+                    <button class="platformer-btn" onclick="moveRight()">RIGHT →</button>
+                </div>
+                
+                <div class="platformer-stats">
+                    <div class="platformer-stat">
+                        <div class="platformer-stat-value" id="platformerLevel">1</div>
+                        <div class="platformer-stat-label">Level</div>
+                    </div>
+                    <div class="platformer-stat">
+                        <div class="platformer-stat-value" id="collectiblesFound">0</div>
+                        <div class="platformer-stat-label">Collectibles</div>
+                    </div>
+                    <div class="platformer-stat">
+                        <div class="platformer-stat-value" id="bossesDefeated">0</div>
+                        <div class="platformer-stat-label">Bosses</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="achievements-panel">
+            <h3 style="color: white; text-align: center; margin-bottom: 20px;">🏆 ACHIEVEMENTS</h3>
+            <div id="achievementsList">
+                <!-- Achievements will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+    <script>
+        // Game variables
+        let clicks = 0;
+        let totalClicks = 0;
+        let playTime = 0;
+        let resetCount = 0;
+        let clickRate = 0;
+        let lastClickTime = Date.now();
+        let gameStartTime = Date.now();
+        let gameInterval;
+
+        // All 99 achievements!
+        let achievements = [
+            // Clicking achievements (1-20)
+            { id: 'first_click', title: 'First Click', desc: 'Click once', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'clicker', title: 'Clicker', desc: 'Click 10 times', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'clicker_pro', title: 'Clicker Pro', desc: 'Click 50 times', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'clicker_master', title: 'Clicker Master', desc: 'Click 100 times', unlocked: false, progress: 0, maxProgress: 100 },
+            { id: 'clicker_god', title: 'Clicker God', desc: 'Click 500 times', unlocked: false, progress: 0, maxProgress: 500 },
+            { id: 'clicker_legend', title: 'Clicker Legend', desc: 'Click 1,000 times', unlocked: false, progress: 0, maxProgress: 1000 },
+            { id: 'clicker_myth', title: 'Clicker Myth', desc: 'Click 5,000 times', unlocked: false, progress: 0, maxProgress: 5000 },
+            { id: 'clicker_eternal', title: 'Clicker Eternal', desc: 'Click 10,000 times', unlocked: false, progress: 0, maxProgress: 10000 },
+            { id: 'clicker_infinite', title: 'Clicker Infinite', desc: 'Click 50,000 times', unlocked: false, progress: 0, maxProgress: 50000 },
+            { id: 'clicker_ultimate', title: 'Clicker Ultimate', desc: 'Click 100,000 times', unlocked: false, progress: 0, maxProgress: 100000 },
+            { id: 'total_clicker', title: 'Total Clicker', desc: 'Total clicks: 1,000', unlocked: false, progress: 0, maxProgress: 1000 },
+            { id: 'total_clicker_pro', title: 'Total Clicker Pro', desc: 'Total clicks: 10,000', unlocked: false, progress: 0, maxProgress: 10000 },
+            { id: 'total_clicker_master', title: 'Total Clicker Master', desc: 'Total clicks: 100,000', unlocked: false, progress: 0, maxProgress: 100000 },
+            { id: 'total_clicker_god', title: 'Total Clicker God', desc: 'Total clicks: 1,000,000', unlocked: false, progress: 0, maxProgress: 1000000 },
+            { id: 'total_clicker_legend', title: 'Total Clicker Legend', desc: 'Total clicks: 10,000,000', unlocked: false, progress: 0, maxProgress: 10000000 },
+            { id: 'speed_clicker', title: 'Speed Clicker', desc: 'Click 10 times in 1 second', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'speed_clicker_pro', title: 'Speed Clicker Pro', desc: 'Click 20 times in 1 second', unlocked: false, progress: 0, maxProgress: 20 },
+            { id: 'speed_clicker_master', title: 'Speed Clicker Master', desc: 'Click 50 times in 1 second', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'speed_clicker_god', title: 'Speed Clicker God', desc: 'Click 100 times in 1 second', unlocked: false, progress: 0, maxProgress: 100 },
+            { id: 'speed_clicker_legend', title: 'Speed Clicker Legend', desc: 'Click 200 times in 1 second', unlocked: false, progress: 0, maxProgress: 200 },
+
+            // Time achievements (21-40)
+            { id: 'early_bird', title: 'Early Bird', desc: 'Play for 1 minute', unlocked: false, progress: 0, maxProgress: 60000 },
+            { id: 'dedicated_player', title: 'Dedicated Player', desc: 'Play for 5 minutes', unlocked: false, progress: 0, maxProgress: 300000 },
+            { id: 'hardcore_player', title: 'Hardcore Player', desc: 'Play for 15 minutes', unlocked: false, progress: 0, maxProgress: 900000 },
+            { id: 'addicted_player', title: 'Addicted Player', desc: 'Play for 1 hour', unlocked: false, progress: 0, maxProgress: 3600000 },
+            { id: 'obsessed_player', title: 'Obsessed Player', desc: 'Play for 5 hours', unlocked: false, progress: 0, maxProgress: 18000000 },
+            { id: 'insane_player', title: 'Insane Player', desc: 'Play for 24 hours', unlocked: false, progress: 0, maxProgress: 86400000 },
+            { id: 'eternal_player', title: 'Eternal Player', desc: 'Play for 7 days', unlocked: false, progress: 0, maxProgress: 604800000 },
+            { id: 'time_traveler', title: 'Time Traveler', desc: 'Play for 30 days', unlocked: false, progress: 0, maxProgress: 2592000000 },
+            { id: 'time_lord', title: 'Time Lord', desc: 'Play for 100 days', unlocked: false, progress: 0, maxProgress: 8640000000 },
+            { id: 'time_god', title: 'Time God', desc: 'Play for 1 year', unlocked: false, progress: 0, maxProgress: 31536000000 },
+            { id: 'quick_clicker', title: 'Quick Clicker', desc: 'Click within 1 second of starting', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'patience_test', title: 'Patience Test', desc: 'Wait 10 seconds without clicking', unlocked: false, progress: 0, maxProgress: 10000 },
+            { id: 'zen_master', title: 'Zen Master', desc: 'Wait 1 minute without clicking', unlocked: false, progress: 0, maxProgress: 60000 },
+            { id: 'meditation_expert', title: 'Meditation Expert', desc: 'Wait 5 minutes without clicking', unlocked: false, progress: 0, maxProgress: 300000 },
+            { id: 'buddha_level', title: 'Buddha Level', desc: 'Wait 15 minutes without clicking', unlocked: false, progress: 0, maxProgress: 900000 },
+            { id: 'enlightened_one', title: 'Enlightened One', desc: 'Wait 1 hour without clicking', unlocked: false, progress: 0, maxProgress: 3600000 },
+            { id: 'time_paradox', title: 'Time Paradox', desc: 'Play for exactly 1 minute', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'perfect_timing', title: 'Perfect Timing', desc: 'Click exactly 100 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'rhythm_master', title: 'Rhythm Master', desc: 'Click 10 times with exactly 1 second between each', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'chaos_clicker', title: 'Chaos Clicker', desc: 'Click randomly for 30 seconds', unlocked: false, progress: 0, maxProgress: 30000 },
+
+            // Reset achievements (41-60)
+            { id: 'first_reset', title: 'First Reset', desc: 'Reset the game once', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'reset_regular', title: 'Reset Regular', desc: 'Reset 5 times', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'reset_master', title: 'Reset Master', desc: 'Reset 20 times', unlocked: false, progress: 0, maxProgress: 20 },
+            { id: 'reset_god', title: 'Reset God', desc: 'Reset 100 times', unlocked: false, progress: 0, maxProgress: 100 },
+            { id: 'reset_legend', title: 'Reset Legend', desc: 'Reset 500 times', unlocked: false, progress: 0, maxProgress: 500 },
+            { id: 'reset_myth', title: 'Reset Myth', desc: 'Reset 1,000 times', unlocked: false, progress: 0, maxProgress: 1000 },
+            { id: 'reset_eternal', title: 'Reset Eternal', desc: 'Reset 5,000 times', unlocked: false, progress: 0, maxProgress: 5000 },
+            { id: 'reset_infinite', title: 'Reset Infinite', desc: 'Reset 10,000 times', unlocked: false, progress: 0, maxProgress: 10000 },
+            { id: 'reset_ultimate', title: 'Reset Ultimate', desc: 'Reset 50,000 times', unlocked: false, progress: 0, maxProgress: 50000 },
+            { id: 'reset_paradox', title: 'Reset Paradox', desc: 'Reset 100,000 times', unlocked: false, progress: 0, maxProgress: 100000 },
+            { id: 'quick_reset', title: 'Quick Reset', desc: 'Reset within 10 seconds of starting', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'patience_reset', title: 'Patience Reset', desc: 'Reset after playing for 1 hour', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'no_reset_run', title: 'No Reset Run', desc: 'Play for 1 hour without resetting', unlocked: false, progress: 0, maxProgress: 3600000 },
+            { id: 'reset_spree', title: 'Reset Spree', desc: 'Reset 10 times in 1 minute', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'reset_mania', title: 'Reset Mania', desc: 'Reset 50 times in 5 minutes', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'reset_chaos', title: 'Reset Chaos', desc: 'Reset 100 times in 10 minutes', unlocked: false, progress: 0, maxProgress: 100 },
+            { id: 'reset_zen', title: 'Reset Zen', desc: 'Reset exactly 42 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'reset_perfect', title: 'Reset Perfect', desc: 'Reset exactly 100 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'reset_masterpiece', title: 'Reset Masterpiece', desc: 'Reset exactly 1,000 times', unlocked: false, progress: 0, maxProgress: 1 },
+
+            // Achievement progress achievements (61-80)
+            { id: 'achievement_hunter', title: 'Achievement Hunter', desc: 'Unlock 10 achievements', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'achievement_collector', title: 'Achievement Collector', desc: 'Unlock 25 achievements', unlocked: false, progress: 0, maxProgress: 25 },
+            { id: 'achievement_master', title: 'Achievement Master', desc: 'Unlock 50 achievements', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'achievement_god', title: 'Achievement God', desc: 'Unlock 75 achievements', unlocked: false, progress: 0, maxProgress: 75 },
+            { id: 'achievement_legend', title: 'Achievement Legend', desc: 'Unlock 90 achievements', unlocked: false, progress: 0, maxProgress: 90 },
+            { id: 'achievement_myth', title: 'Achievement Myth', desc: 'Unlock 95 achievements', unlocked: false, progress: 0, maxProgress: 95 },
+            { id: 'achievement_eternal', title: 'Achievement Eternal', desc: 'Unlock 98 achievements', unlocked: false, progress: 0, maxProgress: 98 },
+            { id: 'achievement_completionist', title: 'Achievement Completionist', desc: 'Unlock all 99 achievements', unlocked: false, progress: 0, maxProgress: 99 },
+            { id: 'first_ten', title: 'First Ten', desc: 'Unlock your first 10 achievements', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'quarter_way', title: 'Quarter Way', desc: 'Unlock 25 achievements', unlocked: false, progress: 0, maxProgress: 25 },
+            { id: 'half_way', title: 'Half Way', desc: 'Unlock 50 achievements', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'three_quarters', title: 'Three Quarters', desc: 'Unlock 75 achievements', unlocked: false, progress: 0, maxProgress: 75 },
+            { id: 'almost_there', title: 'Almost There', desc: 'Unlock 90 achievements', unlocked: false, progress: 0, maxProgress: 90 },
+            { id: 'final_push', title: 'Final Push', desc: 'Unlock 95 achievements', unlocked: false, progress: 0, maxProgress: 95 },
+            { id: 'last_leg', title: 'Last Leg', desc: 'Unlock 98 achievements', unlocked: false, progress: 0, maxProgress: 98 },
+            { id: 'victory_lap', title: 'Victory Lap', desc: 'Unlock 99 achievements', unlocked: false, progress: 0, maxProgress: 99 },
+            { id: 'achievement_streak', title: 'Achievement Streak', desc: 'Unlock 5 achievements in a row', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'achievement_chain', title: 'Achievement Chain', desc: 'Unlock 10 achievements in a row', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'achievement_combo', title: 'Achievement Combo', desc: 'Unlock 20 achievements in a row', unlocked: false, progress: 0, maxProgress: 20 },
+
+            // Special achievements (81-99)
+            { id: 'lucky_click', title: 'Lucky Click', desc: 'Click exactly 777 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'unlucky_click', title: 'Unlucky Click', desc: 'Click exactly 666 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'perfect_click', title: 'Perfect Click', desc: 'Click exactly 1,000 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'binary_click', title: 'Binary Click', desc: 'Click exactly 1,024 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'pi_click', title: 'Pi Click', desc: 'Click exactly 3,141 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'euler_click', title: 'Euler Click', desc: 'Click exactly 2,718 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'golden_click', title: 'Golden Click', desc: 'Click exactly 1,618 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'infinity_click', title: 'Infinity Click', desc: 'Click exactly 8,888 times', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'zero_click', title: 'Zero Click', desc: 'Don\'t click for 1 minute after starting', unlocked: false, progress: 0, maxProgress: 60000 },
+            { id: 'max_click', title: 'Max Click', desc: 'Click 999,999 times', unlocked: false, progress: 0, maxProgress: 999999 },
+            { id: 'minimalist', title: 'Minimalist', desc: 'Unlock 1 achievement with only 1 click', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'efficient_player', title: 'Efficient Player', desc: 'Unlock 10 achievements with less than 100 clicks', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'speed_runner', title: 'Speed Runner', desc: 'Unlock 25 achievements in under 5 minutes', unlocked: false, progress: 0, maxProgress: 25 },
+            { id: 'marathon_runner', title: 'Marathon Runner', desc: 'Unlock 50 achievements in under 1 hour', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'ultra_runner', title: 'Ultra Runner', desc: 'Unlock 75 achievements in under 24 hours', unlocked: false, progress: 0, maxProgress: 75 },
+            { id: 'endurance_runner', title: 'Endurance Runner', desc: 'Unlock 90 achievements in under 7 days', unlocked: false, progress: 0, maxProgress: 90 },
+            { id: 'legendary_runner', title: 'Legendary Runner', desc: 'Unlock 95 achievements in under 30 days', unlocked: false, progress: 0, maxProgress: 95 },
+            { id: 'mythical_runner', title: 'Mythical Runner', desc: 'Unlock 98 achievements in under 100 days', unlocked: false, progress: 0, maxProgress: 98 },
+            { id: 'eternal_runner', title: 'Eternal Runner', desc: 'Unlock all 99 achievements in under 1 year', unlocked: false, progress: 0, maxProgress: 99 },
+
+            // Platformer achievements (100-120)
+            { id: 'platformer_starter', title: 'Platformer Starter', desc: 'Complete platformer level 1', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'platformer_explorer', title: 'Platformer Explorer', desc: 'Complete 5 platformer levels', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'platformer_master', title: 'Platformer Master', desc: 'Complete 10 platformer levels', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'platformer_legend', title: 'Platformer Legend', desc: 'Complete 20 platformer levels', unlocked: false, progress: 0, maxProgress: 20 },
+            { id: 'collector_starter', title: 'Collector Starter', desc: 'Find 5 collectibles', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'collector_master', title: 'Collector Master', desc: 'Find 25 collectibles', unlocked: false, progress: 0, maxProgress: 25 },
+            { id: 'collector_legend', title: 'Collector Legend', desc: 'Find 100 collectibles', unlocked: false, progress: 0, maxProgress: 100 },
+            { id: 'boss_slayer', title: 'Boss Slayer', desc: 'Defeat your first boss', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'boss_master', title: 'Boss Master', desc: 'Defeat 5 bosses', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'boss_legend', title: 'Boss Legend', desc: 'Defeat 20 bosses', unlocked: false, progress: 0, maxProgress: 20 },
+            { id: 'secret_finder', title: 'Secret Finder', desc: 'Discover your first secret area', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'secret_explorer', title: 'Secret Explorer', desc: 'Discover 10 secret areas', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'secret_master', title: 'Secret Master', desc: 'Discover 50 secret areas', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'speed_runner_platformer', title: 'Speed Runner Platformer', desc: 'Complete a level in under 10 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'no_damage_run', title: 'No Damage Run', desc: 'Complete a level without touching enemies', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'perfect_collector', title: 'Perfect Collector', desc: 'Collect all items in a level', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'boss_speed_killer', title: 'Boss Speed Killer', desc: 'Defeat a boss in under 5 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'platformer_addict', title: 'Platformer Addict', desc: 'Play platformer for 1 hour', unlocked: false, progress: 0, maxProgress: 3600000 },
+            { id: 'platformer_insane', title: 'Platformer Insane', desc: 'Play platformer for 5 hours', unlocked: false, progress: 0, maxProgress: 18000000 },
+            { id: 'ultimate_gamer', title: 'Ultimate Gamer', desc: 'Unlock all platformer achievements', unlocked: false, progress: 0, maxProgress: 1 }
+        ];
+
+        let clickTimes = [];
+        let lastResetTime = Date.now();
+        let achievementStreak = 0;
+        let unlockedCount = 0;
+
+        // Platformer game variables
+        let platformerLevel = 1;
+        let collectiblesFound = 0;
+        let bossesDefeated = 0;
+        let secretAreasFound = 0;
+        let platformerPlayTime = 0;
+        let platformerStartTime = Date.now();
+        let playerX = 20;
+        let playerY = 30;
+        let playerVelocityY = 0;
+        let isOnGround = false;
+        let levelStartTime = Date.now();
+        let levelCompleted = false;
+        let bossFightActive = false;
+        let bossHealth = 100;
+        let bossAttackTime = 0;
+        let enemies = [];
+        let platforms = [];
+        let collectibles = [];
+        let secretAreas = [];
+        let boss = null;
+        let levelItems = 0;
+        let levelItemsCollected = 0;
+        let levelEnemies = 0;
+        let levelEnemiesHit = 0;
+
+        function initializeGame() {
+            generateAchievementsList();
+            gameInterval = setInterval(gameLoop, 1000);
+            initializePlatformer();
+            updateUI();
+            showNotification('🏆 Welcome to Achievement Unlocked! Click to start unlocking achievements!');
+        }
+
+        function generateAchievementsList() {
+            const achievementsList = document.getElementById('achievementsList');
+            achievementsList.innerHTML = '';
+            
+            achievements.forEach(achievement => {
+                const achievementElement = document.createElement('div');
+                achievementElement.className = 'achievement';
+                achievementElement.id = `achievement_${achievement.id}`;
+                
+                const progressPercent = Math.min((achievement.progress / achievement.maxProgress) * 100, 100);
+                
+                achievementElement.innerHTML = `
+                    <div class="achievement-title">🏆 ${achievement.title}</div>
+                    <div class="achievement-desc">${achievement.desc}</div>
+                    <div class="achievement-progress">
+                        <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                `;
+                
+                if (achievement.unlocked) {
+                    achievementElement.classList.add('unlocked');
+                }
+                
+                achievementsList.appendChild(achievementElement);
+            });
+        }
+
+        function clickGame() {
+            clicks++;
+            totalClicks++;
+            const now = Date.now();
+            
+            // Track click times for speed achievements
+            clickTimes.push(now);
+            if (clickTimes.length > 200) {
+                clickTimes.shift();
+            }
+            
+            // Check clicking achievements
+            checkAchievement('first_click', 1);
+            checkAchievement('clicker', clicks);
+            checkAchievement('clicker_pro', clicks);
+            checkAchievement('clicker_master', clicks);
+            checkAchievement('clicker_god', clicks);
+            checkAchievement('clicker_legend', clicks);
+            checkAchievement('clicker_myth', clicks);
+            checkAchievement('clicker_eternal', clicks);
+            checkAchievement('clicker_infinite', clicks);
+            checkAchievement('clicker_ultimate', clicks);
+            
+            checkAchievement('total_clicker', totalClicks);
+            checkAchievement('total_clicker_pro', totalClicks);
+            checkAchievement('total_clicker_master', totalClicks);
+            checkAchievement('total_clicker_god', totalClicks);
+            checkAchievement('total_clicker_legend', totalClicks);
+            
+            // Check special number achievements
+            checkSpecialNumberAchievements(clicks);
+            
+            // Check speed achievements
+            checkSpeedAchievements();
+            
+            lastClickTime = now;
+            updateUI();
+        }
+
+        function checkSpecialNumberAchievements(clickCount) {
+            const specialNumbers = [777, 666, 1000, 1024, 3141, 2718, 1618, 8888];
+            specialNumbers.forEach(num => {
+                if (clickCount === num) {
+                    const achievementId = getSpecialNumberAchievementId(num);
+                    if (achievementId) {
+                        checkAchievement(achievementId, 1);
+                    }
+                }
+            });
+        }
+
+        function getSpecialNumberAchievementId(num) {
+            const mapping = {
+                777: 'lucky_click',
+                666: 'unlucky_click',
+                1000: 'perfect_click',
+                1024: 'binary_click',
+                3141: 'pi_click',
+                2718: 'euler_click',
+                1618: 'golden_click',
+                8888: 'infinity_click'
+            };
+            return mapping[num];
+        }
+
+        function checkSpeedAchievements() {
+            const now = Date.now();
+            const oneSecondAgo = now - 1000;
+            const clicksInLastSecond = clickTimes.filter(time => time >= oneSecondAgo).length;
+            
+            checkAchievement('speed_clicker', clicksInLastSecond);
+            checkAchievement('speed_clicker_pro', clicksInLastSecond);
+            checkAchievement('speed_clicker_master', clicksInLastSecond);
+            checkAchievement('speed_clicker_god', clicksInLastSecond);
+            checkAchievement('speed_clicker_legend', clicksInLastSecond);
+        }
+
+        function gameLoop() {
+            playTime = Date.now() - gameStartTime;
+            
+            // Check time-based achievements
+            checkAchievement('early_bird', playTime);
+            checkAchievement('dedicated_player', playTime);
+            checkAchievement('hardcore_player', playTime);
+            checkAchievement('addicted_player', playTime);
+            checkAchievement('obsessed_player', playTime);
+            checkAchievement('insane_player', playTime);
+            checkAchievement('eternal_player', playTime);
+            checkAchievement('time_traveler', playTime);
+            checkAchievement('time_lord', playTime);
+            checkAchievement('time_god', playTime);
+            
+            // Check platformer time achievements
+            platformerPlayTime = Date.now() - platformerStartTime;
+            checkAchievement('platformer_addict', platformerPlayTime);
+            checkAchievement('platformer_insane', platformerPlayTime);
+            
+            // Check patience achievements
+            const timeSinceLastClick = Date.now() - lastClickTime;
+            checkAchievement('patience_test', timeSinceLastClick);
+            checkAchievement('zen_master', timeSinceLastClick);
+            checkAchievement('meditation_expert', timeSinceLastClick);
+            checkAchievement('buddha_level', timeSinceLastClick);
+            checkAchievement('enlightened_one', timeSinceLastClick);
+            
+            // Check zero click achievement
+            if (clicks === 0 && playTime >= 60000) {
+                checkAchievement('zero_click', 1);
+            }
+            
+            // Check max click achievement
+            checkAchievement('max_click', clicks);
+            
+            // Check efficiency achievements
+            if (clicks <= 1 && unlockedCount >= 1) {
+                checkAchievement('minimalist', 1);
+            }
+            if (clicks < 100 && unlockedCount >= 10) {
+                checkAchievement('efficient_player', unlockedCount);
+            }
+            
+            // Check speed run achievements
+            if (playTime <= 300000 && unlockedCount >= 25) { // 5 minutes
+                checkAchievement('speed_runner', unlockedCount);
+            }
+            if (playTime <= 3600000 && unlockedCount >= 50) { // 1 hour
+                checkAchievement('marathon_runner', unlockedCount);
+            }
+            if (playTime <= 86400000 && unlockedCount >= 75) { // 24 hours
+                checkAchievement('ultra_runner', unlockedCount);
+            }
+            if (playTime <= 604800000 && unlockedCount >= 90) { // 7 days
+                checkAchievement('endurance_runner', unlockedCount);
+            }
+            if (playTime <= 2592000000 && unlockedCount >= 95) { // 30 days
+                checkAchievement('legendary_runner', unlockedCount);
+            }
+            if (playTime <= 8640000000 && unlockedCount >= 98) { // 100 days
+                checkAchievement('mythical_runner', unlockedCount);
+            }
+            if (playTime <= 31536000000 && unlockedCount >= 99) { // 1 year
+                checkAchievement('eternal_runner', unlockedCount);
+            }
+            
+            updateUI();
+        }
+
+        function checkAchievement(achievementId, currentValue) {
+            const achievement = achievements.find(a => a.id === achievementId);
+            if (!achievement || achievement.unlocked) return;
+            
+            achievement.progress = Math.max(achievement.progress, currentValue);
+            
+            if (achievement.progress >= achievement.maxProgress) {
+                unlockAchievement(achievement);
+            }
+            
+            updateAchievementDisplay(achievement);
+        }
+
+        function unlockAchievement(achievement) {
+            if (achievement.unlocked) return;
+            
+            achievement.unlocked = true;
+            achievement.progress = achievement.maxProgress;
+            unlockedCount++;
+            achievementStreak++;
+            
+            showNotification(`🏆 ACHIEVEMENT UNLOCKED: ${achievement.title}!`);
+            
+            // Check achievement progress achievements
+            checkAchievement('achievement_hunter', unlockedCount);
+            checkAchievement('achievement_collector', unlockedCount);
+            checkAchievement('achievement_master', unlockedCount);
+            checkAchievement('achievement_god', unlockedCount);
+            checkAchievement('achievement_legend', unlockedCount);
+            checkAchievement('achievement_myth', unlockedCount);
+            checkAchievement('achievement_eternal', unlockedCount);
+            checkAchievement('achievement_completionist', unlockedCount);
+            
+            checkAchievement('first_ten', unlockedCount);
+            checkAchievement('quarter_way', unlockedCount);
+            checkAchievement('half_way', unlockedCount);
+            checkAchievement('three_quarters', unlockedCount);
+            checkAchievement('almost_there', unlockedCount);
+            checkAchievement('final_push', unlockedCount);
+            checkAchievement('last_leg', unlockedCount);
+            checkAchievement('victory_lap', unlockedCount);
+            
+            // Check streak achievements
+            checkAchievement('achievement_streak', achievementStreak);
+            checkAchievement('achievement_chain', achievementStreak);
+            checkAchievement('achievement_combo', achievementStreak);
+            
+            updateProgress();
+        }
+
+        function updateAchievementDisplay(achievement) {
+            const element = document.getElementById(`achievement_${achievement.id}`);
+            if (!element) return;
+            
+            const progressPercent = Math.min((achievement.progress / achievement.maxProgress) * 100, 100);
+            const progressFill = element.querySelector('.achievement-progress-fill');
+            if (progressFill) {
+                progressFill.style.width = `${progressPercent}%`;
+            }
+            
+            if (achievement.unlocked) {
+                element.classList.add('unlocked');
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('progress').textContent = unlockedCount;
+        }
+
+        function updateUI() {
+            document.getElementById('clickCount').textContent = clicks.toLocaleString();
+            document.getElementById('totalClicks').textContent = totalClicks.toLocaleString();
+            document.getElementById('playTime').textContent = formatTime(playTime);
+            document.getElementById('resetCount').textContent = resetCount;
+            document.getElementById('clickRate').textContent = `${clickRate}/s`;
+            
+            updateProgress();
+        }
+
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) return `${days}d ${hours % 24}h`;
+            if (hours > 0) return `${hours}h ${minutes % 60}m`;
+            if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+            return `${seconds}s`;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function resetGame() {
+            resetCount++;
+            clicks = 0;
+            clickTimes = [];
+            achievementStreak = 0;
+            gameStartTime = Date.now();
+            lastClickTime = Date.now();
+            
+            // Check reset achievements
+            checkAchievement('first_reset', 1);
+            checkAchievement('reset_regular', resetCount);
+            checkAchievement('reset_master', resetCount);
+            checkAchievement('reset_god', resetCount);
+            checkAchievement('reset_legend', resetCount);
+            checkAchievement('reset_myth', resetCount);
+            checkAchievement('reset_eternal', resetCount);
+            checkAchievement('reset_infinite', resetCount);
+            checkAchievement('reset_ultimate', resetCount);
+            checkAchievement('reset_paradox', resetCount);
+            
+            // Check special reset achievements
+            const timeSinceStart = Date.now() - gameStartTime;
+            if (timeSinceStart <= 10000) {
+                checkAchievement('quick_reset', 1);
+            }
+            
+            if (timeSinceStart >= 3600000) {
+                checkAchievement('patience_reset', 1);
+            }
+            
+            const timeSinceLastReset = Date.now() - lastResetTime;
+            if (timeSinceLastReset <= 60000 && resetCount % 10 === 0) {
+                checkAchievement('reset_spree', 10);
+            }
+            if (timeSinceLastReset <= 300000 && resetCount % 50 === 0) {
+                checkAchievement('reset_mania', 50);
+            }
+            if (timeSinceLastReset <= 600000 && resetCount % 100 === 0) {
+                checkAchievement('reset_chaos', 100);
+            }
+            
+            if (resetCount === 42) {
+                checkAchievement('reset_zen', 1);
+            }
+            if (resetCount === 100) {
+                checkAchievement('reset_perfect', 1);
+            }
+            if (resetCount === 1000) {
+                checkAchievement('reset_masterpiece', 1);
+            }
+            
+            lastResetTime = Date.now();
+            updateUI();
+            showNotification('🔄 Game reset! Start fresh!');
+        }
+
+        function exportSave() {
+            const saveData = {
+                clicks,
+                totalClicks,
+                playTime,
+                resetCount,
+                achievements,
+                unlockedCount,
+                gameStartTime: Date.now()
+            };
+            
+            const saveString = JSON.stringify(saveData);
+            const blob = new Blob([saveString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'achievement_unlocked_save.json';
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            showNotification('💾 Save exported!');
+        }
+
+        // Platformer game functions
+        function initializePlatformer() {
+            console.log('Initializing platformer...');
+            generateLevel();
+            setInterval(platformerGameLoop, 50); // 20 FPS
+            console.log('Platformer initialized!');
+        }
+
+        function generateLevel() {
+            console.log('Generating level ' + platformerLevel);
+            clearLevel();
+            levelStartTime = Date.now();
+            levelCompleted = false;
+            levelItems = 0;
+            levelItemsCollected = 0;
+            levelEnemies = 0;
+            levelEnemiesHit = 0;
+            
+            const canvas = document.getElementById('platformerCanvas');
+            const canvasWidth = canvas.offsetWidth;
+            const canvasHeight = canvas.offsetHeight;
+            
+            // Generate platforms based on level
+            const platformCount = Math.min(3 + platformerLevel, 8);
+            for (let i = 0; i < platformCount; i++) {
+                const platform = {
+                    x: 50 + (i * 80) + Math.random() * 40,
+                    y: 50 + (i * 30) + Math.random() * 20,
+                    width: 60,
+                    height: 10
+                };
+                platforms.push(platform);
+                createPlatformElement(platform);
+            }
+            
+            // Generate collectibles
+            const collectibleCount = Math.min(2 + platformerLevel, 6);
+            for (let i = 0; i < collectibleCount; i++) {
+                const collectible = {
+                    x: 30 + (i * 60) + Math.random() * 40,
+                    y: 30 + (i * 40) + Math.random() * 30,
+                    collected: false
+                };
+                collectibles.push(collectible);
+                createCollectibleElement(collectible, i);
+                levelItems++;
+            }
+            
+            // Generate enemies (every 3 levels)
+            if (platformerLevel % 3 === 0) {
+                const enemyCount = Math.min(1 + Math.floor(platformerLevel / 3), 4);
+                for (let i = 0; i < enemyCount; i++) {
+                    const enemy = {
+                        x: 100 + (i * 100) + Math.random() * 50,
+                        y: 20 + Math.random() * 30,
+                        direction: 1,
+                        speed: 1 + Math.random() * 2
+                    };
+                    enemies.push(enemy);
+                    createEnemyElement(enemy, i);
+                    levelEnemies++;
+                }
+            }
+            
+            // Generate secret areas (every 5 levels)
+            if (platformerLevel % 5 === 0) {
+                const secretArea = {
+                    x: canvasWidth - 50,
+                    y: 20,
+                    discovered: false
+                };
+                secretAreas.push(secretArea);
+                createSecretAreaElement(secretArea);
+            }
+            
+            // Generate boss (every 10 levels)
+            if (platformerLevel % 10 === 0) {
+                boss = {
+                    x: canvasWidth - 80,
+                    y: 40,
+                    health: 100 + (platformerLevel * 10),
+                    maxHealth: 100 + (platformerLevel * 10)
+                };
+                createBossElement(boss);
+            }
+            
+            updatePlatformerUI();
+        }
+
+        function clearLevel() {
+            const canvas = document.getElementById('platformerCanvas');
+            const elementsToRemove = canvas.querySelectorAll('.platform, .enemy, .collectible, .secret-area, .boss');
+            elementsToRemove.forEach(element => element.remove());
+            
+            platforms = [];
+            enemies = [];
+            collectibles = [];
+            secretAreas = [];
+            boss = null;
+        }
+
+        function createPlatformElement(platform) {
+            const canvas = document.getElementById('platformerCanvas');
+            const element = document.createElement('div');
+            element.className = 'platform';
+            element.style.left = platform.x + 'px';
+            element.style.top = (250 - platform.y - 10) + 'px';
+            canvas.appendChild(element);
+        }
+
+        function createCollectibleElement(collectible, index) {
+            const canvas = document.getElementById('platformerCanvas');
+            const element = document.createElement('div');
+            element.className = 'collectible';
+            element.id = `collectible_${index}`;
+            element.style.left = collectible.x + 'px';
+            element.style.top = (250 - collectible.y - 12) + 'px';
+            canvas.appendChild(element);
+        }
+
+        function createEnemyElement(enemy, index) {
+            const canvas = document.getElementById('platformerCanvas');
+            const element = document.createElement('div');
+            element.className = 'enemy';
+            element.id = `enemy_${index}`;
+            element.style.left = enemy.x + 'px';
+            element.style.top = (250 - enemy.y - 15) + 'px';
+            canvas.appendChild(element);
+        }
+
+        function createSecretAreaElement(secretArea) {
+            const canvas = document.getElementById('platformerCanvas');
+            const element = document.createElement('div');
+            element.className = 'secret-area';
+            element.style.left = secretArea.x + 'px';
+            element.style.top = (250 - secretArea.y - 30) + 'px';
+            canvas.appendChild(element);
+        }
+
+        function createBossElement(boss) {
+            const canvas = document.getElementById('platformerCanvas');
+            const element = document.createElement('div');
+            element.className = 'boss';
+            element.style.left = boss.x + 'px';
+            element.style.top = (250 - boss.y - 40) + 'px';
+            canvas.appendChild(element);
+        }
+
+        function platformerGameLoop() {
+            if (bossFightActive) return;
+            
+            // Gravity
+            if (!isOnGround) {
+                playerVelocityY -= 0.5;
+                playerY += playerVelocityY;
+            }
+            
+            // Ground collision
+            if (playerY <= 10) {
+                playerY = 10;
+                playerVelocityY = 0;
+                isOnGround = true;
+            }
+            
+            // Platform collision
+            isOnGround = false;
+            platforms.forEach(platform => {
+                if (playerX + 20 > platform.x && playerX < platform.x + 60 &&
+                    playerY <= platform.y + 10 && playerY >= platform.y) {
+                    playerY = platform.y + 10;
+                    playerVelocityY = 0;
+                    isOnGround = true;
+                }
+            });
+            
+            // Update player position
+            const player = document.getElementById('player');
+            if (player) {
+                player.style.left = playerX + 'px';
+                player.style.top = (250 - playerY - 20) + 'px';
+            }
+            
+            // Check collectibles
+            collectibles.forEach((collectible, index) => {
+                if (!collectible.collected && 
+                    playerX + 20 > collectible.x && playerX < collectible.x + 12 &&
+                    playerY + 20 > collectible.y && playerY < collectible.y + 12) {
+                    collectible.collected = true;
+                    collectiblesFound++;
+                    levelItemsCollected++;
+                    const element = document.getElementById(`collectible_${index}`);
+                    if (element) element.remove();
+                    
+                    checkAchievement('collector_starter', collectiblesFound);
+                    checkAchievement('collector_master', collectiblesFound);
+                    checkAchievement('collector_legend', collectiblesFound);
+                    
+                    if (levelItemsCollected === levelItems) {
+                        checkAchievement('perfect_collector', 1);
+                    }
+                }
+            });
+            
+            // Check secret areas
+            secretAreas.forEach(secretArea => {
+                if (!secretArea.discovered &&
+                    playerX + 20 > secretArea.x && playerX < secretArea.x + 30 &&
+                    playerY + 20 > secretArea.y && playerY < secretArea.y + 30) {
+                    secretArea.discovered = true;
+                    secretAreasFound++;
+                    checkAchievement('secret_finder', 1);
+                    checkAchievement('secret_explorer', secretAreasFound);
+                    checkAchievement('secret_master', secretAreasFound);
+                    showNotification('🔍 Secret area discovered!');
+                }
+            });
+            
+            // Check boss trigger
+            if (boss && !bossFightActive &&
+                playerX + 20 > boss.x && playerX < boss.x + 40 &&
+                playerY + 20 > boss.y && playerY < boss.y + 40) {
+                startBossFight();
+            }
+            
+            // Check level completion
+            if (!levelCompleted && levelItemsCollected >= levelItems && 
+                (boss ? bossFightActive : true)) {
+                completeLevel();
+            }
+            
+            // Update enemies
+            enemies.forEach((enemy, index) => {
+                enemy.x += enemy.direction * enemy.speed;
+                if (enemy.x <= 0 || enemy.x >= 300) {
+                    enemy.direction *= -1;
+                }
+                
+                const element = document.getElementById(`enemy_${index}`);
+                if (element) {
+                    element.style.left = enemy.x + 'px';
+                    element.style.top = (250 - enemy.y - 15) + 'px';
+                }
+                
+                // Enemy collision
+                if (playerX + 20 > enemy.x && playerX < enemy.x + 15 &&
+                    playerY + 20 > enemy.y && playerY < enemy.y + 15) {
+                    levelEnemiesHit++;
+                    if (levelEnemiesHit === levelEnemies) {
+                        checkAchievement('no_damage_run', 1);
+                    }
+                }
+            });
+        }
+
+        function moveLeft() {
+            if (bossFightActive) return;
+            playerX = Math.max(0, playerX - 10);
+        }
+
+        function moveRight() {
+            if (bossFightActive) return;
+            playerX = Math.min(280, playerX + 10);
+        }
+
+        function jump() {
+            if (bossFightActive || !isOnGround) return;
+            playerVelocityY = 8;
+            isOnGround = false;
+        }
+
+        function startBossFight() {
+            bossFightActive = true;
+            bossHealth = boss.maxHealth;
+            bossAttackTime = Date.now();
+            document.getElementById('bossFight').style.display = 'flex';
+            showNotification('👹 BOSS FIGHT STARTED!');
+        }
+
+        function attackBoss() {
+            if (!bossFightActive) return;
+            
+            const damage = 10 + Math.floor(Math.random() * 20);
+            bossHealth -= damage;
+            
+            const healthPercent = (bossHealth / boss.maxHealth) * 100;
+            document.getElementById('bossHealth').style.width = healthPercent + '%';
+            
+            if (bossHealth <= 0) {
+                defeatBoss();
+            } else {
+                bossAttackTime = Date.now();
+            }
+        }
+
+        function defeatBoss() {
+            bossFightActive = false;
+            bossesDefeated++;
+            document.getElementById('bossFight').style.display = 'none';
+            
+            checkAchievement('boss_slayer', 1);
+            checkAchievement('boss_master', bossesDefeated);
+            checkAchievement('boss_legend', bossesDefeated);
+            
+            const bossDefeatTime = Date.now() - bossAttackTime;
+            if (bossDefeatTime < 5000) {
+                checkAchievement('boss_speed_killer', 1);
+            }
+            
+            showNotification('🎉 BOSS DEFEATED!');
+        }
+
+        function completeLevel() {
+            levelCompleted = true;
+            const levelTime = Date.now() - levelStartTime;
+            
+            if (levelTime < 10000) {
+                checkAchievement('speed_runner_platformer', 1);
+            }
+            
+            checkAchievement('platformer_starter', 1);
+            checkAchievement('platformer_explorer', platformerLevel);
+            checkAchievement('platformer_master', platformerLevel);
+            checkAchievement('platformer_legend', platformerLevel);
+            
+            document.getElementById('levelComplete').style.display = 'flex';
+            showNotification('🎉 Level Complete!');
+        }
+
+        function nextLevel() {
+            platformerLevel++;
+            document.getElementById('levelComplete').style.display = 'none';
+            generateLevel();
+        }
+
+        function updatePlatformerUI() {
+            document.getElementById('platformerLevel').textContent = platformerLevel;
+            document.getElementById('collectiblesFound').textContent = collectiblesFound;
+            document.getElementById('bossesDefeated').textContent = bossesDefeated;
+        }
+
+        // Initialize the game
+        window.addEventListener('load', () => {
+            initializeGame();
+        });
+    </script>
+</body>
+</html>
