@@ -9,42 +9,222 @@
         body {
             margin: 0;
             padding: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             height: 100vh;
             overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 60% 60%, rgba(255, 255, 255, 0.1) 0%, transparent 30%);
+            pointer-events: none;
+            z-index: -1;
+            animation: backgroundShift 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { 
+                background: 
+                    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 60%, rgba(255, 255, 255, 0.1) 0%, transparent 30%);
+            }
+            25% { 
+                background: 
+                    radial-gradient(circle at 80% 20%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 80%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 60%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 30%);
+            }
+            50% { 
+                background: 
+                    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 60% 60%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 80%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 30%);
+            }
+            75% { 
+                background: 
+                    radial-gradient(circle at 60% 60%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 40%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(120, 219, 255, 0.3) 0%, transparent 50%),
+                    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 30%);
+            }
+        }
+
+        /* Floating particles */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.3), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.2), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.4), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.3), transparent),
+                radial-gradient(2px 2px at 160px 30px, rgba(255, 255, 255, 0.2), transparent),
+                radial-gradient(1px 1px at 200px 60px, rgba(255, 255, 255, 0.3), transparent),
+                radial-gradient(2px 2px at 240px 90px, rgba(255, 255, 255, 0.2), transparent),
+                radial-gradient(1px 1px at 280px 20px, rgba(255, 255, 255, 0.4), transparent),
+                radial-gradient(2px 2px at 320px 70px, rgba(255, 255, 255, 0.3), transparent),
+                radial-gradient(1px 1px at 360px 40px, rgba(255, 255, 255, 0.2), transparent);
+            background-repeat: repeat;
+            background-size: 400px 100px;
+            animation: particleFloat 15s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-100px); }
         }
 
         .game-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-            height: calc(100vh - 40px);
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            height: calc(100vh - 50px);
             display: grid;
             grid-template-columns: 1fr 350px;
-            gap: 20px;
-            backdrop-filter: blur(10px);
-            border: 3px solid rgba(255, 255, 255, 0.2);
+            gap: 25px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.08) 50%, transparent 70%),
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: shimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { 
+                transform: translateX(-100%) rotate(0deg);
+                opacity: 0.5;
+            }
+            50% { 
+                transform: translateX(100%) rotate(180deg);
+                opacity: 1;
+            }
         }
 
         .header {
             grid-column: 1 / -1;
             text-align: center;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            border-radius: 15px;
-            padding: 20px;
-            border: 3px solid #fff;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 
+                0 15px 35px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.15), transparent),
+                conic-gradient(from 180deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: rotate 8s linear infinite;
+            pointer-events: none;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: headerPulse 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes headerPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
         }
 
         h1 {
             color: white;
-            font-size: 3em;
+            font-size: 3.5em;
             margin: 0;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            font-weight: bold;
-            letter-spacing: 2px;
+            text-shadow: 
+                3px 3px 6px rgba(0,0,0,0.5),
+                0 0 20px rgba(255, 255, 255, 0.3);
+            font-weight: 900;
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { 
+                text-shadow: 
+                    3px 3px 6px rgba(0,0,0,0.5), 
+                    0 0 20px rgba(255, 255, 255, 0.3),
+                    0 0 40px rgba(255, 255, 255, 0.1);
+            }
+            50% { 
+                text-shadow: 
+                    3px 3px 6px rgba(0,0,0,0.5), 
+                    0 0 30px rgba(255, 255, 255, 0.6),
+                    0 0 60px rgba(255, 255, 255, 0.3);
+            }
+            100% { 
+                text-shadow: 
+                    3px 3px 6px rgba(0,0,0,0.5), 
+                    0 0 20px rgba(255, 255, 255, 0.3),
+                    0 0 40px rgba(255, 255, 255, 0.1);
+            }
         }
 
         .stats {
@@ -70,28 +250,94 @@
         }
 
         .achievement {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
-            border: 2px solid #95a5a6;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 10px 0;
+            background: linear-gradient(135deg, rgba(44, 62, 80, 0.8), rgba(52, 73, 94, 0.8));
+            border: 2px solid rgba(149, 165, 166, 0.5);
+            border-radius: 15px;
+            padding: 18px;
+            margin: 12px 0;
             color: white;
-            transition: all 0.3s ease;
-            opacity: 0.6;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.7;
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 5px 15px rgba(0,0,0,0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .achievement::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .achievement:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 10px 25px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .achievement:hover::before {
+            left: 100%;
         }
 
         .achievement.unlocked {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
-            border-color: #d35400;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 50%, #d35400 100%);
+            border-color: rgba(211, 84, 0, 0.8);
             opacity: 1;
-            animation: achievementGlow 2s ease-in-out infinite alternate;
-            transform: scale(1.02);
+            animation: achievementGlow 3s ease-in-out infinite alternate;
+            transform: scale(1.03);
+            box-shadow: 
+                0 10px 30px rgba(243, 156, 18, 0.4),
+                0 0 0 1px rgba(243, 156, 18, 0.3);
+            position: relative;
+        }
+
+        .achievement.unlocked::after {
+            content: '🏆';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 20px;
+            animation: trophyBounce 2s ease-in-out infinite;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
         }
 
         @keyframes achievementGlow {
-            from { box-shadow: 0 0 10px #f39c12; }
-            to { box-shadow: 0 0 20px #f39c12, 0 0 30px #e67e22; }
+            0% { 
+                box-shadow: 
+                    0 10px 30px rgba(243, 156, 18, 0.4),
+                    0 0 0 1px rgba(243, 156, 18, 0.3),
+                    0 0 20px rgba(243, 156, 18, 0.3);
+                transform: scale(1.03) rotate(0deg);
+            }
+            50% { 
+                box-shadow: 
+                    0 15px 40px rgba(243, 156, 18, 0.6),
+                    0 0 0 1px rgba(243, 156, 18, 0.5),
+                    0 0 30px rgba(243, 156, 18, 0.5);
+                transform: scale(1.05) rotate(0.5deg);
+            }
+            100% { 
+                box-shadow: 
+                    0 10px 30px rgba(243, 156, 18, 0.4),
+                    0 0 0 1px rgba(243, 156, 18, 0.3),
+                    0 0 20px rgba(243, 156, 18, 0.3);
+                transform: scale(1.03) rotate(0deg);
+            }
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-5px) rotate(-5deg); }
+            75% { transform: translateY(-5px) rotate(5deg); }
         }
 
         .achievement-title {
@@ -107,22 +353,49 @@
 
         .achievement-progress {
             width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-            margin-top: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 10px;
             overflow: hidden;
+            position: relative;
+        }
+
+        .achievement-progress::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: progressShimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes progressShimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
         }
 
         .achievement-progress-fill {
             height: 100%;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            background: linear-gradient(90deg, #27ae60, #2ecc71, #27ae60);
+            background-size: 200% 100%;
             width: 0%;
-            transition: width 0.5s ease;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: progressFlow 2s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes progressFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .achievement.unlocked .achievement-progress-fill {
-            background: linear-gradient(45deg, #f39c12, #e67e22);
+            background: linear-gradient(90deg, #f39c12, #e67e22, #f39c12);
+            background-size: 200% 100%;
+            animation: progressFlow 1.5s ease-in-out infinite;
         }
 
         .notification {
@@ -130,50 +403,148 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 50%, #27ae60 100%);
             color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 25px 35px;
+            border-radius: 20px;
             text-align: center;
             font-size: 16px;
-            font-weight: bold;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            font-weight: 700;
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
             z-index: 1000;
             display: none;
             max-width: 400px;
-            border: 3px solid #229954;
+            border: 2px solid rgba(34, 153, 84, 0.8);
+            backdrop-filter: blur(15px);
+            animation: notificationSlide 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: notificationShimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes notificationSlide {
+            0% { 
+                transform: translateX(-50%) translateY(-100px) scale(0.8);
+                opacity: 0;
+            }
+            50% { 
+                transform: translateX(-50%) translateY(-10px) scale(1.05);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: translateX(-50%) translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes notificationShimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
         }
 
         .click-area {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            border: 3px solid #2980b9;
-            border-radius: 15px;
-            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px;
             text-align: center;
             color: white;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 15px 35px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .click-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .click-area::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+            border-radius: 50%;
         }
 
         .click-area:hover {
-            background: linear-gradient(45deg, #2980b9, #3498db);
-            transform: scale(1.02);
+            background: linear-gradient(135deg, #764ba2 0%, #f093fb 50%, #667eea 100%);
+            transform: scale(1.08) translateY(-8px) rotate(1deg);
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .click-area:hover::before {
+            left: 100%;
+        }
+
+        .click-area:hover::after {
+            width: 200px;
+            height: 200px;
         }
 
         .click-area:active {
-            transform: scale(0.98);
+            transform: scale(0.92) translateY(3px) rotate(-1deg);
+            box-shadow: 
+                0 8px 16px rgba(0,0,0,0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .click-area:active::after {
+            width: 300px;
+            height: 300px;
+            opacity: 0.8;
         }
 
         .click-text {
-            font-size: 2em;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
         }
 
         .click-count {
-            font-size: 1.5em;
-            opacity: 0.8;
+            font-size: 1.8em;
+            opacity: 0.9;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
         }
 
         .controls {
@@ -184,312 +555,182 @@
         }
 
         .control-btn {
-            padding: 12px 20px;
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: 2px solid #c0392b;
-            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.4s;
         }
 
         .control-btn:hover {
-            background: linear-gradient(45deg, #c0392b, #e74c3c);
-            transform: scale(1.05);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 
+                0 15px 35px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95) translateY(1px);
         }
 
         .control-btn:disabled {
-            background: #7f8c8d;
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
             border-color: #95a5a6;
             cursor: not-allowed;
             opacity: 0.6;
+            transform: none;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 25px;
         }
 
         .stat-box {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 15px;
+            padding: 20px;
             text-align: center;
             color: white;
             border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 15px 35px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-box:hover::before {
+            left: 100%;
         }
 
         .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
+            font-size: 2em;
+            font-weight: 900;
             color: #f39c12;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
         }
 
         .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .save-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            color: white;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .save-info h4 {
+            margin: 0 0 10px 0;
+            color: #f39c12;
+        }
+
+        .save-status {
             font-size: 0.9em;
             opacity: 0.8;
         }
 
-        .platformer-area {
-            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        /* NEW PLATFORMER STYLES */
+        .platformer-section {
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             padding: 20px;
             border: 2px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-            min-height: 300px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
-        .platformer-canvas {
+        .platformer-game {
             width: 100%;
-            height: 250px;
-            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
-            border: 3px solid #2c3e50;
+            max-width: 800px;
+            height: 400px;
+            background-color: #333;
             border-radius: 10px;
-            position: relative;
             overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        .player {
-            width: 20px;
-            height: 20px;
-            background: #e74c3c;
-            border: 2px solid #c0392b;
-            border-radius: 50%;
-            position: absolute;
-            top: 220px;
-            left: 20px;
-            transition: all 0.1s ease;
-            z-index: 10;
+        #gameCanvas {
+            display: block;
         }
 
-        .platform {
-            width: 60px;
-            height: 10px;
-            background: linear-gradient(45deg, #8B4513, #A0522D);
-            border: 2px solid #654321;
-            border-radius: 5px;
-            position: absolute;
-            z-index: 5;
-        }
-
-        .enemy {
-            width: 15px;
-            height: 15px;
-            background: #9B59B6;
-            border: 2px solid #8E44AD;
-            border-radius: 50%;
-            position: absolute;
-            z-index: 8;
-            animation: enemyMove 2s ease-in-out infinite;
-        }
-
-        @keyframes enemyMove {
-            0%, 100% { transform: translateX(0px); }
-            50% { transform: translateX(30px); }
-        }
-
-        .boss {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, #FF4500, #DC143C);
-            border: 3px solid #B22222;
-            border-radius: 10px;
-            position: absolute;
-            z-index: 9;
-            animation: bossGlow 1s ease-in-out infinite alternate;
-        }
-
-        @keyframes bossGlow {
-            from { box-shadow: 0 0 10px #FF4500; }
-            to { box-shadow: 0 0 20px #FF4500, 0 0 30px #DC143C; }
-        }
-
-        .collectible {
-            width: 12px;
-            height: 12px;
-            background: #FFD700;
-            border: 2px solid #FFA500;
-            border-radius: 50%;
-            position: absolute;
-            z-index: 7;
-            animation: collectibleFloat 1.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes collectibleFloat {
-            from { transform: translateY(0px); }
-            to { transform: translateY(-5px); }
-        }
-
-        .secret-area {
-            width: 30px;
-            height: 30px;
-            background: linear-gradient(45deg, #9400D3, #8A2BE2);
-            border: 2px solid #4B0082;
-            border-radius: 50%;
-            position: absolute;
-            z-index: 6;
-            animation: secretPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes secretPulse {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
+        .platformer-instructions {
+            font-size: 0.9em;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .platformer-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            display: flex;
             gap: 10px;
-            margin-top: 15px;
-        }
-
-        .platformer-btn {
-            padding: 10px 15px;
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            border: 2px solid #2980b9;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .platformer-btn:hover {
-            background: linear-gradient(45deg, #2980b9, #3498db);
-            transform: scale(1.05);
-        }
-
-        .platformer-btn:active {
-            transform: scale(0.95);
-        }
-
-        .platformer-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .platformer-stat {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .platformer-stat-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #f39c12;
-        }
-
-        .platformer-stat-label {
-            font-size: 0.8em;
-            opacity: 0.8;
-        }
-
-        .boss-fight {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #FF4500, #DC143C);
-            border-radius: 10px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-        }
-
-        .boss-health {
-            width: 80%;
-            height: 20px;
-            background: #2c3e50;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .boss-health-fill {
-            height: 100%;
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            width: 100%;
-            transition: width 0.3s ease;
-        }
-
-        .boss-attack {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            border: 3px solid #c0392b;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .boss-attack:hover {
-            background: linear-gradient(45deg, #c0392b, #e74c3c);
-            transform: scale(1.1);
-        }
-
-        .boss-attack:active {
-            transform: scale(0.95);
-        }
-
-        .level-complete {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            border-radius: 10px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-        }
-
-        .level-complete h3 {
-            color: white;
-            font-size: 2em;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .level-complete-btn {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            border: 3px solid #2980b9;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .level-complete-btn:hover {
-            background: linear-gradient(45deg, #2980b9, #3498db);
-            transform: scale(1.05);
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -497,7 +738,7 @@
     <div class="game-container">
         <div class="header">
             <h1>🏆 ACHIEVEMENT UNLOCKED</h1>
-            <div class="stats">Unlock all 99 achievements to win! | Progress: <span id="progress">0</span>/99</div>
+            <div class="stats">Unlock all 129 achievements to win! | Progress: <span id="progress">0</span>/129</div>
         </div>
         
         <div class="main-area">
@@ -506,9 +747,32 @@
                 <div class="click-count">Clicks: <span id="clickCount">0</span></div>
             </div>
 
+            <!-- NEW PLATFORMER LEVEL SECTION -->
+            <div class="platformer-section">
+                <h3 style="color: white; text-align: center; margin-bottom: 20px;">🐘 JUNIOR PLATFORMER</h3>
+                
+                <div class="platformer-controls">
+                    <button class="control-btn" onclick="toggleMute()" id="muteBtn">🔊 MUTE</button>
+                    <button class="control-btn" onclick="showHint()">💡 HINT</button>
+                    <button class="control-btn" onclick="resetPlatformer()">🔄 RESET</button>
+                </div>
+                
+                <div class="platformer-game" id="platformerGame">
+                    <canvas id="gameCanvas" width="800" height="400"></canvas>
+                </div>
+                
+                <div class="platformer-instructions">
+                    <p style="color: white; text-align: center; margin: 10px 0;">
+                        <strong>Controls:</strong> Arrow keys to move, Space to jump<br>
+                        <strong>Goal:</strong> Reach the flag! Watch out for the fan! 💨
+                    </p>
+                </div>
+            </div>
+
             <div class="controls">
                 <button class="control-btn" onclick="resetGame()">RESET GAME</button>
                 <button class="control-btn" onclick="exportSave()">EXPORT SAVE</button>
+                <button class="control-btn" onclick="clearSave()">CLEAR SAVE</button>
             </div>
 
             <div class="stats-grid">
@@ -530,46 +794,9 @@
                 </div>
             </div>
 
-            <div class="platformer-area">
-                <h3 style="color: white; text-align: center; margin-bottom: 15px;">🎮 PLATFORMER ADVENTURE</h3>
-                <div class="platformer-canvas" id="platformerCanvas">
-                    <div class="player" id="player"></div>
-                    <!-- Platforms, enemies, collectibles, and secret areas will be generated here -->
-                    
-                    <div class="boss-fight" id="bossFight">
-                        <h3 style="color: white; margin-bottom: 15px;">BOSS FIGHT!</h3>
-                        <div class="boss-health">
-                            <div class="boss-health-fill" id="bossHealth"></div>
-                        </div>
-                        <button class="boss-attack" onclick="attackBoss()">ATTACK BOSS!</button>
-                    </div>
-                    
-                    <div class="level-complete" id="levelComplete">
-                        <h3>🎉 LEVEL COMPLETE!</h3>
-                        <button class="level-complete-btn" onclick="nextLevel()">NEXT LEVEL</button>
-                    </div>
-                </div>
-                
-                <div class="platformer-controls">
-                    <button class="platformer-btn" onclick="moveLeft()">← LEFT</button>
-                    <button class="platformer-btn" onclick="jump()">JUMP</button>
-                    <button class="platformer-btn" onclick="moveRight()">RIGHT →</button>
-                </div>
-                
-                <div class="platformer-stats">
-                    <div class="platformer-stat">
-                        <div class="platformer-stat-value" id="platformerLevel">1</div>
-                        <div class="platformer-stat-label">Level</div>
-                    </div>
-                    <div class="platformer-stat">
-                        <div class="platformer-stat-value" id="collectiblesFound">0</div>
-                        <div class="platformer-stat-label">Collectibles</div>
-                    </div>
-                    <div class="platformer-stat">
-                        <div class="platformer-stat-value" id="bossesDefeated">0</div>
-                        <div class="platformer-stat-label">Bosses</div>
-                    </div>
-                </div>
+            <div class="save-info">
+                <h4>💾 AUTO SAVE</h4>
+                <div class="save-status" id="saveStatus">Game automatically saves your progress!</div>
             </div>
         </div>
 
@@ -668,7 +895,7 @@
             { id: 'achievement_legend', title: 'Achievement Legend', desc: 'Unlock 90 achievements', unlocked: false, progress: 0, maxProgress: 90 },
             { id: 'achievement_myth', title: 'Achievement Myth', desc: 'Unlock 95 achievements', unlocked: false, progress: 0, maxProgress: 95 },
             { id: 'achievement_eternal', title: 'Achievement Eternal', desc: 'Unlock 98 achievements', unlocked: false, progress: 0, maxProgress: 98 },
-            { id: 'achievement_completionist', title: 'Achievement Completionist', desc: 'Unlock all 99 achievements', unlocked: false, progress: 0, maxProgress: 99 },
+            { id: 'achievement_completionist', title: 'Achievement Completionist', desc: 'Unlock all 129 achievements', unlocked: false, progress: 0, maxProgress: 129 },
             { id: 'first_ten', title: 'First Ten', desc: 'Unlock your first 10 achievements', unlocked: false, progress: 0, maxProgress: 10 },
             { id: 'quarter_way', title: 'Quarter Way', desc: 'Unlock 25 achievements', unlocked: false, progress: 0, maxProgress: 25 },
             { id: 'half_way', title: 'Half Way', desc: 'Unlock 50 achievements', unlocked: false, progress: 0, maxProgress: 50 },
@@ -702,27 +929,39 @@
             { id: 'mythical_runner', title: 'Mythical Runner', desc: 'Unlock 98 achievements in under 100 days', unlocked: false, progress: 0, maxProgress: 98 },
             { id: 'eternal_runner', title: 'Eternal Runner', desc: 'Unlock all 99 achievements in under 1 year', unlocked: false, progress: 0, maxProgress: 99 },
 
-            // Platformer achievements (100-120)
-            { id: 'platformer_starter', title: 'Platformer Starter', desc: 'Complete platformer level 1', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'platformer_explorer', title: 'Platformer Explorer', desc: 'Complete 5 platformer levels', unlocked: false, progress: 0, maxProgress: 5 },
-            { id: 'platformer_master', title: 'Platformer Master', desc: 'Complete 10 platformer levels', unlocked: false, progress: 0, maxProgress: 10 },
-            { id: 'platformer_legend', title: 'Platformer Legend', desc: 'Complete 20 platformer levels', unlocked: false, progress: 0, maxProgress: 20 },
-            { id: 'collector_starter', title: 'Collector Starter', desc: 'Find 5 collectibles', unlocked: false, progress: 0, maxProgress: 5 },
-            { id: 'collector_master', title: 'Collector Master', desc: 'Find 25 collectibles', unlocked: false, progress: 0, maxProgress: 25 },
-            { id: 'collector_legend', title: 'Collector Legend', desc: 'Find 100 collectibles', unlocked: false, progress: 0, maxProgress: 100 },
-            { id: 'boss_slayer', title: 'Boss Slayer', desc: 'Defeat your first boss', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'boss_master', title: 'Boss Master', desc: 'Defeat 5 bosses', unlocked: false, progress: 0, maxProgress: 5 },
-            { id: 'boss_legend', title: 'Boss Legend', desc: 'Defeat 20 bosses', unlocked: false, progress: 0, maxProgress: 20 },
-            { id: 'secret_finder', title: 'Secret Finder', desc: 'Discover your first secret area', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'secret_explorer', title: 'Secret Explorer', desc: 'Discover 10 secret areas', unlocked: false, progress: 0, maxProgress: 10 },
-            { id: 'secret_master', title: 'Secret Master', desc: 'Discover 50 secret areas', unlocked: false, progress: 0, maxProgress: 50 },
-            { id: 'speed_runner_platformer', title: 'Speed Runner Platformer', desc: 'Complete a level in under 10 seconds', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'no_damage_run', title: 'No Damage Run', desc: 'Complete a level without touching enemies', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'perfect_collector', title: 'Perfect Collector', desc: 'Collect all items in a level', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'boss_speed_killer', title: 'Boss Speed Killer', desc: 'Defeat a boss in under 5 seconds', unlocked: false, progress: 0, maxProgress: 1 },
-            { id: 'platformer_addict', title: 'Platformer Addict', desc: 'Play platformer for 1 hour', unlocked: false, progress: 0, maxProgress: 3600000 },
-            { id: 'platformer_insane', title: 'Platformer Insane', desc: 'Play platformer for 5 hours', unlocked: false, progress: 0, maxProgress: 18000000 },
-            { id: 'ultimate_gamer', title: 'Ultimate Gamer', desc: 'Unlock all platformer achievements', unlocked: false, progress: 0, maxProgress: 1 }
+            // PLATFORMER ACHIEVEMENTS (100-109)
+            { id: 'first_step', title: 'First Step', desc: 'Take your first step in the platformer', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'first_jump', title: 'First Jump', desc: 'Make your first jump in the platformer', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'silence_is_golden', title: 'Silence is Golden', desc: 'Mute the platformer game', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'hint_hunter', title: 'Hint Hunter', desc: 'Use a hint in the platformer', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'hint_master', title: 'Hint Master', desc: 'Use 5 hints in the platformer', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'floating_corpse', title: 'Floating Corpse', desc: 'Die by touching the fan', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'platformer_explorer', title: 'Platformer Explorer', desc: 'Move around the entire platformer level', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'elephant_master', title: 'Elephant Master', desc: 'Complete the platformer level', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'junior_champion', title: 'Junior Champion', desc: 'Complete the platformer without dying', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'platformer_completionist', title: 'Platformer Completionist', desc: 'Unlock all platformer achievements', unlocked: false, progress: 0, maxProgress: 30 },
+
+            // MORE PLATFORMER ACHIEVEMENTS (110-129)
+            { id: 'cheater_hint', title: 'Cheater Hint', desc: 'Use a hint (you cheater!)', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'hint_addict', title: 'Hint Addict', desc: 'Use 10 hints in the platformer', unlocked: false, progress: 0, maxProgress: 10 },
+            { id: 'hint_obsessed', title: 'Hint Obsessed', desc: 'Use 25 hints in the platformer', unlocked: false, progress: 0, maxProgress: 25 },
+            { id: 'hint_god', title: 'Hint God', desc: 'Use 50 hints in the platformer', unlocked: false, progress: 0, maxProgress: 50 },
+            { id: 'too_slow', title: 'Too Slow!', desc: 'Take more than 30 seconds to complete', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'speed_demon', title: 'Speed Demon', desc: 'Complete in under 15 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'lightning_elephant', title: 'Lightning Elephant', desc: 'Complete in under 10 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'supersonic_elephant', title: 'Supersonic Elephant', desc: 'Complete in under 5 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'time_trial_master', title: 'Time Trial Master', desc: 'Complete in under 3 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'impossible_speed', title: 'Impossible Speed', desc: 'Complete in under 2 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'fan_avoidance', title: 'Fan Avoidance', desc: 'Complete without touching the fan area', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'platform_hopper', title: 'Platform Hopper', desc: 'Jump on every platform in the level', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'wall_hugger', title: 'Wall Hugger', desc: 'Touch both left and right walls', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'high_jumper', title: 'High Jumper', desc: 'Jump to the highest point possible', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'low_crawler', title: 'Low Crawler', desc: 'Stay on the ground for 10 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'air_time', title: 'Air Time', desc: 'Stay in the air for 5 seconds total', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'bouncy_elephant', title: 'Bouncy Elephant', desc: 'Jump 20 times in one run', unlocked: false, progress: 0, maxProgress: 20 },
+            { id: 'restless_elephant', title: 'Restless Elephant', desc: 'Move continuously for 20 seconds', unlocked: false, progress: 0, maxProgress: 1 },
+            { id: 'elephant_marathon', title: 'Elephant Marathon', desc: 'Complete 5 platformer runs', unlocked: false, progress: 0, maxProgress: 5 },
+            { id: 'platformer_legend', title: 'Platformer Legend', desc: 'Unlock 20 platformer achievements', unlocked: false, progress: 0, maxProgress: 20 }
         ];
 
         let clickTimes = [];
@@ -730,38 +969,17 @@
         let achievementStreak = 0;
         let unlockedCount = 0;
 
-        // Platformer game variables
-        let platformerLevel = 1;
-        let collectiblesFound = 0;
-        let bossesDefeated = 0;
-        let secretAreasFound = 0;
-        let platformerPlayTime = 0;
-        let platformerStartTime = Date.now();
-        let playerX = 20;
-        let playerY = 30;
-        let playerVelocityY = 0;
-        let isOnGround = false;
-        let levelStartTime = Date.now();
-        let levelCompleted = false;
-        let bossFightActive = false;
-        let bossHealth = 100;
-        let bossAttackTime = 0;
-        let enemies = [];
-        let platforms = [];
-        let collectibles = [];
-        let secretAreas = [];
-        let boss = null;
-        let levelItems = 0;
-        let levelItemsCollected = 0;
-        let levelEnemies = 0;
-        let levelEnemiesHit = 0;
+        // Cookie save system
+        let lastSaveTime = Date.now();
+        let autoSaveInterval;
 
         function initializeGame() {
+            loadGame();
             generateAchievementsList();
             gameInterval = setInterval(gameLoop, 1000);
-            initializePlatformer();
+            autoSaveInterval = setInterval(autoSave, 5000); // Save every 5 seconds
             updateUI();
-            showNotification('🏆 Welcome to Achievement Unlocked! Click to start unlocking achievements!');
+            showNotification('🏆 Welcome to Achievement Unlocked! Your progress is automatically saved!');
         }
 
         function generateAchievementsList() {
@@ -796,6 +1014,9 @@
             totalClicks++;
             const now = Date.now();
             
+            // Create click effect
+            createClickEffect(event);
+            
             // Track click times for speed achievements
             clickTimes.push(now);
             if (clickTimes.length > 200) {
@@ -828,6 +1049,69 @@
             
             lastClickTime = now;
             updateUI();
+        }
+
+        function createClickEffect(event) {
+            const clickArea = document.querySelector('.click-area');
+            const rect = clickArea.getBoundingClientRect();
+            const x = event ? event.clientX - rect.left : rect.width / 2;
+            const y = event ? event.clientY - rect.top : rect.height / 2;
+            
+            // Create ripple effect
+            const ripple = document.createElement('div');
+            ripple.style.position = 'absolute';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = '0px';
+            ripple.style.height = '0px';
+            ripple.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%)';
+            ripple.style.borderRadius = '50%';
+            ripple.style.transform = 'translate(-50%, -50%)';
+            ripple.style.pointerEvents = 'none';
+            ripple.style.zIndex = '1000';
+            ripple.style.transition = 'all 0.6s ease-out';
+            
+            clickArea.appendChild(ripple);
+            
+            // Animate ripple
+            setTimeout(() => {
+                ripple.style.width = '200px';
+                ripple.style.height = '200px';
+                ripple.style.opacity = '0';
+            }, 10);
+            
+            // Remove ripple after animation
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+            
+            // Create floating number
+            const number = document.createElement('div');
+            number.textContent = '+1';
+            number.style.position = 'absolute';
+            number.style.left = x + 'px';
+            number.style.top = y + 'px';
+            number.style.color = '#f39c12';
+            number.style.fontSize = '24px';
+            number.style.fontWeight = '900';
+            number.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+            number.style.transform = 'translate(-50%, -50%)';
+            number.style.pointerEvents = 'none';
+            number.style.zIndex = '1001';
+            number.style.transition = 'all 0.8s ease-out';
+            
+            clickArea.appendChild(number);
+            
+            // Animate number
+            setTimeout(() => {
+                number.style.transform = 'translate(-50%, -100px) scale(1.5)';
+                number.style.opacity = '0';
+            }, 10);
+            
+            // Remove number after animation
+            setTimeout(() => {
+                number.remove();
+            }, 800);
         }
 
         function checkSpecialNumberAchievements(clickCount) {
@@ -883,10 +1167,7 @@
             checkAchievement('time_lord', playTime);
             checkAchievement('time_god', playTime);
             
-            // Check platformer time achievements
-            platformerPlayTime = Date.now() - platformerStartTime;
-            checkAchievement('platformer_addict', platformerPlayTime);
-            checkAchievement('platformer_insane', platformerPlayTime);
+
             
             // Check patience achievements
             const timeSinceLastClick = Date.now() - lastClickTime;
@@ -1015,6 +1296,7 @@
             document.getElementById('clickRate').textContent = `${clickRate}/s`;
             
             updateProgress();
+            updateSaveStatus();
         }
 
         function formatTime(ms) {
@@ -1118,349 +1400,577 @@
             showNotification('💾 Save exported!');
         }
 
-        // Platformer game functions
-        function initializePlatformer() {
-            console.log('Initializing platformer...');
-            generateLevel();
-            setInterval(platformerGameLoop, 50); // 20 FPS
-            console.log('Platformer initialized!');
+        // Cookie save functions
+        function saveGame() {
+            const saveData = {
+                clicks,
+                totalClicks,
+                playTime,
+                resetCount,
+                achievements,
+                unlockedCount,
+                gameStartTime,
+                lastSaveTime: Date.now()
+            };
+            
+            const saveString = JSON.stringify(saveData);
+            const encodedSave = btoa(saveString); // Base64 encode
+            
+            // Save to cookies (max 4KB per cookie, so we might need to split)
+            if (encodedSave.length <= 4000) {
+                document.cookie = `achievementGame=${encodedSave}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+            } else {
+                // Split into multiple cookies if too large
+                const chunks = Math.ceil(encodedSave.length / 4000);
+                for (let i = 0; i < chunks; i++) {
+                    const chunk = encodedSave.substring(i * 4000, (i + 1) * 4000);
+                    document.cookie = `achievementGame_${i}=${chunk}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+                }
+                document.cookie = `achievementGame_chunks=${chunks}; expires=Fri, 31 Dec 9999 23:59:59 GMT; path=/`;
+            }
+            
+            lastSaveTime = Date.now();
+            updateSaveStatus();
         }
 
-        function generateLevel() {
-            console.log('Generating level ' + platformerLevel);
-            clearLevel();
-            levelStartTime = Date.now();
+        function loadGame() {
+            try {
+                let saveString = '';
+                
+                // Check if we have a single cookie or multiple chunks
+                const chunks = getCookie('achievementGame_chunks');
+                if (chunks) {
+                    // Load from multiple cookies
+                    for (let i = 0; i < parseInt(chunks); i++) {
+                        const chunk = getCookie(`achievementGame_${i}`);
+                        if (chunk) {
+                            saveString += chunk;
+                        }
+                    }
+                } else {
+                    // Load from single cookie
+                    saveString = getCookie('achievementGame');
+                }
+                
+                if (saveString) {
+                    const decodedSave = atob(saveString); // Base64 decode
+                    const saveData = JSON.parse(decodedSave);
+                    
+                    clicks = saveData.clicks || 0;
+                    totalClicks = saveData.totalClicks || 0;
+                    playTime = saveData.playTime || 0;
+                    resetCount = saveData.resetCount || 0;
+                    achievements = saveData.achievements || achievements;
+                    unlockedCount = saveData.unlockedCount || 0;
+                    gameStartTime = saveData.gameStartTime || Date.now();
+                    lastSaveTime = saveData.lastSaveTime || Date.now();
+                    
+                    // Recalculate unlocked count
+                    unlockedCount = achievements.filter(a => a.unlocked).length;
+                    
+                    showNotification('💾 Game loaded from save!');
+                    updateSaveStatus();
+                }
+            } catch (error) {
+                console.log('No save found or error loading save:', error);
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function autoSave() {
+            saveGame();
+        }
+
+        function updateSaveStatus() {
+            const saveStatus = document.getElementById('saveStatus');
+            const timeSinceSave = Math.floor((Date.now() - lastSaveTime) / 1000);
+            saveStatus.textContent = `Last saved: ${timeSinceSave} seconds ago`;
+        }
+
+        function clearSave() {
+            // Clear all achievement game cookies
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                const name = cookie.split('=')[0].trim();
+                if (name.startsWith('achievementGame')) {
+                    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+                }
+            });
+            showNotification('🗑️ Save data cleared!');
+        }
+
+        // PLATFORMER GAME CODE
+        let canvas, ctx;
+        let gameRunning = false;
+        let isMuted = false;
+        let hintCount = 0;
+        let hasStepped = false;
+        let hasJumped = false;
+        let hasExplored = false;
+        let hasDied = false;
+        let levelCompleted = false;
+        let noDeathRun = true;
+        let startTime = Date.now();
+        let jumpCount = 0;
+        let moveStartTime = Date.now();
+        let isMoving = false;
+        let groundTime = 0;
+        let airTime = 0;
+        let completedRuns = 0;
+        let touchedLeftWall = false;
+        let touchedRightWall = false;
+        let touchedFanArea = false;
+        let touchedAllPlatforms = false;
+        let platformTouches = new Set();
+
+        // Game objects
+        let player = {
+            x: 50,
+            y: 300,
+            width: 30,
+            height: 30,
+            vx: 0,
+            vy: 0,
+            onGround: false,
+            color: '#8B4513' // Brown for elephant
+        };
+
+        let platforms = [
+            { x: 0, y: 350, width: 800, height: 50, color: '#654321' }, // Ground
+            { x: 200, y: 250, width: 100, height: 20, color: '#8B4513' },
+            { x: 400, y: 200, width: 100, height: 20, color: '#8B4513' },
+            { x: 600, y: 150, width: 100, height: 20, color: '#8B4513' },
+            { x: 700, y: 100, width: 50, height: 20, color: '#8B4513' }
+        ];
+
+        let fan = {
+            x: 350,
+            y: 180,
+            width: 40,
+            height: 40,
+            color: '#FF6B6B',
+            spinning: true
+        };
+
+        let flag = {
+            x: 750,
+            y: 80,
+            width: 20,
+            height: 40,
+            color: '#4ECDC4'
+        };
+
+        let keys = {};
+        let gravity = 0.8;
+        let jumpPower = -15;
+        let moveSpeed = 8;
+
+        function initializePlatformer() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Event listeners
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            
+            // Start game loop
+            gameLoop();
+        }
+
+        function handleKeyDown(e) {
+            keys[e.code] = true;
+            
+            // Check for first step
+            if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && !hasStepped) {
+                hasStepped = true;
+                checkAchievement('first_step', 1);
+            }
+            
+            // Check for first jump
+            if (e.code === 'Space' && !hasJumped) {
+                hasJumped = true;
+                checkAchievement('first_jump', 1);
+            }
+        }
+
+        function handleKeyUp(e) {
+            keys[e.code] = false;
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('muteBtn');
+            muteBtn.textContent = isMuted ? '🔇 UNMUTE' : '🔊 MUTE';
+            
+            if (!isMuted) {
+                checkAchievement('silence_is_golden', 1);
+            }
+        }
+
+        function showHint() {
+            hintCount++;
+            checkAchievement('hint_hunter', 1);
+            checkAchievement('hint_master', hintCount);
+            checkAchievement('cheater_hint', 1);
+            checkAchievement('hint_addict', hintCount);
+            checkAchievement('hint_obsessed', hintCount);
+            checkAchievement('hint_god', hintCount);
+            
+            const hints = [
+                "💡 Use arrow keys to move and space to jump!",
+                "💡 The fan is dangerous - don't touch it!",
+                "💡 Jump from platform to platform to reach the flag!",
+                "💡 You can reset the level if you get stuck!",
+                "💡 Try to complete it without dying for a special achievement!",
+                "💡 You're getting addicted to hints!",
+                "💡 Speed is key for time achievements!",
+                "💡 Try jumping on every platform!",
+                "💡 Touch the walls for achievements!",
+                "💡 Stay on the ground for 10 seconds!"
+            ];
+            
+            const hintIndex = (hintCount - 1) % hints.length;
+            showNotification(hints[hintIndex]);
+        }
+
+        function resetPlatformer() {
+            if (levelCompleted) {
+                completedRuns++;
+                checkAchievement('elephant_marathon', completedRuns);
+            }
+            
+            player.x = 50;
+            player.y = 300;
+            player.vx = 0;
+            player.vy = 0;
             levelCompleted = false;
-            levelItems = 0;
-            levelItemsCollected = 0;
-            levelEnemies = 0;
-            levelEnemiesHit = 0;
-            
-            const canvas = document.getElementById('platformerCanvas');
-            const canvasWidth = canvas.offsetWidth;
-            const canvasHeight = canvas.offsetHeight;
-            
-            // Generate platforms based on level
-            const platformCount = Math.min(3 + platformerLevel, 8);
-            for (let i = 0; i < platformCount; i++) {
-                const platform = {
-                    x: 50 + (i * 80) + Math.random() * 40,
-                    y: 50 + (i * 30) + Math.random() * 20,
-                    width: 60,
-                    height: 10
-                };
-                platforms.push(platform);
-                createPlatformElement(platform);
+            noDeathRun = true;
+            hasDied = false;
+            startTime = Date.now();
+            jumpCount = 0;
+            moveStartTime = Date.now();
+            isMoving = false;
+            groundTime = 0;
+            airTime = 0;
+            touchedLeftWall = false;
+            touchedRightWall = false;
+            touchedFanArea = false;
+            touchedAllPlatforms = false;
+            platformTouches.clear();
+            showNotification('🔄 Platformer reset!');
+        }
+
+        function updatePlayer() {
+            // Handle input
+            if (keys['ArrowLeft']) {
+                player.vx = -moveSpeed;
+                if (!isMoving) {
+                    isMoving = true;
+                    moveStartTime = Date.now();
+                }
+            } else if (keys['ArrowRight']) {
+                player.vx = moveSpeed;
+                if (!isMoving) {
+                    isMoving = true;
+                    moveStartTime = Date.now();
+                }
+            } else {
+                player.vx *= 0.8; // Friction
+                isMoving = false;
             }
             
-            // Generate collectibles
-            const collectibleCount = Math.min(2 + platformerLevel, 6);
-            for (let i = 0; i < collectibleCount; i++) {
-                const collectible = {
-                    x: 30 + (i * 60) + Math.random() * 40,
-                    y: 30 + (i * 40) + Math.random() * 30,
-                    collected: false
-                };
-                collectibles.push(collectible);
-                createCollectibleElement(collectible, i);
-                levelItems++;
+            if (keys['Space'] && player.onGround) {
+                player.vy = jumpPower;
+                player.onGround = false;
+                jumpCount++;
+                checkAchievement('bouncy_elephant', jumpCount);
             }
             
-            // Generate enemies (every 3 levels)
-            if (platformerLevel % 3 === 0) {
-                const enemyCount = Math.min(1 + Math.floor(platformerLevel / 3), 4);
-                for (let i = 0; i < enemyCount; i++) {
-                    const enemy = {
-                        x: 100 + (i * 100) + Math.random() * 50,
-                        y: 20 + Math.random() * 30,
-                        direction: 1,
-                        speed: 1 + Math.random() * 2
-                    };
-                    enemies.push(enemy);
-                    createEnemyElement(enemy, i);
-                    levelEnemies++;
+            // Apply gravity
+            player.vy += gravity;
+            
+            // Update position
+            player.x += player.vx;
+            player.y += player.vy;
+            
+            // Track movement time
+            if (isMoving) {
+                const moveTime = Date.now() - moveStartTime;
+                if (moveTime >= 20000) { // 20 seconds
+                    checkAchievement('restless_elephant', 1);
                 }
             }
             
-            // Generate secret areas (every 5 levels)
-            if (platformerLevel % 5 === 0) {
-                const secretArea = {
-                    x: canvasWidth - 50,
-                    y: 20,
-                    discovered: false
-                };
-                secretAreas.push(secretArea);
-                createSecretAreaElement(secretArea);
+            // Track ground/air time
+            if (player.onGround) {
+                groundTime++;
+                if (groundTime >= 600) { // 10 seconds at 60fps
+                    checkAchievement('low_crawler', 1);
+                }
+            } else {
+                airTime++;
+                if (airTime >= 300) { // 5 seconds at 60fps
+                    checkAchievement('air_time', 1);
+                }
             }
             
-            // Generate boss (every 10 levels)
-            if (platformerLevel % 10 === 0) {
-                boss = {
-                    x: canvasWidth - 80,
-                    y: 40,
-                    health: 100 + (platformerLevel * 10),
-                    maxHealth: 100 + (platformerLevel * 10)
-                };
-                createBossElement(boss);
+            // Check platformer exploration achievement
+            if (!hasExplored && (player.x > 100 || player.x < 0 || player.y < 200)) {
+                hasExplored = true;
+                checkAchievement('platformer_explorer', 1);
             }
             
-            updatePlatformerUI();
-        }
-
-        function clearLevel() {
-            const canvas = document.getElementById('platformerCanvas');
-            const elementsToRemove = canvas.querySelectorAll('.platform, .enemy, .collectible, .secret-area, .boss');
-            elementsToRemove.forEach(element => element.remove());
-            
-            platforms = [];
-            enemies = [];
-            collectibles = [];
-            secretAreas = [];
-            boss = null;
-        }
-
-        function createPlatformElement(platform) {
-            const canvas = document.getElementById('platformerCanvas');
-            const element = document.createElement('div');
-            element.className = 'platform';
-            element.style.left = platform.x + 'px';
-            element.style.top = (250 - platform.y - 10) + 'px';
-            canvas.appendChild(element);
-        }
-
-        function createCollectibleElement(collectible, index) {
-            const canvas = document.getElementById('platformerCanvas');
-            const element = document.createElement('div');
-            element.className = 'collectible';
-            element.id = `collectible_${index}`;
-            element.style.left = collectible.x + 'px';
-            element.style.top = (250 - collectible.y - 12) + 'px';
-            canvas.appendChild(element);
-        }
-
-        function createEnemyElement(enemy, index) {
-            const canvas = document.getElementById('platformerCanvas');
-            const element = document.createElement('div');
-            element.className = 'enemy';
-            element.id = `enemy_${index}`;
-            element.style.left = enemy.x + 'px';
-            element.style.top = (250 - enemy.y - 15) + 'px';
-            canvas.appendChild(element);
-        }
-
-        function createSecretAreaElement(secretArea) {
-            const canvas = document.getElementById('platformerCanvas');
-            const element = document.createElement('div');
-            element.className = 'secret-area';
-            element.style.left = secretArea.x + 'px';
-            element.style.top = (250 - secretArea.y - 30) + 'px';
-            canvas.appendChild(element);
-        }
-
-        function createBossElement(boss) {
-            const canvas = document.getElementById('platformerCanvas');
-            const element = document.createElement('div');
-            element.className = 'boss';
-            element.style.left = boss.x + 'px';
-            element.style.top = (250 - boss.y - 40) + 'px';
-            canvas.appendChild(element);
-        }
-
-        function platformerGameLoop() {
-            if (bossFightActive) return;
-            
-            // Gravity
-            if (!isOnGround) {
-                playerVelocityY -= 0.5;
-                playerY += playerVelocityY;
+            // Check boundaries and wall achievements
+            if (player.x < 0) {
+                player.x = 0;
+                touchedLeftWall = true;
+                checkAchievement('wall_hugger', touchedLeftWall && touchedRightWall ? 1 : 0);
+            }
+            if (player.x > canvas.width - player.width) {
+                player.x = canvas.width - player.width;
+                touchedRightWall = true;
+                checkAchievement('wall_hugger', touchedLeftWall && touchedRightWall ? 1 : 0);
             }
             
-            // Ground collision
-            if (playerY <= 10) {
-                playerY = 10;
-                playerVelocityY = 0;
-                isOnGround = true;
+            // Check if player fell off
+            if (player.y > canvas.height) {
+                player.y = 300;
+                player.x = 50;
+                player.vx = 0;
+                player.vy = 0;
+                noDeathRun = false;
             }
             
             // Platform collision
-            isOnGround = false;
+            player.onGround = false;
+            platforms.forEach((platform, index) => {
+                if (player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    
+                    if (player.vy > 0 && player.y < platform.y) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                        platformTouches.add(index);
+                        
+                        // Check if touched all platforms
+                        if (platformTouches.size >= platforms.length) {
+                            checkAchievement('platform_hopper', 1);
+                        }
+                    }
+                }
+            });
+            
+            // Fan collision (death)
+            if (player.x < fan.x + fan.width &&
+                player.x + player.width > fan.x &&
+                player.y < fan.y + fan.height &&
+                player.y + player.height > fan.y) {
+                
+                if (!hasDied) {
+                    hasDied = true;
+                    noDeathRun = false;
+                    checkAchievement('floating_corpse', 1);
+                    showNotification('💀 You became a floating corpse! Achievement unlocked!');
+                }
+                
+                // Make player float up like a corpse
+                player.vy = -2;
+                player.vx = 0;
+            }
+            
+            // Check fan area proximity for avoidance achievement
+            if (player.x < fan.x + fan.width + 20 &&
+                player.x + player.width > fan.x - 20 &&
+                player.y < fan.y + fan.height + 20 &&
+                player.y + player.height > fan.y - 20) {
+                touchedFanArea = true;
+            }
+            
+            // Flag collision (win)
+            if (player.x < flag.x + flag.width &&
+                player.x + player.width > flag.x &&
+                player.y < flag.y + flag.height &&
+                player.y + player.height > flag.y) {
+                
+                if (!levelCompleted) {
+                    levelCompleted = true;
+                    const completionTime = (Date.now() - startTime) / 1000;
+                    
+                    // Time-based achievements
+                    if (completionTime > 30) {
+                        checkAchievement('too_slow', 1);
+                    }
+                    if (completionTime < 15) {
+                        checkAchievement('speed_demon', 1);
+                    }
+                    if (completionTime < 10) {
+                        checkAchievement('lightning_elephant', 1);
+                    }
+                    if (completionTime < 5) {
+                        checkAchievement('supersonic_elephant', 1);
+                    }
+                    if (completionTime < 3) {
+                        checkAchievement('time_trial_master', 1);
+                    }
+                    if (completionTime < 2) {
+                        checkAchievement('impossible_speed', 1);
+                    }
+                    
+                    // Other completion achievements
+                    checkAchievement('elephant_master', 1);
+                    
+                    if (noDeathRun) {
+                        checkAchievement('junior_champion', 1);
+                        showNotification('🏆 Perfect run! No deaths!');
+                    } else {
+                        showNotification('🎉 Level completed!');
+                    }
+                    
+                    // Fan avoidance achievement
+                    if (!touchedFanArea) {
+                        checkAchievement('fan_avoidance', 1);
+                    }
+                    
+                    // High jumper achievement
+                    if (player.y < 100) {
+                        checkAchievement('high_jumper', 1);
+                    }
+                    
+                    // Check platformer achievements
+                    checkPlatformerAchievements();
+                }
+            }
+        }
+
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#87CEEB'; // Sky blue background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw platforms
             platforms.forEach(platform => {
-                if (playerX + 20 > platform.x && playerX < platform.x + 60 &&
-                    playerY <= platform.y + 10 && playerY >= platform.y) {
-                    playerY = platform.y + 10;
-                    playerVelocityY = 0;
-                    isOnGround = true;
-                }
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             });
             
-            // Update player position
-            const player = document.getElementById('player');
-            if (player) {
-                player.style.left = playerX + 'px';
-                player.style.top = (250 - playerY - 20) + 'px';
+            // Draw fan
+            ctx.fillStyle = fan.color;
+            ctx.fillRect(fan.x, fan.y, fan.width, fan.height);
+            
+            // Draw fan blades
+            ctx.strokeStyle = '#FF4757';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(fan.x + fan.width/2, fan.y + fan.height/2);
+            ctx.lineTo(fan.x + fan.width/2, fan.y);
+            ctx.moveTo(fan.x + fan.width/2, fan.y + fan.height/2);
+            ctx.lineTo(fan.x + fan.width/2, fan.y + fan.height);
+            ctx.moveTo(fan.x + fan.width/2, fan.y + fan.height/2);
+            ctx.lineTo(fan.x, fan.y + fan.height/2);
+            ctx.moveTo(fan.x + fan.width/2, fan.y + fan.height/2);
+            ctx.lineTo(fan.x + fan.width, fan.y + fan.height/2);
+            ctx.stroke();
+            
+            // Draw flag
+            ctx.fillStyle = flag.color;
+            ctx.fillRect(flag.x, flag.y, flag.width, flag.height);
+            
+            // Draw flag pole
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(flag.x + flag.width/2, flag.y);
+            ctx.lineTo(flag.x + flag.width/2, flag.y + flag.height);
+            ctx.stroke();
+            
+            // Draw player (elephant)
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw elephant trunk
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(player.x + player.width/2 - 2, player.y - 5, 4, 8);
+            
+            // Draw elephant ears
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(player.x - 5, player.y + 5, 8, 12);
+            ctx.fillRect(player.x + player.width - 3, player.y + 5, 8, 12);
+            
+            // Draw elephant eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 8, player.y + 8, 3, 3);
+            ctx.fillRect(player.x + 19, player.y + 8, 3, 3);
+            
+            // Draw instructions
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(10, 10, 200, 60);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText('Arrow Keys: Move', 15, 25);
+            ctx.fillText('Space: Jump', 15, 40);
+            ctx.fillText('Reach the flag!', 15, 55);
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                updatePlayer();
             }
-            
-            // Check collectibles
-            collectibles.forEach((collectible, index) => {
-                if (!collectible.collected && 
-                    playerX + 20 > collectible.x && playerX < collectible.x + 12 &&
-                    playerY + 20 > collectible.y && playerY < collectible.y + 12) {
-                    collectible.collected = true;
-                    collectiblesFound++;
-                    levelItemsCollected++;
-                    const element = document.getElementById(`collectible_${index}`);
-                    if (element) element.remove();
-                    
-                    checkAchievement('collector_starter', collectiblesFound);
-                    checkAchievement('collector_master', collectiblesFound);
-                    checkAchievement('collector_legend', collectiblesFound);
-                    
-                    if (levelItemsCollected === levelItems) {
-                        checkAchievement('perfect_collector', 1);
-                    }
-                }
-            });
-            
-            // Check secret areas
-            secretAreas.forEach(secretArea => {
-                if (!secretArea.discovered &&
-                    playerX + 20 > secretArea.x && playerX < secretArea.x + 30 &&
-                    playerY + 20 > secretArea.y && playerY < secretArea.y + 30) {
-                    secretArea.discovered = true;
-                    secretAreasFound++;
-                    checkAchievement('secret_finder', 1);
-                    checkAchievement('secret_explorer', secretAreasFound);
-                    checkAchievement('secret_master', secretAreasFound);
-                    showNotification('🔍 Secret area discovered!');
-                }
-            });
-            
-            // Check boss trigger
-            if (boss && !bossFightActive &&
-                playerX + 20 > boss.x && playerX < boss.x + 40 &&
-                playerY + 20 > boss.y && playerY < boss.y + 40) {
-                startBossFight();
-            }
-            
-            // Check level completion
-            if (!levelCompleted && levelItemsCollected >= levelItems && 
-                (boss ? bossFightActive : true)) {
-                completeLevel();
-            }
-            
-            // Update enemies
-            enemies.forEach((enemy, index) => {
-                enemy.x += enemy.direction * enemy.speed;
-                if (enemy.x <= 0 || enemy.x >= 300) {
-                    enemy.direction *= -1;
-                }
-                
-                const element = document.getElementById(`enemy_${index}`);
-                if (element) {
-                    element.style.left = enemy.x + 'px';
-                    element.style.top = (250 - enemy.y - 15) + 'px';
-                }
-                
-                // Enemy collision
-                if (playerX + 20 > enemy.x && playerX < enemy.x + 15 &&
-                    playerY + 20 > enemy.y && playerY < enemy.y + 15) {
-                    levelEnemiesHit++;
-                    if (levelEnemiesHit === levelEnemies) {
-                        checkAchievement('no_damage_run', 1);
-                    }
-                }
-            });
+            drawGame();
+            requestAnimationFrame(gameLoop);
         }
 
-        function moveLeft() {
-            if (bossFightActive) return;
-            playerX = Math.max(0, playerX - 10);
+        function startPlatformer() {
+            gameRunning = true;
+            showNotification('🐘 Junior Platformer started! Use arrow keys and space!');
         }
 
-        function moveRight() {
-            if (bossFightActive) return;
-            playerX = Math.min(280, playerX + 10);
+        function checkPlatformerAchievements() {
+            // Check platformer legend achievement
+            const platformerAchievements = achievements.filter(a => 
+                a.id.startsWith('first_step') || 
+                a.id.startsWith('first_jump') || 
+                a.id.startsWith('silence_is_golden') || 
+                a.id.startsWith('hint_') || 
+                a.id.startsWith('floating_corpse') || 
+                a.id.startsWith('platformer_') || 
+                a.id.startsWith('elephant_') || 
+                a.id.startsWith('junior_champion') || 
+                a.id.startsWith('cheater_') || 
+                a.id.startsWith('too_slow') || 
+                a.id.startsWith('speed_') || 
+                a.id.startsWith('lightning_') || 
+                a.id.startsWith('supersonic_') || 
+                a.id.startsWith('time_trial_') || 
+                a.id.startsWith('impossible_') || 
+                a.id.startsWith('fan_avoidance') || 
+                a.id.startsWith('platform_hopper') || 
+                a.id.startsWith('wall_hugger') || 
+                a.id.startsWith('high_jumper') || 
+                a.id.startsWith('low_crawler') || 
+                a.id.startsWith('air_time') || 
+                a.id.startsWith('bouncy_') || 
+                a.id.startsWith('restless_') || 
+                a.id.startsWith('elephant_marathon')
+            );
+            
+            const unlockedPlatformer = platformerAchievements.filter(a => a.unlocked).length;
+            checkAchievement('platformer_legend', unlockedPlatformer);
         }
 
-        function jump() {
-            if (bossFightActive || !isOnGround) return;
-            playerVelocityY = 8;
-            isOnGround = false;
-        }
-
-        function startBossFight() {
-            bossFightActive = true;
-            bossHealth = boss.maxHealth;
-            bossAttackTime = Date.now();
-            document.getElementById('bossFight').style.display = 'flex';
-            showNotification('👹 BOSS FIGHT STARTED!');
-        }
-
-        function attackBoss() {
-            if (!bossFightActive) return;
-            
-            const damage = 10 + Math.floor(Math.random() * 20);
-            bossHealth -= damage;
-            
-            const healthPercent = (bossHealth / boss.maxHealth) * 100;
-            document.getElementById('bossHealth').style.width = healthPercent + '%';
-            
-            if (bossHealth <= 0) {
-                defeatBoss();
-            } else {
-                bossAttackTime = Date.now();
-            }
-        }
-
-        function defeatBoss() {
-            bossFightActive = false;
-            bossesDefeated++;
-            document.getElementById('bossFight').style.display = 'none';
-            
-            checkAchievement('boss_slayer', 1);
-            checkAchievement('boss_master', bossesDefeated);
-            checkAchievement('boss_legend', bossesDefeated);
-            
-            const bossDefeatTime = Date.now() - bossAttackTime;
-            if (bossDefeatTime < 5000) {
-                checkAchievement('boss_speed_killer', 1);
-            }
-            
-            showNotification('🎉 BOSS DEFEATED!');
-        }
-
-        function completeLevel() {
-            levelCompleted = true;
-            const levelTime = Date.now() - levelStartTime;
-            
-            if (levelTime < 10000) {
-                checkAchievement('speed_runner_platformer', 1);
-            }
-            
-            checkAchievement('platformer_starter', 1);
-            checkAchievement('platformer_explorer', platformerLevel);
-            checkAchievement('platformer_master', platformerLevel);
-            checkAchievement('platformer_legend', platformerLevel);
-            
-            document.getElementById('levelComplete').style.display = 'flex';
-            showNotification('🎉 Level Complete!');
-        }
-
-        function nextLevel() {
-            platformerLevel++;
-            document.getElementById('levelComplete').style.display = 'none';
-            generateLevel();
-        }
-
-        function updatePlatformerUI() {
-            document.getElementById('platformerLevel').textContent = platformerLevel;
-            document.getElementById('collectiblesFound').textContent = collectiblesFound;
-            document.getElementById('bossesDefeated').textContent = bossesDefeated;
-        }
-
-        // Initialize the game
+        // Initialize platformer when page loads
         window.addEventListener('load', () => {
             initializeGame();
+            initializePlatformer();
+            startPlatformer();
         });
     </script>
 </body>

@@ -1,0 +1,806 @@
+<!-- 
+BRAIN TEST - Tricky Puzzles and Adventures!
+A puzzle game with:
+- Multiple brain teaser levels
+- Interactive elements
+- Hints system
+- Fun animations
+- Progressive difficulty
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brain Test - Tricky Puzzles!</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        #gameContainer {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #title {
+            font-size: 3em;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            animation: titleBounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes titleBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        #levelInfo {
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #levelTitle {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        #levelDescription {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        #puzzleArea {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 400px;
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .puzzle-element {
+            display: inline-block;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .puzzle-element:hover {
+            transform: scale(1.1);
+        }
+        
+        .puzzle-element:active {
+            transform: scale(0.95);
+        }
+        
+        .character {
+            font-size: 4em;
+            margin: 20px;
+        }
+        
+        .object {
+            font-size: 3em;
+            margin: 15px;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        #hintButton {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        #nextButton {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            display: none;
+        }
+        
+        #hint {
+            background: rgba(255, 193, 7, 0.9);
+            border: 3px solid #ffc107;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+            animation: hintPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes hintPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 193, 7, 0.8); }
+        }
+        
+        #progress {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #progressBar {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .draggable {
+            position: absolute;
+            cursor: grab;
+            transition: none;
+        }
+        
+        .draggable:active {
+            cursor: grabbing;
+        }
+        
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            min-height: 100px;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .correct {
+            background: rgba(76, 175, 80, 0.3) !important;
+            border-color: #4CAF50 !important;
+            animation: correctPulse 0.5s ease-in-out;
+        }
+        
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .wrong {
+            animation: wrongShake 0.5s ease-in-out;
+        }
+        
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        #celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confettiFall 3s linear forwards;
+        }
+        
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        #stats {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stat {
+            display: inline-block;
+            margin: 0 20px;
+            font-size: 1.1em;
+        }
+        
+        .stat strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 id="title">🧠 Brain Test 🧠</h1>
+        
+        <div id="stats">
+            <div class="stat"><strong>Level:</strong> <span id="currentLevel">1</span></div>
+            <div class="stat"><strong>Score:</strong> <span id="score">0</span></div>
+            <div class="stat"><strong>Hints Used:</strong> <span id="hintsUsed">0</span></div>
+        </div>
+        
+        <div id="progress">
+            <div>Progress</div>
+            <div id="progressBar">
+                <div id="progressFill"></div>
+            </div>
+        </div>
+        
+        <div id="levelInfo">
+            <div id="levelTitle">Level 1: The Hungry Cat</div>
+            <div id="levelDescription">Help the cat find its food!</div>
+        </div>
+        
+        <div id="puzzleArea">
+            <!-- Puzzle content will be generated here -->
+        </div>
+        
+        <div id="hint"></div>
+        
+        <button class="button" id="hintButton" onclick="showHint()">💡 Get Hint</button>
+        <button class="button" id="nextButton" onclick="nextLevel()">🎉 Next Level</button>
+    </div>
+    
+    <div id="celebration"></div>
+    
+    <script>
+        // Game state
+        let currentLevel = 1;
+        let score = 0;
+        let hintsUsed = 0;
+        let totalLevels = 10;
+        
+        // Levels data
+        const levels = [
+            {
+                title: "Level 1: The Hungry Cat",
+                description: "Help the cat find its food!",
+                elements: [
+                    { type: 'character', emoji: '🐱', x: 100, y: 200, draggable: true },
+                    { type: 'object', emoji: '🍖', x: 300, y: 200, draggable: true },
+                    { type: 'object', emoji: '🥕', x: 500, y: 200, draggable: true }
+                ],
+                hint: "Cats don't eat vegetables!",
+                solution: function() {
+                    const cat = document.querySelector('[data-emoji="🐱"]');
+                    const meat = document.querySelector('[data-emoji="🍖"]');
+                    return isNear(cat, meat, 50);
+                }
+            },
+            {
+                title: "Level 2: Color Match",
+                description: "Match the colors correctly!",
+                elements: [
+                    { type: 'object', emoji: '🔴', x: 100, y: 150, draggable: true },
+                    { type: 'object', emoji: '🔵', x: 200, y: 150, draggable: true },
+                    { type: 'object', emoji: '🟡', x: 300, y: 150, draggable: true },
+                    { type: 'drop-zone', emoji: '🔴', x: 100, y: 300, dropZone: true },
+                    { type: 'drop-zone', emoji: '🔵', x: 200, y: 300, dropZone: true },
+                    { type: 'drop-zone', emoji: '🟡', x: 300, y: 300, dropZone: true }
+                ],
+                hint: "Drag each circle to its matching color zone!",
+                solution: function() {
+                    const red = document.querySelector('[data-emoji="🔴"]');
+                    const redZone = document.querySelectorAll('[data-emoji="🔴"]')[1];
+                    const blue = document.querySelector('[data-emoji="🔵"]');
+                    const blueZone = document.querySelectorAll('[data-emoji="🔵"]')[1];
+                    const yellow = document.querySelector('[data-emoji="🟡"]');
+                    const yellowZone = document.querySelectorAll('[data-emoji="🟡"]')[1];
+                    
+                    return isNear(red, redZone, 30) && isNear(blue, blueZone, 30) && isNear(yellow, yellowZone, 30);
+                }
+            },
+            {
+                title: "Level 3: Math Puzzle",
+                description: "What's 2 + 2?",
+                elements: [
+                    { type: 'object', emoji: '2', x: 100, y: 200, clickable: true },
+                    { type: 'object', emoji: '+', x: 200, y: 200, clickable: true },
+                    { type: 'object', emoji: '2', x: 300, y: 200, clickable: true },
+                    { type: 'object', emoji: '=', x: 400, y: 200, clickable: true },
+                    { type: 'object', emoji: '?', x: 500, y: 200, clickable: true }
+                ],
+                hint: "Count on your fingers!",
+                solution: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    return question.textContent === '4';
+                },
+                onQuestionClick: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    question.textContent = '4';
+                    question.style.background = '#4CAF50';
+                    question.style.color = 'white';
+                }
+            },
+            {
+                title: "Level 4: Find the Hidden",
+                description: "Click on the hidden object!",
+                elements: [
+                    { type: 'object', emoji: '🌳', x: 100, y: 150, clickable: true },
+                    { type: 'object', emoji: '🌳', x: 300, y: 150, clickable: true },
+                    { type: 'object', emoji: '🌳', x: 500, y: 150, clickable: true },
+                    { type: 'object', emoji: '🌳', x: 100, y: 300, clickable: true },
+                    { type: 'object', emoji: '🌳', x: 300, y: 300, clickable: true },
+                    { type: 'object', emoji: '🌳', x: 500, y: 300, clickable: true }
+                ],
+                hint: "Look very carefully at each tree...",
+                solution: function() {
+                    return document.querySelector('.found') !== null;
+                },
+                onTreeClick: function(element) {
+                    if (element.dataset.found === 'true') {
+                        element.classList.add('found');
+                        element.style.background = '#4CAF50';
+                        element.style.color = 'white';
+                    }
+                }
+            },
+            {
+                title: "Level 5: Pattern Sequence",
+                description: "What comes next in the pattern?",
+                elements: [
+                    { type: 'object', emoji: '🔴', x: 100, y: 200, clickable: true },
+                    { type: 'object', emoji: '🔵', x: 200, y: 200, clickable: true },
+                    { type: 'object', emoji: '🔴', x: 300, y: 200, clickable: true },
+                    { type: 'object', emoji: '🔵', x: 400, y: 200, clickable: true },
+                    { type: 'object', emoji: '🔴', x: 500, y: 200, clickable: true },
+                    { type: 'object', emoji: '?', x: 600, y: 200, clickable: true }
+                ],
+                hint: "Red, Blue, Red, Blue, Red, ...",
+                solution: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    return question.textContent === '🔵';
+                },
+                onQuestionClick: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    question.textContent = '🔵';
+                    question.style.background = '#4CAF50';
+                    question.style.color = 'white';
+                }
+            },
+            {
+                title: "Level 6: Word Puzzle",
+                description: "Unscramble the word: TAC",
+                elements: [
+                    { type: 'object', emoji: 'T', x: 100, y: 200, clickable: true },
+                    { type: 'object', emoji: 'A', x: 200, y: 200, clickable: true },
+                    { type: 'object', emoji: 'C', x: 300, y: 200, clickable: true },
+                    { type: 'object', emoji: '?', x: 500, y: 200, clickable: true }
+                ],
+                hint: "What do cats say?",
+                solution: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    return question.textContent === 'CAT';
+                },
+                onQuestionClick: function() {
+                    const question = document.querySelector('[data-emoji="?"]');
+                    question.textContent = 'CAT';
+                    question.style.background = '#4CAF50';
+                    question.style.color = 'white';
+                }
+            },
+            {
+                title: "Level 7: Memory Test",
+                description: "Remember the sequence and click in order!",
+                elements: [
+                    { type: 'object', emoji: '🔴', x: 100, y: 200, clickable: true, sequence: 1 },
+                    { type: 'object', emoji: '🔵', x: 200, y: 200, clickable: true, sequence: 2 },
+                    { type: 'object', emoji: '🟡', x: 300, y: 200, clickable: true, sequence: 3 },
+                    { type: 'object', emoji: '🟢', x: 400, y: 200, clickable: true, sequence: 4 }
+                ],
+                hint: "Watch the flashing lights carefully!",
+                solution: function() {
+                    return window.sequenceCompleted === true;
+                },
+                onLoad: function() {
+                    showSequence();
+                }
+            },
+            {
+                title: "Level 8: Logic Puzzle",
+                description: "Which door leads to safety?",
+                elements: [
+                    { type: 'object', emoji: '🚪', x: 100, y: 200, clickable: true, door: 1 },
+                    { type: 'object', emoji: '🚪', x: 300, y: 200, clickable: true, door: 2 },
+                    { type: 'object', emoji: '🚪', x: 500, y: 200, clickable: true, door: 3 },
+                    { type: 'text', text: "Door 1: 'This door leads to safety'", x: 100, y: 300 },
+                    { type: 'text', text: "Door 2: 'Door 1 lies'", x: 300, y: 300 },
+                    { type: 'text', text: "Door 3: 'Door 2 tells the truth'", x: 500, y: 300 }
+                ],
+                hint: "If Door 1 lies, then Door 2 tells the truth...",
+                solution: function() {
+                    return window.correctDoorClicked === 2;
+                },
+                onDoorClick: function(doorNum) {
+                    if (doorNum === 2) {
+                        window.correctDoorClicked = 2;
+                        document.querySelector(`[data-door="${doorNum}"]`).style.background = '#4CAF50';
+                    } else {
+                        document.querySelector(`[data-door="${doorNum}"]`).style.background = '#f44336';
+                    }
+                }
+            },
+            {
+                title: "Level 9: Physics Puzzle",
+                description: "Make the ball reach the goal!",
+                elements: [
+                    { type: 'object', emoji: '⚽', x: 100, y: 100, draggable: true },
+                    { type: 'object', emoji: '🎯', x: 600, y: 300, static: true },
+                    { type: 'object', emoji: '🪜', x: 200, y: 200, draggable: true },
+                    { type: 'object', emoji: '📦', x: 400, y: 250, draggable: true }
+                ],
+                hint: "Use the ladder to create a ramp!",
+                solution: function() {
+                    const ball = document.querySelector('[data-emoji="⚽"]');
+                    const goal = document.querySelector('[data-emoji="🎯"]');
+                    return isNear(ball, goal, 30);
+                }
+            },
+            {
+                title: "Level 10: Final Challenge",
+                description: "Complete the impossible puzzle!",
+                elements: [
+                    { type: 'object', emoji: '🧩', x: 100, y: 150, draggable: true, piece: 1 },
+                    { type: 'object', emoji: '🧩', x: 200, y: 150, draggable: true, piece: 2 },
+                    { type: 'object', emoji: '🧩', x: 300, y: 150, draggable: true, piece: 3 },
+                    { type: 'object', emoji: '🧩', x: 400, y: 150, draggable: true, piece: 4 },
+                    { type: 'drop-zone', emoji: '🎨', x: 250, y: 300, dropZone: true }
+                ],
+                hint: "All pieces must fit together perfectly!",
+                solution: function() {
+                    const pieces = document.querySelectorAll('[data-piece]');
+                    const dropZone = document.querySelector('[data-emoji="🎨"]');
+                    return Array.from(pieces).every(piece => isNear(piece, dropZone, 50));
+                }
+            }
+        ];
+        
+        // Initialize game
+        function init() {
+            console.log('BRAIN TEST GAME INITIALIZING!');
+            loadLevel(currentLevel);
+            updateDisplay();
+        }
+        
+        function loadLevel(levelNum) {
+            const level = levels[levelNum - 1];
+            if (!level) {
+                showGameComplete();
+                return;
+            }
+            
+            document.getElementById('levelTitle').textContent = level.title;
+            document.getElementById('levelDescription').textContent = level.description;
+            
+            const puzzleArea = document.getElementById('puzzleArea');
+            puzzleArea.innerHTML = '';
+            
+            // Create elements
+            level.elements.forEach(element => {
+                if (element.type === 'text') {
+                    const textDiv = document.createElement('div');
+                    textDiv.textContent = element.text;
+                    textDiv.style.position = 'absolute';
+                    textDiv.style.left = element.x + 'px';
+                    textDiv.style.top = element.y + 'px';
+                    textDiv.style.fontSize = '14px';
+                    textDiv.style.color = '#666';
+                    puzzleArea.appendChild(textDiv);
+                } else if (element.type === 'drop-zone') {
+                    const dropZone = document.createElement('div');
+                    dropZone.className = 'drop-zone';
+                    dropZone.textContent = element.emoji;
+                    dropZone.style.position = 'absolute';
+                    dropZone.style.left = element.x + 'px';
+                    dropZone.style.top = element.y + 'px';
+                    dropZone.dataset.emoji = element.emoji;
+                    puzzleArea.appendChild(dropZone);
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'puzzle-element';
+                    div.textContent = element.emoji;
+                    div.style.position = 'absolute';
+                    div.style.left = element.x + 'px';
+                    div.style.top = element.y + 'px';
+                    div.dataset.emoji = element.emoji;
+                    
+                    if (element.draggable) {
+                        div.classList.add('draggable');
+                        makeDraggable(div);
+                    }
+                    
+                    if (element.clickable) {
+                        div.addEventListener('click', () => handleElementClick(div, element));
+                    }
+                    
+                    if (element.door) {
+                        div.dataset.door = element.door;
+                    }
+                    
+                    if (element.piece) {
+                        div.dataset.piece = element.piece;
+                    }
+                    
+                    if (element.sequence) {
+                        div.dataset.sequence = element.sequence;
+                    }
+                    
+                    if (element.static) {
+                        div.style.cursor = 'default';
+                    }
+                    
+                    puzzleArea.appendChild(div);
+                }
+            });
+            
+            // Special level setup
+            if (level.onLoad) {
+                level.onLoad();
+            }
+            
+            // Set up hidden elements for level 4
+            if (levelNum === 4) {
+                const trees = document.querySelectorAll('[data-emoji="🌳"]');
+                const randomTree = trees[Math.floor(Math.random() * trees.length)];
+                randomTree.dataset.found = 'true';
+            }
+            
+            hideHint();
+            document.getElementById('nextButton').style.display = 'none';
+        }
+        
+        function makeDraggable(element) {
+            let isDragging = false;
+            let startX, startY;
+            
+            element.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX - element.offsetLeft;
+                startY = e.clientY - element.offsetTop;
+                element.style.zIndex = '1000';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    element.style.left = (e.clientX - startX) + 'px';
+                    element.style.top = (e.clientY - startY) + 'px';
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    element.style.zIndex = 'auto';
+                    checkSolution();
+                }
+            });
+        }
+        
+        function handleElementClick(element, data) {
+            const level = levels[currentLevel - 1];
+            
+            if (data.emoji === '?') {
+                if (level.onQuestionClick) {
+                    level.onQuestionClick();
+                }
+            } else if (data.emoji === '🌳') {
+                if (level.onTreeClick) {
+                    level.onTreeClick(element);
+                }
+            } else if (data.emoji === '🚪') {
+                if (level.onDoorClick) {
+                    level.onDoorClick(parseInt(element.dataset.door));
+                }
+            } else if (data.dataset && data.dataset.sequence) {
+                handleSequenceClick(element);
+            }
+            
+            checkSolution();
+        }
+        
+        function handleSequenceClick(element) {
+            const expectedSequence = parseInt(element.dataset.sequence);
+            if (!window.currentSequence) window.currentSequence = 1;
+            
+            if (expectedSequence === window.currentSequence) {
+                element.style.background = '#4CAF50';
+                element.style.color = 'white';
+                window.currentSequence++;
+                
+                if (window.currentSequence > 4) {
+                    window.sequenceCompleted = true;
+                }
+            } else {
+                element.classList.add('wrong');
+                setTimeout(() => element.classList.remove('wrong'), 500);
+                window.currentSequence = 1;
+                resetSequenceColors();
+            }
+        }
+        
+        function resetSequenceColors() {
+            document.querySelectorAll('[data-sequence]').forEach(el => {
+                el.style.background = '';
+                el.style.color = '';
+            });
+        }
+        
+        function showSequence() {
+            const sequence = [1, 2, 3, 4];
+            let index = 0;
+            
+            const interval = setInterval(() => {
+                if (index < sequence.length) {
+                    const element = document.querySelector(`[data-sequence="${sequence[index]}"]`);
+                    element.style.background = '#ffc107';
+                    element.style.color = 'white';
+                    
+                    setTimeout(() => {
+                        element.style.background = '';
+                        element.style.color = '';
+                    }, 500);
+                    
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    window.currentSequence = 1;
+                }
+            }, 1000);
+        }
+        
+        function checkSolution() {
+            const level = levels[currentLevel - 1];
+            if (level.solution && level.solution()) {
+                levelComplete();
+            }
+        }
+        
+        function levelComplete() {
+            score += 100;
+            showCelebration();
+            
+            setTimeout(() => {
+                document.getElementById('nextButton').style.display = 'inline-block';
+            }, 2000);
+        }
+        
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel <= totalLevels) {
+                loadLevel(currentLevel);
+                updateDisplay();
+            } else {
+                showGameComplete();
+            }
+        }
+        
+        function showHint() {
+            const level = levels[currentLevel - 1];
+            if (level.hint) {
+                const hintDiv = document.getElementById('hint');
+                hintDiv.textContent = level.hint;
+                hintDiv.style.display = 'block';
+                hintsUsed++;
+                updateDisplay();
+            }
+        }
+        
+        function hideHint() {
+            document.getElementById('hint').style.display = 'none';
+        }
+        
+        function showCelebration() {
+            const celebration = document.getElementById('celebration');
+            celebration.style.display = 'block';
+            
+            // Create confetti
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                celebration.appendChild(confetti);
+            }
+            
+            setTimeout(() => {
+                celebration.style.display = 'none';
+                celebration.innerHTML = '';
+            }, 3000);
+        }
+        
+        function showGameComplete() {
+            const puzzleArea = document.getElementById('puzzleArea');
+            puzzleArea.innerHTML = `
+                <h2 style="color: #4CAF50; font-size: 2em;">🎉 Congratulations! 🎉</h2>
+                <p style="font-size: 1.5em;">You completed all the brain teasers!</p>
+                <p style="font-size: 1.2em;">Final Score: ${score}</p>
+                <button class="button" onclick="restartGame()">🔄 Play Again</button>
+            `;
+        }
+        
+        function restartGame() {
+            currentLevel = 1;
+            score = 0;
+            hintsUsed = 0;
+            loadLevel(currentLevel);
+            updateDisplay();
+        }
+        
+        function isNear(element1, element2, distance) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+            
+            const center1 = {
+                x: rect1.left + rect1.width / 2,
+                y: rect1.top + rect1.height / 2
+            };
+            
+            const center2 = {
+                x: rect2.left + rect2.width / 2,
+                y: rect2.top + rect2.height / 2
+            };
+            
+            const actualDistance = Math.sqrt(
+                Math.pow(center1.x - center2.x, 2) + 
+                Math.pow(center1.y - center2.y, 2)
+            );
+            
+            return actualDistance <= distance;
+        }
+        
+        function updateDisplay() {
+            document.getElementById('currentLevel').textContent = currentLevel;
+            document.getElementById('score').textContent = score;
+            document.getElementById('hintsUsed').textContent = hintsUsed;
+            
+            const progress = ((currentLevel - 1) / totalLevels) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+        
+        // Start the game
+        console.log('BRAIN TEST GAME LOADING!');
+        init();
+        console.log('Brain Test game ready! Time to solve some puzzles! 🧠');
+    </script>
+</body>
+</html>

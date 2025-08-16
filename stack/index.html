@@ -1,0 +1,443 @@
+<!-- 
+Bo's Stack Game Request:
+- 3D blocks using Three.js
+- Total height scoring
+- Different block features (colors, sizes, special effects)
+- Tap/click to drop blocks and build the tallest tower
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Stack - Build the Tallest Tower!</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        #height {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        #blocks {
+            font-size: 16px;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 18px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 200;
+            display: none;
+        }
+        
+        #restartBtn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        #restartBtn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui">
+            <div id="score">Score: 0</div>
+            <div id="height">Height: 0m</div>
+            <div id="blocks">Blocks: 0</div>
+        </div>
+        
+        <div id="instructions">
+            Click/Tap to drop blocks! Build the tallest tower! 🏗️
+        </div>
+        
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Height: <span id="finalHeight">0</span>m</p>
+            <p>Total Blocks: <span id="finalBlocks">0</span></p>
+            <button id="restartBtn">Play Again!</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.20.0/cannon.min.js"></script>
+    <script>
+        // Game variables
+        let scene, camera, renderer;
+        let world; // Physics world
+        let blocks = [];
+        let currentBlock;
+        let movingRight = true;
+        let gameStarted = false;
+        let score = 0;
+        let totalHeight = 0;
+        let blockCount = 0;
+        let gameOver = false;
+        let difficulty = 1; // Difficulty increases with height
+        
+        // Block colors for different features
+        const blockColors = [
+            0xff6b6b, // Red
+            0x4ecdc4, // Teal
+            0x45b7d1, // Blue
+            0x96ceb4, // Green
+            0xfeca57, // Yellow
+            0xff9ff3, // Pink
+            0x54a0ff, // Light Blue
+            0x5f27cd, // Purple
+            0x00d2d3, // Cyan
+            0xff9f43  // Orange
+        ];
+        
+        // Initialize the game
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+            
+            // Initialize physics world
+            world = new CANNON.World();
+            world.gravity.set(0, -9.82, 0); // Real gravity!
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
+            
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+            
+            // Create ground with physics
+            const groundGeometry = new THREE.PlaneGeometry(20, 20);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Physics ground
+            const groundShape = new CANNON.Plane();
+            const groundBody = new CANNON.Body({ mass: 0 });
+            groundBody.addShape(groundShape);
+            groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+            world.addBody(groundBody);
+            
+            // Create first block
+            createNewBlock();
+            
+            // Add event listeners
+            document.addEventListener('click', dropBlock);
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') dropBlock();
+            });
+            
+            document.getElementById('restartBtn').addEventListener('click', restartGame);
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start game loop
+            animate();
+        }
+        
+        function createNewBlock() {
+            let geometry, shape, blockType;
+            
+            // Determine block type based on height
+            if (totalHeight >= 100) {
+                // Circle at height 100+
+                geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 8);
+                shape = new CANNON.Cylinder(0.5, 0.5, 0.3, 8);
+                blockType = 'circle';
+            } else if (totalHeight >= 50) {
+                // Triangle at height 50+
+                geometry = new THREE.ConeGeometry(0.5, 0.6, 3);
+                shape = new CANNON.Cylinder(0.5, 0.5, 0.6, 3);
+                blockType = 'triangle';
+            } else {
+                // Regular cube
+                geometry = new THREE.BoxGeometry(1, 1, 1);
+                shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+                blockType = 'cube';
+            }
+            
+            // Random color for different features
+            const colorIndex = Math.floor(Math.random() * blockColors.length);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: blockColors[colorIndex],
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            currentBlock = new THREE.Mesh(geometry, material);
+            currentBlock.castShadow = true;
+            currentBlock.receiveShadow = true;
+            currentBlock.userData = { type: blockType };
+            
+            // Position the block
+            if (blocks.length === 0) {
+                currentBlock.position.set(0, 0.5, 0);
+            } else {
+                const lastBlock = blocks[blocks.length - 1];
+                currentBlock.position.set(0, lastBlock.position.y + 1, 0);
+            }
+            
+            scene.add(currentBlock);
+        }
+        
+        function dropBlock() {
+            if (gameOver) return;
+            
+            if (!gameStarted) {
+                gameStarted = true;
+            }
+            
+            // Create physics body for the dropped block
+            let shape, mass = 1;
+            
+            if (currentBlock.userData.type === 'circle') {
+                shape = new CANNON.Cylinder(0.5, 0.5, 0.3, 8);
+            } else if (currentBlock.userData.type === 'triangle') {
+                shape = new CANNON.Cylinder(0.5, 0.5, 0.6, 3);
+            } else {
+                shape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+            }
+            
+            const body = new CANNON.Body({ mass: mass });
+            body.addShape(shape);
+            body.position.copy(currentBlock.position);
+            body.quaternion.copy(currentBlock.quaternion);
+            world.addBody(body);
+            
+            // Create visual block
+            const droppedBlock = currentBlock.clone();
+            droppedBlock.userData = { body: body, type: currentBlock.userData.type };
+            blocks.push(droppedBlock);
+            scene.add(droppedBlock);
+            
+            // Remove the moving block
+            scene.remove(currentBlock);
+            
+            // Check if block landed on target (simplified for physics)
+            let landed = false;
+            if (blocks.length > 1) {
+                const lastBlock = blocks[blocks.length - 2];
+                const currentPos = droppedBlock.position.x;
+                const lastPos = lastBlock.position.x;
+                const overlap = Math.abs(currentPos - lastPos);
+                
+                // Increase difficulty with height
+                const difficultyFactor = Math.min(1 + (totalHeight / 50), 3); // Gets 3x harder
+                const tolerance = 0.5 / difficultyFactor;
+                
+                if (overlap < tolerance) {
+                    // Perfect landing!
+                    landed = true;
+                    score += 100 * difficultyFactor;
+                    
+                    // Special effect for perfect landing
+                    droppedBlock.material.color.setHex(0x00ff00);
+                    setTimeout(() => {
+                        droppedBlock.material.color.setHex(blockColors[Math.floor(Math.random() * blockColors.length)]);
+                    }, 500);
+                } else {
+                    // Partial landing - harder to balance
+                    const newWidth = 1 - overlap;
+                    if (newWidth > 0.1) {
+                        droppedBlock.scale.x = newWidth;
+                        score += Math.floor(newWidth * 50 * difficultyFactor);
+                        
+                        // Make it more unstable
+                        body.angularVelocity.set(0, 0, Math.random() * 2 - 1);
+                    } else {
+                        // Block fell off - game over
+                        gameOver = true;
+                        showGameOver();
+                        return;
+                    }
+                }
+            } else {
+                // First block always lands perfectly
+                landed = true;
+                score += 100;
+            }
+            
+            // Update stats
+            blockCount++;
+            totalHeight = Math.max(totalHeight, droppedBlock.position.y + 0.5);
+            difficulty = Math.min(1 + (totalHeight / 50), 3);
+            updateUI();
+            
+            // Create next block
+            createNewBlock();
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = `Score: ${Math.floor(score)}`;
+            document.getElementById('height').textContent = `Height: ${totalHeight.toFixed(1)}m`;
+            document.getElementById('blocks').textContent = `Blocks: ${blockCount} | Difficulty: ${difficulty.toFixed(1)}x`;
+        }
+        
+        function showGameOver() {
+            document.getElementById('finalHeight').textContent = totalHeight.toFixed(1);
+            document.getElementById('finalBlocks').textContent = blockCount;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function restartGame() {
+            // Clear all blocks and physics bodies
+            blocks.forEach(block => {
+                scene.remove(block);
+                if (block.userData.body) {
+                    world.removeBody(block.userData.body);
+                }
+            });
+            blocks = [];
+            
+            // Reset game state
+            score = 0;
+            totalHeight = 0;
+            blockCount = 0;
+            difficulty = 1;
+            gameOver = false;
+            gameStarted = false;
+            
+            // Update UI
+            updateUI();
+            
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Create new first block
+            createNewBlock();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update physics
+            world.step(1/60);
+            
+            // Update visual blocks to match physics
+            blocks.forEach(block => {
+                if (block.userData.body) {
+                    block.position.copy(block.userData.body.position);
+                    block.quaternion.copy(block.userData.body.quaternion);
+                    
+                    // Check if block fell too far (game over)
+                    if (block.position.y < -10) {
+                        gameOver = true;
+                        showGameOver();
+                    }
+                }
+            });
+            
+            if (!gameOver && gameStarted && currentBlock) {
+                // Move current block back and forth (faster with difficulty)
+                const speed = 0.03 * difficulty;
+                if (movingRight) {
+                    currentBlock.position.x += speed;
+                    if (currentBlock.position.x > 3) {
+                        movingRight = false;
+                    }
+                } else {
+                    currentBlock.position.x -= speed;
+                    if (currentBlock.position.x < -3) {
+                        movingRight = true;
+                    }
+                }
+                
+                // Add some rotation for visual appeal
+                currentBlock.rotation.y += 0.02 * difficulty;
+            }
+            
+            // Camera follows the top block
+            if (blocks.length > 0) {
+                const topBlock = blocks[blocks.length - 1];
+                const targetY = topBlock.position.y + 5; // Keep camera 5 units above the top block
+                camera.position.y += (targetY - camera.position.y) * 0.05; // Smooth camera movement
+                camera.lookAt(0, topBlock.position.y, 0);
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Start the game
+        init();
+    </script>
+</body>
+</html>

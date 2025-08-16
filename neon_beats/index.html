@@ -1,0 +1,778 @@
+<!-- Neon Beats - Super confusing rhythm game with portals, gravity changes, and shape shifting! -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌈 Neon Beats - The Most Confusing Rhythm Game! 🌈</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-container {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(45deg, #000, #1a0033);
+            overflow: hidden;
+        }
+        
+        .ui-panel {
+            height: 80px;
+            background: linear-gradient(90deg, #ff00ff, #00ffff, #ffff00, #ff00ff);
+            background-size: 400% 100%;
+            animation: rainbowShift 3s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 3px solid #fff;
+        }
+        
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+        
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: #fff;
+            color: #000;
+            transform: scale(1.1);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+        
+        .portal {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid;
+            animation: portalSpin 2s linear infinite;
+            box-shadow: 0 0 30px currentColor;
+        }
+        
+        @keyframes portalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .portal.gravity {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .portal.shape {
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+        
+        .portal.flip {
+            border-color: #ffff00;
+            color: #ffff00;
+        }
+        
+        .portal.teleport {
+            border-color: #ff0080;
+            color: #ff0080;
+        }
+        
+        .obstacle {
+            position: absolute;
+            background: linear-gradient(45deg, #ff0066, #ff6600);
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px #ff0066;
+            animation: obstaclePulse 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes obstaclePulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            animation: particleFloat 1s ease-out forwards;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: #000;
+            padding: 20px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.8);
+            z-index: 1001;
+            font-size: 24px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        .background-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,0,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,0,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 2s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="ui-panel">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="controls">
+            <button class="control-btn" onclick="startGame()">🎮 Start</button>
+            <button class="control-btn" onclick="pauseGame()">⏸️ Pause</button>
+            <button class="control-btn" onclick="resetGame()">🔄 Reset</button>
+        </div>
+        <div class="score">Level: <span id="level">1</span></div>
+    </div>
+    
+    <div class="game-container">
+        <div class="background-grid"></div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // Game state
+        let game = {
+            canvas: null,
+            ctx: null,
+            player: {
+                x: 100,
+                y: 300,
+                size: 30,
+                vy: 0,
+                vx: 5,
+                shape: 'cube', // cube, triangle, circle, star
+                color: '#ff00ff',
+                gravity: 0.8,
+                isJumping: false,
+                rotation: 0
+            },
+            obstacles: [],
+            portals: [],
+            particles: [],
+            score: 0,
+            level: 1,
+            gameSpeed: 5,
+            isPlaying: false,
+            isPaused: false,
+            gravity: 0.8,
+            screenFlipped: false,
+            beatTimer: 0,
+            beatInterval: 500, // milliseconds
+            keys: {
+                space: false,
+                up: false,
+                down: false
+            }
+        };
+        
+        // Initialize game
+        function initGame() {
+            game.canvas = document.getElementById('gameCanvas');
+            game.ctx = game.canvas.getContext('2d');
+            
+            // Set canvas size
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Keyboard events
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            
+            // Initialize level
+            initLevel();
+            
+            // Start game loop
+            gameLoop();
+        }
+        
+        // Resize canvas
+        function resizeCanvas() {
+            const container = game.canvas.parentElement;
+            game.canvas.width = container.clientWidth;
+            game.canvas.height = container.clientHeight;
+        }
+        
+        // Initialize level
+        function initLevel() {
+            game.obstacles = [];
+            game.portals = [];
+            game.particles = [];
+            game.player.x = 100;
+            game.player.y = game.canvas.height - 200;
+            game.player.vy = 0;
+            game.player.shape = 'cube';
+            game.player.color = '#ff00ff';
+            game.gravity = 0.8;
+            game.screenFlipped = false;
+            game.gameSpeed = 5 + (game.level - 1) * 2;
+            
+            // Create portals
+            createPortals();
+            
+            // Create obstacles
+            createObstacles();
+        }
+        
+        // Create portals
+        function createPortals() {
+            const portalTypes = ['gravity', 'shape', 'flip', 'teleport'];
+            
+            for (let i = 0; i < 3; i++) {
+                const type = portalTypes[Math.floor(Math.random() * portalTypes.length)];
+                const portal = {
+                    x: 400 + i * 300 + Math.random() * 200,
+                    y: 100 + Math.random() * (game.canvas.height - 300),
+                    type: type,
+                    size: 60
+                };
+                game.portals.push(portal);
+            }
+        }
+        
+        // Create obstacles
+        function createObstacles() {
+            for (let i = 0; i < 10; i++) {
+                const obstacle = {
+                    x: 600 + i * 200 + Math.random() * 100,
+                    y: game.canvas.height - 100 - Math.random() * 200,
+                    width: 30 + Math.random() * 40,
+                    height: 30 + Math.random() * 40,
+                    type: Math.random() > 0.5 ? 'spike' : 'block'
+                };
+                game.obstacles.push(obstacle);
+            }
+        }
+        
+        // Keyboard events
+        function onKeyDown(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                game.keys.space = true;
+                if (game.isPlaying && !game.isPaused) {
+                    jump();
+                }
+            }
+            if (e.code === 'ArrowUp') game.keys.up = true;
+            if (e.code === 'ArrowDown') game.keys.down = true;
+        }
+        
+        function onKeyUp(e) {
+            if (e.code === 'Space') game.keys.space = false;
+            if (e.code === 'ArrowUp') game.keys.up = false;
+            if (e.code === 'ArrowDown') game.keys.down = false;
+        }
+        
+        // Start game
+        function startGame() {
+            if (!game.isPlaying) {
+                game.isPlaying = true;
+                game.isPaused = false;
+                showNotification('🎵 Neon Beats Started! 🎵');
+            } else if (game.isPaused) {
+                game.isPaused = false;
+                showNotification('▶️ Game Resumed!');
+            }
+        }
+        
+        // Pause game
+        function pauseGame() {
+            if (game.isPlaying && !game.isPaused) {
+                game.isPaused = true;
+                showNotification('⏸️ Game Paused!');
+            }
+        }
+        
+        // Reset game
+        function resetGame() {
+            game.score = 0;
+            game.level = 1;
+            game.isPlaying = false;
+            game.isPaused = false;
+            initLevel();
+            updateDisplay();
+            showNotification('🔄 Game Reset!');
+        }
+        
+        // Jump
+        function jump() {
+            if (!game.player.isJumping) {
+                game.player.vy = -15;
+                game.player.isJumping = true;
+                createParticles(game.player.x, game.player.y, '#ffff00');
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Update game state
+        function update() {
+            if (!game.isPlaying || game.isPaused) return;
+            
+            // Update beat timer
+            game.beatTimer += 16; // 60fps
+            if (game.beatTimer >= game.beatInterval) {
+                game.beatTimer = 0;
+                // Beat effect
+                createParticles(game.player.x, game.player.y, '#ff00ff');
+            }
+            
+            // Update player
+            updatePlayer();
+            
+            // Update obstacles
+            updateObstacles();
+            
+            // Update portals
+            updatePortals();
+            
+            // Update particles
+            updateParticles();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Check level completion
+            checkLevelComplete();
+        }
+        
+        // Update player
+        function updatePlayer() {
+            // Apply gravity
+            game.player.vy += game.gravity;
+            
+            // Update position
+            game.player.x += game.player.vx;
+            game.player.y += game.player.vy;
+            
+            // Update rotation
+            game.player.rotation += 0.1;
+            
+            // Check ground collision
+            if (game.player.y + game.player.size > game.canvas.height - 100) {
+                game.player.y = game.canvas.height - 100 - game.player.size;
+                game.player.vy = 0;
+                game.player.isJumping = false;
+            }
+            
+            // Check ceiling collision
+            if (game.player.y < 0) {
+                game.player.y = 0;
+                game.player.vy = 0;
+            }
+            
+            // Check screen bounds
+            if (game.player.x < 0) game.player.x = 0;
+            if (game.player.x > game.canvas.width) game.player.x = game.canvas.width;
+        }
+        
+        // Update obstacles
+        function updateObstacles() {
+            game.obstacles.forEach(obstacle => {
+                obstacle.x -= game.gameSpeed;
+            });
+            
+            // Remove off-screen obstacles
+            game.obstacles = game.obstacles.filter(obstacle => obstacle.x > -100);
+        }
+        
+        // Update portals
+        function updatePortals() {
+            game.portals.forEach(portal => {
+                portal.x -= game.gameSpeed;
+            });
+            
+            // Remove off-screen portals
+            game.portals = game.portals.filter(portal => portal.x > -100);
+        }
+        
+        // Update particles
+        function updateParticles() {
+            game.particles.forEach(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life -= 1;
+            });
+            
+            // Remove dead particles
+            game.particles = game.particles.filter(particle => particle.life > 0);
+        }
+        
+        // Check collisions
+        function checkCollisions() {
+            // Portal collisions
+            game.portals.forEach(portal => {
+                const distance = Math.sqrt(
+                    Math.pow(game.player.x + game.player.size/2 - portal.x, 2) +
+                    Math.pow(game.player.y + game.player.size/2 - portal.y, 2)
+                );
+                
+                if (distance < portal.size/2 + game.player.size/2) {
+                    activatePortal(portal);
+                }
+            });
+            
+            // Obstacle collisions
+            game.obstacles.forEach(obstacle => {
+                if (game.player.x < obstacle.x + obstacle.width &&
+                    game.player.x + game.player.size > obstacle.x &&
+                    game.player.y < obstacle.y + obstacle.height &&
+                    game.player.y + game.player.size > obstacle.y) {
+                    
+                    // Game over
+                    gameOver();
+                }
+            });
+        }
+        
+        // Activate portal
+        function activatePortal(portal) {
+            createParticles(portal.x, portal.y, portal.type === 'gravity' ? '#ff00ff' : 
+                          portal.type === 'shape' ? '#00ffff' : 
+                          portal.type === 'flip' ? '#ffff00' : '#ff0080');
+            
+            switch(portal.type) {
+                case 'gravity':
+                    game.gravity = game.gravity > 0 ? -0.8 : 0.8;
+                    showNotification('🔄 Gravity Changed!');
+                    break;
+                case 'shape':
+                    const shapes = ['cube', 'triangle', 'circle', 'star'];
+                    game.player.shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    showNotification('🔷 Shape Changed!');
+                    break;
+                case 'flip':
+                    game.screenFlipped = !game.screenFlipped;
+                    showNotification('🔄 Screen Flipped!');
+                    break;
+                case 'teleport':
+                    game.player.x = Math.random() * (game.canvas.width - 200) + 100;
+                    game.player.y = Math.random() * (game.canvas.height - 300) + 100;
+                    showNotification('🚀 Teleported!');
+                    break;
+            }
+            
+            // Remove portal
+            game.portals = game.portals.filter(p => p !== portal);
+        }
+        
+        // Check level complete
+        function checkLevelComplete() {
+            if (game.player.x > game.canvas.width - 100) {
+                game.level++;
+                game.score += 1000;
+                initLevel();
+                updateDisplay();
+                showNotification(`🎉 Level ${game.level} Complete!`);
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            game.isPlaying = false;
+            createParticles(game.player.x, game.player.y, '#ff0000');
+            showNotification('💥 Game Over! Press Reset to try again!');
+        }
+        
+        // Render game
+        function render() {
+            const ctx = game.ctx;
+            ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+            
+            // Apply screen flip
+            if (game.screenFlipped) {
+                ctx.save();
+                ctx.translate(game.canvas.width/2, game.canvas.height/2);
+                ctx.rotate(Math.PI);
+                ctx.translate(-game.canvas.width/2, -game.canvas.height/2);
+            }
+            
+            // Draw background
+            drawBackground();
+            
+            // Draw obstacles
+            drawObstacles();
+            
+            // Draw portals
+            drawPortals();
+            
+            // Draw player
+            drawPlayer();
+            
+            // Draw particles
+            drawParticles();
+            
+            if (game.screenFlipped) {
+                ctx.restore();
+            }
+        }
+        
+        // Draw background
+        function drawBackground() {
+            const ctx = game.ctx;
+            
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, game.canvas.height);
+            gradient.addColorStop(0, '#000033');
+            gradient.addColorStop(0.5, '#330066');
+            gradient.addColorStop(1, '#660099');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
+            
+            // Neon lines
+            ctx.strokeStyle = 'rgba(255, 0, 255, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < game.canvas.width; i += 100) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + 50, game.canvas.height);
+                ctx.stroke();
+            }
+        }
+        
+        // Draw obstacles
+        function drawObstacles() {
+            const ctx = game.ctx;
+            
+            game.obstacles.forEach(obstacle => {
+                if (obstacle.type === 'spike') {
+                    // Draw spike
+                    ctx.fillStyle = '#ff0066';
+                    ctx.beginPath();
+                    ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+                    ctx.lineTo(obstacle.x + obstacle.width/2, obstacle.y);
+                    ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Draw block
+                    ctx.fillStyle = '#ff6600';
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                }
+                
+                // Glow effect
+                ctx.shadowColor = '#ff0066';
+                ctx.shadowBlur = 20;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.shadowBlur = 0;
+            });
+        }
+        
+        // Draw portals
+        function drawPortals() {
+            const ctx = game.ctx;
+            
+            game.portals.forEach(portal => {
+                const colors = {
+                    gravity: '#ff00ff',
+                    shape: '#00ffff',
+                    flip: '#ffff00',
+                    teleport: '#ff0080'
+                };
+                
+                const color = colors[portal.type];
+                
+                // Portal glow
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 30;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, portal.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Portal ring
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, portal.size/2, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Portal center
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, portal.size/4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // Draw player
+        function drawPlayer() {
+            const ctx = game.ctx;
+            
+            ctx.save();
+            ctx.translate(game.player.x + game.player.size/2, game.player.y + game.player.size/2);
+            ctx.rotate(game.player.rotation);
+            
+            // Player glow
+            ctx.shadowColor = game.player.color;
+            ctx.shadowBlur = 20;
+            
+            switch(game.player.shape) {
+                case 'cube':
+                    ctx.fillStyle = game.player.color;
+                    ctx.fillRect(-game.player.size/2, -game.player.size/2, game.player.size, game.player.size);
+                    break;
+                case 'triangle':
+                    ctx.fillStyle = game.player.color;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -game.player.size/2);
+                    ctx.lineTo(-game.player.size/2, game.player.size/2);
+                    ctx.lineTo(game.player.size/2, game.player.size/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'circle':
+                    ctx.fillStyle = game.player.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, game.player.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'star':
+                    ctx.fillStyle = game.player.color;
+                    ctx.beginPath();
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                        const x = Math.cos(angle) * game.player.size/2;
+                        const y = Math.sin(angle) * game.player.size/2;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
+        
+        // Draw particles
+        function drawParticles() {
+            const ctx = game.ctx;
+            
+            game.particles.forEach(particle => {
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life / 60;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // Create particles
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                const particle = {
+                    x: x + Math.random() * 40 - 20,
+                    y: y + Math.random() * 40 - 20,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    size: Math.random() * 4 + 2,
+                    color: color,
+                    life: 60
+                };
+                game.particles.push(particle);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('level').textContent = game.level;
+        }
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

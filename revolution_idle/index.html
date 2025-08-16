@@ -1,0 +1,1437 @@
+<!-- Revolution Idle Game - Like the App Store version with resources, buildings, ages, and revolution system -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🏛️ Revolution Idle - Build Your Empire! 🏛️</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0a0f;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .header {
+            background: #1a1a2e;
+            padding: 8px 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            height: 35px;
+            box-sizing: border-box;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1em;
+            color: white;
+            font-weight: normal;
+        }
+        
+        .age-display {
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        
+        .sidebar {
+            width: 220px;
+            background: #2d1b69;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .sidebar-title {
+            color: #ccc;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .sidebar-currency {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 3px;
+        }
+        
+        .sidebar-rate {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+        
+        .sidebar-menu {
+            flex: 1;
+            padding: 10px 0;
+        }
+        
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        
+        .menu-item:hover {
+            background: #2d2d4a;
+        }
+        
+        .menu-item.active {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .menu-item.offline {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .menu-icon {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .skill-tree {
+            flex: 1;
+            background: #0a0a0f;
+            padding: 15px;
+            overflow: auto;
+            position: relative;
+        }
+        
+        .skill-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 110px);
+            grid-template-rows: repeat(6, 90px);
+            gap: 15px;
+            position: relative;
+            margin-top: 20px;
+        }
+        
+        .skill-node {
+            background: #2d2d4a;
+            border: 2px solid #555;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+        }
+        
+        .skill-node.unlocked {
+            background: #00ff00;
+            border-color: #00cc00;
+            color: #000;
+        }
+        
+        .skill-node.available {
+            background: #8b5cf6;
+            border-color: #7c3aed;
+            color: white;
+        }
+        
+        .skill-node.locked {
+            background: #4a4a4a;
+            border-color: #333;
+            color: #666;
+        }
+        
+        .skill-icon {
+            font-size: 1.3em;
+            margin-bottom: 3px;
+        }
+        
+        .skill-name {
+            font-size: 0.65em;
+            font-weight: bold;
+            line-height: 1.1;
+            text-align: center;
+        }
+        
+        .skill-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .connection-line {
+            position: absolute;
+            border: 1px dashed #555;
+            z-index: 1;
+        }
+        
+        .bottom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .skill-points {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background: #2d2d4a;
+            border: 1px solid #555;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control-btn:hover {
+            background: #3d3d5a;
+        }
+        
+        .resource:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+        }
+        
+        .resource-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 4px;
+        }
+        
+        .resource-amount {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+        }
+        
+        .resource-rate {
+            font-size: 0.85em;
+            color: #ff6b6b;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        
+        .buildings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            margin: 15px;
+        }
+        
+        .building {
+            background: linear-gradient(135deg, #2d1b69, #553c9a);
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .building:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.5);
+        }
+        
+        .building::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .building:hover::before {
+            left: 100%;
+        }
+        
+        .building-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 10px;
+        }
+        
+        .building-count {
+            font-size: 1.1em;
+            color: #f39c12;
+            margin-bottom: 10px;
+        }
+        
+        .building-cost {
+            font-size: 0.9em;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        
+        .building-production {
+            font-size: 0.9em;
+            color: #2ecc71;
+            margin-bottom: 15px;
+        }
+        
+        .buy-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 0.9em;
+        }
+        
+        .buy-btn:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+        }
+        
+        .buy-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .revolution-section {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 15px;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            border: 3px solid #00ffff;
+            box-shadow: 0 6px 25px rgba(0, 255, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .revolution-title {
+            font-size: 2em;
+            color: #ecf0f1;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        
+        .revolution-bonus {
+            font-size: 1.2em;
+            color: #f1c40f;
+            margin-bottom: 20px;
+        }
+        
+        .revolution-btn {
+            background: linear-gradient(45deg, #00ffff, #00ccff);
+            border: none;
+            color: #0a0a0f;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+        }
+        
+        .revolution-btn:hover {
+            background: linear-gradient(45deg, #e67e22, #d35400);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.6);
+        }
+        
+        .revolution-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .upgrades {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            margin: 15px;
+        }
+        
+        .upgrade {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid #00ff00;
+            box-shadow: 0 4px 16px rgba(0, 255, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .upgrade:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(39, 174, 96, 0.5);
+        }
+        
+        .upgrade-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ecf0f1;
+            margin-bottom: 10px;
+        }
+        
+        .upgrade-description {
+            font-size: 0.9em;
+            color: #bdc3c7;
+            margin-bottom: 15px;
+        }
+        
+        .upgrade-cost {
+            font-size: 1em;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        
+        .upgrade-btn {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border: none;
+            color: #0a0a0f;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 0.9em;
+        }
+        
+        .upgrade-btn:hover {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            transform: translateY(-2px);
+        }
+        
+        .upgrade-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            animation: particleFloat 2s ease-out forwards;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #0a0a0f;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 255, 0, 0.4);
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .stats {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 15px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid #00ffff;
+            box-shadow: 0 4px 16px rgba(0, 255, 255, 0.2);
+        }
+        
+        .stats h3 {
+            color: #00ffff;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(155, 89, 182, 0.3);
+        }
+        
+        .stat-label {
+            color: #bdc3c7;
+        }
+        
+        .stat-value {
+            color: #f39c12;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Menu</div>
+            <div class="sidebar-currency" id="sidebarCurrency">0</div>
+            <div class="sidebar-rate" id="sidebarRate">+0/s</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item" onclick="showSection('bots')">
+                <div class="menu-icon">🤖</div>
+                <div>Bots</div>
+            </div>
+            <div class="menu-item" onclick="showSection('research')">
+                <div class="menu-icon">🔍</div>
+                <div>Research</div>
+            </div>
+            <div class="menu-item active" onclick="showSection('skills')">
+                <div class="menu-icon">❌</div>
+                <div>Skills</div>
+            </div>
+            <div class="menu-item offline" onclick="showSection('offline')">
+                <div class="menu-icon">🍃</div>
+                <div>Offline Time</div>
+            </div>
+            <div class="menu-item" onclick="showSection('infinity')">
+                <div class="menu-icon">∞</div>
+                <div>Infinity</div>
+            </div>
+            <div class="menu-item" onclick="showSection('quantum')">
+                <div class="menu-icon">🏢</div>
+                <div>Quantum Management</div>
+            </div>
+            <div class="menu-item" onclick="showSection('reality')">
+                <div class="menu-icon">🏔️</div>
+                <div>Reality</div>
+            </div>
+            <div class="menu-item" onclick="showSection('simulations')">
+                <div class="menu-icon">📈</div>
+                <div>Simulations</div>
+            </div>
+            <div class="menu-item" onclick="showSection('story')">
+                <div class="menu-icon">📖</div>
+                <div>Story</div>
+            </div>
+            <div class="menu-item" onclick="showSection('wiki')">
+                <div class="menu-icon">📄</div>
+                <div>Wiki</div>
+            </div>
+
+            <div class="menu-item" onclick="showSection('debug')">
+                <div class="menu-icon">{}</div>
+                <div>Debug Options</div>
+            </div>
+            <div class="menu-item" onclick="showSection('settings')">
+                <div class="menu-icon">⚙️</div>
+                <div>Settings</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="header">
+            <h1>Total Bots: <span id="totalBots">1.00</span></h1>
+            <div class="age-display"><span id="currentResource">0.00</span> | <span id="currentRate">$0.00/s</span></div>
+        </div>
+        
+        <div class="skill-tree">
+            <div class="skill-grid" id="skillGrid">
+                <!-- Skill nodes will be added here -->
+            </div>
+            <div class="skill-connections" id="skillConnections">
+                <!-- Connection lines will be added here -->
+            </div>
+            <div class="bottom-controls">
+                <div class="skill-points">Skill points: <span id="skillPoints">21</span></div>
+                <div class="control-buttons">
+                    <button class="control-btn">Options</button>
+                    <button class="control-btn">Description</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // Game state - Revolution Idle mechanics
+        let game = {
+            // Resources
+            food: 0,
+            wood: 0,
+            stone: 0,
+            iron: 0,
+            gold: 0,
+            
+            // Production rates
+            foodRate: 0,
+            woodRate: 0,
+            stoneRate: 0,
+            ironRate: 0,
+            goldRate: 0,
+            
+            // Buildings
+            farms: 0,
+            lumberMills: 0,
+            quarries: 0,
+            mines: 0,
+            banks: 0,
+            
+            // Costs
+            farmCost: 10,
+            lumberMillCost: 50,
+            quarryCost: 200,
+            mineCost: 1000,
+            bankCost: 5000,
+            
+            // Upgrades
+            farmEfficiency: false,
+            lumberEfficiency: false,
+            quarryEfficiency: false,
+            mineEfficiency: false,
+            bankEfficiency: false,
+            revolutionBonus: false,
+            
+            // Revolution system
+            revolutions: 0,
+            revolutionBonus: 1,
+            
+            // Game progression
+            currentSection: 'buildings',
+            age: 0,
+            ages: ['Stone Age', 'Bronze Age', 'Iron Age', 'Classical Age', 'Medieval Age'],
+            
+            // Statistics
+            totalResources: 0,
+            totalBuildings: 0,
+            gameTime: 0,
+            
+            // Time tracking
+            lastUpdate: Date.now()
+        };
+        
+        // Skill tree data - exactly like the screenshot
+        const skillTree = [
+            // Row 1 (Top)
+            { id: 'quantum_computing', name: 'Quantum Computing', icon: '⚛️', x: 0, y: 0, status: 'available', cost: 1 },
+            { id: 'parallel_computation', name: 'Parallel Computation', icon: '⊞', x: 1, y: 0, status: 'available', cost: 1 },
+            { id: 'aggressive_algorithms', name: 'Aggressive Algorithms', icon: '➡️', x: 2, y: 0, status: 'available', cost: 1 },
+            { id: 'rudi_memory', name: 'Rudi Memory Singularity', icon: '∞', x: 3, y: 0, status: 'available', cost: 1 },
+            { id: 'progressive_assembly', name: 'Progressive Assembly', icon: '⊞', x: 4, y: 0, status: 'available', cost: 1 },
+            
+            // Row 2 (Mid-Left)
+            { id: 'hypercube_networks', name: 'Hypercube Networks', icon: '⬜', x: 0, y: 1, status: 'unlocked', cost: 1 },
+            { id: 'pocket_androids', name: 'Pocket Androids', icon: '🤖', x: 1, y: 1, status: 'unlocked', cost: 1 },
+            { id: 'solar_bubbles', name: 'Solar Bubbles', icon: '☀️', x: 2, y: 1, status: 'unlocked', cost: 1 },
+            { id: 'shoulder_surgery', name: 'Shoulder Surgery', icon: '➕', x: 3, y: 1, status: 'unlocked', cost: 1 },
+            { id: 'shoulders_revolution', name: 'Shoulders of the Revolution', icon: '🗿', x: 4, y: 1, status: 'unlocked', cost: 1 },
+            
+            // Row 3 (Mid-Central)
+            { id: 'ai_managers', name: 'AI Managers', icon: '🧠', x: 0, y: 2, status: 'available', cost: 1 },
+            { id: 'servers', name: 'Servers', icon: '🖥️', x: 1, y: 2, status: 'available', cost: 1 },
+            { id: 'data_centers', name: 'Data Centers', icon: '🖥️', x: 2, y: 2, status: 'available', cost: 1 },
+            { id: 'planets', name: 'Planets', icon: '🌍', x: 3, y: 2, status: 'available', cost: 1 },
+            { id: 'monetary_policy', name: 'Monetary Policy', icon: '$+', x: 4, y: 2, status: 'available', cost: 1 },
+            { id: 'cash_science', name: 'Cash & Science', icon: '$⚛️', x: 5, y: 2, status: 'unlocked', cost: 1 },
+            
+            // Row 4 (Mid-Right)
+            { id: 'higgs_boson', name: 'Higgs Boson', icon: '🌀', x: 0, y: 3, status: 'available', cost: 1 },
+            { id: 'science_squared', name: 'Science ^2', icon: '⚛️', x: 1, y: 3, status: 'available', cost: 1 },
+            { id: 'science_boost', name: 'Science Boost', icon: '⬆️⬆️⬆️', x: 2, y: 3, status: 'available', cost: 1 },
+            { id: 'idle_spaceflight', name: 'Idle Spaceflight', icon: '🚀', x: 3, y: 3, status: 'locked', cost: 1 },
+            
+            // Row 5 (Bottom)
+            { id: 'hubble_telescope', name: 'Hubble Telescope', icon: '🔭', x: 0, y: 4, status: 'locked', cost: 1 },
+            { id: 'dyson_sphere', name: 'Dyson Sphere', icon: '🌐', x: 1, y: 4, status: 'locked', cost: 1 },
+            { id: 'economic_revolution', name: 'Economic Revolution', icon: '$$$', x: 2, y: 4, status: 'locked', cost: 1 },
+            { id: 'renewable_energy', name: 'Renewable Energy', icon: '⚡242', x: 3, y: 4, status: 'locked', cost: 1 }
+        ];
+        
+        // Building definitions
+        const buildingDefs = {
+            solarPanel: { name: '⚡ Solar Panel', description: 'Generates energy from the sun', emoji: '⚡' },
+            botFactory: { name: '🤖 Bot Factory', description: 'Produces worker bots', emoji: '🤖' },
+            panelFactory: { name: '🛰️ Panel Factory', description: 'Manufactures Dyson panels', emoji: '🛰️' },
+            planetMiner: { name: '🌍 Planet Miner', description: 'Mines resources from planets', emoji: '🌍' },
+            starHarvester: { name: '⭐ Star Harvester', description: 'Harvests energy from stars', emoji: '⭐' }
+        };
+        
+        // Upgrade definitions
+        const upgradeDefs = {
+            solarEfficiency: { name: '⚡ Solar Efficiency', description: 'Doubles solar panel output' },
+            botEfficiency: { name: '🤖 Bot Efficiency', description: 'Doubles bot production' },
+            panelEfficiency: { name: '🛰️ Panel Efficiency', description: 'Doubles panel manufacturing' },
+            planetEfficiency: { name: '🌍 Planet Efficiency', description: 'Doubles planet mining' },
+            starEfficiency: { name: '⭐ Star Efficiency', description: 'Doubles star harvesting' },
+            quantumBonus: { name: '🌌 Quantum Bonus', description: 'Increases quantum reset bonus by 50%' }
+        };
+        
+
+        
+        // Show different sections
+        function showSection(section) {
+            game.currentSection = section;
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.menu-item').classList.add('active');
+            
+            const skillTree = document.querySelector('.skill-tree');
+            
+            if (section === 'skills') {
+                skillTree.innerHTML = `
+                    <div class="skill-grid" id="skillGrid">
+                        <!-- Skill nodes will be added here -->
+                    </div>
+                    <div class="skill-connections" id="skillConnections">
+                        <!-- Connection lines will be added here -->
+                    </div>
+                    <div class="bottom-controls">
+                        <div class="skill-points">Skill points: <span id="skillPoints">21</span></div>
+                        <div class="control-buttons">
+                            <button class="control-btn">Options</button>
+                            <button class="control-btn">Description</button>
+                        </div>
+                    </div>
+                `;
+                renderSkillTree();
+            } else if (section === 'bots') {
+                renderBotsSection();
+            } else {
+                skillTree.innerHTML = `
+                    <div style="padding: 20px; color: white; text-align: center;">
+                        <h2 style="color: #00ff00;">🚧 ${section.charAt(0).toUpperCase() + section.slice(1)} Section</h2>
+                        <p>This section is under construction!</p>
+                        <p>Try the <strong>Bots</strong> or <strong>Skills</strong> sections for now.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Render skill tree
+        function renderSkillTree() {
+            const skillGrid = document.getElementById('skillGrid');
+            skillGrid.innerHTML = '';
+            
+            skillTree.forEach(skill => {
+                const skillNode = document.createElement('div');
+                skillNode.className = `skill-node ${skill.status}`;
+                skillNode.style.gridColumn = skill.x + 1;
+                skillNode.style.gridRow = skill.y + 1;
+                skillNode.onclick = () => buySkill(skill.id);
+                
+                skillNode.innerHTML = `
+                    <div class="skill-icon">${skill.icon}</div>
+                    <div class="skill-name">${skill.name}</div>
+                `;
+                
+                skillGrid.appendChild(skillNode);
+            });
+            
+            renderConnections();
+        }
+        
+        // Render connection lines
+        function renderConnections() {
+            const connections = document.getElementById('skillConnections');
+            connections.innerHTML = '';
+            
+            // Add some example connections
+            const connectionLines = [
+                { from: { x: 0, y: 0 }, to: { x: 0, y: 1 } },
+                { from: { x: 1, y: 0 }, to: { x: 1, y: 1 } },
+                { from: { x: 2, y: 0 }, to: { x: 2, y: 1 } },
+                { from: { x: 3, y: 0 }, to: { x: 3, y: 1 } },
+                { from: { x: 4, y: 0 }, to: { x: 4, y: 1 } },
+                { from: { x: 0, y: 1 }, to: { x: 0, y: 2 } },
+                { from: { x: 1, y: 1 }, to: { x: 1, y: 2 } },
+                { from: { x: 2, y: 1 }, to: { x: 2, y: 2 } },
+                { from: { x: 3, y: 1 }, to: { x: 3, y: 2 } },
+                { from: { x: 4, y: 1 }, to: { x: 4, y: 2 } },
+                { from: { x: 5, y: 2 }, to: { x: 4, y: 2 } },
+                { from: { x: 0, y: 2 }, to: { x: 0, y: 3 } },
+                { from: { x: 1, y: 2 }, to: { x: 1, y: 3 } },
+                { from: { x: 2, y: 2 }, to: { x: 2, y: 3 } },
+                { from: { x: 3, y: 2 }, to: { x: 3, y: 3 } },
+                { from: { x: 0, y: 3 }, to: { x: 0, y: 4 } },
+                { from: { x: 1, y: 3 }, to: { x: 1, y: 4 } },
+                { from: { x: 2, y: 3 }, to: { x: 2, y: 4 } },
+                { from: { x: 3, y: 3 }, to: { x: 3, y: 4 } }
+            ];
+            
+            connectionLines.forEach(line => {
+                const connectionLine = document.createElement('div');
+                connectionLine.className = 'connection-line';
+                connectionLine.style.position = 'absolute';
+                connectionLine.style.left = `${line.from.x * 140 + 60}px`;
+                connectionLine.style.top = `${line.from.y * 120 + 50}px`;
+                connectionLine.style.width = '20px';
+                connectionLine.style.height = '20px';
+                connectionLine.style.borderLeft = '1px dashed #555';
+                connectionLine.style.borderBottom = '1px dashed #555';
+                connections.appendChild(connectionLine);
+            });
+        }
+        
+        // Buy skill
+        function buySkill(skillId) {
+            const skill = skillTree.find(s => s.id === skillId);
+            if (skill && skill.status === 'available' && game.skillPoints >= skill.cost) {
+                game.skillPoints -= skill.cost;
+                skill.status = 'unlocked';
+                game.unlockedSkills.push(skillId);
+                renderSkillTree();
+                updateDisplay();
+                showNotification(`Unlocked ${skill.name}!`);
+            }
+        }
+        
+        // Building functions
+        function buyFarm() {
+            if (game.food >= game.farmCost) {
+                game.food -= game.farmCost;
+                game.farms++;
+                game.farmCost = Math.floor(game.farmCost * 1.15);
+                game.totalBuildings++;
+                renderBuildingsSection();
+                updateDisplay();
+                showNotification('Built Farm!');
+            }
+        }
+        
+        function buyLumberMill() {
+            if (game.wood >= game.lumberMillCost) {
+                game.wood -= game.lumberMillCost;
+                game.lumberMills++;
+                game.lumberMillCost = Math.floor(game.lumberMillCost * 1.15);
+                game.totalBuildings++;
+                renderBuildingsSection();
+                updateDisplay();
+                showNotification('Built Lumber Mill!');
+            }
+        }
+        
+        function buyQuarry() {
+            if (game.stone >= game.quarryCost) {
+                game.stone -= game.quarryCost;
+                game.quarries++;
+                game.quarryCost = Math.floor(game.quarryCost * 1.15);
+                game.totalBuildings++;
+                renderBuildingsSection();
+                updateDisplay();
+                showNotification('Built Quarry!');
+            }
+        }
+        
+        function buyMine() {
+            if (game.iron >= game.mineCost) {
+                game.iron -= game.mineCost;
+                game.mines++;
+                game.mineCost = Math.floor(game.mineCost * 1.15);
+                game.totalBuildings++;
+                renderBuildingsSection();
+                updateDisplay();
+                showNotification('Built Mine!');
+            }
+        }
+        
+        function buyBank() {
+            if (game.gold >= game.bankCost) {
+                game.gold -= game.bankCost;
+                game.banks++;
+                game.bankCost = Math.floor(game.bankCost * 1.15);
+                game.totalBuildings++;
+                renderBuildingsSection();
+                updateDisplay();
+                showNotification('Built Bank!');
+            }
+        }
+        
+        // Revolution function
+        function revolution() {
+            if (game.revolutions >= 0) { // Allow revolution anytime
+                // Calculate bonus
+                const bonus = game.revolutionBonus;
+                
+                // Reset resources but keep some bonus
+                game.food = Math.floor(game.food * bonus);
+                game.wood = Math.floor(game.wood * bonus);
+                game.stone = Math.floor(game.stone * bonus);
+                game.iron = Math.floor(game.iron * bonus);
+                game.gold = Math.floor(game.gold * bonus);
+                
+                // Reset buildings
+                game.farms = 0;
+                game.lumberMills = 0;
+                game.quarries = 0;
+                game.mines = 0;
+                game.banks = 0;
+                
+                // Reset upgrades (except revolution bonus)
+                game.farmEfficiency = false;
+                game.lumberEfficiency = false;
+                game.quarryEfficiency = false;
+                game.mineEfficiency = false;
+                game.bankEfficiency = false;
+                
+                // Increment revolution count
+                game.revolutions++;
+                
+                // Reset total buildings
+                game.totalBuildings = 0;
+                
+                // Update displays
+                renderBuildingsSection();
+                renderUpgradesSection();
+                updateDisplay();
+                
+                // Show notification
+                showNotification(`🔥 REVOLUTION COMPLETE! +${Math.round((bonus - 1) * 100)}% bonus!`);
+            }
+        }
+        
+        // Render buildings section
+        function renderBuildingsSection() {
+            const skillTree = document.querySelector('.skill-tree');
+            if (game.currentSection === 'buildings') {
+                skillTree.innerHTML = `
+                    <div style="padding: 20px; color: white;">
+                        <h2 style="color: #00ff00; margin-bottom: 20px;">🏛️ Buildings</h2>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <!-- Farms -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🌾 Farms</h3>
+                                <p>Owned: ${game.farms}</p>
+                                <p>Production: +${formatNumber(game.foodRate)} food/s</p>
+                                <p>Cost: ${formatNumber(game.farmCost)} food</p>
+                                <button onclick="buyFarm()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Buy Farm</button>
+                            </div>
+                            
+                            <!-- Lumber Mills -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🪵 Lumber Mills</h3>
+                                <p>Owned: ${game.lumberMills}</p>
+                                <p>Production: +${formatNumber(game.woodRate)} wood/s</p>
+                                <p>Cost: ${formatNumber(game.lumberMillCost)} wood</p>
+                                <button onclick="buyLumberMill()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Buy Lumber Mill</button>
+                            </div>
+                            
+                            <!-- Quarries -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🪨 Quarries</h3>
+                                <p>Owned: ${game.quarries}</p>
+                                <p>Production: +${formatNumber(game.stoneRate)} stone/s</p>
+                                <p>Cost: ${formatNumber(game.quarryCost)} stone</p>
+                                <button onclick="buyQuarry()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Buy Quarry</button>
+                            </div>
+                            
+                            <!-- Mines -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">⚒️ Mines</h3>
+                                <p>Owned: ${game.mines}</p>
+                                <p>Production: +${formatNumber(game.ironRate)} iron/s</p>
+                                <p>Cost: ${formatNumber(game.mineCost)} iron</p>
+                                <button onclick="buyMine()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Buy Mine</button>
+                            </div>
+                            
+                            <!-- Banks -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">💰 Banks</h3>
+                                <p>Owned: ${game.banks}</p>
+                                <p>Production: +${formatNumber(game.goldRate)} gold/s</p>
+                                <p>Cost: ${formatNumber(game.bankCost)} gold</p>
+                                <button onclick="buyBank()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;">Buy Bank</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Revolution Section -->
+                        <div style="margin-top: 30px; background: linear-gradient(135deg, #dd6b20, #ed8936); padding: 20px; border-radius: 8px; text-align: center; border: 3px solid #f6ad55;">
+                            <h3 style="color: white; margin-bottom: 15px;">🔥 REVOLUTION</h3>
+                            <p style="color: #f1c40f; margin-bottom: 20px;">Next Revolution Bonus: +${Math.round((game.revolutionBonus - 1) * 100)}%</p>
+                            <button onclick="revolution()" style="background: linear-gradient(45deg, #f6ad55, #ed8936); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold;">START REVOLUTION</button>
+                        </div>
+                        
+                        <div style="margin-top: 30px; background: #1a1a2e; padding: 20px; border-radius: 8px;">
+                            <h3 style="color: #00ffff;">📊 Resources</h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                                <div>🍎 Food: ${formatNumber(game.food)} (+${formatNumber(game.foodRate)}/s)</div>
+                                <div>🪵 Wood: ${formatNumber(game.wood)} (+${formatNumber(game.woodRate)}/s)</div>
+                                <div>🪨 Stone: ${formatNumber(game.stone)} (+${formatNumber(game.stoneRate)}/s)</div>
+                                <div>⚒️ Iron: ${formatNumber(game.iron)} (+${formatNumber(game.ironRate)}/s)</div>
+                                <div>💰 Gold: ${formatNumber(game.gold)} (+${formatNumber(game.goldRate)}/s)</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Render upgrades section
+        function renderUpgradesSection() {
+            const skillTree = document.querySelector('.skill-tree');
+            if (game.currentSection === 'upgrades') {
+                skillTree.innerHTML = `
+                    <div style="padding: 20px; color: white;">
+                        <h2 style="color: #00ff00; margin-bottom: 20px;">⚡ Upgrades</h2>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <!-- Farm Efficiency -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🌾 Farm Efficiency</h3>
+                                <p>Doubles farm production</p>
+                                <p>Cost: 100 food</p>
+                                <button onclick="buyFarmEfficiency()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.farmEfficiency ? 'disabled' : ''}>${game.farmEfficiency ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                            
+                            <!-- Lumber Efficiency -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🪵 Lumber Efficiency</h3>
+                                <p>Doubles lumber mill production</p>
+                                <p>Cost: 500 wood</p>
+                                <button onclick="buyLumberEfficiency()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.lumberEfficiency ? 'disabled' : ''}>${game.lumberEfficiency ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                            
+                            <!-- Quarry Efficiency -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🪨 Quarry Efficiency</h3>
+                                <p>Doubles quarry production</p>
+                                <p>Cost: 2000 stone</p>
+                                <button onclick="buyQuarryEfficiency()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.quarryEfficiency ? 'disabled' : ''}>${game.quarryEfficiency ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                            
+                            <!-- Mine Efficiency -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">⚒️ Mine Efficiency</h3>
+                                <p>Doubles mine production</p>
+                                <p>Cost: 10000 iron</p>
+                                <button onclick="buyMineEfficiency()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.mineEfficiency ? 'disabled' : ''}>${game.mineEfficiency ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                            
+                            <!-- Bank Efficiency -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">💰 Bank Efficiency</h3>
+                                <p>Doubles bank production</p>
+                                <p>Cost: 50000 gold</p>
+                                <button onclick="buyBankEfficiency()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.bankEfficiency ? 'disabled' : ''}>${game.bankEfficiency ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                            
+                            <!-- Revolution Bonus -->
+                            <div style="background: #2d2d4a; padding: 15px; border-radius: 8px; border: 2px solid #555;">
+                                <h3 style="color: #00ff00; margin-bottom: 10px;">🔥 Revolution Bonus</h3>
+                                <p>Increases revolution bonus by 50%</p>
+                                <p>Cost: 100000 gold</p>
+                                <button onclick="buyRevolutionBonus()" style="background: #00ff00; color: black; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px;" ${game.revolutionBonus ? 'disabled' : ''}>${game.revolutionBonus ? 'Bought' : 'Buy Upgrade'}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Main game loop
+        function gameLoop() {
+            const now = Date.now();
+            const deltaTime = (now - game.lastUpdate) / 1000; // Convert to seconds
+            game.lastUpdate = now;
+            
+            // Update production rates
+            updateProductionRates();
+            
+            // Update resources based on rates
+            game.food += game.foodRate * deltaTime;
+            game.wood += game.woodRate * deltaTime;
+            game.stone += game.stoneRate * deltaTime;
+            game.iron += game.ironRate * deltaTime;
+            game.gold += game.goldRate * deltaTime;
+            
+            // Update totals
+            game.totalResources += (game.foodRate + game.woodRate + game.stoneRate + game.ironRate + game.goldRate) * deltaTime;
+            
+            updateDisplay();
+        }
+        
+        // Update production rates
+        function updateProductionRates() {
+            // Food from farms
+            let farmMultiplier = game.farmEfficiency ? 2 : 1;
+            game.foodRate = game.farms * 1 * farmMultiplier;
+            
+            // Wood from lumber mills
+            let lumberMultiplier = game.lumberEfficiency ? 2 : 1;
+            game.woodRate = game.lumberMills * 1 * lumberMultiplier;
+            
+            // Stone from quarries
+            let quarryMultiplier = game.quarryEfficiency ? 2 : 1;
+            game.stoneRate = game.quarries * 1 * quarryMultiplier;
+            
+            // Iron from mines
+            let mineMultiplier = game.mineEfficiency ? 2 : 1;
+            game.ironRate = game.mines * 1 * mineMultiplier;
+            
+            // Gold from banks
+            let bankMultiplier = game.bankEfficiency ? 2 : 1;
+            game.goldRate = game.banks * 1 * bankMultiplier;
+        }
+        
+        // Update display
+        function updateDisplay() {
+            // Update sidebar
+            document.getElementById('sidebarCurrency').textContent = formatNumber(game.food);
+            document.getElementById('sidebarRate').textContent = '+' + formatNumber(game.foodRate) + '/s';
+            
+            // Update header
+            document.getElementById('totalBots').textContent = formatNumber(game.totalBuildings);
+            document.getElementById('currentResource').textContent = formatNumber(game.totalResources);
+            document.getElementById('currentRate').textContent = game.ages[game.age];
+        }
+        
+        // Update game time
+        function updateGameTime() {
+            game.gameTime++;
+        }
+        
+        // Initialize game
+        function initGame() {
+            // Start with some basic resources
+            game.food = 100;
+            game.wood = 50;
+            game.stone = 25;
+            
+            updateDisplay();
+            renderBuildingsSection();
+            setInterval(gameLoop, 100); // 10 FPS for smooth updates
+            setInterval(updateGameTime, 1000);
+        }
+        
+        // Render buildings
+        function renderBuildings() {
+            const buildingsContainer = document.getElementById('buildings');
+            buildingsContainer.innerHTML = '';
+            
+            Object.keys(game.buildings).forEach(buildingKey => {
+                const building = game.buildings[buildingKey];
+                const def = buildingDefs[buildingKey];
+                
+                const buildingDiv = document.createElement('div');
+                buildingDiv.className = 'building';
+                buildingDiv.innerHTML = `
+                    <div class="building-name">${def.name}</div>
+                    <div class="building-count">Owned: ${building.count}</div>
+                    <div class="building-cost">Cost: ${formatCost(building.cost)}</div>
+                    <div class="building-production">Production: ${formatProduction(building.production)}</div>
+                    <button class="buy-btn" onclick="buyBuilding('${buildingKey}')" ${canAfford(building.cost) ? '' : 'disabled'}>
+                        Buy ${def.emoji}
+                    </button>
+                `;
+                
+                buildingsContainer.appendChild(buildingDiv);
+            });
+        }
+        
+        // Render upgrades
+        function renderUpgrades() {
+            const upgradesContainer = document.getElementById('upgrades');
+            upgradesContainer.innerHTML = '';
+            
+            Object.keys(game.upgrades).forEach(upgradeKey => {
+                const upgrade = game.upgrades[upgradeKey];
+                const def = upgradeDefs[upgradeKey];
+                
+                if (!upgrade.bought) {
+                    const upgradeDiv = document.createElement('div');
+                    upgradeDiv.className = 'upgrade';
+                    upgradeDiv.innerHTML = `
+                        <div class="upgrade-name">${def.name}</div>
+                        <div class="upgrade-description">${def.description}</div>
+                        <div class="upgrade-cost">Cost: ${formatCost(upgrade.cost)}</div>
+                        <button class="upgrade-btn" onclick="buyUpgrade('${upgradeKey}')" ${canAfford(upgrade.cost) ? '' : 'disabled'}>
+                            Buy Upgrade
+                        </button>
+                    `;
+                    
+                    upgradesContainer.appendChild(upgradeDiv);
+                }
+            });
+        }
+        
+        // Buy building
+        function buyBuilding(buildingKey) {
+            const building = game.buildings[buildingKey];
+            
+            if (canAfford(building.cost)) {
+                // Spend resources
+                Object.keys(building.cost).forEach(resource => {
+                    game.resources[resource] -= building.cost[resource];
+                });
+                
+                // Add building
+                building.count++;
+                game.totalBuildings++;
+                
+                // Update production rates
+                updateProductionRates();
+                
+                // Update displays
+                renderBuildings();
+                updateDisplay();
+                
+                // Create particles
+                createParticles();
+                
+                // Show notification
+                showNotification(`Built ${buildingDefs[buildingKey].name}!`);
+            }
+        }
+        
+        // Buy upgrade
+        function buyUpgrade(upgradeKey) {
+            const upgrade = game.upgrades[upgradeKey];
+            
+            if (canAfford(upgrade.cost)) {
+                // Spend resources
+                Object.keys(upgrade.cost).forEach(resource => {
+                    game.resources[resource] -= upgrade.cost[resource];
+                });
+                
+                // Apply upgrade
+                upgrade.bought = true;
+                
+                if (upgrade.effect === 'revolution') {
+                    game.revolutionBonus *= upgrade.multiplier;
+                }
+                
+                // Update displays
+                renderUpgrades();
+                updateDisplay();
+                
+                // Create particles
+                createParticles();
+                
+                // Show notification
+                showNotification(`Bought ${upgradeDefs[upgradeKey].name}!`);
+            }
+        }
+        
+        // Update production rates
+        function updateProductionRates() {
+            // Reset rates
+            Object.keys(game.rates).forEach(resource => {
+                game.rates[resource] = 0;
+            });
+            
+            // Calculate rates from buildings
+            Object.keys(game.buildings).forEach(buildingKey => {
+                const building = game.buildings[buildingKey];
+                const production = building.production;
+                
+                Object.keys(production).forEach(resource => {
+                    let multiplier = 1;
+                    
+                    // Apply efficiency upgrades
+                    const upgradeKey = buildingKey + 'Efficiency';
+                    if (game.upgrades[upgradeKey] && game.upgrades[upgradeKey].bought) {
+                        multiplier *= game.upgrades[upgradeKey].multiplier;
+                    }
+                    
+                    game.rates[resource] += production[resource] * building.count * multiplier;
+                });
+            });
+        }
+        
+        // Check if can afford
+        function canAfford(cost) {
+            return Object.keys(cost).every(resource => game.resources[resource] >= cost[resource]);
+        }
+        
+        // Revolution function
+        function revolution() {
+            if (game.revolutions >= 1) { // Allow revolution after first building
+                // Calculate bonus
+                const bonus = game.revolutionBonus;
+                
+                // Reset resources but keep some bonus
+                Object.keys(game.resources).forEach(resource => {
+                    game.resources[resource] = Math.floor(game.resources[resource] * bonus);
+                });
+                
+                // Reset buildings
+                Object.keys(game.buildings).forEach(buildingKey => {
+                    game.buildings[buildingKey].count = 0;
+                });
+                
+                // Reset upgrades (except revolution bonus)
+                Object.keys(game.upgrades).forEach(upgradeKey => {
+                    if (upgradeKey !== 'revolutionBonus') {
+                        game.upgrades[upgradeKey].bought = false;
+                    }
+                });
+                
+                // Increment revolution count
+                game.revolutions++;
+                
+                // Reset total buildings
+                game.totalBuildings = 0;
+                
+                // Update production rates
+                updateProductionRates();
+                
+                // Update displays
+                renderBuildings();
+                renderUpgrades();
+                updateDisplay();
+                
+                // Create lots of particles
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(createParticles, i * 100);
+                }
+                
+                // Show notification
+                showNotification(`🔥 REVOLUTION COMPLETE! +${Math.round((bonus - 1) * 100)}% bonus!`);
+            }
+        }
+        
+        // Check age progression
+        function checkAgeProgression() {
+            const totalResources = game.resources.energy + game.resources.bots + game.resources.panels + game.resources.planets + game.resources.stars;
+            
+            if (game.age < game.ages.length - 1) {
+                const nextAgeThreshold = Math.pow(10, game.age + 3);
+                if (totalResources >= nextAgeThreshold) {
+                    game.age++;
+                    showNotification(`🌌 Advanced to ${game.ages[game.age]}!`);
+                    updateDisplay();
+                }
+            }
+        }
+        
+        // Update game time
+        function updateGameTime() {
+            game.gameTime++;
+        }
+        
+        // Create particles
+        function createParticles() {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.top = Math.random() * window.innerHeight + 'px';
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 2000);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Format number
+        function formatNumber(num) {
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return Math.floor(num);
+        }
+        
+        // Format cost
+        function formatCost(cost) {
+            return Object.keys(cost).map(resource => {
+                const emoji = resource === 'energy' ? '⚡' : resource === 'bots' ? '🤖' : resource === 'panels' ? '🛰️' : resource === 'planets' ? '🌍' : '⭐';
+                return emoji + ' ' + formatNumber(cost[resource]);
+            }).join(' ');
+        }
+        
+        // Format production
+        function formatProduction(production) {
+            return Object.keys(production).map(resource => {
+                const emoji = resource === 'energy' ? '⚡' : resource === 'bots' ? '🤖' : resource === 'panels' ? '🛰️' : resource === 'planets' ? '🌍' : '⭐';
+                return emoji + ' ' + production[resource] + '/sec';
+            }).join(' ');
+        }
+        
+        // Format time
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+            if (minutes > 0) return `${minutes}m ${secs}s`;
+            return `${secs}s`;
+        }
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

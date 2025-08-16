@@ -1,4 +1,4 @@
-<!-- Cookie Clicker Game - Bo wants a cookie clicker with buildings: cursor, grandma, farm, mine, factory, bank, temple, wizardtower, shipment, alchemylab, portal, time machine, antim.condenser, prism, chancemaker, idverse, cortexbaker, you. Each building has a simple drawing. -->
+<!-- Cookie Clicker Game - Bo wants a cookie clicker with buildings: cursor, grandma, farm, mine, factory, bank, temple, wizardtower, shipment, alchemylab, portal, time machine, antim.condenser, prism, chancemaker, idverse, cortexbaker, you. Each building has a simple drawing. Now with golden cookies! -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +12,8 @@
             margin: 0;
             padding: 20px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
         
         .container {
@@ -83,6 +85,69 @@
             height: 15px;
             background: #654321;
             border-radius: 50%;
+        }
+        
+        /* Golden Cookie Styles */
+        .golden-cookie {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+            border-radius: 50%;
+            border: 4px solid #B8860B;
+            cursor: pointer;
+            z-index: 1000;
+            animation: goldenCookieFloat 2s ease-in-out infinite;
+            box-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500;
+            transition: all 0.3s ease;
+        }
+        
+        .golden-cookie:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px #FFD700, 0 0 60px #FFA500;
+        }
+        
+        .golden-cookie::before {
+            content: '⭐';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #B8860B;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes goldenCookieFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+        
+        .golden-cookie.clicked {
+            animation: goldenCookieClick 0.5s ease-out;
+        }
+        
+        @keyframes goldenCookieClick {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.5) rotate(180deg); }
+            100% { transform: scale(0) rotate(360deg); }
+        }
+        
+        /* Effect Text */
+        .effect-text {
+            position: absolute;
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            pointer-events: none;
+            animation: effectTextFloat 2s ease-out forwards;
+        }
+        
+        @keyframes effectTextFloat {
+            0% { transform: translateY(0px); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
         }
         
         .buildings {
@@ -905,6 +970,7 @@
         <div class="stats">
             <div>Cookies: <span id="cookies">0</span></div>
             <div>Cookies per second: <span id="cps">0</span></div>
+            <div id="multiplier-display" style="display: none; color: #FFD700; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Multiplier: <span id="multiplier">1</span>x (<span id="multiplier-timer">0</span>s)</div>
         </div>
         
         <div class="cookie-container">
@@ -918,8 +984,11 @@
     </div>
 
     <script>
-        let cookies = 0;
+        let cookies = 0; // Start with 0 cookies - earn them properly!
         let cps = 0;
+        let goldenCookieMultiplier = 1;
+        let goldenCookieTimer = 0;
+        let goldenCookieActive = false;
         let buildings = {
             cursor: { name: 'Cursor', cost: 15, baseCost: 15, count: 0, cps: 0.1, icon: 'cursor-icon' },
             grandma: { name: 'Grandma', cost: 100, baseCost: 100, count: 0, cps: 1, icon: 'grandma-icon' },
@@ -942,7 +1011,7 @@
         };
 
         function clickCookie() {
-            cookies++;
+            cookies += goldenCookieMultiplier;
             updateDisplay();
             
             // Visual feedback
@@ -951,6 +1020,86 @@
             setTimeout(() => {
                 cookie.style.transform = 'scale(1)';
             }, 100);
+        }
+
+        // Golden Cookie Functions
+        function spawnGoldenCookie() {
+            const goldenCookie = document.createElement('div');
+            goldenCookie.className = 'golden-cookie';
+            goldenCookie.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+            goldenCookie.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+            
+            goldenCookie.onclick = function() {
+                clickGoldenCookie(this);
+            };
+            
+            document.body.appendChild(goldenCookie);
+            
+            // Remove golden cookie after 10 seconds if not clicked
+            setTimeout(() => {
+                if (goldenCookie.parentNode) {
+                    goldenCookie.remove();
+                }
+            }, 10000);
+        }
+
+        function clickGoldenCookie(goldenCookieElement) {
+            const effects = [
+                { name: 'Lucky!', effect: () => { cookies += Math.floor(cps * 13); return `+${Math.floor(cps * 13)} cookies!`; } },
+                { name: 'Frenzy!', effect: () => { goldenCookieMultiplier = 7; goldenCookieTimer = 77; goldenCookieActive = true; return '7x multiplier for 77 seconds!'; } },
+                { name: 'Click Frenzy!', effect: () => { goldenCookieMultiplier = 777; goldenCookieTimer = 13; goldenCookieActive = true; return '777x multiplier for 13 seconds!'; } },
+                { name: 'Cookie Storm!', effect: () => { cookies += Math.floor(cps * 26); return `+${Math.floor(cps * 26)} cookies!`; } },
+                { name: 'Building Special!', effect: () => { 
+                    const buildingNames = Object.keys(buildings);
+                    const randomBuilding = buildingNames[Math.floor(Math.random() * buildingNames.length)];
+                    const building = buildings[randomBuilding];
+                    const bonus = Math.floor(building.count * 0.1);
+                    if (bonus > 0) {
+                        building.count += bonus;
+                        building.cost = Math.floor(building.baseCost * Math.pow(1.15, building.count));
+                        updateCPS();
+                        return `+${bonus} ${building.name}s!`;
+                    } else {
+                        return 'Building Special! (no buildings owned)';
+                    }
+                } },
+                { name: 'Cookie Chain!', effect: () => { 
+                    const chainBonus = Math.floor(Math.random() * 10) + 1;
+                    cookies += chainBonus;
+                    return `+${chainBonus} cookies!`;
+                } }
+            ];
+            
+            const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+            const effectResult = randomEffect.effect();
+            
+            // Visual effect
+            goldenCookieElement.classList.add('clicked');
+            
+            // Show effect text
+            const effectText = document.createElement('div');
+            effectText.className = 'effect-text';
+            effectText.textContent = `${randomEffect.name}: ${effectResult}`;
+            effectText.style.left = goldenCookieElement.style.left;
+            effectText.style.top = goldenCookieElement.style.top;
+            document.body.appendChild(effectText);
+            
+            // Remove effect text after animation
+            setTimeout(() => {
+                if (effectText.parentNode) {
+                    effectText.remove();
+                }
+            }, 2000);
+            
+            // Remove golden cookie
+            setTimeout(() => {
+                if (goldenCookieElement.parentNode) {
+                    goldenCookieElement.remove();
+                }
+            }, 500);
+            
+            updateDisplay();
+            generateBuildings();
         }
 
         function buyBuilding(buildingName) {
@@ -975,6 +1124,19 @@
         function updateDisplay() {
             document.getElementById('cookies').textContent = Math.floor(cookies);
             document.getElementById('cps').textContent = cps.toFixed(1);
+            
+            // Update multiplier display
+            const multiplierDisplay = document.getElementById('multiplier-display');
+            const multiplierSpan = document.getElementById('multiplier');
+            const multiplierTimerSpan = document.getElementById('multiplier-timer');
+            
+            if (goldenCookieActive && goldenCookieTimer > 0) {
+                multiplierDisplay.style.display = 'block';
+                multiplierSpan.textContent = goldenCookieMultiplier;
+                multiplierTimerSpan.textContent = Math.ceil(goldenCookieTimer / 10); // Convert to seconds
+            } else {
+                multiplierDisplay.style.display = 'none';
+            }
         }
 
         function generateBuildings() {
@@ -1021,7 +1183,25 @@
         // Game loop
         setInterval(() => {
             cookies += cps / 10; // Update 10 times per second for smooth animation
+            
+            // Handle golden cookie multiplier timer
+            if (goldenCookieActive && goldenCookieTimer > 0) {
+                goldenCookieTimer--;
+                if (goldenCookieTimer <= 0) {
+                    goldenCookieMultiplier = 1;
+                    goldenCookieActive = false;
+                }
+            }
+            
             updateDisplay();
+        }, 100);
+
+        // Golden cookie spawning loop
+        setInterval(() => {
+            // Spawn golden cookie every 30-60 seconds
+            if (Math.random() < 0.02) { // 2% chance every 100ms = ~every 30-60 seconds
+                spawnGoldenCookie();
+            }
         }, 100);
 
         // Initialize

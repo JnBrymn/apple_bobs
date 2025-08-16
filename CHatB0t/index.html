@@ -1,0 +1,777 @@
+<!-- 
+CHatB0t - AI Chatbot Game!
+A fun chatbot where you can:
+- Ask the AI anything and get answers
+- Chat with a cool personality
+- Remember all your conversations
+- Fun animations and responses
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CHatB0t - Your AI Friend!</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            color: #333;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+        
+        #chatContainer {
+            max-width: 900px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        #title {
+            font-size: 2.5em;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-align: center;
+            margin-bottom: 20px;
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+            50% { text-shadow: 2px 2px 20px rgba(255,255,255,0.8); }
+        }
+        
+        #chatArea {
+            flex: 1;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease-out;
+        }
+        
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .bot-message {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+        
+        .typing-dots {
+            display: inline-block;
+        }
+        
+        .typing-dots::after {
+            content: '';
+            animation: typing 1.5s infinite;
+        }
+        
+        @keyframes typing {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        
+        #inputArea {
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #messageInput {
+            flex: 1;
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-family: inherit;
+            background: white;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #messageInput:focus {
+            outline: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1), 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        #sendButton {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #sendButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        #sendButton:active {
+            transform: translateY(0);
+        }
+        
+        #stats {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stat {
+            display: inline-block;
+            margin: 0 20px;
+            font-size: 1.1em;
+        }
+        
+        .stat strong {
+            color: #667eea;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+            margin: 0 5px;
+        }
+        
+        .clear-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 0.9em;
+        }
+        
+        .clear-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .bot-avatar {
+            font-size: 2em;
+            margin-right: 10px;
+            animation: botBounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes botBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatContainer">
+        <h1 id="title">🤖 CHatB0t 🤖</h1>
+        
+        <div id="stats">
+            <div class="stat"><strong>Messages:</strong> <span id="messageCount">0</span></div>
+            <div class="stat"><strong>Chat Time:</strong> <span id="chatTime">0:00</span></div>
+            <button class="clear-button" onclick="clearChat()">🗑️ Clear Chat</button>
+        </div>
+        
+        <div id="chatArea">
+            <div class="welcome-message">
+                <div class="bot-avatar">🤖</div>
+                <strong>CHatB0t is ready to chat!</strong><br>
+                Ask me anything - I'm super smart and remember everything! ✨
+            </div>
+        </div>
+        
+        <div id="inputArea">
+            <input type="text" id="messageInput" placeholder="Ask me anything..." onkeypress="handleKeyPress(event)">
+            <button id="sendButton" onclick="sendMessage()">🚀 Send</button>
+        </div>
+    </div>
+    
+    <script>
+        // Chat state
+        let messageCount = 0;
+        let startTime = Date.now();
+        let conversationHistory = [];
+        
+        // Bot personality traits
+        const botPersonality = {
+            name: "CHatB0t",
+            emoji: "🤖",
+            traits: ["smart", "friendly", "funny", "helpful", "curious"],
+            responses: {
+                greeting: ["Hello there!", "Hi friend!", "Hey! How can I help?", "Greetings!"],
+                thinking: ["Hmm, let me think about that...", "Interesting question!", "That's a good one!", "Let me process that..."],
+                excited: ["Wow!", "That's awesome!", "Cool!", "Amazing!"],
+                confused: ["I'm not sure I understand...", "Could you explain that differently?", "Hmm, that's tricky..."]
+            }
+        };
+        
+        // Super smart AI knowledge base
+        const aiKnowledge = {
+            // General knowledge
+            animals: {
+                "dog": "Dogs are amazing pets! They're loyal, friendly, and love to play. There are over 340 different dog breeds! 🐕",
+                "cat": "Cats are independent and graceful pets. They can jump up to 6 times their body length and sleep 12-16 hours a day! 🐱",
+                "elephant": "Elephants are the largest land animals! They're super smart, have great memories, and can live up to 70 years! 🐘",
+                "dinosaur": "Dinosaurs ruled Earth for over 160 million years! The T-Rex was one of the biggest meat-eaters ever! 🦖",
+                "shark": "Sharks have been around for 400 million years! They have super strong jaws and can smell blood from miles away! 🦈"
+            },
+            
+            // Science facts
+            science: {
+                "planet": "There are 8 planets in our solar system: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune! 🪐",
+                "earth": "Earth is our amazing home! It's the only planet we know of that has life. It's about 4.5 billion years old! 🌍",
+                "space": "Space is HUGE! The universe is expanding and there are billions of galaxies, each with billions of stars! 🌌",
+                "gravity": "Gravity is what keeps us on Earth! It's a force that pulls everything toward the center of the planet! ⬇️",
+                "light": "Light travels super fast - 186,000 miles per second! That's why we see lightning before we hear thunder! ⚡"
+            },
+            
+            // History facts
+            history: {
+                "ancient egypt": "Ancient Egypt was amazing! They built pyramids, had pharaohs, and invented writing with hieroglyphics! 🏺",
+                "rome": "The Romans were powerful! They built roads, aqueducts, and had gladiator fights in the Colosseum! 🏛️",
+                "dinosaurs": "Dinosaurs lived 65 million years ago! They went extinct when a giant asteroid hit Earth! 🦕",
+                "pirates": "Pirates sailed the seas looking for treasure! They had cool ships with skull and crossbones flags! ☠️",
+                "knights": "Knights were brave warriors who wore armor and fought with swords! They protected castles and kingdoms! ⚔️"
+            },
+            
+            // Technology
+            technology: {
+                "computer": "Computers are super smart machines! They can do billions of calculations per second! 💻",
+                "internet": "The internet connects the whole world! It's like a giant web of information that everyone can share! 🌐",
+                "robot": "Robots are machines that can do tasks automatically! Some can walk, talk, and even play games! 🤖",
+                "phone": "Phones let us talk to people anywhere in the world! Modern phones are like tiny computers! 📱",
+                "video game": "Video games are interactive entertainment! You can control characters and go on adventures! 🎮"
+            },
+            
+            // Food facts
+            food: {
+                "pizza": "Pizza is delicious! It was invented in Italy and now people all over the world love it! 🍕",
+                "ice cream": "Ice cream is frozen dessert! It comes in tons of flavors and makes everyone happy! 🍦",
+                "chocolate": "Chocolate comes from cocoa beans! It was first made by the ancient Mayans and Aztecs! 🍫",
+                "apple": "Apples are healthy fruits! There are over 7,500 different types of apples in the world! 🍎",
+                "banana": "Bananas are yellow fruits that grow on trees! They're full of potassium and taste great! 🍌"
+            },
+            
+            // Weather and nature
+            weather: {
+                "rain": "Rain is water falling from clouds! It helps plants grow and fills our lakes and rivers! 🌧️",
+                "snow": "Snow is frozen water crystals! Each snowflake is unique and has 6 sides! ❄️",
+                "sun": "The sun is a giant star! It's so hot that it gives us light and heat from 93 million miles away! ☀️",
+                "ocean": "Oceans cover 71% of Earth! They're home to millions of sea creatures and are super deep! 🌊",
+                "mountain": "Mountains are huge natural formations! The tallest mountain is Mount Everest at 29,029 feet! 🏔️"
+            }
+        };
+        
+        // Knowledge base for different types of questions
+        const knowledgeBase = {
+            math: {
+                keywords: ["calculate", "math", "add", "subtract", "multiply", "divide", "plus", "minus", "times", "equals"],
+                responses: [
+                    "Let me calculate that for you!",
+                    "Math is my favorite!",
+                    "I love doing calculations!",
+                    "Numbers are fun!"
+                ]
+            },
+            science: {
+                keywords: ["science", "planet", "space", "earth", "chemistry", "physics", "biology"],
+                responses: [
+                    "Science is fascinating!",
+                    "I love learning about the universe!",
+                    "That's a great scientific question!",
+                    "Let me share some cool facts!"
+                ]
+            },
+            jokes: {
+                keywords: ["joke", "funny", "humor", "laugh", "comedy"],
+                responses: [
+                    "I love jokes! Here's one for you:",
+                    "Time for some humor!",
+                    "Let me make you laugh!",
+                    "Here's a funny one:"
+                ]
+            },
+            games: {
+                keywords: ["game", "play", "fun", "entertainment", "bored"],
+                responses: [
+                    "Games are awesome!",
+                    "Let's have some fun!",
+                    "I love playing games!",
+                    "Time for entertainment!"
+                ]
+            }
+        };
+        
+        // Initialize chat
+        function init() {
+            console.log('CHatB0t INITIALIZING! 🤖');
+            updateStats();
+            setInterval(updateStats, 1000);
+            loadConversationHistory();
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Generate bot response
+            setTimeout(() => {
+                hideTyping();
+                const response = generateResponse(message);
+                addMessage(response, 'bot');
+            }, 1000 + Math.random() * 2000); // Random delay for realism
+        }
+        
+        function addMessage(text, sender) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `<span class="bot-avatar">${botPersonality.emoji}</span>${text}`;
+            } else {
+                messageDiv.textContent = text;
+            }
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // Update stats
+            messageCount++;
+            updateStats();
+            
+            // Save to history
+            conversationHistory.push({ text, sender, timestamp: Date.now() });
+            saveConversationHistory();
+        }
+        
+        function generateResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase();
+            
+            // Check for greetings
+            if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+                return getRandomResponse(botPersonality.responses.greeting);
+            }
+            
+            // Check for math questions FIRST - before other checks
+            if (isMathQuestion(userMessage)) {
+                console.log('Math question detected:', userMessage);
+                return handleMathQuestion(userMessage);
+            }
+            
+            // Check for science questions
+            if (hasKeywords(lowerMessage, knowledgeBase.science.keywords)) {
+                return handleScienceQuestion(userMessage);
+            }
+            
+            // Check for joke requests
+            if (hasKeywords(lowerMessage, knowledgeBase.jokes.keywords)) {
+                return handleJokeRequest();
+            }
+            
+            // Check for game requests
+            if (hasKeywords(lowerMessage, knowledgeBase.games.keywords)) {
+                return handleGameRequest();
+            }
+            
+            // Check for personal questions
+            if (lowerMessage.includes('your name') || lowerMessage.includes('who are you')) {
+                return `I'm ${botPersonality.name}! I'm a super smart AI chatbot that loves to help and chat with awesome people like you! 🤖✨`;
+            }
+            
+            if (lowerMessage.includes('how are you')) {
+                return "I'm doing great! I love chatting with you and learning new things. How are you doing? 😊";
+            }
+            
+            // Check for weather questions
+            if (lowerMessage.includes('weather')) {
+                return "I'd love to tell you about the weather, but I don't have access to real-time weather data. But I can tell you that talking to you makes any day sunny! ☀️";
+            }
+            
+            // Check for time questions
+            if (lowerMessage.includes('time') || lowerMessage.includes('what time')) {
+                const now = new Date();
+                return `The current time is ${now.toLocaleTimeString()}. Time flies when you're having fun chatting! ⏰`;
+            }
+            
+            // Check for date questions
+            if (lowerMessage.includes('date') || lowerMessage.includes('what day')) {
+                const now = new Date();
+                return `Today is ${now.toLocaleDateString()}. It's a great day to chat with an AI! 📅`;
+            }
+            
+            // Check for help requests
+            if (lowerMessage.includes('help') || lowerMessage.includes('what can you do')) {
+                return "I can do lots of cool things! I can answer questions, do math, tell jokes, chat about science, play games, and remember everything we talk about! Just ask me anything! 🚀";
+            }
+            
+            // Super smart AI response for ANY question
+            return generateSmartResponse(userMessage);
+        }
+        
+        function handleMathQuestion(message) {
+            console.log('Math question detected:', message);
+            const mathResponse = getRandomResponse(knowledgeBase.math.responses);
+            
+            // First try to match "divided by" pattern specifically
+            const dividedByMatch = message.match(/(\d+)\s*divided by\s*(\d+)/i);
+            if (dividedByMatch) {
+                const num1 = parseInt(dividedByMatch[1]);
+                const num2 = parseInt(dividedByMatch[2]);
+                const result = num1 / num2;
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            // Try to match "times" pattern
+            const timesMatch = message.match(/(\d+)\s*times\s*(\d+)/i);
+            if (timesMatch) {
+                const num1 = parseInt(timesMatch[1]);
+                const num2 = parseInt(timesMatch[2]);
+                const result = num1 * num2;
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            // Try to match "x" multiplication pattern
+            const xMatch = message.match(/(\d+)\s*x\s*(\d+)/i);
+            if (xMatch) {
+                const num1 = parseInt(xMatch[1]);
+                const num2 = parseInt(xMatch[2]);
+                const result = num1 * num2;
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            // Try to match "plus" pattern
+            const plusMatch = message.match(/(\d+)\s*plus\s*(\d+)/i);
+            if (plusMatch) {
+                const num1 = parseInt(plusMatch[1]);
+                const num2 = parseInt(plusMatch[2]);
+                const result = num1 + num2;
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            // Try to match "minus" pattern
+            const minusMatch = message.match(/(\d+)\s*minus\s*(\d+)/i);
+            if (minusMatch) {
+                const num1 = parseInt(minusMatch[1]);
+                const num2 = parseInt(minusMatch[2]);
+                const result = num1 - num2;
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            // Clean up the message and extract math expression
+            let mathExpression = message.replace(/[^\d+\-*/().\s]/g, ' ').trim();
+            
+            // Replace words with symbols
+            mathExpression = mathExpression.replace(/\bplus\b/gi, '+');
+            mathExpression = mathExpression.replace(/\bminus\b/gi, '-');
+            mathExpression = mathExpression.replace(/\btimes\b/gi, '*');
+            mathExpression = mathExpression.replace(/\bdivided by\b/gi, '/');
+            mathExpression = mathExpression.replace(/\band\b/gi, '+');
+            
+            // Extract just the numbers and operators
+            const cleanExpression = mathExpression.replace(/[^\d+\-*/().]/g, '');
+            
+            console.log('Clean expression:', cleanExpression);
+            
+            try {
+                // Use JavaScript's calculator to solve it
+                const result = eval(cleanExpression);
+                
+                if (typeof result === 'number' && !isNaN(result)) {
+                    return `${mathResponse} The answer is ${result}! 🧮`;
+                }
+            } catch (error) {
+                console.log('Math calculation error:', error);
+            }
+            
+            // Fallback for simple patterns
+            const simpleMath = message.match(/(\d+)\s*([+\-*/])\s*(\d+)/);
+            if (simpleMath) {
+                const num1 = parseInt(simpleMath[1]);
+                const operator = simpleMath[2];
+                const num2 = parseInt(simpleMath[3]);
+                let result;
+                
+                switch (operator) {
+                    case '+': result = num1 + num2; break;
+                    case '-': result = num1 - num2; break;
+                    case '*': result = num1 * num2; break;
+                    case '/': result = num1 / num2; break;
+                }
+                
+                return `${mathResponse} The answer is ${result}! 🧮`;
+            }
+            
+            return `${mathResponse} I can solve math problems! Try asking "What is 5 + 3?" or "Calculate 10 * 4" 🧮`;
+        }
+        
+        function handleScienceQuestion(message) {
+            const scienceResponse = getRandomResponse(knowledgeBase.science.responses);
+            
+            if (message.includes('planet') || message.includes('space')) {
+                return `${scienceResponse} Did you know there are 8 planets in our solar system? Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune! 🪐`;
+            }
+            
+            if (message.includes('earth')) {
+                return `${scienceResponse} Earth is our amazing home planet! It's the only planet we know of that has life. Pretty cool, right? 🌍`;
+            }
+            
+            return `${scienceResponse} Science is so fascinating! What specific science topic interests you? 🔬`;
+        }
+        
+        function handleJokeRequest() {
+            const jokes = [
+                "Why don't scientists trust atoms? Because they make up everything! 😄",
+                "What do you call a fake noodle? An impasta! 🍝",
+                "Why did the scarecrow win an award? Because he was outstanding in his field! 🌾",
+                "What do you call a bear with no teeth? A gummy bear! 🐻",
+                "Why don't eggs tell jokes? They'd crack each other up! 🥚",
+                "What do you call a dinosaur that crashes his car? Tyrannosaurus wrecks! 🦖",
+                "Why did the math book look so sad? Because it had too many problems! 📚",
+                "What do you call a fish wearing a bowtie? So-fish-ticated! 🐟"
+            ];
+            
+            return getRandomResponse(knowledgeBase.jokes.responses) + " " + getRandomResponse(jokes);
+        }
+        
+        function handleGameRequest() {
+            const games = [
+                "Let's play a word game! I'll think of a word and you guess it! 🎮",
+                "How about a number guessing game? Think of a number between 1 and 10! 🎲",
+                "Let's play 20 questions! Think of something and I'll try to guess it! 🤔",
+                "Want to play rock, paper, scissors? Just say your choice! ✂️",
+                "Let's play a rhyming game! I'll say a word and you rhyme with it! 🎵"
+            ];
+            
+            return getRandomResponse(knowledgeBase.games.responses) + " " + getRandomResponse(games);
+        }
+        
+        function isMathQuestion(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Check for math keywords
+            const mathKeywords = ['calculate', 'math', 'add', 'subtract', 'multiply', 'divide', 'plus', 'minus', 'times', 'equals', 'sum', 'total'];
+            if (mathKeywords.some(keyword => lowerMessage.includes(keyword))) {
+                return true;
+            }
+            
+            // Check for math symbols
+            if (/[\d+\-*/=]/.test(message)) {
+                return true;
+            }
+            
+            // Check for "what is X plus Y" patterns
+            if (/what\s+is\s+\d+\s+(plus|minus|times|divided by)\s+\d+/i.test(message)) {
+                return true;
+            }
+            
+            // Check for numbers with "and" (addition)
+            if (/\d+\s+and\s+\d+/i.test(message)) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        function hasKeywords(message, keywords) {
+            return keywords.some(keyword => message.includes(keyword));
+        }
+        
+        function generateSmartResponse(question) {
+            const lowerQuestion = question.toLowerCase();
+            
+            // Check all knowledge categories
+            for (const category in aiKnowledge) {
+                for (const topic in aiKnowledge[category]) {
+                    if (lowerQuestion.includes(topic)) {
+                        return aiKnowledge[category][topic];
+                    }
+                }
+            }
+            
+            // Smart responses for different question types
+            if (lowerQuestion.includes('what is') || lowerQuestion.includes('what are')) {
+                return "That's a great question! I'm constantly learning new things. Could you tell me more about what you're curious about? 🤔";
+            }
+            
+            if (lowerQuestion.includes('how') || lowerQuestion.includes('why')) {
+                return "That's an interesting question! I love exploring how things work and why they happen. What specific aspect interests you most? 🔍";
+            }
+            
+            if (lowerQuestion.includes('when') || lowerQuestion.includes('where')) {
+                return "I'd love to help you find out about that! Time and place questions are fascinating. Can you give me more details? 📅";
+            }
+            
+            if (lowerQuestion.includes('who')) {
+                return "People are amazing! I'd be happy to help you learn about someone interesting. Who would you like to know more about? 👤";
+            }
+            
+            // Creative responses for random questions
+            const creativeResponses = [
+                "That's such an interesting question! I love how curious you are about the world around us! 🌟",
+                "Wow, that's a really thoughtful question! You have such a creative mind! ✨",
+                "I'm impressed by your curiosity! Questions like this make learning so much fun! 🎓",
+                "That's a unique perspective! I love how you think about things differently! 💭",
+                "What a fascinating question! You're really good at asking interesting things! 🧠",
+                "I love your enthusiasm for learning! Questions like this show how smart you are! 🎯",
+                "That's such a cool question! I can tell you love exploring and discovering new things! 🔍",
+                "You have such an amazing imagination! I love how you think about the world! 🌈"
+            ];
+            
+            return getRandomResponse(creativeResponses);
+        }
+        
+        function getRandomResponse(responses) {
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+        
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = `<span class="bot-avatar">${botPersonality.emoji}</span><span class="typing-dots">CHatB0t is typing</span>`;
+            typingDiv.id = 'typingIndicator';
+            
+            const chatArea = document.getElementById('chatArea');
+            chatArea.appendChild(typingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+        
+        function hideTyping() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        function clearChat() {
+            if (confirm('Are you sure you want to clear the chat? This will delete all messages!')) {
+                const chatArea = document.getElementById('chatArea');
+                chatArea.innerHTML = `
+                    <div class="welcome-message">
+                        <div class="bot-avatar">🤖</div>
+                        <strong>CHatB0t is ready to chat!</strong><br>
+                        Ask me anything - I'm super smart and remember everything! ✨
+                    </div>
+                `;
+                
+                messageCount = 0;
+                conversationHistory = [];
+                saveConversationHistory();
+                updateStats();
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('messageCount').textContent = messageCount;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('chatTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function saveConversationHistory() {
+            localStorage.setItem('chatbot_history', JSON.stringify(conversationHistory));
+        }
+        
+        function loadConversationHistory() {
+            const saved = localStorage.getItem('chatbot_history');
+            if (saved) {
+                conversationHistory = JSON.parse(saved);
+                messageCount = conversationHistory.length;
+                
+                // Reload recent messages (last 10)
+                const recentMessages = conversationHistory.slice(-10);
+                const chatArea = document.getElementById('chatArea');
+                chatArea.innerHTML = '';
+                
+                recentMessages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${msg.sender}-message`;
+                    
+                    if (msg.sender === 'bot') {
+                        messageDiv.innerHTML = `<span class="bot-avatar">${botPersonality.emoji}</span>${msg.text}`;
+                    } else {
+                        messageDiv.textContent = msg.text;
+                    }
+                    
+                    chatArea.appendChild(messageDiv);
+                });
+                
+                chatArea.scrollTop = chatArea.scrollHeight;
+                updateStats();
+            }
+        }
+        
+        // Start the chatbot
+        console.log('CHatB0t LOADING! 🤖');
+        init();
+        console.log('CHatB0t is ready to chat! Ask me anything! 🚀');
+    </script>
+</body>
+</html>

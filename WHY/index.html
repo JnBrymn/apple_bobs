@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WHY - The Adventure Game</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameContainer {
+            position: relative;
+            border: 2px solid #333;
+        }
+        
+        #gameCanvas {
+            background: #000;
+            display: block;
+        }
+        
+        #levelInfo {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            color: white;
+            font-size: 18px;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="levelInfo">Level 1 - Press SPACE to start!</div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="instructions">
+            Arrow Keys: Move Left/Right | Up Arrow: Jump | SPACE: Press Button | Touch Flag to Win!
+        </div>
+        <div id="debug" style="position: absolute; top: 10px; right: 10px; color: white; font-size: 12px;"></div>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const levelInfo = document.getElementById('levelInfo');
+        const debug = document.getElementById('debug');
+        
+        let currentLevel = 1;
+        let gameStarted = false;
+        let gameWon = false;
+        
+        // Player
+        let player = {
+            x: 50,
+            y: 570,
+            width: 20,
+            height: 30,
+            speed: 3,
+            color: '#fff',
+            velocityY: 0,
+            onGround: true
+        };
+        
+        // Button
+        let button = {
+            x: 350,
+            y: 520,
+            width: 100,
+            height: 20,
+            pressed: false,
+            color: '#ff0000'
+        };
+        
+        // Game objects
+        let doors = [];
+        let walls = [];
+        let flag = { x: 750, y: 500, width: 20, height: 30, color: '#00ff00' };
+        
+        // Controls
+        let keys = {};
+        
+        // Level designs
+        const levels = [
+            // Level 1 - Simple
+            {
+                doors: [{ x: 400, y: 400, width: 40, height: 100, open: false }],
+                walls: [
+                    { x: 200, y: 300, width: 400, height: 20 },
+                    { x: 200, y: 300, width: 20, height: 100 }, // Left barrier
+                    { x: 580, y: 300, width: 20, height: 100 }  // Right barrier
+                ],
+                playerStart: { x: 50, y: 570 },
+                buttonPos: { x: 350, y: 520 }
+            },
+            // Level 2 - Two doors
+            {
+                doors: [
+                    { x: 300, y: 400, width: 40, height: 100, open: false },
+                    { x: 500, y: 300, width: 40, height: 100, open: false }
+                ],
+                walls: [
+                    { x: 150, y: 350, width: 300, height: 20 },
+                    { x: 150, y: 350, width: 20, height: 100 }, // Left barrier
+                    { x: 430, y: 350, width: 20, height: 100 }, // Right barrier
+                    { x: 450, y: 250, width: 300, height: 20 },
+                    { x: 450, y: 250, width: 20, height: 100 }, // Left barrier
+                    { x: 730, y: 250, width: 20, height: 100 }  // Right barrier
+                ],
+                playerStart: { x: 50, y: 570 },
+                buttonPos: { x: 350, y: 520 }
+            },
+            // Level 3 - Complex maze
+            {
+                doors: [
+                    { x: 250, y: 450, width: 40, height: 100, open: false },
+                    { x: 450, y: 350, width: 40, height: 100, open: false },
+                    { x: 650, y: 250, width: 40, height: 100, open: false }
+                ],
+                walls: [
+                    { x: 100, y: 400, width: 200, height: 20 },
+                    { x: 300, y: 300, width: 200, height: 20 },
+                    { x: 500, y: 200, width: 200, height: 20 },
+                    { x: 200, y: 200, width: 20, height: 200 },
+                    { x: 400, y: 100, width: 20, height: 200 }
+                ],
+                playerStart: { x: 50, y: 570 },
+                buttonPos: { x: 350, y: 520 }
+            }
+        ];
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space' && !gameStarted) {
+                startGame();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        function startGame() {
+            gameStarted = true;
+            loadLevel(currentLevel);
+        }
+        
+        function loadLevel(levelNum) {
+            const level = levels[levelNum - 1];
+            if (!level) {
+                gameWon = true;
+                return;
+            }
+            
+            // Reset player position
+            player.x = level.playerStart.x;
+            player.y = level.playerStart.y;
+            player.velocityY = 0;
+            player.onGround = false;
+            
+            // Load doors and walls
+            doors = level.doors.map(door => ({...door}));
+            walls = level.walls.map(wall => ({...wall}));
+            
+            // Position button
+            button.x = level.buttonPos.x;
+            button.y = level.buttonPos.y;
+            button.pressed = false;
+            
+            levelInfo.textContent = `Level ${levelNum} - Get to the flag!`;
+        }
+        
+                function updateGame() {
+            if (!gameStarted || gameWon) return;
+            
+            // Handle jumping input
+            if (keys['ArrowUp'] && player.onGround) {
+                player.velocityY = -15;
+                player.onGround = false;
+            }
+            
+            // Apply gravity
+            player.velocityY += 0.8;
+            player.y += player.velocityY;
+            
+            // Player movement (only left/right)
+            if (keys['ArrowLeft'] && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+            
+            // Reset ground state
+            player.onGround = false;
+            
+            // Check floor collision
+            if (player.y >= canvas.height - player.height) {
+                player.y = canvas.height - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+            }
+            
+            // Check wall collisions
+            walls.forEach(wall => {
+                if (player.x < wall.x + wall.width && 
+                    player.x + player.width > wall.x &&
+                    player.y < wall.y + wall.height && 
+                    player.y + player.height > wall.y) {
+                    
+                    // Calculate overlap on each side
+                    let overlapLeft = wall.x + wall.width - player.x;
+                    let overlapRight = player.x + player.width - wall.x;
+                    let overlapTop = wall.y + wall.height - player.y;
+                    let overlapBottom = player.y + player.height - wall.y;
+                    
+                    // Find the smallest overlap to determine collision direction
+                    let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                    
+                    if (minOverlap === overlapTop && player.velocityY > 0) {
+                        // Landing on top of wall
+                        player.y = wall.y - player.height;
+                        player.velocityY = 0;
+                        player.onGround = true;
+                    } else if (minOverlap === overlapBottom && player.velocityY < 0) {
+                        // Hitting ceiling
+                        player.y = wall.y + wall.height;
+                        player.velocityY = 0;
+                    } else if (minOverlap === overlapLeft) {
+                        // Hitting wall from right
+                        player.x = wall.x - player.width;
+                    } else if (minOverlap === overlapRight) {
+                        // Hitting wall from left
+                        player.x = wall.x + wall.width;
+                    } else if (minOverlap === overlapBottom) {
+                        // Hitting bottom of wall (going under)
+                        player.y = wall.y + wall.height;
+                        player.velocityY = 0;
+                    }
+                }
+            });
+            
+            // Check door collisions (only if door is closed)
+            doors.forEach(door => {
+                if (!door.open && player.x < door.x + door.width && 
+                    player.x + player.width > door.x &&
+                    player.y < door.y + door.height && 
+                    player.y + player.height > door.y) {
+                    
+                    // Calculate overlap on each side
+                    let overlapLeft = door.x + door.width - player.x;
+                    let overlapRight = player.x + player.width - door.x;
+                    let overlapTop = door.y + door.height - player.y;
+                    let overlapBottom = player.y + player.height - door.y;
+                    
+                    // Find the smallest overlap to determine collision direction
+                    let minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                    
+                    if (minOverlap === overlapTop && player.velocityY > 0) {
+                        // Landing on top of door
+                        player.y = door.y - player.height;
+                        player.velocityY = 0;
+                        player.onGround = true;
+                    } else if (minOverlap === overlapBottom && player.velocityY < 0) {
+                        // Hitting door ceiling
+                        player.y = door.y + door.height;
+                        player.velocityY = 0;
+                    } else if (minOverlap === overlapLeft) {
+                        // Hitting door from right
+                        player.x = door.x - player.width;
+                    } else if (minOverlap === overlapRight) {
+                        // Hitting door from left
+                        player.x = door.x + door.width;
+                    } else if (minOverlap === overlapBottom) {
+                        // Hitting bottom of door (going under)
+                        player.y = door.y + door.height;
+                        player.velocityY = 0;
+                    }
+                }
+            });
+            
+            // Check button press
+            if (keys['Space'] && !button.pressed) {
+                if (player.x < button.x + button.width && 
+                    player.x + player.width > button.x &&
+                    player.y < button.y + button.height && 
+                    player.y + player.height > button.y) {
+                    button.pressed = true;
+                    button.color = '#00ff00';
+                    doors.forEach(door => door.open = true);
+                }
+            }
+            
+            // Check collision with flag
+            if (player.x < flag.x + flag.width && 
+                player.x + player.width > flag.x &&
+                player.y < flag.y + flag.height && 
+                player.y + player.height > flag.y) {
+                currentLevel++;
+                if (currentLevel > levels.length) {
+                    gameWon = true;
+                    levelInfo.textContent = "YOU WIN! All levels completed! 🎉";
+                } else {
+                    loadLevel(currentLevel);
+                }
+            }
+            
+            // Debug info
+            debug.textContent = `Y: ${Math.round(player.y)} | Ground: ${player.onGround} | VelY: ${Math.round(player.velocityY)}`;
+        }
+        
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw walls (only the visible ones)
+            ctx.fillStyle = '#666';
+            walls.forEach(wall => {
+                // Only draw walls that are wide (horizontal platforms)
+                if (wall.width > wall.height) {
+                    ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+                }
+                // Invisible barriers (tall walls) are not drawn
+            });
+            
+            // Draw doors
+            doors.forEach(door => {
+                if (door.open) {
+                    ctx.fillStyle = '#00ff00';
+                } else {
+                    ctx.fillStyle = '#8B4513';
+                }
+                ctx.fillRect(door.x, door.y, door.width, door.height);
+            });
+            
+            // Draw button
+            ctx.fillStyle = button.color;
+            ctx.fillRect(button.x, button.y, button.width, button.height);
+            
+            // Draw flag
+            ctx.fillStyle = flag.color;
+            ctx.fillRect(flag.x, flag.y, flag.width, flag.height);
+            
+            // Draw flag pole
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(flag.x - 5, flag.y, 5, flag.height);
+            
+            // Draw player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw player eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 5, player.y + 8, 3, 3);
+            ctx.fillRect(player.x + 12, player.y + 8, 3, 3);
+        }
+        
+        function gameLoop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>

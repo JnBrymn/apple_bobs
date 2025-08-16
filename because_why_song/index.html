@@ -1,0 +1,681 @@
+<!-- BECAUSE WHY - A Song by Rabbert -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 BECAUSE WHY - Rabbert</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 25%, #45B7D1 50%, #96CEB4 75%, #FFEAA7 100%);
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: #333333;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(3px 3px at 20px 30px, rgba(255, 255, 255, 0.6), transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.5), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255, 255, 255, 0.4), transparent),
+                radial-gradient(1px 1px at 160px 30px, rgba(255, 255, 255, 0.6), transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: bubbleFloat 10s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes bubbleFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-100px); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border: 3px solid #FF6B6B;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.1), transparent);
+            animation: neonShimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes neonShimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+        }
+
+        .title {
+            text-align: center;
+            color: #FF6B6B;
+            font-size: 4em;
+            font-weight: 900;
+            text-shadow: 
+                3px 3px 0px #4ECDC4,
+                6px 6px 0px #45B7D1;
+            margin-bottom: 10px;
+            animation: titleBounce 1s ease-in-out infinite alternate;
+            letter-spacing: 3px;
+        }
+
+        .artist {
+            text-align: center;
+            color: #4ECDC4;
+            font-size: 1.5em;
+            font-weight: 700;
+            text-shadow: 
+                2px 2px 0px #FF6B6B;
+            margin-bottom: 30px;
+            animation: artistBounce 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleBounce {
+            from { 
+                transform: translateY(0px) scale(1);
+                text-shadow: 
+                    3px 3px 0px #4ECDC4,
+                    6px 6px 0px #45B7D1;
+            }
+            to { 
+                transform: translateY(-10px) scale(1.05);
+                text-shadow: 
+                    3px 3px 0px #4ECDC4,
+                    6px 6px 0px #45B7D1,
+                    9px 9px 0px #96CEB4;
+            }
+        }
+
+        @keyframes artistBounce {
+            from { 
+                transform: translateY(0px);
+                text-shadow: 2px 2px 0px #FF6B6B;
+            }
+            to { 
+                transform: translateY(-5px);
+                text-shadow: 
+                    2px 2px 0px #FF6B6B,
+                    4px 4px 0px #FFEAA7;
+            }
+        }
+
+        .music-player {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.2), rgba(0, 255, 255, 0.2));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 3px solid rgba(255, 0, 0, 0.5);
+            box-shadow: 
+                0 15px 35px rgba(255, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-btn {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #ff0000, #800000);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.4s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #800000, #ff0000);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 
+                0 10px 25px rgba(255, 0, 0, 0.4),
+                0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #00ffff, #ff0000);
+            background-size: 200% 100%;
+            width: 0%;
+            transition: width 0.1s ease;
+            animation: progressFlow 2s ease-in-out infinite;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        @keyframes progressFlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .time-display {
+            text-align: center;
+            color: #00ffff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 15px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .lyrics-container {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            max-height: 400px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .lyrics-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .lyrics-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .lyrics-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #ff0000, #00ffff);
+            border-radius: 4px;
+        }
+
+        .lyric-line {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            border-left: 3px solid transparent;
+        }
+
+        .lyric-line.active {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.3), rgba(0, 255, 255, 0.3));
+            opacity: 1;
+            transform: scale(1.02);
+            box-shadow: 
+                0 5px 15px rgba(255, 0, 0, 0.3),
+                0 0 20px rgba(255, 0, 0, 0.2);
+            border-left: 3px solid #ff0000;
+            text-shadow: 
+                1px 1px 2px rgba(0,0,0,0.8),
+                0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .visualizer {
+            height: 120px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            gap: 4px;
+            padding: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .bar {
+            width: 10px;
+            background: linear-gradient(to top, #ff0000, #00ffff);
+            border-radius: 5px;
+            transition: height 0.1s ease;
+            animation: barPulse 0.5s ease-in-out infinite alternate;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        @keyframes barPulse {
+            from { 
+                opacity: 0.6;
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            }
+            to { 
+                opacity: 1;
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            }
+        }
+
+        .info {
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            color: white;
+            text-align: center;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .info h3 {
+            margin: 0 0 15px 0;
+            color: #ff0000;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        .info p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .mood-indicator {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            animation: moodPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes moodPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">HEY NESTOR!</h1>
+        <div class="artist">by RABBERT</div>
+        
+        <div class="mood-indicator" id="moodIndicator">🧸 FUN & PLAYFUL 🧸</div>
+        
+        <div class="music-player">
+            <div class="controls">
+                <button class="control-btn" onclick="playSong()">▶️ PLAY</button>
+                <button class="control-btn" onclick="pauseSong()">⏸️ PAUSE</button>
+                <button class="control-btn" onclick="stopSong()">⏹️ STOP</button>
+                <button class="control-btn" onclick="resetSong()">🔄 RESET</button>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="time-display" id="timeDisplay">0:00 / 2:00</div>
+            
+            <div class="visualizer" id="visualizer">
+                <!-- Audio bars will be generated here -->
+            </div>
+        </div>
+
+        <div class="lyrics-container" id="lyricsContainer">
+            <div class="lyric-line" data-time="0">[Intro - Cheerful]</div>
+            <div class="lyric-line" data-time="5">Hey Nestor... please pick up your toys</div>
+            <div class="lyric-line" data-time="10">(I'm gonna use them later)</div>
+            <div class="lyric-line" data-time="15">Is that your orange from last week?</div>
+            <div class="lyric-line" data-time="20">(Yeah don't be a hater)</div>
+            
+            <div class="lyric-line" data-time="25">[Verse 1]</div>
+            <div class="lyric-line" data-time="30">This room is a mess</div>
+            <div class="lyric-line" data-time="35">(I'm just a decorator)</div>
+            <div class="lyric-line" data-time="40">Suit yourself</div>
+            <div class="lyric-line" data-time="45">(Can you help me peel this thing sir?)</div>
+            
+            <div class="lyric-line" data-time="50">Nestor I think you need a bath</div>
+            <div class="lyric-line" data-time="55">(No thanks)</div>
+            <div class="lyric-line" data-time="60">But there's dirt all over you</div>
+            <div class="lyric-line" data-time="65">(It will happen again anyway)</div>
+            
+            <div class="lyric-line" data-time="70">[Chorus]</div>
+            <div class="lyric-line" data-time="75">I can see your muddy footsteps</div>
+            <div class="lyric-line" data-time="80">(They look nice)</div>
+            <div class="lyric-line" data-time="85">You have to clean it up</div>
+            <div class="lyric-line" data-time="90">(Because why?)</div>
+            
+            <div class="lyric-line" data-time="95">What do you mean why?</div>
+            <div class="lyric-line" data-time="100">(I'm asking you because why)</div>
+            <div class="lyric-line" data-time="105">There's not a single reason I can find</div>
+            <div class="lyric-line" data-time="110">(It's gonna happen again anyway)</div>
+            
+            <div class="lyric-line" data-time="115">So I don't want to waste my time!</div>
+            <div class="lyric-line" data-time="120">(I'm asking yooooou because whyyy)</div>
+            <div class="lyric-line" data-time="125">I haven't done any crime!</div>
+            <div class="lyric-line" data-time="130">(What's the meaning of cleaning)</div>
+            
+            <div class="lyric-line" data-time="135">When there's better ways to spend my time</div>
+            <div class="lyric-line" data-time="140">(And so on and a lot more)</div>
+            
+            <div class="lyric-line" data-time="145">[Bridge]</div>
+            <div class="lyric-line" data-time="150">Because why should I clean?</div>
+            <div class="lyric-line" data-time="155">(When I can play instead?)</div>
+            <div class="lyric-line" data-time="160">Because why should I care?</div>
+            <div class="lyric-line" data-time="165">(About what you just said?)</div>
+            
+            <div class="lyric-line" data-time="170">[Final Chorus]</div>
+            <div class="lyric-line" data-time="175">I can see your muddy footsteps</div>
+            <div class="lyric-line" data-time="180">(They look nice)</div>
+            <div class="lyric-line" data-time="185">You have to clean it up</div>
+            <div class="lyric-line" data-time="190">(Because why?)</div>
+            
+            <div class="lyric-line" data-time="195">What do you mean why?</div>
+            <div class="lyric-line" data-time="200">(I'm asking you because why)</div>
+            <div class="lyric-line" data-time="205">There's not a single reason I can find</div>
+            <div class="lyric-line" data-time="210">(It's gonna happen again anyway)</div>
+            
+            <div class="lyric-line" data-time="215">[Outro]</div>
+            <div class="lyric-line" data-time="220">So I don't want to waste my time!</div>
+            <div class="lyric-line" data-time="225">(I'm asking yooooou because whyyy)</div>
+            <div class="lyric-line" data-time="230">I haven't done any crime!</div>
+            <div class="lyric-line" data-time="235">🧸 Because why? 🧸</div>
+        </div>
+
+        <div class="info">
+            <h3>🎤 About "Hey Nestor!"</h3>
+            <p><strong>Artist:</strong> Rabbert</p>
+            <p><strong>Duration:</strong> 2:00 (Fast & Energetic!)</p>
+            <p><strong>Genre:</strong> Fun Children's Pop</p>
+            <p><strong>Theme:</strong> A playful conversation between a parent and a messy kid</p>
+            <p><strong>Mood:</strong> Cheerful, playful, funny</p>
+            <p><strong>Message:</strong> Kids will always find reasons not to clean up!</p>
+        </div>
+    </div>
+
+    <script>
+        // Audio context for generating music
+        let audioContext;
+        let oscillators = [];
+        let gainNodes = [];
+        let isPlaying = false;
+        let currentTime = 0;
+        let songDuration = 120; // 2:00 in seconds (faster!)
+        let animationId;
+
+        // Initialize audio context
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Generate fast cheerful children's music
+        function generateCheerfulMusic() {
+            if (!audioContext) return;
+            
+            // Create multiple oscillators for layered sound
+            const frequencies = [261, 329, 392, 523]; // C, E, G, C (major chord)
+            const types = ['sine', 'triangle', 'sine', 'triangle'];
+            
+            frequencies.forEach((freq, index) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = types[index];
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+                
+                // Add faster playful modulation
+                osc.frequency.setValueAtTime(freq * 1.2, audioContext.currentTime + 0.2);
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime + 0.4);
+                osc.frequency.setValueAtTime(freq * 1.1, audioContext.currentTime + 0.6);
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime + 0.8);
+                
+                gain.gain.setValueAtTime(0.1 / (index + 1), audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 3);
+                
+                oscillators.push(osc);
+                gainNodes.push(gain);
+            });
+        }
+
+        // Play the song
+        function playSong() {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            isPlaying = true;
+            generateCheerfulMusic();
+            startVisualizer();
+            updateLyrics();
+            animateProgress();
+            updateMoodIndicator();
+        }
+
+        // Pause the song
+        function pauseSong() {
+            isPlaying = false;
+            oscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            oscillators = [];
+            gainNodes = [];
+            stopVisualizer();
+            cancelAnimationFrame(animationId);
+        }
+
+        // Stop the song
+        function stopSong() {
+            isPlaying = false;
+            currentTime = 0;
+            oscillators.forEach(osc => {
+                try { osc.stop(); } catch(e) {}
+            });
+            oscillators = [];
+            gainNodes = [];
+            stopVisualizer();
+            updateProgress(0);
+            updateTimeDisplay(0);
+            updateLyrics(0);
+            cancelAnimationFrame(animationId);
+        }
+
+        // Reset the song
+        function resetSong() {
+            stopSong();
+        }
+
+        // Animate progress bar
+        function animateProgress() {
+            if (!isPlaying) return;
+            
+            currentTime += 0.1;
+            if (currentTime >= songDuration) {
+                stopSong();
+                return;
+            }
+            
+            updateProgress(currentTime);
+            updateTimeDisplay(currentTime);
+            updateLyrics(currentTime);
+            
+            animationId = requestAnimationFrame(animateProgress);
+        }
+
+        // Update progress bar
+        function updateProgress(time) {
+            const progress = (time / songDuration) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Update time display
+        function updateTimeDisplay(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60);
+            const totalMinutes = Math.floor(songDuration / 60);
+            const totalSeconds = Math.floor(songDuration % 60);
+            
+            document.getElementById('timeDisplay').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+        }
+
+        // Update lyrics highlighting
+        function updateLyrics(time) {
+            const lines = document.querySelectorAll('.lyric-line');
+            lines.forEach(line => {
+                line.classList.remove('active');
+                const lineTime = parseInt(line.dataset.time);
+                if (time >= lineTime && time < lineTime + 4) {
+                    line.classList.add('active');
+                    line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        // Update mood indicator
+        function updateMoodIndicator() {
+            const moods = [
+                "🧸 FUN & PLAYFUL 🧸",
+                "🎈 MESSY & HAPPY 🎈",
+                "🎨 CREATIVE CHAOS 🎨",
+                "🌟 BECAUSE WHY? 🌟",
+                "🎪 TOY TIME! 🎪",
+                "⚡ FAST & ENERGETIC ⚡",
+                "🚀 SPEED DEMON 🚀"
+            ];
+            
+            let moodIndex = 0;
+            setInterval(() => {
+                if (isPlaying) {
+                    document.getElementById('moodIndicator').textContent = moods[moodIndex];
+                    moodIndex = (moodIndex + 1) % moods.length;
+                }
+            }, 1500); // Faster mood changes!
+        }
+
+        // Create visualizer bars
+        function createVisualizer() {
+            const visualizer = document.getElementById('visualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = Math.random() * 100 + 20 + 'px';
+                visualizer.appendChild(bar);
+            }
+        }
+
+        // Start visualizer animation
+        function startVisualizer() {
+            createVisualizer();
+            animateVisualizer();
+        }
+
+        // Stop visualizer
+        function stopVisualizer() {
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach(bar => {
+                bar.style.height = '20px';
+            });
+        }
+
+        // Animate visualizer
+        function animateVisualizer() {
+            if (!isPlaying) return;
+            
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach(bar => {
+                const height = Math.random() * 100 + 20;
+                bar.style.height = height + 'px';
+            });
+            
+            setTimeout(animateVisualizer, 50); // Faster animation!
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createVisualizer();
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(event) {
+            switch(event.code) {
+                case 'Space':
+                    event.preventDefault();
+                    if (isPlaying) {
+                        pauseSong();
+                    } else {
+                        playSong();
+                    }
+                    break;
+                case 'KeyR':
+                    resetSong();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

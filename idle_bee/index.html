@@ -93,6 +93,80 @@ Idle Bee Game
             z-index: 3;
         }
         
+        /* Golden Honey Drop Styles */
+        .golden-honey {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+            border-radius: 50%;
+            border: 3px solid #B8860B;
+            cursor: pointer;
+            z-index: 1000;
+            animation: goldenHoneyFloat 2s ease-in-out infinite;
+            box-shadow: 0 0 20px #FFD700, 0 0 40px #FFA500;
+            transition: all 0.3s ease;
+        }
+        
+        .golden-honey:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px #FFD700, 0 0 60px #FFA500;
+        }
+        
+        .golden-honey::before {
+            content: '🍯';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        
+        @keyframes goldenHoneyFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+        }
+        
+        .golden-honey.clicked {
+            animation: goldenHoneyClick 0.6s ease-out;
+        }
+        
+        @keyframes goldenHoneyClick {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.5) rotate(180deg); }
+            100% { transform: scale(0) rotate(360deg); }
+        }
+        
+        /* Effect Text */
+        .effect-text {
+            position: absolute;
+            color: #FFD700;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            pointer-events: none;
+            animation: effectTextFloat 2s ease-out forwards;
+        }
+        
+        @keyframes effectTextFloat {
+            0% { transform: translateY(0px); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+        
+        #multiplier-display {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 100;
+        }
+        
         .bee-hive {
             position: absolute;
             bottom: 100px;

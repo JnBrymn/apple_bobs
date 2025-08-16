@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🧠 Akanator - The Mind Reading AI! 🧠</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        #gameTitle {
+            text-align: center;
+            font-size: 4em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGlow 4s ease-in-out infinite;
+            text-shadow: 
+                0 0 30px rgba(255, 107, 107, 0.8),
+                0 0 60px rgba(255, 107, 107, 0.6);
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .game-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(15px);
+            border: 3px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+        
+        .game-section h2 {
+            color: #4ecdc4;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.6);
+        }
+        
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .character {
+            background: linear-gradient(135deg, rgba(78,205,196,0.3), rgba(69,183,209,0.3));
+            border: 3px solid rgba(78,205,196,0.5);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .character:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.4),
+                0 0 30px rgba(78, 205, 196, 0.5);
+            border-color: rgba(78, 205, 196, 0.8);
+        }
+        
+        .character.selected {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, rgba(255,215,0,0.4), rgba(255,215,0,0.2));
+            box-shadow: 
+                0 0 40px rgba(255, 215, 0, 0.6),
+                0 0 80px rgba(255, 215, 0, 0.3);
+            animation: selectedPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes selectedPulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 40px rgba(255, 215, 0, 0.6),
+                    0 0 80px rgba(255, 215, 0, 0.3);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 60px rgba(255, 215, 0, 0.8),
+                    0 0 120px rgba(255, 215, 0, 0.5);
+            }
+        }
+        
+        .question-display {
+            text-align: center;
+            font-size: 2em;
+            margin: 30px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(78,205,196,0.2));
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .answer-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .answer-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .answer-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+        
+        .answer-btn.yes { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .answer-btn.no { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .answer-btn.idk { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .answer-btn.probably { background: linear-gradient(135deg, #2196F3, #1976D2); }
+        .answer-btn.probably-not { background: linear-gradient(135deg, #9C27B0, #7B1FA2); }
+        .answer-btn.kind-of { background: linear-gradient(135deg, #607D8B, #455A64); }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .stat h3 {
+            margin: 0 0 10px 0;
+            color: #4ecdc4;
+        }
+        
+        .stat div {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .guess-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .guess-input {
+            width: 80%;
+            max-width: 400px;
+            padding: 15px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 15px;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        
+        .guess-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+            border-radius: 15px;
+            padding: 20px 40px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .guess-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+        
+        .result {
+            text-align: center;
+            font-size: 2em;
+            margin: 30px 0;
+            padding: 30px;
+            border-radius: 20px;
+            animation: resultPop 0.5s ease-out;
+        }
+        
+        .result.correct {
+            background: linear-gradient(135deg, rgba(76,175,80,0.3), rgba(76,175,80,0.1));
+            border: 3px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .result.incorrect {
+            background: linear-gradient(135deg, rgba(244,67,54,0.3), rgba(244,67,54,0.1));
+            border: 3px solid #f44336;
+            color: #f44336;
+        }
+        
+        @keyframes resultPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            border: none;
+            border-radius: 15px;
+            padding: 20px 40px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            margin: 20px;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .thinking {
+            animation: thinking 2s ease-in-out infinite;
+        }
+        
+        @keyframes thinking {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="gameTitle">🧠 Akanator 🧠</h1>
+        
+        <div id="characterSelect" class="game-section">
+            <h2>🎭 Think of Your Character!</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 20px;">
+                Type in the character you're thinking of (real or fictional) and I'll try to guess it with yes/no questions!
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+                <input type="text" class="guess-input" id="playerCharacterInput" placeholder="Enter your character here (e.g., Spider-Man, Mickey Mouse, Albert Einstein)...">
+                <button class="guess-btn" onclick="startGame()" style="margin-top: 20px;">🎮 Start Game!</button>
+            </div>
+            <p style="text-align: center; font-size: 1em; color: #ddd; margin-top: 20px;">
+                Don't worry - I won't see what you typed! I'll just ask questions to try to figure it out.
+            </p>
+        </div>
+        
+        <div id="gamePlay" class="game-section hidden">
+            <h2>🤔 AI is Thinking...</h2>
+            <p style="text-align: center; font-size: 1.2em; margin-bottom: 20px; color: #ffd700;">
+                I'm asking questions to figure out who you're thinking of! Answer honestly to help me guess correctly.
+            </p>
+            
+            <div class="stats">
+                <div class="stat">
+                    <h3>❓ Questions Asked</h3>
+                    <div id="questionCount">0</div>
+                </div>
+                <div class="stat">
+                    <h3>🎯 Questions Left</h3>
+                    <div id="questionsLeft">500</div>
+                </div>
+                <div class="stat">
+                    <h3>🧠 AI Confidence</h3>
+                    <div id="confidence">0%</div>
+                </div>
+            </div>
+            
+            <div class="question-display" id="questionDisplay">
+                Ready to start asking questions!
+            </div>
+            
+            <div class="answer-buttons">
+                <button class="answer-btn yes" onclick="answerQuestion('yes')">✅ YES</button>
+                <button class="answer-btn no" onclick="answerQuestion('no')">❌ NO</button>
+                <button class="answer-btn kind-of" onclick="answerQuestion('kind-of')">🤔 KIND OF</button>
+                <button class="answer-btn idk" onclick="answerQuestion('idk')">🤷 IDK</button>
+                <button class="answer-btn probably" onclick="answerQuestion('probably')">👍 PROBABLY</button>
+                <button class="answer-btn probably-not" onclick="answerQuestion('probably-not')">👎 PROBABLY NOT</button>
+            </div>
+            
+            <div class="guess-section hidden" id="guessSection">
+                <h3>🎯 I think I know!</h3>
+                <p>Is your character:</p>
+                <div class="question-display" id="aiGuessDisplay">
+                    [AI will make its guess here]
+                </div>
+                <div class="answer-buttons">
+                    <button class="answer-btn yes" onclick="confirmGuess('yes')">✅ YES - That's right!</button>
+                    <button class="answer-btn no" onclick="confirmGuess('no')">❌ NO - That's wrong!</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="result" class="result hidden"></div>
+        
+        <div id="restartSection" class="game-section hidden" style="text-align: center;">
+            <button class="restart-btn" onclick="restartGame()">🔄 Play Again!</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let selectedCharacter = null;
+        let currentQuestion = 0;
+        let questionsAsked = 0;
+        let maxQuestions = 500;
+        let gameActive = false;
+        let aiConfidence = 0;
+        
+        // Character database with questions
+        const characterDatabase = {
+            superhero: [
+                "Is it fictional?",
+                "Is your character from Marvel?",
+                "Is your character from DC Comics?",
+                "Does your character have super strength?",
+                "Can your character fly?",
+                "Does your character wear a cape?",
+                "Is your character a billionaire?",
+                "Does your character have a secret identity?",
+                "Is your character an alien?",
+                "Does your character have laser vision?",
+                "Is your character a scientist?",
+                "Does your character have healing powers?",
+                "Is your character from a movie?",
+                "Does your character have a sidekick?",
+                "Is your character a leader of a team?",
+                "Does your character have a tragic backstory?",
+                "Is your character immortal?",
+                "Does your character have magic powers?",
+                "Is your character a detective?",
+                "Does your character have a famous catchphrase?",
+                "Is your character from the Avengers?"
+            ],
+            animal: [
+                "Is it fictional?",
+                "Is your character a mammal?",
+                "Does your character live in water?",
+                "Can your character fly?",
+                "Is your character a pet?",
+                "Is your character dangerous to humans?",
+                "Does your character live in groups?",
+                "Is your character nocturnal?",
+                "Does your character have fur?",
+                "Is your character endangered?",
+                "Does your character live in the jungle?",
+                "Is your character a predator?",
+                "Does your character hibernate?",
+                "Is your character found in Africa?",
+                "Does your character have stripes?",
+                "Is your character very large?",
+                "Does your character make loud sounds?",
+                "Is your character very fast?",
+                "Does your character have horns?",
+                "Is your character found in the ocean?",
+                "Does your character lay eggs?"
+            ],
+            movie: [
+                "Is it fictional?",
+                "Is your character from an action movie?",
+                "Is your character from a comedy?",
+                "Is your character from a Disney movie?",
+                "Is your character a villain?",
+                "Is your character a hero?",
+                "Does your character have magical powers?",
+                "Is your character from an animated movie?",
+                "Does your character have a love interest?",
+                "Is your character from a recent movie?",
+                "Does your character have a famous quote?",
+                "Is your character from a superhero movie?",
+                "Does your character have a sidekick?",
+                "Is your character from a musical?",
+                "Does your character have a tragic story?",
+                "Is your character immortal?",
+                "Does your character have a weapon?",
+                "Is your character from a fantasy movie?",
+                "Does your character have a family?",
+                "Is your character from a horror movie?",
+                "Does your character have a special ability?"
+            ],
+            game: [
+                "Is it fictional?",
+                "Is your character from Nintendo?",
+                "Is your character from PlayStation?",
+                "Is your character from Xbox?",
+                "Is your character a protagonist?",
+                "Is your character a villain?",
+                "Does your character have special abilities?",
+                "Is your character from a platformer?",
+                "Is your character from an RPG?",
+                "Is your character from a fighting game?",
+                "Does your character have a weapon?",
+                "Is your character from a mobile game?",
+                "Does your character have a sidekick?",
+                "Is your character from an indie game?",
+                "Does your character have magic powers?",
+                "Is your character from a racing game?",
+                "Does your character have a transformation?",
+                "Is your character from a strategy game?",
+                "Does your character have a love interest?",
+                "Is your character from a horror game?",
+                "Does your character have a catchphrase?"
+            ],
+            historical: [
+                "Is it fictional?",
+                "Was your character a leader?",
+                "Was your character a scientist?",
+                "Was your character an artist?",
+                "Was your character a warrior?",
+                "Did your character live in the 20th century?",
+                "Was your character from Europe?",
+                "Was your character from Asia?",
+                "Was your character from America?",
+                "Did your character invent something?",
+                "Was your character a writer?",
+                "Did your character discover something?",
+                "Was your character a musician?",
+                "Did your character start a war?",
+                "Was your character a queen or king?",
+                "Did your character have a famous speech?",
+                "Was your character from ancient times?",
+                "Did your character change history?",
+                "Was your character a philosopher?",
+                "Did your character have a tragic death?",
+                "Was your character a revolutionary?"
+            ],
+            cartoon: [
+                "Is it fictional?",
+                "Is your character from a TV show?",
+                "Is your character from a movie?",
+                "Is your character from Disney?",
+                "Is your character from Nickelodeon?",
+                "Is your character from Cartoon Network?",
+                "Is your character a hero?",
+                "Is your character a villain?",
+                "Does your character have magical powers?",
+                "Is your character an animal?",
+                "Does your character have a sidekick?",
+                "Is your character from a comedy?",
+                "Does your character have a love interest?",
+                "Is your character very old?",
+                "Is your character very young?",
+                "Does your character have a catchphrase?",
+                "Is your character from a recent show?",
+                "Does your character have a family?",
+                "Is your character from anime?",
+                "Does your character have a weapon?",
+                "Is your character from a classic cartoon?"
+            ],
+            book: [
+                "Is it fictional?",
+                "Is your character from a fantasy book?",
+                "Is your character from a mystery book?",
+                "Is your character from a romance book?",
+                "Is your character from a children's book?",
+                "Is your character a hero?",
+                "Is your character a villain?",
+                "Is your character magical?",
+                "Is your character human?",
+                "Does your character have a love interest?",
+                "Is your character from a series?",
+                "Does your character have special abilities?",
+                "Is your character from a classic book?",
+                "Does your character have a sidekick?",
+                "Is your character from a recent book?",
+                "Does your character have a tragic story?",
+                "Is your character immortal?",
+                "Does your character have a family?",
+                "Is your character from a famous book?",
+                "Does your character have a weapon?",
+                "Is your character from a science fiction book?"
+            ],
+            custom: [
+                "Is it fictional?",
+                "Is your character famous?",
+                "Is your character from a story?",
+                "Is your character from a game?",
+                "Is your character from a movie?",
+                "Is your character from a book?",
+                "Is your character from TV?",
+                "Is your character from the internet?",
+                "Is your character from history?",
+                "Is your character from mythology?",
+                "Is your character from folklore?",
+                "Is your character from religion?",
+                "Is your character from a comic?",
+                "Is your character from a cartoon?",
+                "Is your character from an anime?",
+                "Is your character from a legend?",
+                "Is your character from a fairy tale?",
+                "Is your character from a fable?",
+                "Is your character from a parable?",
+                "Is your character from a saga?"
+            ]
+        };
+        
+        // Question weights for confidence calculation
+        const questionWeights = {
+            'yes': 1,
+            'no': 1,
+            'probably': 0.7,
+            'probably-not': 0.3,
+            'idk': 0.5,
+            'kind-of': 0.6 // Added weight for 'kind-of'
+        };
+        
+        function startGame() {
+            const playerCharacter = document.getElementById('playerCharacterInput').value.trim();
+            if (!playerCharacter) {
+                alert('Please enter your character!');
+                return;
+            }
+
+            // Store the player's character (but don't show it to the AI)
+            window.playerSecretCharacter = playerCharacter;
+            
+            // Determine the character type based on the input
+            let characterType = 'custom'; // Default to custom
+            
+            // Simple keyword matching to determine character type
+            const characterKeywords = {
+                'superhero': ['spider', 'batman', 'superman', 'iron man', 'captain', 'avenger', 'marvel', 'dc', 'hero', 'superhero'],
+                'animal': ['cat', 'dog', 'lion', 'tiger', 'bear', 'elephant', 'giraffe', 'monkey', 'penguin', 'dolphin', 'shark', 'eagle'],
+                'movie': ['mickey', 'minnie', 'donald', 'goofy', 'disney', 'pixar', 'harry potter', 'star wars', 'lord of the rings'],
+                'game': ['mario', 'luigi', 'sonic', 'link', 'zelda', 'pokemon', 'minecraft', 'fortnite', 'roblox'],
+                'historical': ['einstein', 'newton', 'shakespeare', 'da vinci', 'napoleon', 'cleopatra', 'king', 'queen', 'president'],
+                'cartoon': ['spongebob', 'patrick', 'squidward', 'tom', 'jerry', 'bugs bunny', 'daffy', 'cartoon', 'anime'],
+                'book': ['harry', 'hermione', 'ron', 'frodo', 'gandalf', 'alice', 'wonderland', 'book', 'novel', 'story']
+            };
+            
+            const lowerCharacter = playerCharacter.toLowerCase();
+            for (const [type, keywords] of Object.entries(characterKeywords)) {
+                if (keywords.some(keyword => lowerCharacter.includes(keyword))) {
+                    characterType = type;
+                    break;
+                }
+            }
+
+            selectedCharacter = characterType;
+            
+            // Start game
+            document.getElementById('characterSelect').classList.add('hidden');
+            document.getElementById('gamePlay').classList.remove('hidden');
+            gameActive = true;
+            askNextQuestion();
+        }
+        
+        function askNextQuestion() {
+            if (!gameActive || questionsAsked >= maxQuestions) {
+                endGame();
+                return;
+            }
+            
+            // Show guess section if confidence is high enough or questions are running low
+            if (aiConfidence > 80 || questionsAsked >= maxQuestions - 10) {
+                makeAIGuess();
+                return;
+            }
+            
+            const questions = characterDatabase[selectedCharacter];
+            const question = questions[questionsAsked % questions.length];
+            
+            document.getElementById('questionDisplay').textContent = question;
+            document.getElementById('questionCount').textContent = questionsAsked;
+            document.getElementById('questionsLeft').textContent = maxQuestions - questionsAsked;
+        }
+        
+        function makeAIGuess() {
+            // Simple AI guessing logic based on character type and confidence
+            let aiGuess = "Unknown Character";
+            
+            if (selectedCharacter === 'superhero') {
+                const superheroes = ['Spider-Man', 'Batman', 'Superman', 'Iron Man', 'Captain America', 'Wonder Woman', 'Black Panther', 'Thor', 'Hulk', 'Flash'];
+                aiGuess = superheroes[Math.floor(Math.random() * superheroes.length)];
+            } else if (selectedCharacter === 'animal') {
+                const animals = ['Lion', 'Tiger', 'Elephant', 'Giraffe', 'Penguin', 'Dolphin', 'Eagle', 'Bear', 'Wolf', 'Shark'];
+                aiGuess = animals[Math.floor(Math.random() * animals.length)];
+            } else if (selectedCharacter === 'movie') {
+                const movieChars = ['Mickey Mouse', 'Donald Duck', 'Goofy', 'Simba', 'Elsa', 'Anna', 'Buzz Lightyear', 'Woody', 'Nemo', 'Dory'];
+                aiGuess = movieChars[Math.floor(Math.random() * movieChars.length)];
+            } else if (selectedCharacter === 'game') {
+                const gameChars = ['Mario', 'Luigi', 'Sonic', 'Link', 'Zelda', 'Pikachu', 'Steve', 'Master Chief', 'Kratos', 'Lara Croft'];
+                aiGuess = gameChars[Math.floor(Math.random() * gameChars.length)];
+            } else if (selectedCharacter === 'historical') {
+                const historical = ['Albert Einstein', 'Isaac Newton', 'Napoleon', 'Cleopatra', 'Shakespeare', 'Da Vinci', 'George Washington', 'Abraham Lincoln', 'Queen Elizabeth', 'Alexander the Great'];
+                aiGuess = historical[Math.floor(Math.random() * historical.length)];
+            } else if (selectedCharacter === 'cartoon') {
+                const cartoons = ['SpongeBob', 'Patrick', 'Tom', 'Jerry', 'Bugs Bunny', 'Daffy Duck', 'Mickey Mouse', 'Donald Duck', 'Goofy', 'Scooby-Doo'];
+                aiGuess = cartoons[Math.floor(Math.random() * cartoons.length)];
+            } else if (selectedCharacter === 'book') {
+                const bookChars = ['Harry Potter', 'Hermione', 'Frodo', 'Gandalf', 'Alice', 'Dorothy', 'Peter Pan', 'Wendy', 'Sherlock Holmes', 'Dr. Watson'];
+                aiGuess = bookChars[Math.floor(Math.random() * bookChars.length)];
+            } else {
+                // Custom - try to guess based on common characters
+                const allChars = ['Spider-Man', 'Mickey Mouse', 'Mario', 'Einstein', 'Lion', 'Harry Potter', 'Batman', 'Superman', 'Iron Man', 'Captain America'];
+                aiGuess = allChars[Math.floor(Math.random() * allChars.length)];
+            }
+            
+            document.getElementById('aiGuessDisplay').textContent = aiGuess;
+            document.getElementById('guessSection').classList.remove('hidden');
+            document.getElementById('questionDisplay').textContent = "I think I know who you're thinking of!";
+        }
+        
+        function answerQuestion(answer) {
+            if (!gameActive) return;
+            
+            // Update confidence based on answer
+            const weight = questionWeights[answer];
+            aiConfidence = Math.min(100, aiConfidence + (weight * 10));
+            
+            questionsAsked++;
+            currentQuestion++;
+            
+            // Update display
+            document.getElementById('confidence').textContent = Math.floor(aiConfidence) + '%';
+            
+            // Ask next question after a short delay
+            setTimeout(() => {
+                askNextQuestion();
+            }, 500);
+        }
+        
+        function confirmGuess(answer) {
+            if (!gameActive) return;
+
+            const aiGuessDisplay = document.getElementById('aiGuessDisplay');
+            const aiGuess = aiGuessDisplay.textContent.replace('[AI will make its guess here]', '').trim();
+            const actualCharacter = window.playerSecretCharacter;
+
+            gameActive = false;
+
+            const isCorrect = answer.toLowerCase() === 'yes';
+
+            const resultDiv = document.getElementById('result');
+            if (isCorrect) {
+                resultDiv.textContent = `🎉 CORRECT! I guessed: ${aiGuess}`;
+                resultDiv.className = 'result correct';
+            } else {
+                resultDiv.textContent = `❌ WRONG! I guessed: ${aiGuess}. The actual character was: ${actualCharacter}`;
+                resultDiv.className = 'result incorrect';
+            }
+            resultDiv.classList.remove('hidden');
+            
+            // Show restart section
+            document.getElementById('restartSection').classList.remove('hidden');
+        }
+        
+        function endGame() {
+            gameActive = false;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Game Over! I ran out of questions or you ran out of time!';
+            resultDiv.className = 'result incorrect';
+            resultDiv.classList.remove('hidden');
+            
+            document.getElementById('restartSection').classList.remove('hidden');
+        }
+        
+        function restartGame() {
+            // Reset game state
+            selectedCharacter = null;
+            currentQuestion = 0;
+            questionsAsked = 0;
+            aiConfidence = 0;
+            gameActive = false;
+            
+            // Reset UI
+            document.getElementById('characterSelect').classList.remove('hidden');
+            document.getElementById('gamePlay').classList.add('hidden');
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('restartSection').classList.add('hidden');
+            document.getElementById('guessSection').classList.add('hidden');
+            document.getElementById('guessInput').value = '';
+            document.getElementById('playerCharacterInput').value = '';
+            
+            // Reset stats
+            document.getElementById('questionCount').textContent = '0';
+            document.getElementById('questionsLeft').textContent = '500';
+            document.getElementById('confidence').textContent = '0%';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1782 @@
+<!-- 
+Bo's Ideas Game:
+- CPU generates creative and funny ideas
+- Player clicks their favorite idea
+- Game creates similar ideas based on what player likes
+- Ideas get more creative and varied over time
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>💡 IDEAS - The Creative CPU Game 💡</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        #header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        #title {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4a5568;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        #subtitle {
+            font-size: 18px;
+            color: #718096;
+            margin: 10px 0 0 0;
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            font-size: 16px;
+            color: #4a5568;
+        }
+        
+        .stat {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        #ideas-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .idea-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            width: 300px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .idea-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .idea-card:active {
+            transform: translateY(-2px) scale(1.01);
+        }
+        
+        .idea-text {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .idea-category {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .idea-rating {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .star {
+            color: #fbbf24;
+            font-size: 18px;
+        }
+        
+        .new-idea {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .selected {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .selected .idea-text {
+            color: white;
+        }
+        
+        .selected .idea-category {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        #generate-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        #generate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .floating-emoji {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 2s ease-out forwards;
+            z-index: 1000;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+        
+        #review-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #review-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        #review-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .picked-idea {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+        
+        .picked-idea .idea-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        #review-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        
+        .review-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #keep-ideas {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        #change-ideas {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .review-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #game-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #game-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        #game-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .game-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .game-section h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .game-section p {
+            color: #2d3748;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .idea-explanation {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .idea-explanation .idea-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        #play-game-btn {
+            display: block;
+            margin: 25px auto 0;
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #play-game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        #game-play-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #game-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            z-index: 10001;
+        }
+        
+        #game-title-display {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        #game-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 18px;
+        }
+        
+        .game-stat {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        #game-canvas {
+            border: 3px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: #000;
+        }
+        
+        #game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 10001;
+        }
+        
+        .game-btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .game-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        #game-instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            z-index: 10002;
+            display: none;
+        }
+        
+        #game-instructions h3 {
+            margin-bottom: 15px;
+            color: #f093fb;
+        }
+        
+        #game-instructions p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1 id="title">💡 IDEAS</h1>
+        <p id="subtitle">The Creative CPU Game - Click your favorite ideas!</p>
+        <div id="stats">
+            <div class="stat">Ideas Generated: <span id="total-ideas">0</span></div>
+            <div class="stat">Favorites Picked: <span id="favorites-picked">0</span></div>
+            <div class="stat">Creativity Level: <span id="creativity-level">1</span></div>
+        </div>
+    </div>
+    
+    <button id="generate-btn">🎲 Generate New Ideas</button>
+    
+    <div id="ideas-container"></div>
+    
+    <div id="review-modal">
+        <div id="review-content">
+            <h2 id="review-title">🎯 Review Your Picked Ideas!</h2>
+            <div id="picked-ideas-list"></div>
+            <div id="review-buttons">
+                <button id="keep-ideas" class="review-btn">✅ Keep These Ideas</button>
+                <button id="change-ideas" class="review-btn">🔄 Change Ideas</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="game-modal">
+        <div id="game-content">
+            <h1 id="game-title">🎮 YOUR CUSTOM GAME CREATED! 🎮</h1>
+            <div id="game-description"></div>
+            <div id="ideas-explanation"></div>
+            <button id="play-game-btn">🎲 Play Your Game!</button>
+        </div>
+    </div>
+    
+    <div id="game-play-area">
+        <div id="game-header">
+            <div id="game-title-display"></div>
+            <div id="game-stats">
+                <div class="game-stat">Score: <span id="game-score">0</span></div>
+                <div class="game-stat">Level: <span id="game-level">1</span></div>
+                <div class="game-stat">Time: <span id="game-time">60</span></div>
+            </div>
+        </div>
+        
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+        
+        <div id="game-controls">
+            <button class="game-btn" id="pause-btn">⏸️ Pause</button>
+            <button class="game-btn" id="help-btn">❓ Help</button>
+            <button class="game-btn" id="exit-game-btn">🚪 Exit Game</button>
+        </div>
+        
+        <div id="game-instructions">
+            <h3>🎮 How to Play</h3>
+            <div id="instructions-content"></div>
+            <button class="game-btn" id="start-game-btn">🎲 Start Game!</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let totalIdeas = 0;
+        let favoritesPicked = 0;
+        let creativityLevel = 1;
+        let selectedCategories = [];
+        let selectedThemes = [];
+        let ideaHistory = [];
+        let pickedIdeas = [];
+        let showingReview = false;
+        let gameCreated = false;
+        let currentGame = null;
+        let gameCanvas = null;
+        let gameCtx = null;
+        let gameLoop = null;
+        let gameScore = 0;
+        let gameLevel = 1;
+        let gameTime = 60;
+        let gamePaused = false;
+        let gameStarted = false;
+        
+        // Idea templates and categories
+        const ideaCategories = {
+            'inventions': [
+                'A robot that makes your bed while you sleep',
+                'A machine that turns dreams into movies',
+                'A device that translates animal sounds',
+                'A hat that changes color with your mood',
+                'A backpack that follows you like a pet',
+                'A pillow that sings lullabies',
+                'A mirror that shows your future self',
+                'A door that opens to different places',
+                'A clock that makes time go faster or slower',
+                'A book that reads itself to you'
+            ],
+            'food': [
+                'Pizza that tastes like your favorite dessert',
+                'Ice cream that never melts',
+                'A sandwich that makes you invisible',
+                'Candy that changes flavor as you eat it',
+                'A drink that makes you float',
+                'Cereal that grows in your bowl',
+                'A cake that sings happy birthday',
+                'Cookies that grant wishes',
+                'A fruit that tastes like pizza',
+                'A vegetable that makes you super strong'
+            ],
+            'games': [
+                'A game where you control the weather',
+                'A puzzle that changes while you solve it',
+                'A racing game with flying cars',
+                'A mystery game where you\'re the detective',
+                'A building game with magic blocks',
+                'A music game that creates songs',
+                'A sports game with superpowers',
+                'A strategy game with talking animals',
+                'A adventure game in your own house',
+                'A math game that\'s actually fun'
+            ],
+            'school': [
+                'A teacher robot that knows everything',
+                'A homework machine that does it for you',
+                'A classroom where you can fly',
+                'A library with talking books',
+                'A science lab with magic potions',
+                'A gym class with super strength',
+                'A art class where paintings come to life',
+                'A music class with invisible instruments',
+                'A history class where you time travel',
+                'A math class where numbers dance'
+            ],
+            'nature': [
+                'Trees that grow candy instead of fruit',
+                'Flowers that sing when you water them',
+                'Clouds you can bounce on',
+                'Rivers that flow with chocolate milk',
+                'Mountains that are actually giant animals',
+                'Stars you can catch and keep',
+                'Rain that falls as tiny rainbows',
+                'Wind that carries messages',
+                'Sun that gives you superpowers',
+                'Moon that\'s made of cheese'
+            ],
+            'fantasy': [
+                'A dragon that\'s afraid of fire',
+                'A unicorn that can skateboard',
+                'A wizard who only knows silly spells',
+                'A fairy that\'s allergic to magic',
+                'A giant who\'s afraid of heights',
+                'A mermaid who can\'t swim',
+                'A genie who grants embarrassing wishes',
+                'A ghost who\'s scared of the dark',
+                'A superhero with useless powers',
+                'A robot that wants to be human'
+            ]
+        };
+        
+        // Funny modifiers to make ideas more creative
+        const funnyModifiers = [
+            'but it only works on Tuesdays',
+            'except it has a mind of its own',
+            'but it\'s allergic to everything',
+            'that speaks in rhymes',
+            'but it\'s afraid of the dark',
+            'that only works when you\'re not looking',
+            'but it\'s secretly a spy',
+            'that thinks it\'s a superhero',
+            'but it\'s really bad at its job',
+            'that\'s always late',
+            'but it\'s obsessed with cleaning',
+            'that tells terrible jokes',
+            'but it\'s afraid of heights',
+            'that\'s always hungry',
+            'but it\'s really shy',
+            'that thinks it\'s famous',
+            'but it\'s terrible at math',
+            'that\'s always getting lost',
+            'but it\'s afraid of water',
+            'that thinks it\'s a chef'
+        ];
+        
+        // Generate a random idea
+        function generateIdea() {
+            const categories = Object.keys(ideaCategories);
+            const category = categories[Math.floor(Math.random() * categories.length)];
+            const ideas = ideaCategories[category];
+            let baseIdea = ideas[Math.floor(Math.random() * ideas.length)];
+            
+            // Add creativity based on level
+            if (creativityLevel > 1) {
+                // Combine ideas
+                if (Math.random() < 0.3) {
+                    const otherCategory = categories[Math.floor(Math.random() * categories.length)];
+                    const otherIdeas = ideaCategories[otherCategory];
+                    const otherIdea = otherIdeas[Math.floor(Math.random() * otherIdeas.length)];
+                    baseIdea = baseIdea + ' + ' + otherIdea;
+                }
+                
+                // Add funny modifiers
+                if (Math.random() < 0.4) {
+                    const modifier = funnyModifiers[Math.floor(Math.random() * funnyModifiers.length)];
+                    baseIdea = baseIdea + ' ' + modifier;
+                }
+                
+                // Add complexity for higher levels
+                if (creativityLevel > 3 && Math.random() < 0.2) {
+                    const extraModifier = funnyModifiers[Math.floor(Math.random() * funnyModifiers.length)];
+                    baseIdea = baseIdea + ' and ' + extraModifier;
+                }
+            }
+            
+            return {
+                text: baseIdea,
+                category: category,
+                rating: Math.floor(Math.random() * 5) + 1,
+                id: Date.now() + Math.random()
+            };
+        }
+        
+        // Generate similar ideas based on selected ones
+        function generateSimilarIdeas(selectedIdea) {
+            const similarIdeas = [];
+            const baseCategory = selectedIdea.category;
+            
+            // Generate 3 similar ideas
+            for (let i = 0; i < 3; i++) {
+                let similarIdea;
+                
+                if (Math.random() < 0.6) {
+                    // Use same category
+                    const ideas = ideaCategories[baseCategory];
+                    similarIdea = ideas[Math.floor(Math.random() * ideas.length)];
+                } else {
+                    // Use different category but similar theme
+                    const categories = Object.keys(ideaCategories);
+                    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+                    const ideas = ideaCategories[randomCategory];
+                    similarIdea = ideas[Math.floor(Math.random() * ideas.length)];
+                }
+                
+                // Add modifiers to make it similar
+                if (Math.random() < 0.5) {
+                    const modifier = funnyModifiers[Math.floor(Math.random() * funnyModifiers.length)];
+                    similarIdea = similarIdea + ' ' + modifier;
+                }
+                
+                similarIdeas.push({
+                    text: similarIdea,
+                    category: baseCategory,
+                    rating: Math.floor(Math.random() * 5) + 1,
+                    id: Date.now() + Math.random() + i
+                });
+            }
+            
+            return similarIdeas;
+        }
+        
+        // Create idea card element
+        function createIdeaCard(idea) {
+            const card = document.createElement('div');
+            card.className = 'idea-card new-idea';
+            card.dataset.id = idea.id;
+            
+            const stars = '⭐'.repeat(idea.rating);
+            
+            card.innerHTML = `
+                <div class="idea-category">${idea.category.toUpperCase()}</div>
+                <div class="idea-text">${idea.text}</div>
+                <div class="idea-rating">${stars}</div>
+            `;
+            
+            card.addEventListener('click', () => selectIdea(idea, card));
+            
+            return card;
+        }
+        
+        // Handle idea selection
+        function selectIdea(idea, card) {
+            // Add floating emoji effect
+            const emoji = document.createElement('div');
+            emoji.className = 'floating-emoji';
+            emoji.textContent = '💡';
+            emoji.style.left = event.clientX + 'px';
+            emoji.style.top = event.clientY + 'px';
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => {
+                document.body.removeChild(emoji);
+            }, 2000);
+            
+            // Add to picked ideas
+            pickedIdeas.push(idea);
+            
+            // Update stats
+            favoritesPicked++;
+            updateStats();
+            
+            // Add to selected categories and themes
+            if (!selectedCategories.includes(idea.category)) {
+                selectedCategories.push(idea.category);
+            }
+            
+            // Check if we need to show review (every 5 picks)
+            if (favoritesPicked % 5 === 0) {
+                showReviewModal();
+                return; // Don't generate new ideas yet
+            }
+            
+            // Increase creativity level
+            if (favoritesPicked % 5 === 0) {
+                creativityLevel++;
+                updateStats();
+            }
+            
+            // Generate similar ideas
+            const similarIdeas = generateSimilarIdeas(idea);
+            
+            // Remove old ideas and add new ones
+            const container = document.getElementById('ideas-container');
+            container.innerHTML = '';
+            
+            // Add the selected idea as the first card
+            const selectedCard = createIdeaCard(idea);
+            selectedCard.classList.add('selected');
+            container.appendChild(selectedCard);
+            
+            // Add similar ideas
+            similarIdeas.forEach(similarIdea => {
+                const similarCard = createIdeaCard(similarIdea);
+                container.appendChild(similarCard);
+            });
+            
+            // Add some random new ideas
+            for (let i = 0; i < 2; i++) {
+                const randomIdea = generateIdea();
+                const randomCard = createIdeaCard(randomIdea);
+                container.appendChild(randomCard);
+            }
+            
+            totalIdeas += similarIdeas.length + 2;
+            updateStats();
+        }
+        
+        // Generate new random ideas
+        function generateNewIdeas() {
+            const container = document.getElementById('ideas-container');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 6; i++) {
+                const idea = generateIdea();
+                const card = createIdeaCard(idea);
+                container.appendChild(card);
+            }
+            
+            totalIdeas += 6;
+            updateStats();
+        }
+        
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('total-ideas').textContent = totalIdeas;
+            document.getElementById('favorites-picked').textContent = favoritesPicked;
+            document.getElementById('creativity-level').textContent = creativityLevel;
+        }
+        
+        // Show review modal
+        function showReviewModal() {
+            const modal = document.getElementById('review-modal');
+            const list = document.getElementById('picked-ideas-list');
+            
+            // Clear previous content
+            list.innerHTML = '';
+            
+            // Add picked ideas to the list
+            pickedIdeas.forEach((idea, index) => {
+                const ideaElement = document.createElement('div');
+                ideaElement.className = 'picked-idea';
+                ideaElement.innerHTML = `
+                    <div class="idea-number">Idea #${index + 1} (${idea.category.toUpperCase()})</div>
+                    <div>${idea.text}</div>
+                `;
+                list.appendChild(ideaElement);
+            });
+            
+            // Show the modal
+            modal.style.display = 'flex';
+            showingReview = true;
+        }
+        
+        // Hide review modal
+        function hideReviewModal() {
+            const modal = document.getElementById('review-modal');
+            modal.style.display = 'none';
+            showingReview = false;
+        }
+        
+        // Continue with picked ideas
+        function continueWithIdeas() {
+            hideReviewModal();
+            
+            // Create a game from the picked ideas
+            createGameFromIdeas();
+        }
+        
+        // Change ideas (start over)
+        function changeIdeas() {
+            hideReviewModal();
+            
+            // Clear picked ideas
+            pickedIdeas = [];
+            favoritesPicked = 0;
+            updateStats();
+            
+            // Generate completely new ideas
+            generateNewIdeas();
+        }
+        
+        // Create a game from the picked ideas
+        function createGameFromIdeas() {
+            const gameModal = document.getElementById('game-modal');
+            const gameDescription = document.getElementById('game-description');
+            const ideasExplanation = document.getElementById('ideas-explanation');
+            
+            // Generate game concept based on picked ideas
+            const gameConcept = generateGameConcept();
+            currentGame = gameConcept; // Store the current game
+            
+            // Create game description
+            gameDescription.innerHTML = `
+                <div class="game-section">
+                    <h3>🎮 Game Concept</h3>
+                    <p>${gameConcept.title}</p>
+                    <p><strong>Genre:</strong> ${gameConcept.genre}</p>
+                    <p><strong>Setting:</strong> ${gameConcept.setting}</p>
+                </div>
+                
+                <div class="game-section">
+                    <h3>🎯 How to Play</h3>
+                    <p>${gameConcept.howToPlay}</p>
+                </div>
+                
+                <div class="game-section">
+                    <h3>🏆 Goals</h3>
+                    <p>${gameConcept.goals}</p>
+                </div>
+                
+                <div class="game-section">
+                    <h3>🌟 Special Features</h3>
+                    <p>${gameConcept.features}</p>
+                </div>
+            `;
+            
+            // Create ideas explanation
+            ideasExplanation.innerHTML = `
+                <div class="game-section">
+                    <h3>💡 How Your Ideas Became This Game</h3>
+                    ${pickedIdeas.map((idea, index) => `
+                        <div class="idea-explanation">
+                            <div class="idea-title">Idea #${index + 1}: ${idea.category.toUpperCase()}</div>
+                            <div>"${idea.text}"</div>
+                            <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+                                <strong>How it's used:</strong> ${explainIdeaUsage(idea, gameConcept)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Show the game modal
+            gameModal.style.display = 'flex';
+            gameCreated = true;
+        }
+        
+        // Generate game concept based on picked ideas
+        function generateGameConcept() {
+            const categories = pickedIdeas.map(idea => idea.category);
+            const dominantCategory = getMostFrequent(categories);
+            
+            // Generate a creative name based on the ideas
+            const gameName = generateCreativeGameName();
+            
+            const gameTemplates = {
+                'inventions': {
+                    title: gameName,
+                    genre: 'Simulation & Strategy',
+                    setting: 'A magical workshop where you combine crazy inventions',
+                    howToPlay: 'Build and combine inventions from your ideas. Each invention has special powers and can be combined with others to create even crazier machines!',
+                    goals: 'Create the most amazing invention by combining all your ideas. Solve problems and make the world a better (or funnier) place!',
+                    features: 'Invention combinations, power-ups, workshop upgrades, and surprise inventions that appear randomly!'
+                },
+                'food': {
+                    title: gameName,
+                    genre: 'Cooking & Adventure',
+                    setting: 'A kitchen where food comes to life and has magical powers',
+                    howToPlay: 'Cook magical recipes using your food ideas. Each ingredient has special effects and can transform the game world!',
+                    goals: 'Become the greatest magical chef by creating the most amazing dishes from your ideas!',
+                    features: 'Magical ingredients, recipe combinations, kitchen upgrades, and food that grants special powers!'
+                },
+                'games': {
+                    title: gameName,
+                    genre: 'Game Development & Puzzle',
+                    setting: 'A digital world where you can create any game you imagine',
+                    howToPlay: 'Use your game ideas to build levels and challenges. Each idea becomes a new game mechanic or level!',
+                    goals: 'Create the most fun and challenging game by combining all your creative ideas!',
+                    features: 'Level editor, game mechanics, player testing, and endless creative possibilities!'
+                },
+                'school': {
+                    title: gameName,
+                    genre: 'Educational & Adventure',
+                    setting: 'A magical school where learning is an exciting adventure',
+                    howToPlay: 'Go to different classes based on your ideas. Each class teaches you new skills and powers!',
+                    goals: 'Graduate from the magical school by mastering all the subjects from your ideas!',
+                    features: 'Magical classes, skill upgrades, school exploration, and learning adventures!'
+                },
+                'nature': {
+                    title: gameName,
+                    genre: 'Exploration & Adventure',
+                    setting: 'A magical world where nature has amazing powers',
+                    howToPlay: 'Explore the enchanted world and discover the magical properties of nature from your ideas!',
+                    goals: 'Become the guardian of the enchanted world by understanding and protecting all its magical elements!',
+                    features: 'Nature exploration, magical discoveries, world protection, and environmental adventures!'
+                },
+                'fantasy': {
+                    title: gameName,
+                    genre: 'Fantasy & Strategy',
+                    setting: 'A school for magical creatures where everyone has unique powers',
+                    howToPlay: 'Train and befriend fantasy creatures based on your ideas. Each creature has special abilities and personalities!',
+                    goals: 'Become the greatest creature trainer by helping all your fantasy friends reach their potential!',
+                    features: 'Creature training, friendship building, magical abilities, and epic adventures!'
+                }
+            };
+            
+            // If we have a mix of categories, create a hybrid game
+            if (new Set(categories).size > 1) {
+                return createHybridGame();
+            }
+            
+            return gameTemplates[dominantCategory] || gameTemplates['fantasy'];
+        }
+        
+        // Generate creative game names based on picked ideas
+        function generateCreativeGameName() {
+            const categories = pickedIdeas.map(idea => idea.category);
+            const dominantCategory = getMostFrequent(categories);
+            
+            // Get some keywords from the picked ideas
+            const keywords = extractKeywordsFromIdeas();
+            
+            const nameTemplates = {
+                'inventions': [
+                    'The Crazy Invention Lab',
+                    'Professor Wacky\'s Workshop',
+                    'The Invention Factory of Dreams',
+                    'The Magical Machine Maker',
+                    'The Invention Adventure Zone',
+                    'The Crazy Contraption Creator',
+                    'The Invention Empire',
+                    'The Wacky Workshop World',
+                    'The Invention Quest',
+                    'The Magical Machine Mystery'
+                ],
+                'food': [
+                    'The Magical Kitchen Quest',
+                    'Chef Wacky\'s Wonderland',
+                    'The Enchanted Food Factory',
+                    'The Magical Recipe Realm',
+                    'The Kitchen Adventure Zone',
+                    'The Food Fantasy Factory',
+                    'The Magical Meal Maker',
+                    'The Enchanted Eating Empire',
+                    'The Kitchen Quest',
+                    'The Food Mystery Machine'
+                ],
+                'games': [
+                    'The Ultimate Game Creator',
+                    'The Digital Dream Designer',
+                    'The Game Building Bonanza',
+                    'The Virtual World Creator',
+                    'The Game Adventure Zone',
+                    'The Digital Fantasy Factory',
+                    'The Game Making Machine',
+                    'The Virtual Quest Creator',
+                    'The Game Empire',
+                    'The Digital Mystery Maker'
+                ],
+                'school': [
+                    'The Super School Adventure',
+                    'The Magical Learning Lab',
+                    'The Enchanted Education Empire',
+                    'The School of Superpowers',
+                    'The Learning Adventure Zone',
+                    'The Magical Academy Quest',
+                    'The School Fantasy Factory',
+                    'The Education Mystery Machine',
+                    'The Learning Wonderland',
+                    'The School of Dreams'
+                ],
+                'nature': [
+                    'The Enchanted Nature World',
+                    'The Magical Forest Factory',
+                    'The Nature Adventure Zone',
+                    'The Enchanted Earth Empire',
+                    'The Natural Wonder Quest',
+                    'The Forest Fantasy Factory',
+                    'The Nature Mystery Machine',
+                    'The Earth Adventure Lab',
+                    'The Natural World Wonderland',
+                    'The Forest of Dreams'
+                ],
+                'fantasy': [
+                    'The Fantasy Creature Academy',
+                    'The Magical Beast Factory',
+                    'The Fantasy Adventure Zone',
+                    'The Enchanted Creature Empire',
+                    'The Fantasy Quest Creator',
+                    'The Beast Building Bonanza',
+                    'The Fantasy Mystery Machine',
+                    'The Creature Wonderland',
+                    'The Fantasy Empire',
+                    'The Beast Academy of Dreams'
+                ]
+            };
+            
+            // Get base name from category
+            const baseNames = nameTemplates[dominantCategory] || nameTemplates['fantasy'];
+            let gameName = baseNames[Math.floor(Math.random() * baseNames.length)];
+            
+            // Add keyword-based customization
+            if (keywords.length > 0) {
+                const keyword = keywords[Math.floor(Math.random() * keywords.length)];
+                const customizations = [
+                    `: The ${keyword} Edition`,
+                    ` - ${keyword} Adventures`,
+                    `: ${keyword} Quest`,
+                    ` - The ${keyword} Mystery`,
+                    `: ${keyword} World`,
+                    ` - ${keyword} Empire`,
+                    `: ${keyword} Factory`,
+                    ` - ${keyword} Academy`,
+                    `: ${keyword} Wonderland`,
+                    ` - ${keyword} Zone`
+                ];
+                
+                const customization = customizations[Math.floor(Math.random() * customizations.length)];
+                gameName += customization;
+            }
+            
+            return gameName;
+        }
+        
+        // Extract keywords from picked ideas
+        function extractKeywordsFromIdeas() {
+            const keywords = [];
+            
+            pickedIdeas.forEach(idea => {
+                const words = idea.text.toLowerCase().split(' ');
+                const interestingWords = words.filter(word => 
+                    word.length > 3 && 
+                    !['that', 'with', 'your', 'this', 'they', 'have', 'will', 'from', 'when', 'only', 'works', 'afraid', 'always', 'really', 'secretly', 'thinks', 'terrible', 'getting', 'obsessed', 'telling', 'hungry'].includes(word)
+                );
+                
+                if (interestingWords.length > 0) {
+                    const randomWord = interestingWords[Math.floor(Math.random() * interestingWords.length)];
+                    keywords.push(randomWord.charAt(0).toUpperCase() + randomWord.slice(1));
+                }
+            });
+            
+            return keywords;
+        }
+        
+        // Create hybrid game from mixed categories
+        function createHybridGame() {
+            const categories = [...new Set(pickedIdeas.map(idea => idea.category))];
+            const categoryNames = categories.map(cat => cat.charAt(0).toUpperCase() + cat.slice(1));
+            const keywords = extractKeywordsFromIdeas();
+            
+            // Generate creative hybrid names
+            const hybridNames = [
+                `The Amazing ${categoryNames.join(' + ')} Adventure`,
+                `The ${categoryNames.join(' & ')} Wonderland`,
+                `The ${categoryNames.join(' + ')} Quest`,
+                `The ${categoryNames.join(' & ')} Empire`,
+                `The ${categoryNames.join(' + ')} Factory`,
+                `The ${categoryNames.join(' & ')} Academy`,
+                `The ${categoryNames.join(' + ')} Mystery`,
+                `The ${categoryNames.join(' & ')} World`,
+                `The ${categoryNames.join(' + ')} Zone`,
+                `The ${categoryNames.join(' & ')} Creator`
+            ];
+            
+            let gameName = hybridNames[Math.floor(Math.random() * hybridNames.length)];
+            
+            // Add keyword-based customization
+            if (keywords.length > 0) {
+                const keyword = keywords[Math.floor(Math.random() * keywords.length)];
+                const customizations = [
+                    `: The ${keyword} Edition`,
+                    ` - ${keyword} Adventures`,
+                    `: ${keyword} Quest`,
+                    ` - The ${keyword} Mystery`,
+                    `: ${keyword} World`,
+                    ` - ${keyword} Empire`,
+                    `: ${keyword} Factory`,
+                    ` - ${keyword} Academy`,
+                    `: ${keyword} Wonderland`,
+                    ` - ${keyword} Zone`
+                ];
+                
+                const customization = customizations[Math.floor(Math.random() * customizations.length)];
+                gameName += customization;
+            }
+            
+            return {
+                title: gameName,
+                genre: 'Multi-Genre Adventure',
+                setting: `A magical world where ${categoryNames.join(' and ')} come together in amazing ways`,
+                howToPlay: `Explore different zones based on your ideas. Each zone has unique gameplay mechanics from ${categoryNames.join(' and ')}!`,
+                goals: `Master all the different aspects of your world by completing challenges from each category!`,
+                features: `Multiple gameplay styles, zone exploration, category combinations, and endless creative possibilities!`
+            };
+        }
+        
+        // Explain how each idea is used in the game
+        function explainIdeaUsage(idea, gameConcept) {
+            const explanations = {
+                'inventions': [
+                    'Becomes a new invention you can build in your workshop',
+                    'Adds a special power-up to your invention collection',
+                    'Creates a new workshop tool for building better inventions',
+                    'Unlocks a new invention combination recipe',
+                    'Becomes a special invention that helps solve puzzles'
+                ],
+                'food': [
+                    'Becomes a magical ingredient in your kitchen',
+                    'Creates a new recipe you can cook',
+                    'Adds a special food power-up to your collection',
+                    'Unlocks a new cooking technique',
+                    'Becomes a magical food that grants special abilities'
+                ],
+                'games': [
+                    'Becomes a new game mechanic in your game creator',
+                    'Adds a new level type to your game',
+                    'Creates a special power-up for your game',
+                    'Unlocks a new game mode',
+                    'Becomes a boss challenge in your game'
+                ],
+                'school': [
+                    'Becomes a new class you can attend',
+                    'Adds a new skill you can learn',
+                    'Creates a special school power-up',
+                    'Unlocks a new school area to explore',
+                    'Becomes a special teacher with unique lessons'
+                ],
+                'nature': [
+                    'Becomes a new area to explore in the nature world',
+                    'Adds a new magical nature power',
+                    'Creates a special nature creature to befriend',
+                    'Unlocks a new nature ability',
+                    'Becomes a magical element to protect'
+                ],
+                'fantasy': [
+                    'Becomes a new fantasy creature to train',
+                    'Adds a new magical ability to your collection',
+                    'Creates a special fantasy power-up',
+                    'Unlocks a new fantasy realm to explore',
+                    'Becomes a magical companion with unique powers'
+                ]
+            };
+            
+            const categoryExplanations = explanations[idea.category] || explanations['fantasy'];
+            return categoryExplanations[Math.floor(Math.random() * categoryExplanations.length)];
+        }
+        
+        // Get most frequent item in array
+        function getMostFrequent(arr) {
+            const counts = {};
+            arr.forEach(item => {
+                counts[item] = (counts[item] || 0) + 1;
+            });
+            return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+        }
+        
+        // Hide game modal
+        function hideGameModal() {
+            const modal = document.getElementById('game-modal');
+            modal.style.display = 'none';
+        }
+        
+        // Play the created game
+        function playCreatedGame() {
+            hideGameModal();
+            
+            // Set up the game
+            setupGame();
+            
+            // Show the game play area
+            const gamePlayArea = document.getElementById('game-play-area');
+            gamePlayArea.style.display = 'flex';
+            
+            // Show instructions first
+            showGameInstructions();
+        }
+        
+        // Set up the game
+        function setupGame() {
+            gameCanvas = document.getElementById('game-canvas');
+            gameCtx = gameCanvas.getContext('2d');
+            
+            // Set game title
+            document.getElementById('game-title-display').textContent = currentGame.title;
+            
+            // Reset game state
+            gameScore = 0;
+            gameLevel = 1;
+            gameTime = 60;
+            gamePaused = false;
+            gameStarted = false;
+            
+            updateGameStats();
+        }
+        
+        // Show game instructions
+        function showGameInstructions() {
+            const instructions = document.getElementById('game-instructions');
+            const content = document.getElementById('instructions-content');
+            
+            content.innerHTML = `
+                <p><strong>🎯 Goal:</strong> ${currentGame.goals}</p>
+                <p><strong>🎮 How to Play:</strong> ${currentGame.howToPlay}</p>
+                <p><strong>🌟 Features:</strong> ${currentGame.features}</p>
+                <p><strong>⌨️ Controls:</strong> Use your mouse to click and interact with the game elements!</p>
+                <p><strong>⏱️ Time:</strong> You have 60 seconds to get the highest score possible!</p>
+            `;
+            
+            instructions.style.display = 'block';
+        }
+        
+        // Start the actual game
+        function startGame() {
+            const instructions = document.getElementById('game-instructions');
+            instructions.style.display = 'none';
+            
+            gameStarted = true;
+            gamePaused = false;
+            
+            // Start the game loop
+            gameLoop = setInterval(() => {
+                if (!gamePaused) {
+                    updateGame();
+                    drawGame();
+                }
+            }, 1000 / 60); // 60 FPS
+            
+            // Start the timer
+            const timer = setInterval(() => {
+                if (!gamePaused && gameStarted) {
+                    gameTime--;
+                    updateGameStats();
+                    
+                    if (gameTime <= 0) {
+                        endGame();
+                        clearInterval(timer);
+                    }
+                }
+            }, 1000);
+        }
+        
+        // Update game logic
+        function updateGame() {
+            // This will be different for each game type
+            if (currentGame.genre.includes('Invention')) {
+                updateInventionGame();
+            } else if (currentGame.genre.includes('Food')) {
+                updateFoodGame();
+            } else if (currentGame.genre.includes('Game')) {
+                updateGameCreatorGame();
+            } else if (currentGame.genre.includes('School')) {
+                updateSchoolGame();
+            } else if (currentGame.genre.includes('Nature')) {
+                updateNatureGame();
+            } else if (currentGame.genre.includes('Fantasy')) {
+                updateFantasyGame();
+            } else {
+                updateHybridGame();
+            }
+        }
+        
+        // Draw the game
+        function drawGame() {
+            // Clear canvas
+            gameCtx.fillStyle = '#000';
+            gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // Draw based on game type
+            if (currentGame.genre.includes('Invention')) {
+                drawInventionGame();
+            } else if (currentGame.genre.includes('Food')) {
+                drawFoodGame();
+            } else if (currentGame.genre.includes('Game')) {
+                drawGameCreatorGame();
+            } else if (currentGame.genre.includes('School')) {
+                drawSchoolGame();
+            } else if (currentGame.genre.includes('Nature')) {
+                drawNatureGame();
+            } else if (currentGame.genre.includes('Fantasy')) {
+                drawFantasyGame();
+            } else {
+                drawHybridGame();
+            }
+        }
+        
+        // Invention Game
+        function updateInventionGame() {
+            // Simple clicking game - click on inventions to score points
+            if (Math.random() < 0.02) {
+                // Add new invention to click
+                if (!window.inventions) window.inventions = [];
+                window.inventions.push({
+                    x: Math.random() * (gameCanvas.width - 100),
+                    y: Math.random() * (gameCanvas.height - 100),
+                    size: 50,
+                    color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    points: Math.floor(Math.random() * 10) + 5
+                });
+            }
+        }
+        
+        function drawInventionGame() {
+            if (!window.inventions) window.inventions = [];
+            
+            // Draw inventions
+            window.inventions.forEach(invention => {
+                gameCtx.fillStyle = invention.color;
+                gameCtx.beginPath();
+                gameCtx.arc(invention.x + invention.size/2, invention.y + invention.size/2, invention.size/2, 0, Math.PI * 2);
+                gameCtx.fill();
+                
+                gameCtx.fillStyle = 'white';
+                gameCtx.font = '16px Arial';
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText('⚙️', invention.x + invention.size/2, invention.y + invention.size/2 + 5);
+            });
+            
+            // Draw instructions
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click the inventions to score points!', gameCanvas.width/2, 50);
+        }
+        
+        // Food Game
+        function updateFoodGame() {
+            if (Math.random() < 0.03) {
+                if (!window.foods) window.foods = [];
+                window.foods.push({
+                    x: Math.random() * (gameCanvas.width - 80),
+                    y: Math.random() * (gameCanvas.height - 80),
+                    size: 40,
+                    emoji: ['🍕', '🍦', '🍪', '🍎', '🍕', '🍰'][Math.floor(Math.random() * 6)],
+                    points: Math.floor(Math.random() * 8) + 3
+                });
+            }
+        }
+        
+        function drawFoodGame() {
+            if (!window.foods) window.foods = [];
+            
+            window.foods.forEach(food => {
+                gameCtx.font = `${food.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(food.emoji, food.x + food.size/2, food.y + food.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click the magical food to collect points!', gameCanvas.width/2, 50);
+        }
+        
+        // Game Creator Game
+        function updateGameCreatorGame() {
+            if (Math.random() < 0.02) {
+                if (!window.gameElements) window.gameElements = [];
+                window.gameElements.push({
+                    x: Math.random() * (gameCanvas.width - 60),
+                    y: Math.random() * (gameCanvas.height - 60),
+                    size: 30,
+                    type: ['🎮', '🎯', '🏆', '⭐', '🎲', '🎪'][Math.floor(Math.random() * 6)],
+                    points: Math.floor(Math.random() * 6) + 4
+                });
+            }
+        }
+        
+        function drawGameCreatorGame() {
+            if (!window.gameElements) window.gameElements = [];
+            
+            window.gameElements.forEach(element => {
+                gameCtx.font = `${element.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(element.type, element.x + element.size/2, element.y + element.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click game elements to build your game!', gameCanvas.width/2, 50);
+        }
+        
+        // School Game
+        function updateSchoolGame() {
+            if (Math.random() < 0.025) {
+                if (!window.schoolItems) window.schoolItems = [];
+                window.schoolItems.push({
+                    x: Math.random() * (gameCanvas.width - 70),
+                    y: Math.random() * (gameCanvas.height - 70),
+                    size: 35,
+                    emoji: ['📚', '✏️', '🎓', '🔬', '🎨', '🎵'][Math.floor(Math.random() * 6)],
+                    points: Math.floor(Math.random() * 7) + 3
+                });
+            }
+        }
+        
+        function drawSchoolGame() {
+            if (!window.schoolItems) window.schoolItems = [];
+            
+            window.schoolItems.forEach(item => {
+                gameCtx.font = `${item.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(item.emoji, item.x + item.size/2, item.y + item.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click school items to learn and score!', gameCanvas.width/2, 50);
+        }
+        
+        // Nature Game
+        function updateNatureGame() {
+            if (Math.random() < 0.02) {
+                if (!window.natureElements) window.natureElements = [];
+                window.natureElements.push({
+                    x: Math.random() * (gameCanvas.width - 60),
+                    y: Math.random() * (gameCanvas.height - 60),
+                    size: 40,
+                    emoji: ['🌲', '🌸', '☁️', '⭐', '🌙', '🌈'][Math.floor(Math.random() * 6)],
+                    points: Math.floor(Math.random() * 6) + 4
+                });
+            }
+        }
+        
+        function drawNatureGame() {
+            if (!window.natureElements) window.natureElements = [];
+            
+            window.natureElements.forEach(element => {
+                gameCtx.font = `${element.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(element.emoji, element.x + element.size/2, element.y + element.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click nature elements to explore the world!', gameCanvas.width/2, 50);
+        }
+        
+        // Fantasy Game
+        function updateFantasyGame() {
+            if (Math.random() < 0.025) {
+                if (!window.fantasyCreatures) window.fantasyCreatures = [];
+                window.fantasyCreatures.push({
+                    x: Math.random() * (gameCanvas.width - 80),
+                    y: Math.random() * (gameCanvas.height - 80),
+                    size: 45,
+                    emoji: ['🐉', '🦄', '🧙‍♂️', '🧚‍♀️', '👻', '🦁'][Math.floor(Math.random() * 6)],
+                    points: Math.floor(Math.random() * 8) + 5
+                });
+            }
+        }
+        
+        function drawFantasyGame() {
+            if (!window.fantasyCreatures) window.fantasyCreatures = [];
+            
+            window.fantasyCreatures.forEach(creature => {
+                gameCtx.font = `${creature.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(creature.emoji, creature.x + creature.size/2, creature.y + creature.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click fantasy creatures to befriend them!', gameCanvas.width/2, 50);
+        }
+        
+        // Hybrid Game
+        function updateHybridGame() {
+            if (Math.random() < 0.02) {
+                if (!window.hybridElements) window.hybridElements = [];
+                const allEmojis = ['⚙️', '🍕', '🎮', '📚', '🌲', '🐉', '⭐', '🎯', '🏆', '🌈'];
+                window.hybridElements.push({
+                    x: Math.random() * (gameCanvas.width - 60),
+                    y: Math.random() * (gameCanvas.height - 60),
+                    size: 40,
+                    emoji: allEmojis[Math.floor(Math.random() * allEmojis.length)],
+                    points: Math.floor(Math.random() * 7) + 4
+                });
+            }
+        }
+        
+        function drawHybridGame() {
+            if (!window.hybridElements) window.hybridElements = [];
+            
+            window.hybridElements.forEach(element => {
+                gameCtx.font = `${element.size}px Arial`;
+                gameCtx.textAlign = 'center';
+                gameCtx.fillText(element.emoji, element.x + element.size/2, element.y + element.size/2);
+            });
+            
+            gameCtx.fillStyle = 'white';
+            gameCtx.font = '24px Arial';
+            gameCtx.textAlign = 'center';
+            gameCtx.fillText('Click mixed elements to explore all worlds!', gameCanvas.width/2, 50);
+        }
+        
+        // Update game stats display
+        function updateGameStats() {
+            document.getElementById('game-score').textContent = gameScore;
+            document.getElementById('game-level').textContent = gameLevel;
+            document.getElementById('game-time').textContent = gameTime;
+        }
+        
+        // End the game
+        function endGame() {
+            gameStarted = false;
+            clearInterval(gameLoop);
+            
+            // Show final score
+            alert(`🎮 Game Over! 🎮\n\nFinal Score: ${gameScore}\nLevel: ${gameLevel}\n\nGreat job playing ${currentGame.title}!`);
+            
+            // Exit game
+            exitGame();
+        }
+        
+        // Exit the game
+        function exitGame() {
+            const gamePlayArea = document.getElementById('game-play-area');
+            gamePlayArea.style.display = 'none';
+            
+            // Clear any game data
+            window.inventions = [];
+            window.foods = [];
+            window.gameElements = [];
+            window.schoolItems = [];
+            window.natureElements = [];
+            window.fantasyCreatures = [];
+            window.hybridElements = [];
+            
+            // Continue with normal idea generation
+            creativityLevel++;
+            updateStats();
+            generateNewIdeas();
+        }
+        
+        // Toggle pause
+        function togglePause() {
+            gamePaused = !gamePaused;
+            const pauseBtn = document.getElementById('pause-btn');
+            pauseBtn.textContent = gamePaused ? '▶️ Resume' : '⏸️ Pause';
+        }
+        
+        // Handle game canvas clicks
+        function handleGameClick(event) {
+            if (!gameStarted || gamePaused) return;
+            
+            const rect = gameCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Check which game type and handle clicks accordingly
+            if (currentGame.genre.includes('Invention')) {
+                handleInventionClick(x, y);
+            } else if (currentGame.genre.includes('Food')) {
+                handleFoodClick(x, y);
+            } else if (currentGame.genre.includes('Game')) {
+                handleGameCreatorClick(x, y);
+            } else if (currentGame.genre.includes('School')) {
+                handleSchoolClick(x, y);
+            } else if (currentGame.genre.includes('Nature')) {
+                handleNatureClick(x, y);
+            } else if (currentGame.genre.includes('Fantasy')) {
+                handleFantasyClick(x, y);
+            } else {
+                handleHybridClick(x, y);
+            }
+        }
+        
+        // Handle clicks for different game types
+        function handleInventionClick(x, y) {
+            if (!window.inventions) return;
+            
+            for (let i = window.inventions.length - 1; i >= 0; i--) {
+                const invention = window.inventions[i];
+                const distance = Math.sqrt((x - (invention.x + invention.size/2))**2 + (y - (invention.y + invention.size/2))**2);
+                
+                if (distance <= invention.size/2) {
+                    gameScore += invention.points;
+                    window.inventions.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleFoodClick(x, y) {
+            if (!window.foods) return;
+            
+            for (let i = window.foods.length - 1; i >= 0; i--) {
+                const food = window.foods[i];
+                const distance = Math.sqrt((x - (food.x + food.size/2))**2 + (y - (food.y + food.size/2))**2);
+                
+                if (distance <= food.size/2) {
+                    gameScore += food.points;
+                    window.foods.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleGameCreatorClick(x, y) {
+            if (!window.gameElements) return;
+            
+            for (let i = window.gameElements.length - 1; i >= 0; i--) {
+                const element = window.gameElements[i];
+                const distance = Math.sqrt((x - (element.x + element.size/2))**2 + (y - (element.y + element.size/2))**2);
+                
+                if (distance <= element.size/2) {
+                    gameScore += element.points;
+                    window.gameElements.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleSchoolClick(x, y) {
+            if (!window.schoolItems) return;
+            
+            for (let i = window.schoolItems.length - 1; i >= 0; i--) {
+                const item = window.schoolItems[i];
+                const distance = Math.sqrt((x - (item.x + item.size/2))**2 + (y - (item.y + item.size/2))**2);
+                
+                if (distance <= item.size/2) {
+                    gameScore += item.points;
+                    window.schoolItems.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleNatureClick(x, y) {
+            if (!window.natureElements) return;
+            
+            for (let i = window.natureElements.length - 1; i >= 0; i--) {
+                const element = window.natureElements[i];
+                const distance = Math.sqrt((x - (element.x + element.size/2))**2 + (y - (element.y + element.size/2))**2);
+                
+                if (distance <= element.size/2) {
+                    gameScore += element.points;
+                    window.natureElements.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleFantasyClick(x, y) {
+            if (!window.fantasyCreatures) return;
+            
+            for (let i = window.fantasyCreatures.length - 1; i >= 0; i--) {
+                const creature = window.fantasyCreatures[i];
+                const distance = Math.sqrt((x - (creature.x + creature.size/2))**2 + (y - (creature.y + creature.size/2))**2);
+                
+                if (distance <= creature.size/2) {
+                    gameScore += creature.points;
+                    window.fantasyCreatures.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        function handleHybridClick(x, y) {
+            if (!window.hybridElements) return;
+            
+            for (let i = window.hybridElements.length - 1; i >= 0; i--) {
+                const element = window.hybridElements[i];
+                const distance = Math.sqrt((x - (element.x + element.size/2))**2 + (y - (element.y + element.size/2))**2);
+                
+                if (distance <= element.size/2) {
+                    gameScore += element.points;
+                    window.hybridElements.splice(i, 1);
+                    updateGameStats();
+                    break;
+                }
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('generate-btn').addEventListener('click', generateNewIdeas);
+        document.getElementById('keep-ideas').addEventListener('click', continueWithIdeas);
+        document.getElementById('change-ideas').addEventListener('click', changeIdeas);
+        document.getElementById('play-game-btn').addEventListener('click', playCreatedGame);
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
+        document.getElementById('pause-btn').addEventListener('click', togglePause);
+        document.getElementById('help-btn').addEventListener('click', showGameInstructions);
+        document.getElementById('exit-game-btn').addEventListener('click', exitGame);
+        
+        // Game canvas click handler
+        document.getElementById('game-canvas').addEventListener('click', handleGameClick);
+        
+        // Initialize the game
+        generateNewIdeas();
+    </script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!-- MONA LISA CHALLENGE - Try to paint better than the Mona Lisa! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Mona Lisa Challenge - Beat the Masterpiece!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 25%, #CD853F 50%, #DEB887 75%, #F5DEB3 100%);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: #2F2F2F;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(4px 4px at 30px 40px, rgba(255, 255, 255, 0.3), transparent),
+                radial-gradient(3px 3px at 60px 90px, rgba(255, 255, 255, 0.4), transparent),
+                radial-gradient(2px 2px at 120px 50px, rgba(255, 255, 255, 0.5), transparent),
+                radial-gradient(3px 3px at 180px 110px, rgba(255, 255, 255, 0.3), transparent);
+            background-repeat: repeat;
+            background-size: 250px 150px;
+            animation: paintFloat 15s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes paintFloat {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-150px) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 
+                0 25px 70px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(25px);
+            border: 4px solid #8B4513;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 69, 19, 0.1), transparent);
+            animation: artShimmer 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes artShimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+        }
+
+        .title {
+            text-align: center;
+            color: #8B4513;
+            font-size: 3.5em;
+            font-weight: 900;
+            text-shadow: 
+                3px 3px 0px #D2691E,
+                6px 6px 0px #CD853F;
+            margin-bottom: 10px;
+            animation: titleBrush 2s ease-in-out infinite alternate;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #D2691E;
+            font-size: 1.3em;
+            font-weight: 700;
+            text-shadow: 2px 2px 0px #8B4513;
+            margin-bottom: 30px;
+            animation: subtitleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleBrush {
+            from { 
+                transform: translateY(0px) scale(1);
+                text-shadow: 
+                    3px 3px 0px #D2691E,
+                    6px 6px 0px #CD853F;
+            }
+            to { 
+                transform: translateY(-8px) scale(1.03);
+                text-shadow: 
+                    3px 3px 0px #D2691E,
+                    6px 6px 0px #CD853F,
+                    9px 9px 0px #DEB887;
+            }
+        }
+
+        @keyframes subtitleGlow {
+            from { 
+                transform: translateY(0px);
+                text-shadow: 2px 2px 0px #8B4513;
+            }
+            to { 
+                transform: translateY(-3px);
+                text-shadow: 
+                    2px 2px 0px #8B4513,
+                    0 0 15px rgba(210, 105, 30, 0.6);
+            }
+        }
+
+        .game-area {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .canvas-container {
+            flex: 1;
+            min-width: 400px;
+            background: #F5F5DC;
+            border-radius: 20px;
+            padding: 20px;
+            border: 3px solid #8B4513;
+            box-shadow: 
+                0 15px 35px rgba(139, 69, 19, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .canvas-container::before {
+            content: '🎨 Your Masterpiece';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: #8B4513;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #8B4513;
+            border-radius: 15px;
+            cursor: crosshair;
+            background: #FDF5E6;
+            box-shadow: inset 0 0 20px rgba(139, 69, 19, 0.2);
+        }
+
+        .tools-panel {
+            width: 250px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(210, 105, 30, 0.1));
+            border-radius: 20px;
+            padding: 25px;
+            border: 3px solid rgba(139, 69, 19, 0.5);
+            box-shadow: 
+                0 10px 25px rgba(139, 69, 19, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .tool-section {
+            margin-bottom: 25px;
+        }
+
+        .tool-section h3 {
+            color: #8B4513;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 1px 1px 0px #DEB887;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #8B4513;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .color-btn.active {
+            border: 4px solid #FFD700;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .brush-sizes {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .brush-btn {
+            padding: 10px;
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .brush-btn:hover {
+            background: linear-gradient(135deg, #D2691E, #8B4513);
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(139, 69, 19, 0.4);
+        }
+
+        .brush-btn.active {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #8B4513;
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #D2691E, #8B4513);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(139, 69, 19, 0.4);
+        }
+
+        .score-panel {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.1), rgba(210, 105, 30, 0.1));
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 3px solid rgba(139, 69, 19, 0.5);
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0px #DEB887;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            border: 2px solid #8B4513;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8B4513, #D2691E, #CD853F);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 8px;
+        }
+
+        .mona-lisa-reference {
+            background: rgba(139, 69, 19, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            border: 3px solid rgba(139, 69, 19, 0.5);
+            text-align: center;
+        }
+
+        .mona-lisa-reference h3 {
+            color: #8B4513;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 0px #DEB887;
+        }
+
+        .mona-lisa-frame {
+            width: 200px;
+            height: 250px;
+            margin: 0 auto;
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .mona-lisa-frame::before {
+            content: '👩‍🎨';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            opacity: 0.7;
+        }
+
+        .challenge-text {
+            color: #8B4513;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 15px;
+            text-shadow: 1px 1px 0px #DEB887;
+        }
+
+        .timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #D2691E;
+            text-shadow: 1px 1px 0px #8B4513;
+            margin-bottom: 15px;
+        }
+
+        .game-status {
+            font-size: 1.2em;
+            color: #8B4513;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .tools-panel {
+                width: 100%;
+            }
+            
+            .title {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🎨 MONA LISA CHALLENGE</h1>
+        <div class="subtitle">Can you paint better than the masterpiece?</div>
+        
+        <div class="score-panel">
+            <div class="score-display" id="scoreDisplay">Score: 0</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="timer" id="timer">Time: 5:00</div>
+            <div class="game-status" id="gameStatus">Ready to paint! 🎨</div>
+        </div>
+
+        <div class="game-area">
+            <div class="canvas-container">
+                <canvas id="canvas" width="600" height="400"></canvas>
+            </div>
+            
+            <div class="tools-panel">
+                <div class="tool-section">
+                    <h3>🎨 Colors</h3>
+                    <div class="color-palette">
+                        <div class="color-btn active" style="background: #000000;" data-color="#000000"></div>
+                        <div class="color-btn" style="background: #8B4513;" data-color="#8B4513"></div>
+                        <div class="color-btn" style="background: #D2691E;" data-color="#D2691E"></div>
+                        <div class="color-btn" style="background: #CD853F;" data-color="#CD853F"></div>
+                        <div class="color-btn" style="background: #DEB887;" data-color="#DEB887"></div>
+                        <div class="color-btn" style="background: #F5DEB3;" data-color="#F5DEB3"></div>
+                        <div class="color-btn" style="background: #8B0000;" data-color="#8B0000"></div>
+                        <div class="color-btn" style="background: #006400;" data-color="#006400"></div>
+                        <div class="color-btn" style="background: #00008B;" data-color="#00008B"></div>
+                        <div class="color-btn" style="background: #4B0082;" data-color="#4B0082"></div>
+                        <div class="color-btn" style="background: #FFD700;" data-color="#FFD700"></div>
+                        <div class="color-btn" style="background: #FFFFFF;" data-color="#FFFFFF"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3>🖌️ Brush Size</h3>
+                    <div class="brush-sizes">
+                        <div class="brush-btn active" data-size="2">Small Brush</div>
+                        <div class="brush-btn" data-size="5">Medium Brush</div>
+                        <div class="brush-btn" data-size="10">Large Brush</div>
+                        <div class="brush-btn" data-size="20">Extra Large</div>
+                    </div>
+                </div>
+                
+                <div class="tool-section">
+                    <h3>⚙️ Controls</h3>
+                    <div class="controls">
+                        <button class="control-btn" onclick="clearCanvas()">🗑️ Clear Canvas</button>
+                        <button class="control-btn" onclick="startGame()">▶️ Start Painting</button>
+                        <button class="control-btn" onclick="evaluateArt()">🏆 Evaluate Art</button>
+                        <button class="control-btn" onclick="resetGame()">🔄 Reset Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mona-lisa-reference">
+            <h3>👩‍🎨 The Original Mona Lisa</h3>
+            <div class="mona-lisa-frame"></div>
+            <div class="challenge-text">Try to capture her mysterious smile and beautiful details!</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentColor = '#000000';
+        let currentBrushSize = 2;
+        let score = 0;
+        let gameTime = 300; // 5 minutes
+        let gameTimer;
+        let isGameActive = false;
+        let strokeCount = 0;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Initialize canvas
+        function initCanvas() {
+            ctx.fillStyle = '#FDF5E6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        // Color selection
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentColor = this.dataset.color;
+            });
+        });
+
+        // Brush size selection
+        document.querySelectorAll('.brush-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentBrushSize = parseInt(this.dataset.size);
+            });
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            if (!isGameActive) return;
+            
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing || !isGameActive) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentBrushSize;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            lastX = x;
+            lastY = y;
+            
+            strokeCount++;
+            updateScore();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // Game functions
+        function startGame() {
+            if (isGameActive) return;
+            
+            isGameActive = true;
+            gameTime = 300;
+            strokeCount = 0;
+            score = 0;
+            updateScore();
+            updateTimer();
+            updateGameStatus("Painting in progress! 🎨");
+            
+            gameTimer = setInterval(() => {
+                gameTime--;
+                updateTimer();
+                
+                if (gameTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            isGameActive = false;
+            clearInterval(gameTimer);
+            updateGameStatus("Time's up! Let's see how you did! 🏆");
+            evaluateArt();
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = gameTime % 60;
+            document.getElementById('timer').textContent = 
+                `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateScore() {
+            // Score based on strokes, time remaining, and color variety
+            const timeBonus = Math.floor(gameTime / 10);
+            const strokeBonus = strokeCount * 2;
+            const colorBonus = getColorVariety() * 10;
+            
+            score = strokeBonus + timeBonus + colorBonus;
+            document.getElementById('scoreDisplay').textContent = `Score: ${score}`;
+            
+            // Update progress bar (max score around 2000)
+            const progress = Math.min((score / 2000) * 100, 100);
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function getColorVariety() {
+            // Simple color variety calculation
+            const colors = new Set();
+            document.querySelectorAll('.color-btn.active').forEach(btn => {
+                colors.add(btn.dataset.color);
+            });
+            return colors.size;
+        }
+
+        function updateGameStatus(message) {
+            document.getElementById('gameStatus').textContent = message;
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#FDF5E6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            strokeCount = 0;
+            updateScore();
+        }
+
+        function evaluateArt() {
+            if (!isGameActive && gameTime > 0) {
+                updateGameStatus("Start painting first! 🎨");
+                return;
+            }
+            
+            const artScore = calculateArtScore();
+            let message = "";
+            
+            if (artScore >= 1500) {
+                message = "🎉 AMAZING! You've surpassed the Mona Lisa! You're a true master!";
+            } else if (artScore >= 1000) {
+                message = "🌟 EXCELLENT! You're getting close to masterpiece level!";
+            } else if (artScore >= 500) {
+                message = "👏 GOOD JOB! You're developing your artistic skills!";
+            } else if (artScore >= 200) {
+                message = "🎨 NICE TRY! Keep practicing to improve!";
+            } else {
+                message = "💪 BEGINNER LEVEL! Don't give up, keep painting!";
+            }
+            
+            updateGameStatus(message);
+            
+            // Add some fun effects
+            setTimeout(() => {
+                document.body.style.animation = 'paintFloat 0.5s ease-in-out';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 500);
+            }, 1000);
+        }
+
+        function calculateArtScore() {
+            // Complex scoring algorithm
+            const baseScore = score;
+            const timeBonus = gameTime * 2;
+            const strokeEfficiency = strokeCount > 0 ? (score / strokeCount) * 10 : 0;
+            const canvasCoverage = getCanvasCoverage() * 100;
+            
+            return Math.floor(baseScore + timeBonus + strokeEfficiency + canvasCoverage);
+        }
+
+        function getCanvasCoverage() {
+            // Simple coverage calculation
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let paintedPixels = 0;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] !== 253 || data[i + 1] !== 245 || data[i + 2] !== 230) {
+                    paintedPixels++;
+                }
+            }
+            
+            return paintedPixels / (canvas.width * canvas.height);
+        }
+
+        function resetGame() {
+            isGameActive = false;
+            clearInterval(gameTimer);
+            gameTime = 300;
+            strokeCount = 0;
+            score = 0;
+            updateScore();
+            updateTimer();
+            updateGameStatus("Ready to paint! 🎨");
+            clearCanvas();
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            switch(event.code) {
+                case 'Space':
+                    event.preventDefault();
+                    if (isGameActive) {
+                        endGame();
+                    } else {
+                        startGame();
+                    }
+                    break;
+                case 'KeyC':
+                    clearCanvas();
+                    break;
+                case 'KeyR':
+                    resetGame();
+                    break;
+                case 'KeyE':
+                    evaluateArt();
+                    break;
+            }
+        });
+
+        // Initialize
+        initCanvas();
+        updateGameStatus("Ready to paint! Press SPACE to start! 🎨");
+    </script>
+</body>
+</html>

@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Space Colony Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        #gameContainer {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        #title {
+            text-align: center;
+            font-size: 4em;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #00ffff, #0080ff, #00ffff, #0080ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: titleGlow 3s ease-in-out infinite;
+            text-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.8),
+                0 0 40px rgba(0, 255, 255, 0.6),
+                0 0 60px rgba(0, 255, 255, 0.4);
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { 
+                background-position: 0% 50%;
+                transform: scale(1);
+            }
+            50% { 
+                background-position: 100% 50%;
+                transform: scale(1.05);
+            }
+        }
+        
+        #stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        .stat h3 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+        }
+        
+        .stat div {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        #spaceView {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        #spaceView::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0, 128, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 10% 80%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 90% 20%, rgba(255, 255, 0, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            animation: spaceGlow 8s ease-in-out infinite;
+        }
+        
+        @keyframes spaceGlow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        @keyframes nebulaFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+            25% { transform: translate(20px, -10px) scale(1.1); opacity: 0.5; }
+            50% { transform: translate(-10px, 15px) scale(0.9); opacity: 0.4; }
+            75% { transform: translate(15px, 5px) scale(1.05); opacity: 0.6; }
+        }
+        
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        .planet:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+        }
+        
+        .planet.earth { 
+            background: radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32);
+            box-shadow: 
+                0 0 30px rgba(76, 175, 80, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.mars { 
+            background: radial-gradient(circle at 30% 30%, #FF5722, #D84315);
+            box-shadow: 
+                0 0 30px rgba(255, 87, 34, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.venus { 
+            background: radial-gradient(circle at 30% 30%, #FF9800, #F57C00);
+            box-shadow: 
+                0 0 30px rgba(255, 152, 0, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.mercury { 
+            background: radial-gradient(circle at 30% 30%, #9E9E9E, #757575);
+            box-shadow: 
+                0 0 30px rgba(158, 158, 158, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.jupiter { 
+            background: radial-gradient(circle at 30% 30%, #FF9800, #E65100);
+            box-shadow: 
+                0 0 30px rgba(255, 152, 0, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.saturn { 
+            background: radial-gradient(circle at 30% 30%, #FFC107, #FF8F00);
+            box-shadow: 
+                0 0 30px rgba(255, 193, 7, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.saturn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 20px;
+            background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.8), transparent);
+            border-radius: 50%;
+            animation: saturnRings 4s ease-in-out infinite;
+        }
+        @keyframes saturnRings {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) rotate(180deg); }
+        }
+        .planet.uranus { 
+            background: radial-gradient(circle at 30% 30%, #4FC3F7, #29B6F6);
+            box-shadow: 
+                0 0 30px rgba(79, 195, 247, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.uranus::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 110%;
+            height: 15px;
+            background: linear-gradient(90deg, transparent, rgba(79, 195, 247, 0.6), transparent);
+            border-radius: 50%;
+            animation: uranusRings 6s ease-in-out infinite;
+        }
+        @keyframes uranusRings {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) rotate(-180deg); }
+        }
+        .planet.neptune { 
+            background: radial-gradient(circle at 30% 30%, #2196F3, #1565C0);
+            box-shadow: 
+                0 0 30px rgba(33, 150, 243, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.pluto { 
+            background: radial-gradient(circle at 30% 30%, #E1BEE7, #BA68C8);
+            box-shadow: 
+                0 0 30px rgba(225, 190, 231, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.ceres { 
+            background: radial-gradient(circle at 30% 30%, #8D6E63, #6D4C41);
+            box-shadow: 
+                0 0 30px rgba(141, 110, 99, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.europa { 
+            background: radial-gradient(circle at 30% 30%, #81C784, #66BB6A);
+            box-shadow: 
+                0 0 30px rgba(129, 199, 132, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.titan { 
+            background: radial-gradient(circle at 30% 30%, #FFB74D, #FFA726);
+            box-shadow: 
+                0 0 30px rgba(255, 183, 77, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.triton { 
+            background: radial-gradient(circle at 30% 30%, #90A4AE, #78909C);
+            box-shadow: 
+                0 0 30px rgba(144, 164, 174, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.mikemike { 
+            background: radial-gradient(circle at 30% 30%, #E91E63, #C2185B);
+            box-shadow: 
+                0 0 30px rgba(233, 30, 99, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        .planet.amaea { 
+            background: radial-gradient(circle at 30% 30%, #9C27B0, #7B1FA2);
+            box-shadow: 
+                0 0 30px rgba(156, 39, 176, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+        
+        .spaceship {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-radius: 20px 5px 5px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        
+        .spaceship:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+        }
+        
+        .spaceship::before {
+            content: '🚀';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            font-size: 20px;
+        }
+        
+        #buildings, #upgrades, #adventure {
+            margin: 30px 0;
+        }
+        
+        #buildings h2, #upgrades h2, #adventure h2 {
+            text-align: center;
+            color: #00ffff;
+            margin-bottom: 20px;
+        }
+        
+        #buildingsGrid, #upgradesGrid, #adventureGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .building, .upgrade, .adventure {
+            background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(0,128,255,0.2));
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(0,255,255,0.4);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .building::before, .upgrade::before, .adventure::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at 30% 30%, #00ffff, #0080ff);
+            border-radius: 50%;
+            opacity: 0.7;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .building:hover, .upgrade:hover, .adventure:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 25px 60px rgba(0,0,0,0.6),
+                0 0 50px rgba(0, 255, 255, 0.3),
+                inset 0 0 30px rgba(255,255,255,0.1);
+            border-color: rgba(255, 215, 0, 0.6);
+            filter: brightness(1.1);
+        }
+        
+        .building h3, .upgrade h3, .adventure h3 {
+            margin: 0 0 15px 0;
+            color: #00ffff;
+        }
+        
+        .building p, .upgrade p, .adventure p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #ddd;
+        }
+        
+        .building .cost, .upgrade .cost, .adventure .cost {
+            font-weight: bold;
+            color: #00ffff;
+        }
+        
+        .building .owned, .upgrade .owned, .adventure .owned {
+            color: #4CAF50;
+        }
+        
+        .building .production, .upgrade .production, .adventure .production {
+            color: #87CEEB;
+        }
+        
+        .affordable {
+            border-color: #4CAF50;
+            box-shadow: 
+                0 0 30px rgba(76, 175, 80, 0.4),
+                0 0 60px rgba(76, 175, 80, 0.2),
+                inset 0 0 20px rgba(76, 175, 80, 0.1);
+            animation: affordablePulse 2s ease-in-out infinite;
+        }
+        
+        .unaffordable {
+            border-color: #f44336;
+            opacity: 0.7;
+            box-shadow: 
+                0 0 20px rgba(244, 67, 54, 0.3),
+                inset 0 0 20px rgba(244, 67, 54, 0.1);
+        }
+        
+        @keyframes affordablePulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 30px rgba(76, 175, 80, 0.4),
+                    0 0 60px rgba(76, 175, 80, 0.2),
+                    inset 0 0 20px rgba(76, 175, 80, 0.1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 40px rgba(76, 175, 80, 0.6),
+                    0 0 80px rgba(76, 175, 80, 0.3),
+                    inset 0 0 30px rgba(76, 175, 80, 0.2);
+            }
+        }
+        
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 24px;
+            font-weight: bold;
+            animation: particleFloat 1.5s ease-out forwards;
+            text-shadow: 
+                2px 2px 4px rgba(0,0,0,0.8),
+                0 0 20px rgba(0, 255, 255, 0.6);
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.4));
+        }
+        
+        @keyframes particleFloat {
+            0% { 
+                transform: translateY(0px) scale(1) rotate(0deg); 
+                opacity: 1; 
+            }
+            25% { 
+                transform: translateY(-15px) scale(1.2) rotate(5deg); 
+                opacity: 0.9; 
+            }
+            50% { 
+                transform: translateY(-30px) scale(1.1) rotate(-3deg); 
+                opacity: 0.7; 
+            }
+            75% { 
+                transform: translateY(-40px) scale(0.9) rotate(2deg); 
+                opacity: 0.4; 
+            }
+            100% { 
+                transform: translateY(-60px) scale(0.7) rotate(0deg); 
+                opacity: 0; 
+            }
+        }
+        
+        #achievements {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,255,255,0.9);
+            color: #000;
+            padding: 10px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1001;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        #currentPlanet {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        #planetActions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .planetAction {
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+        }
+        
+        .planetAction:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        .planetAction:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #currentPlanet h3 {
+            color: #00ffff;
+            margin: 0 0 15px 0;
+        }
+        
+        .resource-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin: 5px 0;
+            overflow: hidden;
+        }
+        
+        .resource-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #0080ff);
+            transition: width 0.3s ease;
+        }
+        
+        #missionLog {
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .mission-entry {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,255,255,0.1);
+            border-radius: 10px;
+            border-left: 4px solid #00ffff;
+        }
+        
+        .mission-success { border-left-color: #4CAF50; }
+        .mission-failure { border-left-color: #f44336; }
+        .mission-info { border-left-color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 id="title">Space Colony Adventure</h1>
+        
+        <div id="stats">
+            <div class="stat" id="creditsStat">
+                <h3>💰 Credits</h3>
+                <div id="credits">1000000</div>
+                <div id="creditsPerSecond">per second: 0</div>
+            </div>
+            <div class="stat" id="energyStat">
+                <h3>⚡ Energy</h3>
+                <div id="energy">1000</div>
+                <div id="energyPerSecond">per second: 0</div>
+            </div>
+            <div class="stat" id="mineralsStat">
+                <h3>⛏️ Minerals</h3>
+                <div id="minerals">500</div>
+                <div id="mineralsPerSecond">per second: 0</div>
+            </div>
+            <div class="stat" id="technologyStat">
+                <h3>🔬 Technology</h3>
+                <div id="technology">100</div>
+                <div id="technologyPerSecond">per second: 0</div>
+            </div>
+        </div>
+        
+        <div id="currentPlanet">
+            <h3>🌍 Current Planet: <span id="planetName">Earth</span></h3>
+            <div class="resource-bar">
+                <div class="resource-fill" id="planetHealth" style="width: 100%"></div>
+            </div>
+            <p>Planet Health: <span id="healthText">100%</span></p>
+            <div id="planetActions">
+                <button class="planetAction" id="healPlanet" onclick="healPlanet()">🌱 Heal Planet (1000 credits)</button>
+                <button class="planetAction" id="terraformPlanet" onclick="terraformPlanet()">🏗️ Terraform (5000 credits)</button>
+                <button class="planetAction" id="buildColony" onclick="buildColony()">🏠 Build Colony (10000 credits)</button>
+            </div>
+        </div>
+        
+        <div id="spaceView">
+            <!-- Planets and spaceships will be added here -->
+        </div>
+        
+        <div id="missionLog">
+            <h3>📋 Mission Log</h3>
+            <div id="missionEntries">
+                <div class="mission-entry mission-info">
+                    <strong>Mission Control:</strong> Welcome to Space Colony Adventure! Your mission is to explore the galaxy and build the greatest space empire ever known!
+                </div>
+            </div>
+        </div>
+        
+        <div id="buildings">
+            <h2>🏗️ Space Buildings</h2>
+            <div id="buildingsGrid"></div>
+        </div>
+        
+        <div id="upgrades">
+            <h2>⚡ Upgrades</h2>
+            <div id="upgradesGrid"></div>
+        </div>
+        
+        <div id="adventure">
+            <h2>🚀 Adventures</h2>
+            <div id="adventureGrid"></div>
+        </div>
+    </div>
+    
+    <div id="achievements"></div>
+    
+    <script>
+        // Game state
+        let credits = 1000000;
+        let energy = 1000;
+        let minerals = 500;
+        let technology = 100;
+        let creditsPerSecond = 0;
+        let energyPerSecond = 0;
+        let mineralsPerSecond = 0;
+        let technologyPerSecond = 0;
+        
+        let currentPlanet = 'earth';
+        let planetHealth = 100;
+        let discoveredPlanets = ['earth'];
+        let spaceships = [];
+        let missions = [];
+        
+        // Planets data
+        let planets = {
+            earth: { 
+                name: 'Earth', 
+                x: 50, y: 50, 
+                size: 60, 
+                health: 100,
+                resources: { credits: 10, energy: 5, minerals: 3, technology: 2 },
+                discovered: true,
+                color: 'earth'
+            },
+            mars: { 
+                name: 'Mars', 
+                x: 200, y: 80, 
+                size: 45, 
+                health: 80,
+                resources: { credits: 15, energy: 8, minerals: 8, technology: 3 },
+                discovered: false,
+                color: 'mars'
+            },
+            venus: { 
+                name: 'Venus', 
+                x: 150, y: 150, 
+                size: 55, 
+                health: 70,
+                resources: { credits: 20, energy: 10, minerals: 12, technology: 4 },
+                discovered: false,
+                color: 'venus'
+            },
+            mercury: { 
+                name: 'Mercury', 
+                x: 80, y: 200, 
+                size: 35, 
+                health: 90,
+                resources: { credits: 12, energy: 15, minerals: 5, technology: 6 },
+                discovered: false,
+                color: 'mercury'
+            },
+            jupiter: { 
+                name: 'Jupiter', 
+                x: 350, y: 120, 
+                size: 80, 
+                health: 60,
+                resources: { credits: 25, energy: 12, minerals: 15, technology: 5 },
+                discovered: false,
+                color: 'jupiter'
+            },
+            saturn: { 
+                name: 'Saturn', 
+                x: 500, y: 200, 
+                size: 70, 
+                health: 40,
+                resources: { credits: 40, energy: 20, minerals: 25, technology: 8 },
+                discovered: false,
+                color: 'saturn'
+            },
+            uranus: { 
+                name: 'Uranus', 
+                x: 580, y: 280, 
+                size: 65, 
+                health: 30,
+                resources: { credits: 50, energy: 25, minerals: 35, technology: 12 },
+                discovered: false,
+                color: 'uranus'
+            },
+            neptune: { 
+                name: 'Neptune', 
+                x: 650, y: 300, 
+                size: 55, 
+                health: 20,
+                resources: { credits: 60, energy: 30, minerals: 40, technology: 15 },
+                discovered: false,
+                color: 'neptune'
+            },
+            pluto: { 
+                name: 'Pluto', 
+                x: 750, y: 350, 
+                size: 25, 
+                health: 95,
+                resources: { credits: 8, energy: 4, minerals: 2, technology: 8 },
+                discovered: false,
+                color: 'pluto'
+            },
+            ceres: { 
+                name: 'Ceres', 
+                x: 300, y: 250, 
+                size: 20, 
+                health: 85,
+                resources: { credits: 5, energy: 3, minerals: 10, technology: 1 },
+                discovered: false,
+                color: 'ceres'
+            },
+            europa: { 
+                name: 'Europa', 
+                x: 380, y: 180, 
+                size: 30, 
+                health: 75,
+                resources: { credits: 18, energy: 6, minerals: 8, technology: 7 },
+                discovered: false,
+                color: 'europa'
+            },
+            titan: { 
+                name: 'Titan', 
+                x: 520, y: 220, 
+                size: 40, 
+                health: 65,
+                resources: { credits: 30, energy: 18, minerals: 20, technology: 10 },
+                discovered: false,
+                color: 'titan'
+            },
+            triton: { 
+                name: 'Triton', 
+                x: 680, y: 320, 
+                size: 35, 
+                health: 55,
+                resources: { credits: 35, energy: 22, minerals: 28, technology: 13 },
+                discovered: false,
+                color: 'triton'
+            },
+            mikemike: { 
+                name: 'Mikemike', 
+                x: 450, y: 350, 
+                size: 50, 
+                health: 85,
+                resources: { credits: 45, energy: 35, minerals: 45, technology: 25 },
+                discovered: false,
+                color: 'mikemike'
+            },
+            amaea: { 
+                name: 'Amaea', 
+                x: 600, y: 400, 
+                size: 60, 
+                health: 75,
+                resources: { credits: 55, energy: 40, minerals: 50, technology: 30 },
+                discovered: false,
+                color: 'amaea'
+            }
+        };
+        
+        // Buildings
+        let buildings = {
+            solarPanel: { count: 0, cost: 100, baseCost: 100, production: { energy: 5 }, name: "Solar Panel", icon: "☀️" },
+            mine: { count: 0, cost: 200, baseCost: 200, production: { minerals: 3 }, name: "Mine", icon: "⛏️" },
+            researchLab: { count: 0, cost: 500, baseCost: 500, production: { technology: 2 }, name: "Research Lab", icon: "🔬" },
+            spaceStation: { count: 0, cost: 1000, baseCost: 1000, production: { credits: 10 }, name: "Space Station", icon: "🛰️" },
+            factory: { count: 0, cost: 2500, baseCost: 2500, production: { credits: 25, energy: 10 }, name: "Factory", icon: "🏭" },
+            powerPlant: { count: 0, cost: 5000, baseCost: 5000, production: { energy: 25 }, name: "Power Plant", icon: "⚡" },
+            refinery: { count: 0, cost: 10000, baseCost: 10000, production: { minerals: 15, technology: 5 }, name: "Refinery", icon: "🏗️" },
+            tradingPost: { count: 0, cost: 20000, baseCost: 20000, production: { credits: 50 }, name: "Trading Post", icon: "💰" },
+            quantumLab: { count: 0, cost: 50000, baseCost: 50000, production: { technology: 15 }, name: "Quantum Lab", icon: "⚛️" },
+            megafactory: { count: 0, cost: 100000, baseCost: 100000, production: { credits: 100, energy: 50, minerals: 30 }, name: "Mega Factory", icon: "🏢" }
+        };
+        
+        // Upgrades
+        let upgrades = {
+            efficientPanels: { cost: 500, bought: false, name: "Efficient Solar Panels", description: "Solar panels produce 2x energy" },
+            advancedMining: { cost: 1000, bought: false, name: "Advanced Mining", description: "Mines produce 2x minerals" },
+            researchBoost: { cost: 2000, bought: false, name: "Research Boost", description: "Research labs produce 2x technology" },
+            spaceEconomy: { cost: 5000, bought: false, name: "Space Economy", description: "Space stations produce 2x credits" },
+            automation: { cost: 10000, bought: false, name: "Automation", description: "All buildings produce 1.5x resources" },
+            quantumComputing: { cost: 25000, bought: false, name: "Quantum Computing", description: "Technology production +100%" },
+            fusionPower: { cost: 50000, bought: false, name: "Fusion Power", description: "Energy production +200%" },
+            asteroidMining: { cost: 100000, bought: false, name: "Asteroid Mining", description: "Minerals production +200%" },
+            galacticTrade: { cost: 200000, bought: false, name: "Galactic Trade", description: "Credits production +200%" }
+        };
+        
+        // Adventures
+        let adventures = {
+            exploreMars: { cost: 1000, name: "Explore Mars", description: "Send expedition to Mars", planet: 'mars', energyCost: 100 },
+            exploreVenus: { cost: 1500, name: "Explore Venus", description: "Explore the hot planet", planet: 'venus', energyCost: 150 },
+            mercuryMining: { cost: 2000, name: "Mercury Mining", description: "Mine Mercury's surface", planet: 'mercury', energyCost: 200 },
+            jupiterMission: { cost: 5000, name: "Jupiter Mission", description: "Explore Jupiter's moons", planet: 'jupiter', energyCost: 250 },
+            saturnRings: { cost: 15000, name: "Saturn Rings", description: "Mine Saturn's rings", planet: 'saturn', energyCost: 500 },
+            uranusExploration: { cost: 25000, name: "Uranus Exploration", description: "Explore Uranus", planet: 'uranus', energyCost: 750 },
+            neptuneVoyage: { cost: 50000, name: "Neptune Voyage", description: "Deep space exploration", planet: 'neptune', energyCost: 1000 },
+            plutoExpedition: { cost: 75000, name: "Pluto Expedition", description: "Journey to the edge", planet: 'pluto', energyCost: 1500 },
+            ceresMining: { cost: 3000, name: "Ceres Mining", description: "Mine the dwarf planet", planet: 'ceres', energyCost: 300 },
+            europaOcean: { cost: 8000, name: "Europa Ocean", description: "Explore the ice moon", planet: 'europa', energyCost: 400 },
+            titanLakes: { cost: 12000, name: "Titan Lakes", description: "Explore methane lakes", planet: 'titan', energyCost: 600 },
+            tritonResearch: { cost: 35000, name: "Triton Research", description: "Study Neptune's moon", planet: 'triton', energyCost: 800 },
+            mikemikeExpedition: { cost: 40000, name: "Mikemike Expedition", description: "Explore the mysterious pink planet", planet: 'mikemike', energyCost: 900 },
+            amaeaDiscovery: { cost: 60000, name: "Amaea Discovery", description: "Uncover secrets of the purple world", planet: 'amaea', energyCost: 1200 },
+            alienContact: { cost: 100000, name: "Alien Contact", description: "First contact with aliens", energyCost: 2000 },
+            blackHole: { cost: 500000, name: "Black Hole Research", description: "Study black holes", energyCost: 5000 }
+        };
+        
+        // Planet improvements
+        let planetImprovements = {
+            earth: { terraformed: false, colonized: false },
+            mars: { terraformed: false, colonized: false },
+            venus: { terraformed: false, colonized: false },
+            mercury: { terraformed: false, colonized: false },
+            jupiter: { terraformed: false, colonized: false },
+            saturn: { terraformed: false, colonized: false },
+            uranus: { terraformed: false, colonized: false },
+            neptune: { terraformed: false, colonized: false },
+            pluto: { terraformed: false, colonized: false },
+            ceres: { terraformed: false, colonized: false },
+            europa: { terraformed: false, colonized: false },
+            titan: { terraformed: false, colonized: false },
+            triton: { terraformed: false, colonized: false },
+            mikemike: { terraformed: false, colonized: false },
+            amaea: { terraformed: false, colonized: false }
+        };
+        
+        // Initialize game
+        function init() {
+            console.log('SPACE COLONY ADVENTURE INITIALIZING!');
+            
+            createBuildingGrid();
+            createUpgradeGrid();
+            createAdventureGrid();
+            createSpaceView();
+            updateDisplay();
+            setInterval(gameLoop, 1000);
+            
+            // Event listeners
+            document.getElementById('spaceView').addEventListener('click', handleSpaceClick);
+            
+            console.log('SPACE COLONY ADVENTURE READY!');
+        }
+        
+        function createSpaceView() {
+            const spaceView = document.getElementById('spaceView');
+            spaceView.innerHTML = '';
+            
+            // Add planets
+            Object.keys(planets).forEach(planetKey => {
+                const planet = planets[planetKey];
+                const planetElement = document.createElement('div');
+                planetElement.className = `planet ${planet.color}`;
+                planetElement.style.left = planet.x + 'px';
+                planetElement.style.top = planet.y + 'px';
+                planetElement.style.width = planet.size + 'px';
+                planetElement.style.height = planet.size + 'px';
+                planetElement.dataset.planet = planetKey;
+                
+                if (!planet.discovered) {
+                    planetElement.style.filter = 'grayscale(100%) brightness(0.3)';
+                }
+                
+                planetElement.addEventListener('click', () => selectPlanet(planetKey));
+                spaceView.appendChild(planetElement);
+            });
+            
+            // Add some stars
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = (Math.random() * 3 + 1) + 'px';
+                star.style.height = star.style.width;
+                star.style.background = `hsl(${Math.random() * 60 + 200}, 100%, ${Math.random() * 50 + 50}%)`;
+                star.style.borderRadius = '50%';
+                star.style.animation = `twinkle ${Math.random() * 4 + 2}s infinite`;
+                star.style.boxShadow = `0 0 ${Math.random() * 10 + 5}px currentColor`;
+                spaceView.appendChild(star);
+            }
+            
+            // Add nebula effects
+            for (let i = 0; i < 5; i++) {
+                const nebula = document.createElement('div');
+                nebula.style.position = 'absolute';
+                nebula.style.left = Math.random() * 100 + '%';
+                nebula.style.top = Math.random() * 100 + '%';
+                nebula.style.width = (Math.random() * 200 + 100) + 'px';
+                nebula.style.height = (Math.random() * 200 + 100) + 'px';
+                nebula.style.background = `radial-gradient(circle, rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.1) 0%, transparent 70%)`;
+                nebula.style.borderRadius = '50%';
+                nebula.style.animation = `nebulaFloat ${Math.random() * 20 + 10}s infinite`;
+                spaceView.appendChild(nebula);
+            }
+        }
+        
+        function selectPlanet(planetKey) {
+            if (!planets[planetKey].discovered) {
+                if (credits >= 1000 && energy >= 100) {
+                    credits -= 1000;
+                    energy -= 100;
+                    planets[planetKey].discovered = true;
+                    discoveredPlanets.push(planetKey);
+                    addMissionLog(`Discovered ${planets[planetKey].name}!`, 'success');
+                    createSpaceView();
+                } else {
+                    addMissionLog(`Need 1000 credits and 100 energy to explore ${planets[planetKey].name}`, 'info');
+                }
+                return;
+            }
+            
+            currentPlanet = planetKey;
+            planetHealth = planets[planetKey].health;
+            updateDisplay();
+            addMissionLog(`Traveled to ${planets[planetKey].name}`, 'info');
+        }
+        
+        function handleSpaceClick(event) {
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Check if clicked on empty space
+            if (event.target.id === 'spaceView') {
+                if (credits >= 5000 && energy >= 200) {
+                    credits -= 5000;
+                    energy -= 200;
+                    createSpaceship(x, y);
+                    addMissionLog('Built a new spaceship!', 'success');
+                } else {
+                    addMissionLog('Need 5000 credits and 200 energy to build a spaceship', 'info');
+                }
+            }
+        }
+        
+        function createSpaceship(x, y) {
+            const spaceship = {
+                id: Date.now(),
+                x: x,
+                y: y,
+                targetX: x,
+                targetY: y,
+                mission: null
+            };
+            
+            spaceships.push(spaceship);
+            
+            const spaceshipElement = document.createElement('div');
+            spaceshipElement.className = 'spaceship';
+            spaceshipElement.id = 'spaceship-' + spaceship.id;
+            spaceshipElement.style.left = x + 'px';
+            spaceshipElement.style.top = y + 'px';
+            
+            spaceshipElement.addEventListener('click', () => selectSpaceship(spaceship.id));
+            
+            document.getElementById('spaceView').appendChild(spaceshipElement);
+        }
+        
+        function selectSpaceship(spaceshipId) {
+            const spaceship = spaceships.find(s => s.id === spaceshipId);
+            if (spaceship) {
+                addMissionLog(`Selected spaceship ${spaceshipId}`, 'info');
+                // Could add more spaceship management here
+            }
+        }
+        
+        function createBuildingGrid() {
+            const grid = document.getElementById('buildingsGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(buildings).forEach(buildingKey => {
+                const building = buildings[buildingKey];
+                const div = document.createElement('div');
+                div.className = 'building';
+                div.id = 'building-' + buildingKey;
+                div.innerHTML = `
+                    <h3>${building.icon} ${building.name}</h3>
+                    <p class="cost">Cost: ${building.cost.toLocaleString()} credits</p>
+                    <p class="owned">Owned: <span id="${buildingKey}Count">0</span></p>
+                    <p class="production">Production: ${getProductionText(building.production)}</p>
+                `;
+                div.addEventListener('click', () => buyBuilding(buildingKey));
+                grid.appendChild(div);
+            });
+        }
+        
+        function getProductionText(production) {
+            let text = '';
+            Object.keys(production).forEach(resource => {
+                const amount = production[resource];
+                const icon = resource === 'credits' ? '💰' : resource === 'energy' ? '⚡' : resource === 'minerals' ? '⛏️' : '🔬';
+                text += `${icon} ${amount}/s `;
+            });
+            return text;
+        }
+        
+        function createUpgradeGrid() {
+            const grid = document.getElementById('upgradesGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(upgrades).forEach(upgradeKey => {
+                const upgrade = upgrades[upgradeKey];
+                const div = document.createElement('div');
+                div.className = 'upgrade';
+                div.id = 'upgrade-' + upgradeKey;
+                div.innerHTML = `
+                    <h3>${upgrade.name}</h3>
+                    <p class="cost">Cost: ${upgrade.cost.toLocaleString()} credits</p>
+                    <p>${upgrade.description}</p>
+                `;
+                div.addEventListener('click', () => buyUpgrade(upgradeKey));
+                grid.appendChild(div);
+            });
+            
+            updateUpgradeAvailability();
+        }
+        
+        function createAdventureGrid() {
+            const grid = document.getElementById('adventureGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(adventures).forEach(adventureKey => {
+                const adventure = adventures[adventureKey];
+                const div = document.createElement('div');
+                div.className = 'adventure';
+                div.id = 'adventure-' + adventureKey;
+                div.innerHTML = `
+                    <h3>${adventure.name}</h3>
+                    <p class="cost">Cost: ${adventure.cost.toLocaleString()} credits, ${adventure.energyCost} energy</p>
+                    <p>${adventure.description}</p>
+                `;
+                div.addEventListener('click', () => startAdventure(adventureKey));
+                grid.appendChild(div);
+            });
+            
+            updateAdventureAvailability();
+        }
+        
+        function buyBuilding(buildingName) {
+            const building = buildings[buildingName];
+            if (credits >= building.cost) {
+                credits -= building.cost;
+                building.count++;
+                building.cost = Math.floor(building.baseCost * Math.pow(1.15, building.count));
+                
+                updateDisplay();
+                updateUpgradeAvailability();
+                updateAdventureAvailability();
+                addMissionLog(`Built ${building.name}!`, 'success');
+            }
+        }
+        
+        function buyUpgrade(upgradeName) {
+            const upgrade = upgrades[upgradeName];
+            if (credits >= upgrade.cost && !upgrade.bought) {
+                credits -= upgrade.cost;
+                upgrade.bought = true;
+                
+                updateDisplay();
+                updateUpgradeAvailability();
+                addMissionLog(`Upgraded: ${upgrade.name}!`, 'success');
+            }
+        }
+        
+        function startAdventure(adventureName) {
+            const adventure = adventures[adventureName];
+            if (credits >= adventure.cost && energy >= adventure.energyCost) {
+                credits -= adventure.cost;
+                energy -= adventure.energyCost;
+                
+                // Simulate adventure
+                setTimeout(() => {
+                    const success = Math.random() > 0.3; // 70% success rate
+                    if (success) {
+                        const rewards = {
+                            credits: Math.floor(adventure.cost * 0.5),
+                            energy: Math.floor(adventure.energyCost * 0.3),
+                            minerals: Math.floor(Math.random() * 100) + 50,
+                            technology: Math.floor(Math.random() * 20) + 10
+                        };
+                        
+                        credits += rewards.credits;
+                        energy += rewards.energy;
+                        minerals += rewards.minerals;
+                        technology += rewards.technology;
+                        
+                        addMissionLog(`${adventure.name} completed! Rewards: ${rewards.credits} credits, ${rewards.energy} energy, ${rewards.minerals} minerals, ${rewards.technology} technology`, 'success');
+                    } else {
+                        addMissionLog(`${adventure.name} failed! Mission aborted.`, 'failure');
+                    }
+                    
+                    updateDisplay();
+                    updateAdventureAvailability();
+                }, 2000);
+                
+                addMissionLog(`Starting ${adventure.name}...`, 'info');
+                updateDisplay();
+                updateAdventureAvailability();
+            }
+        }
+        
+        function updateUpgradeAvailability() {
+            Object.keys(upgrades).forEach(upgradeKey => {
+                const upgrade = upgrades[upgradeKey];
+                const element = document.getElementById('upgrade-' + upgradeKey);
+                if (element) {
+                    element.classList.remove('affordable', 'unaffordable');
+                    
+                    if (upgrade.bought) {
+                        element.style.opacity = '0.5';
+                        element.style.cursor = 'not-allowed';
+                    } else {
+                        element.style.opacity = '1';
+                        element.style.cursor = 'pointer';
+                        
+                        if (credits >= upgrade.cost) {
+                            element.classList.add('affordable');
+                        } else {
+                            element.classList.add('unaffordable');
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateAdventureAvailability() {
+            Object.keys(adventures).forEach(adventureKey => {
+                const adventure = adventures[adventureKey];
+                const element = document.getElementById('adventure-' + adventureKey);
+                if (element) {
+                    element.classList.remove('affordable', 'unaffordable');
+                    
+                    if (credits >= adventure.cost && energy >= adventure.energyCost) {
+                        element.classList.add('affordable');
+                    } else {
+                        element.classList.add('unaffordable');
+                    }
+                }
+            });
+        }
+        
+        function gameLoop() {
+            // Calculate production
+            creditsPerSecond = 0;
+            energyPerSecond = 0;
+            mineralsPerSecond = 0;
+            technologyPerSecond = 0;
+            
+            Object.keys(buildings).forEach(buildingKey => {
+                const building = buildings[buildingKey];
+                let multiplier = 1;
+                
+                // Apply upgrades
+                if (upgrades.automation.bought) multiplier *= 1.5;
+                if (upgrades.efficientPanels.bought && buildingKey === 'solarPanel') multiplier *= 2;
+                if (upgrades.advancedMining.bought && buildingKey === 'mine') multiplier *= 2;
+                if (upgrades.researchBoost.bought && buildingKey === 'researchLab') multiplier *= 2;
+                if (upgrades.spaceEconomy.bought && buildingKey === 'spaceStation') multiplier *= 2;
+                if (upgrades.fusionPower.bought && buildingKey === 'powerPlant') multiplier *= 3;
+                if (upgrades.asteroidMining.bought && buildingKey === 'mine') multiplier *= 3;
+                if (upgrades.galacticTrade.bought && buildingKey === 'tradingPost') multiplier *= 3;
+                if (upgrades.quantumComputing.bought && buildingKey === 'quantumLab') multiplier *= 2;
+                
+                Object.keys(building.production).forEach(resource => {
+                    const production = building.production[resource] * building.count * multiplier;
+                    switch(resource) {
+                        case 'credits': creditsPerSecond += production; break;
+                        case 'energy': energyPerSecond += production; break;
+                        case 'minerals': mineralsPerSecond += production; break;
+                        case 'technology': technologyPerSecond += production; break;
+                    }
+                });
+            });
+            
+            // Add planet bonuses
+            const planet = planets[currentPlanet];
+            creditsPerSecond += planet.resources.credits;
+            energyPerSecond += planet.resources.energy;
+            mineralsPerSecond += planet.resources.minerals;
+            technologyPerSecond += planet.resources.technology;
+            
+            // Update resources
+            credits += creditsPerSecond;
+            energy += energyPerSecond;
+            minerals += mineralsPerSecond;
+            technology += technologyPerSecond;
+            
+            // Update planet health (slowly decrease)
+            planetHealth = Math.max(0, planetHealth - 0.01);
+            planets[currentPlanet].health = planetHealth;
+            
+            updateDisplay();
+            updateUpgradeAvailability();
+            updateAdventureAvailability();
+        }
+        
+        function updateDisplay() {
+            document.getElementById('credits').textContent = Math.floor(credits).toLocaleString();
+            document.getElementById('energy').textContent = Math.floor(energy).toLocaleString();
+            document.getElementById('minerals').textContent = Math.floor(minerals).toLocaleString();
+            document.getElementById('technology').textContent = Math.floor(technology).toLocaleString();
+            
+            document.getElementById('creditsPerSecond').textContent = 'per second: ' + creditsPerSecond.toFixed(1);
+            document.getElementById('energyPerSecond').textContent = 'per second: ' + energyPerSecond.toFixed(1);
+            document.getElementById('mineralsPerSecond').textContent = 'per second: ' + mineralsPerSecond.toFixed(1);
+            document.getElementById('technologyPerSecond').textContent = 'per second: ' + technologyPerSecond.toFixed(1);
+            
+            document.getElementById('planetName').textContent = planets[currentPlanet].name;
+            document.getElementById('healthText').textContent = planetHealth.toFixed(1) + '%';
+            document.getElementById('planetHealth').style.width = planetHealth + '%';
+            
+            // Update planet action buttons
+            document.getElementById('healPlanet').disabled = credits < 1000 || planetHealth >= 100;
+            document.getElementById('terraformPlanet').disabled = credits < 5000 || planetImprovements[currentPlanet].terraformed;
+            document.getElementById('buildColony').disabled = credits < 10000 || planetImprovements[currentPlanet].colonized;
+            
+            Object.keys(buildings).forEach(building => {
+                const countElement = document.getElementById(building + 'Count');
+                if (countElement) {
+                    countElement.textContent = buildings[building].count;
+                }
+            });
+            
+            Object.keys(buildings).forEach(buildingKey => {
+                const element = document.getElementById('building-' + buildingKey);
+                if (element) {
+                    element.classList.remove('affordable', 'unaffordable');
+                    
+                    if (credits >= buildings[buildingKey].cost) {
+                        element.classList.add('affordable');
+                    } else {
+                        element.classList.add('unaffordable');
+                    }
+                }
+            });
+        }
+        
+        function addMissionLog(message, type = 'info') {
+            const missionEntries = document.getElementById('missionEntries');
+            const entry = document.createElement('div');
+            entry.className = `mission-entry mission-${type}`;
+            entry.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            missionEntries.appendChild(entry);
+            
+            // Auto-scroll to bottom
+            missionEntries.scrollTop = missionEntries.scrollHeight;
+            
+            // Limit entries
+            while (missionEntries.children.length > 20) {
+                missionEntries.removeChild(missionEntries.firstChild);
+            }
+        }
+        
+        function healPlanet() {
+            if (credits >= 1000 && planetHealth < 100) {
+                credits -= 1000;
+                planetHealth = Math.min(100, planetHealth + 20);
+                planets[currentPlanet].health = planetHealth;
+                addMissionLog(`🌱 Healed ${planets[currentPlanet].name}! Health restored to ${planetHealth.toFixed(1)}%`, 'success');
+                updateDisplay();
+            }
+        }
+        
+        function terraformPlanet() {
+            if (credits >= 5000 && !planetImprovements[currentPlanet].terraformed) {
+                credits -= 5000;
+                planetImprovements[currentPlanet].terraformed = true;
+                
+                // Increase planet resources
+                planets[currentPlanet].resources.credits *= 2;
+                planets[currentPlanet].resources.energy *= 2;
+                planets[currentPlanet].resources.minerals *= 2;
+                planets[currentPlanet].resources.technology *= 2;
+                
+                addMissionLog(`🏗️ Terraformed ${planets[currentPlanet].name}! All resources doubled!`, 'success');
+                updateDisplay();
+            }
+        }
+        
+        function buildColony() {
+            if (credits >= 10000 && !planetImprovements[currentPlanet].colonized) {
+                credits -= 10000;
+                planetImprovements[currentPlanet].colonized = true;
+                
+                // Add colony bonus
+                planets[currentPlanet].resources.credits += 50;
+                planets[currentPlanet].resources.energy += 25;
+                planets[currentPlanet].resources.minerals += 30;
+                planets[currentPlanet].resources.technology += 20;
+                
+                addMissionLog(`🏠 Built colony on ${planets[currentPlanet].name}! Major resource boost!`, 'success');
+                updateDisplay();
+            }
+        }
+        
+        // Start the game
+        console.log('SPACE COLONY ADVENTURE LOADING!');
+        init();
+        console.log('Space Colony Adventure launched successfully!');
+    </script>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!-- Bridge Constructor Portal - Physics-based bridge building with portal mechanics -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌉 Bridge Constructor Portal - Build & Teleport! 🌉</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+        
+        .game-container {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB, #98FB98);
+            overflow: hidden;
+        }
+        
+        .ui-panel {
+            width: 300px;
+            background: #2d1b69;
+            border-left: 2px solid #00ffff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+        
+        .level-info {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #00ff00;
+        }
+        
+        .level-title {
+            font-size: 1.2em;
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .budget {
+            color: #f39c12;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .materials {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ff6b6b;
+        }
+        
+        .material-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .material-name {
+            color: #00ffff;
+        }
+        
+        .material-cost {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .controls {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #00ff00;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border: none;
+            color: #0a0a0f;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.4);
+        }
+        
+        .control-btn:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+        
+        .portal {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid #00ffff;
+            background: radial-gradient(circle, #00ffff, #0080ff);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            animation: portalPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes portalPulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        .vehicle {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            background: #e74c3c;
+            border-radius: 4px;
+            border: 2px solid #c0392b;
+        }
+        
+        .bridge-piece {
+            position: absolute;
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border: 2px solid #2c3e50;
+            border-radius: 2px;
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to top, #8B4513, #A0522D);
+        }
+        
+        .water {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(to top, #4169E1, #1E90FF);
+            opacity: 0.7;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #0a0a0f;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 255, 0, 0.4);
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            animation: particleFloat 2s ease-out forwards;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+            <div class="ground"></div>
+            <div class="water"></div>
+        </div>
+    </div>
+    
+    <div class="ui-panel">
+        <div class="level-info">
+            <div class="level-title">🌉 Level 1: Portal Crossing</div>
+            <div class="budget">💰 Budget: $<span id="budget">1000</span></div>
+            <div>🎯 Goal: Get car to exit portal</div>
+        </div>
+        
+        <div class="materials">
+            <h3>🔧 Building Materials</h3>
+            <div class="material-item">
+                <span class="material-name">🟦 Steel Beam</span>
+                <span class="material-cost">$50</span>
+            </div>
+            <div class="material-item">
+                <span class="material-name">🔗 Steel Cable</span>
+                <span class="material-cost">$25</span>
+            </div>
+            <div class="material-item">
+                <span class="material-name">📐 Steel Joint</span>
+                <span class="material-cost">$75</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <h3>🎮 Controls</h3>
+            <button class="control-btn" onclick="selectMaterial('beam')">🟦 Steel Beam</button>
+            <button class="control-btn" onclick="selectMaterial('cable')">🔗 Steel Cable</button>
+            <button class="control-btn" onclick="selectMaterial('joint')">📐 Steel Joint</button>
+            <button class="control-btn" onclick="clearBridge()">🗑️ Clear Bridge</button>
+            <button class="control-btn" onclick="testBridge()">🚗 Test Bridge</button>
+            <button class="control-btn" onclick="resetLevel()">🔄 Reset Level</button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // Game state
+        let game = {
+            canvas: null,
+            ctx: null,
+            budget: 1000,
+            selectedMaterial: 'beam',
+            bridgePieces: [],
+            vehicles: [],
+            portals: [],
+            physics: {
+                gravity: 0.5,
+                friction: 0.98
+            },
+            isTesting: false,
+            mouse: { x: 0, y: 0, isDown: false },
+            materials: {
+                beam: { cost: 50, strength: 100, length: 100 },
+                cable: { cost: 25, strength: 50, length: 80 },
+                joint: { cost: 75, strength: 200, length: 20 }
+            }
+        };
+        
+        // Initialize game
+        function initGame() {
+            game.canvas = document.getElementById('gameCanvas');
+            game.ctx = game.canvas.getContext('2d');
+            
+            // Set canvas size
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Mouse events
+            game.canvas.addEventListener('mousedown', onMouseDown);
+            game.canvas.addEventListener('mousemove', onMouseMove);
+            game.canvas.addEventListener('mouseup', onMouseUp);
+            
+            // Initialize level
+            initLevel();
+            
+            // Start game loop
+            gameLoop();
+        }
+        
+        // Resize canvas
+        function resizeCanvas() {
+            const container = game.canvas.parentElement;
+            game.canvas.width = container.clientWidth;
+            game.canvas.height = container.clientHeight;
+        }
+        
+        // Initialize level
+        function initLevel() {
+            // Create portals
+            game.portals = [
+                { x: 100, y: game.canvas.height - 150, id: 'portal1', color: '#00ffff' },
+                { x: game.canvas.width - 100, y: game.canvas.height - 150, id: 'portal2', color: '#ff00ff' }
+            ];
+            
+            // Create vehicle
+            game.vehicles = [
+                { x: 50, y: game.canvas.height - 120, vx: 0, vy: 0, width: 40, height: 20, color: '#e74c3c' }
+            ];
+            
+            // Create ground platforms
+            game.groundPlatforms = [
+                { x: 0, y: game.canvas.height - 100, width: 200, height: 100 },
+                { x: game.canvas.width - 200, y: game.canvas.height - 100, width: 200, height: 100 }
+            ];
+            
+            updateDisplay();
+        }
+        
+        // Mouse events
+        function onMouseDown(e) {
+            const rect = game.canvas.getBoundingClientRect();
+            game.mouse.x = e.clientX - rect.left;
+            game.mouse.y = e.clientY - rect.top;
+            game.mouse.isDown = true;
+        }
+        
+        function onMouseMove(e) {
+            const rect = game.canvas.getBoundingClientRect();
+            game.mouse.x = e.clientX - rect.left;
+            game.mouse.y = e.clientY - rect.top;
+        }
+        
+        function onMouseUp(e) {
+            if (game.mouse.isDown) {
+                placeBridgePiece();
+            }
+            game.mouse.isDown = false;
+        }
+        
+        // Select material
+        function selectMaterial(material) {
+            game.selectedMaterial = material;
+            showNotification(`Selected ${material}!`);
+        }
+        
+        // Place bridge piece
+        function placeBridgePiece() {
+            const material = game.materials[game.selectedMaterial];
+            
+            if (game.budget >= material.cost) {
+                game.budget -= material.cost;
+                
+                const piece = {
+                    x: game.mouse.x,
+                    y: game.mouse.y,
+                    type: game.selectedMaterial,
+                    width: material.length,
+                    height: 10,
+                    rotation: 0,
+                    strength: material.strength,
+                    connections: []
+                };
+                
+                game.bridgePieces.push(piece);
+                updateDisplay();
+                createParticles(game.mouse.x, game.mouse.y);
+                showNotification(`Placed ${game.selectedMaterial}!`);
+            } else {
+                showNotification('Not enough budget!');
+            }
+        }
+        
+        // Clear bridge
+        function clearBridge() {
+            game.bridgePieces = [];
+            game.budget = 1000;
+            updateDisplay();
+            showNotification('Bridge cleared!');
+        }
+        
+        // Test bridge
+        function testBridge() {
+            if (game.bridgePieces.length === 0) {
+                showNotification('Build a bridge first!');
+                return;
+            }
+            
+            game.isTesting = true;
+            showNotification('Testing bridge...');
+            
+            // Start vehicle movement
+            game.vehicles[0].vx = 2;
+        }
+        
+        // Reset level
+        function resetLevel() {
+            game.bridgePieces = [];
+            game.budget = 1000;
+            game.isTesting = false;
+            initLevel();
+            showNotification('Level reset!');
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('budget').textContent = game.budget;
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Update game state
+        function update() {
+            if (game.isTesting) {
+                updateVehicles();
+                updatePhysics();
+                checkPortalCollisions();
+                checkWinCondition();
+            }
+        }
+        
+        // Update vehicles
+        function updateVehicles() {
+            game.vehicles.forEach(vehicle => {
+                // Apply gravity
+                vehicle.vy += game.physics.gravity;
+                
+                // Apply friction
+                vehicle.vx *= game.physics.friction;
+                vehicle.vy *= game.physics.friction;
+                
+                // Update position
+                vehicle.x += vehicle.vx;
+                vehicle.y += vehicle.vy;
+                
+                // Check ground collision
+                if (vehicle.y + vehicle.height > game.canvas.height - 100) {
+                    vehicle.y = game.canvas.height - 100 - vehicle.height;
+                    vehicle.vy = 0;
+                }
+                
+                // Check bridge collision
+                checkBridgeCollision(vehicle);
+            });
+        }
+        
+        // Update physics
+        function updatePhysics() {
+            // Simple physics for bridge pieces
+            game.bridgePieces.forEach(piece => {
+                // Add some physics effects here if needed
+            });
+        }
+        
+        // Check bridge collision
+        function checkBridgeCollision(vehicle) {
+            game.bridgePieces.forEach(piece => {
+                const pieceRect = {
+                    x: piece.x - piece.width/2,
+                    y: piece.y - piece.height/2,
+                    width: piece.width,
+                    height: piece.height
+                };
+                
+                if (vehicle.x < pieceRect.x + pieceRect.width &&
+                    vehicle.x + vehicle.width > pieceRect.x &&
+                    vehicle.y < pieceRect.y + pieceRect.height &&
+                    vehicle.y + vehicle.height > pieceRect.y) {
+                    
+                    // Vehicle is on bridge
+                    vehicle.y = pieceRect.y - vehicle.height;
+                    vehicle.vy = 0;
+                }
+            });
+        }
+        
+        // Check portal collisions
+        function checkPortalCollisions() {
+            game.vehicles.forEach(vehicle => {
+                game.portals.forEach(portal => {
+                    const distance = Math.sqrt(
+                        Math.pow(vehicle.x + vehicle.width/2 - portal.x, 2) +
+                        Math.pow(vehicle.y + vehicle.height/2 - portal.y, 2)
+                    );
+                    
+                    if (distance < 30) {
+                        // Teleport vehicle to other portal
+                        const otherPortal = game.portals.find(p => p.id !== portal.id);
+                        if (otherPortal) {
+                            vehicle.x = otherPortal.x - vehicle.width/2;
+                            vehicle.y = otherPortal.y - vehicle.height/2;
+                            createParticles(vehicle.x, vehicle.y);
+                            showNotification('🚗 Vehicle teleported!');
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Check win condition
+        function checkWinCondition() {
+            const vehicle = game.vehicles[0];
+            if (vehicle.x > game.canvas.width - 50) {
+                game.isTesting = false;
+                showNotification('🎉 Level Complete! Bridge successful!');
+                createParticles(vehicle.x, vehicle.y);
+            }
+        }
+        
+        // Render game
+        function render() {
+            const ctx = game.ctx;
+            ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
+            
+            // Draw background
+            drawBackground();
+            
+            // Draw bridge pieces
+            drawBridgePieces();
+            
+            // Draw portals
+            drawPortals();
+            
+            // Draw vehicles
+            drawVehicles();
+            
+            // Draw ground platforms
+            drawGroundPlatforms();
+        }
+        
+        // Draw background
+        function drawBackground() {
+            const ctx = game.ctx;
+            
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, game.canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
+            
+            // Clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(100, 80, 30, 0, Math.PI * 2);
+            ctx.arc(130, 80, 40, 0, Math.PI * 2);
+            ctx.arc(160, 80, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(400, 120, 25, 0, Math.PI * 2);
+            ctx.arc(430, 120, 35, 0, Math.PI * 2);
+            ctx.arc(460, 120, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw bridge pieces
+        function drawBridgePieces() {
+            const ctx = game.ctx;
+            
+            game.bridgePieces.forEach(piece => {
+                ctx.save();
+                ctx.translate(piece.x, piece.y);
+                ctx.rotate(piece.rotation);
+                
+                // Draw piece based on type
+                if (piece.type === 'beam') {
+                    ctx.fillStyle = '#95a5a6';
+                    ctx.fillRect(-piece.width/2, -piece.height/2, piece.width, piece.height);
+                    ctx.strokeStyle = '#2c3e50';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-piece.width/2, -piece.height/2, piece.width, piece.height);
+                } else if (piece.type === 'cable') {
+                    ctx.strokeStyle = '#7f8c8d';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(-piece.width/2, 0);
+                    ctx.lineTo(piece.width/2, 0);
+                    ctx.stroke();
+                } else if (piece.type === 'joint') {
+                    ctx.fillStyle = '#34495e';
+                    ctx.fillRect(-piece.width/2, -piece.height/2, piece.width, piece.height);
+                    ctx.strokeStyle = '#2c3e50';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-piece.width/2, -piece.height/2, piece.width, piece.height);
+                }
+                
+                ctx.restore();
+            });
+        }
+        
+        // Draw portals
+        function drawPortals() {
+            const ctx = game.ctx;
+            
+            game.portals.forEach(portal => {
+                // Portal glow
+                const gradient = ctx.createRadialGradient(
+                    portal.x, portal.y, 0,
+                    portal.x, portal.y, 40
+                );
+                gradient.addColorStop(0, portal.color);
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(portal.x - 40, portal.y - 40, 80, 80);
+                
+                // Portal ring
+                ctx.strokeStyle = portal.color;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, 30, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Portal center
+                ctx.fillStyle = portal.color;
+                ctx.beginPath();
+                ctx.arc(portal.x, portal.y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // Draw vehicles
+        function drawVehicles() {
+            const ctx = game.ctx;
+            
+            game.vehicles.forEach(vehicle => {
+                // Vehicle body
+                ctx.fillStyle = vehicle.color;
+                ctx.fillRect(vehicle.x, vehicle.y, vehicle.width, vehicle.height);
+                
+                // Vehicle details
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(vehicle.x + 5, vehicle.y + 5, 10, 10);
+                ctx.fillRect(vehicle.x + 25, vehicle.y + 5, 10, 10);
+                
+                // Wheels
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.arc(vehicle.x + 8, vehicle.y + vehicle.height, 4, 0, Math.PI * 2);
+                ctx.arc(vehicle.x + vehicle.width - 8, vehicle.y + vehicle.height, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        // Draw ground platforms
+        function drawGroundPlatforms() {
+            const ctx = game.ctx;
+            
+            game.groundPlatforms.forEach(platform => {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                
+                // Platform details
+                ctx.fillStyle = '#A0522D';
+                for (let i = 0; i < platform.width; i += 20) {
+                    ctx.fillRect(platform.x + i, platform.y, 15, platform.height);
+                }
+            });
+        }
+        
+        // Create particles
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (x + Math.random() * 40 - 20) + 'px';
+                particle.style.top = (y + Math.random() * 40 - 20) + 'px';
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 2000);
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

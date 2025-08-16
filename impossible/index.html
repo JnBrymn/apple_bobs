@@ -1,0 +1,752 @@
+<!-- 
+IMPOSSIBLE - The Hardest Game Ever!
+A survival game with:
+- Tiny player hitbox (1 pixel!)
+- Super fast enemies
+- Impossible physics
+- Multiple survival mechanics
+- No mercy!
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IMPOSSIBLE - The Hardest Game Ever!</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(45deg, #000000, #1a0033, #330033, #000000);
+            font-family: 'Courier New', monospace;
+            color: #ff0000;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #000011 0%, #000000 100%);
+        }
+        
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 
+                0 0 20px #ff0000,
+                0 0 40px #ff0000,
+                0 0 60px #ff0000;
+            z-index: 1000;
+            animation: titlePulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.7; transform: translateX(-50%) scale(1.1); }
+        }
+        
+        #player {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                0 0 30px #00ff00;
+            z-index: 100;
+            transition: none;
+        }
+        
+        .enemy {
+            position: absolute;
+            background: #ff0000;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 10px #ff0000,
+                0 0 20px #ff0000;
+            z-index: 50;
+        }
+        
+        .bullet {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffff00;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #ffff00;
+            z-index: 75;
+        }
+        
+        .laser {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, #ff00ff, transparent);
+            box-shadow: 0 0 10px #ff00ff;
+            z-index: 60;
+        }
+        
+        .spike {
+            position: absolute;
+            background: #ff6600;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            box-shadow: 0 0 10px #ff6600;
+            z-index: 40;
+        }
+        
+        .portal {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #00ffff;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,255,0.3), transparent);
+            box-shadow: 
+                0 0 20px #00ffff,
+                inset 0 0 20px rgba(0,255,255,0.5);
+            z-index: 30;
+            animation: portalSpin 2s linear infinite;
+        }
+        
+        @keyframes portalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #stats {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+        }
+        
+        #stats div {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            color: #ff0000;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+            text-shadow: 
+                0 0 20px #ff0000,
+                0 0 40px #ff0000;
+            animation: gameOverPulse 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes gameOverPulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        #restartBtn {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff0000;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            z-index: 2001;
+            display: none;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #ff0000;
+        }
+        
+        #restartBtn:hover {
+            background: #cc0000;
+            box-shadow: 0 0 30px #ff0000;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 25;
+            animation: particleFade 1s ease-out forwards;
+        }
+        
+        @keyframes particleFade {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+        
+        #warning {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            color: #ff0000;
+            text-align: center;
+            z-index: 1500;
+            text-shadow: 0 0 10px #ff0000;
+            animation: warningBlink 0.3s ease-in-out infinite;
+        }
+        
+        @keyframes warningBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            font-size: 12px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 id="title">IMPOSSIBLE</h1>
+        
+        <div id="stats">
+            <div>Survival Time: <span id="time">0.00</span>s</div>
+            <div>Score: <span id="score">0</span></div>
+            <div>Deaths: <span id="deaths">0</span></div>
+            <div>Enemies: <span id="enemyCount">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+        
+        <div id="player"></div>
+        
+        <div id="gameOver">GAME OVER</div>
+        <button id="restartBtn" onclick="restartGame()">TRY AGAIN (IMPOSSIBLE)</button>
+        
+        <div id="warning">WARNING: THIS GAME IS IMPOSSIBLE!</div>
+        
+        <div id="instructions">
+            <strong>HOW TO PLAY (IF YOU DARE):</strong><br>
+            • Move with mouse<br>
+            • Survive as long as possible<br>
+            • You are 1 pixel big<br>
+            • Everything wants to kill you<br>
+            • Good luck (you'll need it!)
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let gameRunning = false;
+        let startTime = 0;
+        let survivalTime = 0;
+        let score = 0;
+        let deaths = 0;
+        let level = 1;
+        let playerX = 400;
+        let playerY = 300;
+        let enemies = [];
+        let bullets = [];
+        let lasers = [];
+        let spikes = [];
+        let portals = [];
+        let particles = [];
+        let lastEnemySpawn = 0;
+        let lastBulletSpawn = 0;
+        let lastLaserSpawn = 0;
+        let lastSpikeSpawn = 0;
+        let lastPortalSpawn = 0;
+        let warningShown = false;
+        
+        // Difficulty scaling
+        let enemySpeed = 2;
+        let bulletSpeed = 3;
+        let laserSpeed = 4;
+        let spawnRate = 1000;
+        
+        // DOM elements
+        const gameContainer = document.getElementById('gameContainer');
+        const player = document.getElementById('player');
+        const gameOver = document.getElementById('gameOver');
+        const restartBtn = document.getElementById('restartBtn');
+        const warning = document.getElementById('warning');
+        
+        // Initialize game
+        function init() {
+            console.log('IMPOSSIBLE GAME INITIALIZING!');
+            
+            // Show warning for 3 seconds
+            setTimeout(() => {
+                warning.style.display = 'none';
+                startGame();
+            }, 3000);
+            
+            // Mouse tracking
+            gameContainer.addEventListener('mousemove', (e) => {
+                if (gameRunning) {
+                    playerX = e.clientX;
+                    playerY = e.clientY;
+                    player.style.left = playerX + 'px';
+                    player.style.top = playerY + 'px';
+                }
+            });
+            
+            // Click to start
+            gameContainer.addEventListener('click', () => {
+                if (!gameRunning && !warningShown) {
+                    warningShown = true;
+                    warning.style.display = 'block';
+                    setTimeout(() => {
+                        warning.style.display = 'none';
+                        startGame();
+                    }, 3000);
+                }
+            });
+        }
+        
+        function startGame() {
+            gameRunning = true;
+            startTime = Date.now();
+            lastEnemySpawn = startTime;
+            lastBulletSpawn = startTime;
+            lastLaserSpawn = startTime;
+            lastSpikeSpawn = startTime;
+            lastPortalSpawn = startTime;
+            
+            // Position player
+            playerX = window.innerWidth / 2;
+            playerY = window.innerHeight / 2;
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+            
+            gameLoop();
+        }
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            const currentTime = Date.now();
+            survivalTime = (currentTime - startTime) / 1000;
+            
+            // Update level based on survival time
+            level = Math.floor(survivalTime / 10) + 1;
+            
+            // Increase difficulty
+            enemySpeed = 2 + (level * 0.5);
+            bulletSpeed = 3 + (level * 0.3);
+            laserSpeed = 4 + (level * 0.4);
+            spawnRate = Math.max(100, 1000 - (level * 50));
+            
+            // Spawn enemies
+            if (currentTime - lastEnemySpawn > spawnRate) {
+                spawnEnemy();
+                lastEnemySpawn = currentTime;
+            }
+            
+            // Spawn bullets
+            if (currentTime - lastBulletSpawn > spawnRate * 0.8) {
+                spawnBullet();
+                lastBulletSpawn = currentTime;
+            }
+            
+            // Spawn lasers
+            if (currentTime - lastLaserSpawn > spawnRate * 1.2) {
+                spawnLaser();
+                lastLaserSpawn = currentTime;
+            }
+            
+            // Spawn spikes
+            if (currentTime - lastSpikeSpawn > spawnRate * 1.5) {
+                spawnSpike();
+                lastSpikeSpawn = currentTime;
+            }
+            
+            // Spawn portals
+            if (currentTime - lastPortalSpawn > spawnRate * 2) {
+                spawnPortal();
+                lastPortalSpawn = currentTime;
+            }
+            
+            // Update enemies
+            updateEnemies();
+            
+            // Update bullets
+            updateBullets();
+            
+            // Update lasers
+            updateLasers();
+            
+            // Update spikes
+            updateSpikes();
+            
+            // Update portals
+            updatePortals();
+            
+            // Update particles
+            updateParticles();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Update display
+            updateDisplay();
+            
+            // Continue loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function spawnEnemy() {
+            const enemy = {
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 20 + 10,
+                speedX: (Math.random() - 0.5) * enemySpeed * 2,
+                speedY: (Math.random() - 0.5) * enemySpeed * 2,
+                element: document.createElement('div')
+            };
+            
+            enemy.element.className = 'enemy';
+            enemy.element.style.left = enemy.x + 'px';
+            enemy.element.style.top = enemy.y + 'px';
+            enemy.element.style.width = enemy.size + 'px';
+            enemy.element.style.height = enemy.size + 'px';
+            
+            gameContainer.appendChild(enemy.element);
+            enemies.push(enemy);
+        }
+        
+        function spawnBullet() {
+            const bullet = {
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                speedX: (playerX - (Math.random() * window.innerWidth)) * 0.01 * bulletSpeed,
+                speedY: (playerY - (Math.random() * window.innerHeight)) * 0.01 * bulletSpeed,
+                element: document.createElement('div')
+            };
+            
+            bullet.element.className = 'bullet';
+            bullet.element.style.left = bullet.x + 'px';
+            bullet.element.style.top = bullet.y + 'px';
+            
+            gameContainer.appendChild(bullet.element);
+            bullets.push(bullet);
+        }
+        
+        function spawnLaser() {
+            const laser = {
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                width: Math.random() * 200 + 100,
+                height: 3,
+                speedX: (Math.random() - 0.5) * laserSpeed * 2,
+                speedY: (Math.random() - 0.5) * laserSpeed * 2,
+                element: document.createElement('div')
+            };
+            
+            laser.element.className = 'laser';
+            laser.element.style.left = laser.x + 'px';
+            laser.element.style.top = laser.y + 'px';
+            laser.element.style.width = laser.width + 'px';
+            laser.element.style.height = laser.height + 'px';
+            
+            gameContainer.appendChild(laser.element);
+            lasers.push(laser);
+        }
+        
+        function spawnSpike() {
+            const spike = {
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: Math.random() * 30 + 20,
+                speedX: (Math.random() - 0.5) * 2,
+                speedY: (Math.random() - 0.5) * 2,
+                element: document.createElement('div')
+            };
+            
+            spike.element.className = 'spike';
+            spike.element.style.left = spike.x + 'px';
+            spike.element.style.top = spike.y + 'px';
+            spike.element.style.width = spike.size + 'px';
+            spike.element.style.height = spike.size + 'px';
+            
+            gameContainer.appendChild(spike.element);
+            spikes.push(spike);
+        }
+        
+        function spawnPortal() {
+            const portal = {
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: 30,
+                speedX: (Math.random() - 0.5) * 1,
+                speedY: (Math.random() - 0.5) * 1,
+                element: document.createElement('div')
+            };
+            
+            portal.element.className = 'portal';
+            portal.element.style.left = portal.x + 'px';
+            portal.element.style.top = portal.y + 'px';
+            
+            gameContainer.appendChild(portal.element);
+            portals.push(portal);
+        }
+        
+        function updateEnemies() {
+            enemies.forEach((enemy, index) => {
+                enemy.x += enemy.speedX;
+                enemy.y += enemy.speedY;
+                
+                // Bounce off walls
+                if (enemy.x <= 0 || enemy.x >= window.innerWidth - enemy.size) {
+                    enemy.speedX *= -1;
+                }
+                if (enemy.y <= 0 || enemy.y >= window.innerHeight - enemy.size) {
+                    enemy.speedY *= -1;
+                }
+                
+                // Keep in bounds
+                enemy.x = Math.max(0, Math.min(window.innerWidth - enemy.size, enemy.x));
+                enemy.y = Math.max(0, Math.min(window.innerHeight - enemy.size, enemy.y));
+                
+                enemy.element.style.left = enemy.x + 'px';
+                enemy.element.style.top = enemy.y + 'px';
+                
+                // Remove if off screen for too long
+                if (enemy.x < -100 || enemy.x > window.innerWidth + 100 || 
+                    enemy.y < -100 || enemy.y > window.innerHeight + 100) {
+                    enemy.element.remove();
+                    enemies.splice(index, 1);
+                }
+            });
+        }
+        
+        function updateBullets() {
+            bullets.forEach((bullet, index) => {
+                bullet.x += bullet.speedX;
+                bullet.y += bullet.speedY;
+                
+                bullet.element.style.left = bullet.x + 'px';
+                bullet.element.style.top = bullet.y + 'px';
+                
+                // Remove if off screen
+                if (bullet.x < -10 || bullet.x > window.innerWidth + 10 || 
+                    bullet.y < -10 || bullet.y > window.innerHeight + 10) {
+                    bullet.element.remove();
+                    bullets.splice(index, 1);
+                }
+            });
+        }
+        
+        function updateLasers() {
+            lasers.forEach((laser, index) => {
+                laser.x += laser.speedX;
+                laser.y += laser.speedY;
+                
+                laser.element.style.left = laser.x + 'px';
+                laser.element.style.top = laser.y + 'px';
+                
+                // Remove if off screen
+                if (laser.x < -laser.width || laser.x > window.innerWidth + laser.width || 
+                    laser.y < -laser.height || laser.y > window.innerHeight + laser.height) {
+                    laser.element.remove();
+                    lasers.splice(index, 1);
+                }
+            });
+        }
+        
+        function updateSpikes() {
+            spikes.forEach((spike, index) => {
+                spike.x += spike.speedX;
+                spike.y += spike.speedY;
+                
+                // Bounce off walls
+                if (spike.x <= 0 || spike.x >= window.innerWidth - spike.size) {
+                    spike.speedX *= -1;
+                }
+                if (spike.y <= 0 || spike.y >= window.innerHeight - spike.size) {
+                    spike.speedY *= -1;
+                }
+                
+                spike.element.style.left = spike.x + 'px';
+                spike.element.style.top = spike.y + 'px';
+                
+                // Remove if off screen for too long
+                if (spike.x < -100 || spike.x > window.innerWidth + 100 || 
+                    spike.y < -100 || spike.y > window.innerHeight + 100) {
+                    spike.element.remove();
+                    spikes.splice(index, 1);
+                }
+            });
+        }
+        
+        function updatePortals() {
+            portals.forEach((portal, index) => {
+                portal.x += portal.speedX;
+                portal.y += portal.speedY;
+                
+                // Bounce off walls
+                if (portal.x <= 0 || portal.x >= window.innerWidth - portal.size) {
+                    portal.speedX *= -1;
+                }
+                if (portal.y <= 0 || portal.y >= window.innerHeight - portal.size) {
+                    portal.speedY *= -1;
+                }
+                
+                portal.element.style.left = portal.x + 'px';
+                portal.element.style.top = portal.y + 'px';
+                
+                // Remove after some time
+                if (Date.now() - lastPortalSpawn > 10000) {
+                    portal.element.remove();
+                    portals.splice(index, 1);
+                }
+            });
+        }
+        
+        function updateParticles() {
+            particles.forEach((particle, index) => {
+                particle.life -= 1;
+                particle.element.style.opacity = particle.life / 60;
+                
+                if (particle.life <= 0) {
+                    particle.element.remove();
+                    particles.splice(index, 1);
+                }
+            });
+        }
+        
+        function checkCollisions() {
+            // Check enemy collisions
+            enemies.forEach(enemy => {
+                if (playerX >= enemy.x && playerX <= enemy.x + enemy.size &&
+                    playerY >= enemy.y && playerY <= enemy.y + enemy.size) {
+                    gameOver();
+                }
+            });
+            
+            // Check bullet collisions
+            bullets.forEach(bullet => {
+                if (playerX >= bullet.x && playerX <= bullet.x + 2 &&
+                    playerY >= bullet.y && playerY <= bullet.y + 2) {
+                    gameOver();
+                }
+            });
+            
+            // Check laser collisions
+            lasers.forEach(laser => {
+                if (playerX >= laser.x && playerX <= laser.x + laser.width &&
+                    playerY >= laser.y && playerY <= laser.y + laser.height) {
+                    gameOver();
+                }
+            });
+            
+            // Check spike collisions
+            spikes.forEach(spike => {
+                if (playerX >= spike.x && playerX <= spike.x + spike.size &&
+                    playerY >= spike.y && playerY <= spike.y + spike.size) {
+                    gameOver();
+                }
+            });
+            
+            // Check portal collisions (teleport player randomly)
+            portals.forEach(portal => {
+                if (playerX >= portal.x && playerX <= portal.x + portal.size &&
+                    playerY >= portal.y && playerY <= portal.y + portal.size) {
+                    playerX = Math.random() * window.innerWidth;
+                    playerY = Math.random() * window.innerHeight;
+                    player.style.left = playerX + 'px';
+                    player.style.top = playerY + 'px';
+                    
+                    // Create particles
+                    createParticles(playerX, playerY);
+                }
+            });
+        }
+        
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const particle = {
+                    x: x + (Math.random() - 0.5) * 50,
+                    y: y + (Math.random() - 0.5) * 50,
+                    life: 60,
+                    element: document.createElement('div')
+                };
+                
+                particle.element.className = 'particle';
+                particle.element.style.left = particle.x + 'px';
+                particle.element.style.top = particle.y + 'px';
+                
+                gameContainer.appendChild(particle.element);
+                particles.push(particle);
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            deaths++;
+            score = Math.floor(survivalTime * 100);
+            
+            gameOver.style.display = 'block';
+            restartBtn.style.display = 'block';
+            
+            // Create explosion particles
+            createParticles(playerX, playerY);
+            
+            console.log(`GAME OVER! Survived: ${survivalTime.toFixed(2)}s, Score: ${score}`);
+        }
+        
+        function restartGame() {
+            // Clear all enemies
+            enemies.forEach(enemy => enemy.element.remove());
+            bullets.forEach(bullet => bullet.element.remove());
+            lasers.forEach(laser => laser.element.remove());
+            spikes.forEach(spike => spike.element.remove());
+            portals.forEach(portal => portal.element.remove());
+            particles.forEach(particle => particle.element.remove());
+            
+            enemies = [];
+            bullets = [];
+            lasers = [];
+            spikes = [];
+            portals = [];
+            particles = [];
+            
+            gameOver.style.display = 'none';
+            restartBtn.style.display = 'none';
+            
+            startGame();
+        }
+        
+        function updateDisplay() {
+            document.getElementById('time').textContent = survivalTime.toFixed(2);
+            document.getElementById('score').textContent = Math.floor(survivalTime * 100);
+            document.getElementById('deaths').textContent = deaths;
+            document.getElementById('enemyCount').textContent = enemies.length + bullets.length + lasers.length + spikes.length;
+            document.getElementById('level').textContent = level;
+        }
+        
+        // Start the game
+        console.log('IMPOSSIBLE GAME LOADING!');
+        init();
+        console.log('IMPOSSIBLE GAME READY! (Good luck, you\'ll need it!)');
+    </script>
+</body>
+</html>

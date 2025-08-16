@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎮 Geometry Dash - Jump Over Spikes! 🎮</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(45deg, #0f0f23, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            border: 3px solid #00ffff;
+            background: linear-gradient(90deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            box-shadow: 
+                0 0 50px rgba(0, 255, 255, 0.5),
+                inset 0 0 50px rgba(0, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #ff0066, #ff6b6b);
+            border: 2px solid #ffffff;
+            border-radius: 5px;
+            left: 100px;
+            bottom: 50px;
+            z-index: 10;
+            box-shadow: 
+                0 0 20px rgba(255, 0, 102, 0.8),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: playerGlow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes playerGlow {
+            0% { box-shadow: 0 0 20px rgba(255, 0, 102, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3); }
+            100% { box-shadow: 0 0 30px rgba(255, 0, 102, 1), inset 0 0 15px rgba(255, 255, 255, 0.5); }
+        }
+        
+        .spike {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 40px solid #ff0000;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            animation: spikeGlow 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes spikeGlow {
+            0% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(255, 0, 0, 1); }
+        }
+        
+        .block {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: 2px solid #ffffff;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+            animation: blockGlow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes blockGlow {
+            0% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(255, 107, 107, 1); }
+        }
+        
+        .portal {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.8);
+            animation: portalSpin 2s linear infinite;
+        }
+        
+        @keyframes portalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .portal::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: portalPulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes portalPulse {
+            0% { transform: translate(-50%, -50%) scale(0.8); }
+            100% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            bottom: 80px;
+            z-index: 5;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            animation: coinFloat 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes coinFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-10px); }
+        }
+        
+        .coin::before {
+            content: '$';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .laser {
+            position: absolute;
+            width: 4px;
+            height: 200px;
+            background: linear-gradient(to bottom, #ff0000, #ff6b6b, #ff0000);
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            animation: laserPulse 0.3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes laserPulse {
+            0% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            100% { box-shadow: 0 0 40px rgba(255, 0, 0, 1); }
+        }
+        
+        .bouncer {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+            animation: bouncerBounce 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes bouncerBounce {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.3); }
+        }
+        
+        .teleporter {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #9c27b0, #e91e63);
+            border: 3px solid #ffffff;
+            border-radius: 10px;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 25px rgba(156, 39, 176, 0.8);
+            animation: teleporterWarp 1s ease-in-out infinite;
+        }
+        
+        @keyframes teleporterWarp {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+        }
+        
+        .teleporter::before {
+            content: '⚡';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 20px;
+            animation: teleporterFlash 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes teleporterFlash {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .gravityWell {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #000000, #333333);
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+            animation: gravityWellSpin 3s linear infinite;
+        }
+        
+        @keyframes gravityWellSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .gravityWell::before {
+            content: '🌀';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ffff;
+            font-size: 25px;
+        }
+        
+        .timeWarp {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #ff9800, #ff5722);
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            bottom: 50px;
+            z-index: 5;
+            box-shadow: 0 0 25px rgba(255, 152, 0, 0.8);
+            animation: timeWarpGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes timeWarpGlow {
+            0%, 100% { box-shadow: 0 0 25px rgba(255, 152, 0, 0.8); }
+            50% { box-shadow: 0 0 50px rgba(255, 152, 0, 1); }
+        }
+        
+        .timeWarp::before {
+            content: '⏰';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 20px;
+            animation: timeWarpTick 1s ease-in-out infinite;
+        }
+        
+        @keyframes timeWarpTick {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(90deg, #333333, #666666, #333333);
+            border-top: 2px solid #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            z-index: 20;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #ff0000;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
+        }
+        
+        #gameOver h2 {
+            color: #ff0000;
+            font-size: 3em;
+            margin: 0 0 20px 0;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+        }
+        
+        #gameOver p {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #ffffff;
+        }
+        
+        #restartBtn {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        #restartBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
+        }
+        
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2em;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            z-index: 20;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            z-index: 20;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+            50% { text-shadow: 0 0 30px rgba(0, 255, 255, 1); }
+        }
+    </style>
+</head>
+<body>
+            <div id="gameContainer">
+            <div id="title">🎮 GEOMETRY DASH 🎮</div>
+            <div id="instructions">SPACE to JUMP! 🟥Spikes=DEATH 🟦Blocks=DEATH 🔴Lasers=DEATH 🟣Bouncers=DEATH 🟢Portals=+50pts ⚡Teleporters=+100pts 💰Coins=+10pts 🌀Gravity=SLOW ⏰TimeWarp=FAST</div>
+            <div id="score">Score: 0 | Coins: 0</div>
+            <div id="player"></div>
+            <div class="ground"></div>
+            
+            <!-- Test jump button -->
+            <button id="testJumpBtn" style="position: absolute; top: 60px; left: 20px; background: #00ff00; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; z-index: 25;" onclick="jump()">TEST JUMP</button>
+        
+        <div id="gameOver">
+            <h2>💥 GAME OVER! 💥</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Press SPACE to restart!</p>
+            <button id="restartBtn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game variables
+        let player = document.getElementById('player');
+        let gameContainer = document.getElementById('gameContainer');
+        let score = 0;
+        let gameSpeed = 5;
+        let isGameOver = false;
+        let playerY = 50;
+        let isJumping = false;
+        let jumpHeight = 0;
+        let maxJumpHeight = 150;
+        let jumpSpeed = 8;
+        let falling = false;
+        let spikes = [];
+        let blocks = [];
+        let portals = [];
+        let coins = [];
+        let lasers = [];
+        let bouncers = [];
+        let teleporters = [];
+        let gravityWells = [];
+        let timeWarps = [];
+        let particles = [];
+        let gameLoop;
+        let scoreInterval;
+        let coinsCollected = 0;
+        let gameSpeedMultiplier = 1;
+        
+        // Initialize game
+        function initGame() {
+            score = 0;
+            gameSpeed = 5;
+            isGameOver = false;
+            playerY = 50;
+            isJumping = false;
+            jumpHeight = 0;
+            falling = false;
+            spikes = [];
+            blocks = [];
+            portals = [];
+            coins = [];
+            lasers = [];
+            bouncers = [];
+            teleporters = [];
+            gravityWells = [];
+            timeWarps = [];
+            particles = [];
+            coinsCollected = 0;
+            gameSpeedMultiplier = 1;
+            
+            // Clear existing obstacles
+            document.querySelectorAll('.spike').forEach(spike => spike.remove());
+            document.querySelectorAll('.block').forEach(block => block.remove());
+            document.querySelectorAll('.portal').forEach(portal => portal.remove());
+            document.querySelectorAll('.coin').forEach(coin => coin.remove());
+            document.querySelectorAll('.laser').forEach(laser => laser.remove());
+            document.querySelectorAll('.bouncer').forEach(bouncer => bouncer.remove());
+            document.querySelectorAll('.teleporter').forEach(teleporter => teleporter.remove());
+            document.querySelectorAll('.gravityWell').forEach(gravityWell => gravityWell.remove());
+            document.querySelectorAll('.timeWarp').forEach(timeWarp => timeWarp.remove());
+            document.querySelectorAll('.particle').forEach(particle => particle.remove());
+            
+            // Reset player position
+            player.style.bottom = playerY + 'px';
+            
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Start game loops
+            gameLoop = setInterval(updateGame, 16); // 60 FPS
+            scoreInterval = setInterval(updateScore, 100);
+            
+            // Start spawning obstacles
+            setTimeout(spawnObstacle, 2000);
+        }
+        
+        // Update game state
+        function updateGame() {
+            if (isGameOver) return;
+            
+            // Update player jumping
+            if (isJumping) {
+                if (!falling) {
+                    // Going up
+                    jumpHeight += jumpSpeed;
+                    if (jumpHeight >= maxJumpHeight) {
+                        falling = true;
+                    }
+                } else {
+                    // Coming down
+                    jumpHeight -= jumpSpeed;
+                    if (jumpHeight <= 0) {
+                        jumpHeight = 0;
+                        isJumping = false;
+                        falling = false;
+                    }
+                }
+                
+                player.style.bottom = (playerY + jumpHeight) + 'px';
+            }
+            
+            // Move spikes
+            spikes.forEach((spike, index) => {
+                spike.x -= gameSpeed;
+                spike.element.style.left = spike.x + 'px';
+                
+                // Remove spikes that are off screen
+                if (spike.x < -50) {
+                    spike.element.remove();
+                    spikes.splice(index, 1);
+                }
+                
+                // Check collision
+                if (checkCollision(spike)) {
+                    gameOver();
+                }
+            });
+            
+            // Move blocks
+            blocks.forEach((block, index) => {
+                block.x -= gameSpeed;
+                block.element.style.left = block.x + 'px';
+                
+                // Remove blocks that are off screen
+                if (block.x < -50) {
+                    block.element.remove();
+                    blocks.splice(index, 1);
+                }
+                
+                // Check collision
+                if (checkCollision(block)) {
+                    gameOver();
+                }
+            });
+            
+            // Move portals
+            portals.forEach((portal, index) => {
+                portal.x -= gameSpeed;
+                portal.element.style.left = portal.x + 'px';
+                
+                // Remove portals that are off screen
+                if (portal.x < -50) {
+                    portal.element.remove();
+                    portals.splice(index, 1);
+                }
+                
+                // Check collision - portals give bonus points
+                if (checkCollision(portal)) {
+                    score += 50;
+                    portal.element.remove();
+                    portals.splice(index, 1);
+                    createParticles(portal.x, portal.y + 25);
+                }
+            });
+            
+            // Move coins
+            coins.forEach((coin, index) => {
+                coin.x -= gameSpeed;
+                coin.element.style.left = coin.x + 'px';
+                
+                // Remove coins that are off screen
+                if (coin.x < -50) {
+                    coin.element.remove();
+                    coins.splice(index, 1);
+                }
+                
+                // Check collision - collect coins
+                if (checkCollision(coin)) {
+                    coinsCollected++;
+                    score += 10;
+                    coin.element.remove();
+                    coins.splice(index, 1);
+                    createParticles(coin.x, coin.y + 10);
+                }
+            });
+            
+            // Move lasers
+            lasers.forEach((laser, index) => {
+                laser.x -= gameSpeed;
+                laser.element.style.left = laser.x + 'px';
+                
+                // Remove lasers that are off screen
+                if (laser.x < -50) {
+                    laser.element.remove();
+                    lasers.splice(index, 1);
+                }
+                
+                // Check collision - lasers are deadly
+                if (checkCollision(laser)) {
+                    gameOver();
+                }
+            });
+            
+            // Move bouncers
+            bouncers.forEach((bouncer, index) => {
+                bouncer.x -= gameSpeed;
+                bouncer.element.style.left = bouncer.x + 'px';
+                
+                // Remove bouncers that are off screen
+                if (bouncer.x < -50) {
+                    bouncer.element.remove();
+                    bouncers.splice(index, 1);
+                }
+                
+                // Check collision - bouncers are deadly
+                if (checkCollision(bouncer)) {
+                    gameOver();
+                }
+            });
+            
+            // Move teleporters
+            teleporters.forEach((teleporter, index) => {
+                teleporter.x -= gameSpeed;
+                teleporter.element.style.left = teleporter.x + 'px';
+                
+                // Remove teleporters that are off screen
+                if (teleporter.x < -50) {
+                    teleporter.element.remove();
+                    teleporters.splice(index, 1);
+                }
+                
+                // Check collision - teleporters give bonus points
+                if (checkCollision(teleporter)) {
+                    score += 100;
+                    teleporter.element.remove();
+                    teleporters.splice(index, 1);
+                    createParticles(teleporter.x, teleporter.y + 20);
+                }
+            });
+            
+            // Move gravity wells
+            gravityWells.forEach((gravityWell, index) => {
+                gravityWell.x -= gameSpeed;
+                gravityWell.element.style.left = gravityWell.x + 'px';
+                
+                // Remove gravity wells that are off screen
+                if (gravityWell.x < -50) {
+                    gravityWell.element.remove();
+                    gravityWells.splice(index, 1);
+                }
+                
+                // Check collision - gravity wells slow down the game
+                if (checkCollision(gravityWell)) {
+                    gameSpeedMultiplier = 0.5;
+                    setTimeout(() => { gameSpeedMultiplier = 1; }, 3000);
+                    gravityWell.element.remove();
+                    gravityWells.splice(index, 1);
+                    createParticles(gravityWell.x, gravityWell.y + 30);
+                }
+            });
+            
+            // Move time warps
+            timeWarps.forEach((timeWarp, index) => {
+                timeWarp.x -= gameSpeed;
+                timeWarp.element.style.left = timeWarp.x + 'px';
+                
+                // Remove time warps that are off screen
+                if (timeWarp.x < -50) {
+                    timeWarp.element.remove();
+                    timeWarps.splice(index, 1);
+                }
+                
+                // Check collision - time warps speed up the game
+                if (checkCollision(timeWarp)) {
+                    gameSpeedMultiplier = 2;
+                    setTimeout(() => { gameSpeedMultiplier = 1; }, 2000);
+                    timeWarp.element.remove();
+                    timeWarps.splice(index, 1);
+                    createParticles(timeWarp.x, timeWarp.y + 25);
+                }
+            });
+            
+            // Update particles
+            particles.forEach((particle, index) => {
+                particle.x -= gameSpeed;
+                particle.y += particle.velocity;
+                particle.life--;
+                
+                particle.element.style.left = particle.x + 'px';
+                particle.element.style.top = particle.y + 'px';
+                particle.element.style.opacity = particle.life / 30;
+                
+                if (particle.life <= 0) {
+                    particle.element.remove();
+                    particles.splice(index, 1);
+                }
+            });
+            
+            // Increase game speed over time
+            gameSpeed += 0.01;
+            
+            // Apply speed multiplier
+            const actualGameSpeed = gameSpeed * gameSpeedMultiplier;
+            
+            // Update all obstacle movements with actual speed
+            spikes.forEach(spike => {
+                spike.x -= actualGameSpeed;
+                spike.element.style.left = spike.x + 'px';
+            });
+            
+            blocks.forEach(block => {
+                block.x -= actualGameSpeed;
+                block.element.style.left = block.x + 'px';
+            });
+            
+            portals.forEach(portal => {
+                portal.x -= actualGameSpeed;
+                portal.element.style.left = portal.x + 'px';
+            });
+            
+            coins.forEach(coin => {
+                coin.x -= actualGameSpeed;
+                coin.element.style.left = coin.x + 'px';
+            });
+            
+            lasers.forEach(laser => {
+                laser.x -= actualGameSpeed;
+                laser.element.style.left = laser.x + 'px';
+            });
+            
+            bouncers.forEach(bouncer => {
+                bouncer.x -= actualGameSpeed;
+                bouncer.element.style.left = bouncer.x + 'px';
+            });
+            
+            teleporters.forEach(teleporter => {
+                teleporter.x -= actualGameSpeed;
+                teleporter.element.style.left = teleporter.x + 'px';
+            });
+            
+            gravityWells.forEach(gravityWell => {
+                gravityWell.x -= actualGameSpeed;
+                gravityWell.element.style.left = gravityWell.x + 'px';
+            });
+            
+            timeWarps.forEach(timeWarp => {
+                timeWarp.x -= actualGameSpeed;
+                timeWarp.element.style.left = timeWarp.x + 'px';
+            });
+        }
+        
+        // Spawn random obstacles
+        function spawnObstacle() {
+            if (isGameOver) return;
+            
+            const obstacleTypes = ['spike', 'block', 'portal', 'coin', 'laser', 'bouncer', 'teleporter', 'gravityWell', 'timeWarp'];
+            const randomType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+            
+            switch(randomType) {
+                case 'spike':
+                    spawnSpike();
+                    break;
+                case 'block':
+                    spawnBlock();
+                    break;
+                case 'portal':
+                    spawnPortal();
+                    break;
+                case 'coin':
+                    spawnCoin();
+                    break;
+                case 'laser':
+                    spawnLaser();
+                    break;
+                case 'bouncer':
+                    spawnBouncer();
+                    break;
+                case 'teleporter':
+                    spawnTeleporter();
+                    break;
+                case 'gravityWell':
+                    spawnGravityWell();
+                    break;
+                case 'timeWarp':
+                    spawnTimeWarp();
+                    break;
+            }
+            
+            // Schedule next obstacle
+            const nextSpawn = Math.random() * 1200 + 600; // 0.6-1.8 seconds
+            setTimeout(spawnObstacle, nextSpawn);
+        }
+        
+        // Spawn a new spike
+        function spawnSpike() {
+            const spike = document.createElement('div');
+            spike.className = 'spike';
+            spike.style.left = '800px';
+            gameContainer.appendChild(spike);
+            
+            spikes.push({
+                element: spike,
+                x: 800,
+                y: 50,
+                width: 30,
+                height: 40
+            });
+            
+            createParticles(800, 90);
+        }
+        
+        // Spawn a new block
+        function spawnBlock() {
+            const block = document.createElement('div');
+            block.className = 'block';
+            block.style.left = '800px';
+            gameContainer.appendChild(block);
+            
+            blocks.push({
+                element: block,
+                x: 800,
+                y: 50,
+                width: 40,
+                height: 40
+            });
+            
+            createParticles(800, 90);
+        }
+        
+        // Spawn a new portal
+        function spawnPortal() {
+            const portal = document.createElement('div');
+            portal.className = 'portal';
+            portal.style.left = '800px';
+            gameContainer.appendChild(portal);
+            
+            portals.push({
+                element: portal,
+                x: 800,
+                y: 50,
+                width: 50,
+                height: 50
+            });
+            
+            createParticles(800, 75);
+        }
+        
+        // Spawn a new coin
+        function spawnCoin() {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = '800px';
+            gameContainer.appendChild(coin);
+            
+            coins.push({
+                element: coin,
+                x: 800,
+                y: 80,
+                width: 20,
+                height: 20
+            });
+            
+            createParticles(800, 80);
+        }
+        
+        // Spawn a laser beam
+        function spawnLaser() {
+            const laser = document.createElement('div');
+            laser.className = 'laser';
+            laser.style.left = '800px';
+            gameContainer.appendChild(laser);
+            
+            lasers.push({
+                element: laser,
+                x: 800,
+                y: 50,
+                width: 4,
+                height: 200
+            });
+            
+            createParticles(800, 150);
+        }
+        
+        // Spawn a bouncer
+        function spawnBouncer() {
+            const bouncer = document.createElement('div');
+            bouncer.className = 'bouncer';
+            bouncer.style.left = '800px';
+            gameContainer.appendChild(bouncer);
+            
+            bouncers.push({
+                element: bouncer,
+                x: 800,
+                y: 50,
+                width: 30,
+                height: 30
+            });
+            
+            createParticles(800, 65);
+        }
+        
+        // Spawn a teleporter
+        function spawnTeleporter() {
+            const teleporter = document.createElement('div');
+            teleporter.className = 'teleporter';
+            teleporter.style.left = '800px';
+            gameContainer.appendChild(teleporter);
+            
+            teleporters.push({
+                element: teleporter,
+                x: 800,
+                y: 50,
+                width: 40,
+                height: 40
+            });
+            
+            createParticles(800, 70);
+        }
+        
+        // Spawn a gravity well
+        function spawnGravityWell() {
+            const gravityWell = document.createElement('div');
+            gravityWell.className = 'gravityWell';
+            gravityWell.style.left = '800px';
+            gameContainer.appendChild(gravityWell);
+            
+            gravityWells.push({
+                element: gravityWell,
+                x: 800,
+                y: 50,
+                width: 60,
+                height: 60
+            });
+            
+            createParticles(800, 80);
+        }
+        
+        // Spawn a time warp
+        function spawnTimeWarp() {
+            const timeWarp = document.createElement('div');
+            timeWarp.className = 'timeWarp';
+            timeWarp.style.left = '800px';
+            gameContainer.appendChild(timeWarp);
+            
+            timeWarps.push({
+                element: timeWarp,
+                x: 800,
+                y: 50,
+                width: 50,
+                height: 50
+            });
+            
+            createParticles(800, 75);
+        }
+        
+        // Create particle effects
+        function createParticles(x, y) {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                gameContainer.appendChild(particle);
+                
+                particles.push({
+                    element: particle,
+                    x: x,
+                    y: y,
+                    velocity: Math.random() * 2 - 1,
+                    life: 30
+                });
+            }
+        }
+        
+        // Check collision between player and spike
+        function checkCollision(spike) {
+            const playerRect = {
+                x: 100,
+                y: playerY + jumpHeight,
+                width: 30,
+                height: 30
+            };
+            
+            const spikeRect = {
+                x: spike.x,
+                y: spike.y,
+                width: 30,
+                height: 40
+            };
+            
+            return playerRect.x < spikeRect.x + spikeRect.width &&
+                   playerRect.x + playerRect.width > spikeRect.x &&
+                   playerRect.y < spikeRect.y + spikeRect.height &&
+                   playerRect.y + playerRect.height > spikeRect.y;
+        }
+        
+        // Make player jump
+        function jump() {
+            console.log('Jump called! isJumping:', isJumping, 'isGameOver:', isGameOver);
+            if (!isJumping && !isGameOver) {
+                isJumping = true;
+                falling = false;
+                jumpHeight = 0;
+                console.log('JUMPING!');
+                
+                // Create jump particles
+                createParticles(100, playerY + 30);
+            }
+        }
+        
+        // Update score
+        function updateScore() {
+            if (!isGameOver) {
+                score++;
+                document.getElementById('score').textContent = 'Score: ' + score + ' | Coins: ' + coinsCollected;
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            isGameOver = true;
+            clearInterval(gameLoop);
+            clearInterval(scoreInterval);
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+            
+            // Create explosion particles
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    createParticles(100, playerY + 15);
+                }, i * 50);
+            }
+        }
+        
+        // Restart game
+        function restartGame() {
+            initGame();
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(event) {
+            console.log('Key pressed:', event.code);
+            if (event.code === 'Space') {
+                event.preventDefault();
+                console.log('Space pressed!');
+                if (isGameOver) {
+                    restartGame();
+                } else {
+                    jump();
+                }
+            }
+        });
+        
+        // Touch controls for mobile
+        gameContainer.addEventListener('click', function() {
+            if (isGameOver) {
+                restartGame();
+            } else {
+                jump();
+            }
+        });
+        
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
