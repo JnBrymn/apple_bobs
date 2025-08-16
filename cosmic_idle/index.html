@@ -787,15 +787,19 @@ A magical space adventure where you:
                 }, 2000);
             }
             
-            // Remove particle after some time
+            // Remove particle after some time (affected by particle lifetime)
+            const lifetime = 8000 * gameState.particleLifetime;
             setTimeout(() => {
                 if (particle.parentNode) {
                     particle.remove();
                 }
-            }, 8000);
+            }, lifetime);
             
-            // Schedule next spawn (prevent division by zero)
-            const spawnDelay = Math.max(100, 3000 / Math.max(0.1, gameState.particleSpawnRate));
+            // Schedule next spawn (affected by cosmic storm)
+            let spawnDelay = Math.max(100, 3000 / Math.max(0.1, gameState.particleSpawnRate));
+            if (gameState.cosmicStorm) {
+                spawnDelay = Math.max(50, spawnDelay / 10); // 10x faster spawning
+            }
             setTimeout(spawnParticles, spawnDelay);
         }
         
@@ -936,8 +940,9 @@ A magical space adventure where you:
                         break;
                 }
                 
-                // Increase cost
-                upgrade.cost = Math.floor(upgrade.cost * 1.5);
+                // Increase cost (affected by cosmic wisdom)
+                const wisdomDiscount = gameState.cosmicWisdom / 100;
+                upgrade.cost = Math.floor(upgrade.cost * (1.5 - wisdomDiscount));
                 
                 updateDisplay();
                 
@@ -1190,16 +1195,24 @@ A magical space adventure where you:
                 const stationStardust = gameState.stations.reduce((total, station) => total + station.stardustPerSec, 0);
                 gameState.stardustPerSec = planetStardust + creatureStardust + stationStardust;
                 
+                // Calculate total stardust generation with all multipliers
+                let totalMultiplier = 1 + (gameState.stardustReactor / 100) + (gameState.infinityCore / 100);
+                
+                // Apply time warp effect
+                if (gameState.timeWarp) {
+                    totalMultiplier *= 2;
+                }
+                
                 // Add the calculated stardust
                 if (gameState.stardustPerSec > 0) {
-                    gameState.stardust += gameState.stardustPerSec * 0.5;
+                    gameState.stardust += gameState.stardustPerSec * 0.5 * totalMultiplier;
                     // Only log occasionally to reduce spam
                     if (Math.random() < 0.1) {
-                        console.log('Planets:', planetStardust, 'Creatures:', creatureStardust, 'Stations:', stationStardust, 'Total added:', gameState.stardustPerSec * 0.5);
+                        console.log('Planets:', planetStardust, 'Creatures:', creatureStardust, 'Stations:', stationStardust, 'Total added:', gameState.stardustPerSec * 0.5 * totalMultiplier);
                     }
                 } else {
                     // Fallback: add 0.5 stardust if no planets/creatures/stations
-                    gameState.stardust += 0.5;
+                    gameState.stardust += 0.5 * totalMultiplier;
                     gameState.stardustPerSec = 0.5;
                 }
                 updateDisplay();
@@ -1207,6 +1220,16 @@ A magical space adventure where you:
                 // Auto-build planets if upgrade is active
                 if (gameState.planetBuilder && Math.random() < 0.01) {
                     buildPlanet();
+                }
+                
+                // Auto-upgrade planets if upgrade is active
+                if (gameState.autoUpgrader) {
+                    gameState.planets.forEach((planet, index) => {
+                        const upgradeCost = planet.type.cost * planet.level;
+                        if (gameState.stardust >= upgradeCost) {
+                            upgradePlanet(index);
+                        }
+                    });
                 }
                 
                 // Auto-summon creatures if upgrade is active
