@@ -1,0 +1,586 @@
+<!--
+Farmer's Place Township Game
+- Build different farms to collect resources
+- Resources: garden items, eggs, milk, bacon
+- Click to build farms and collect resources
+- Simple township management game
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer's Place</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2E8B57;
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .resources {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .resource {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .resource h3 {
+            color: #8B4513;
+            margin-bottom: 5px;
+            font-size: 1.2em;
+        }
+
+        .resource .amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2E8B57;
+        }
+
+        .buildings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .building {
+            background: linear-gradient(135deg, #DEB887, #F5DEB3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .building:hover {
+            transform: translateY(-5px);
+        }
+
+        .building h3 {
+            color: #8B4513;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .building .cost {
+            color: #2E8B57;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .building .production {
+            color: #8B4513;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+
+        .building .count {
+            background: #FFD700;
+            color: #8B4513;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .farm-plot {
+            width: 100px;
+            height: 100px;
+            background: #8FBC8F;
+            border: 3px solid #556B2F;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .farm-plot:hover {
+            background: #90EE90;
+            transform: scale(1.05);
+        }
+
+        .farm-plot.garden { background: #90EE90; }
+        .farm-plot.chicken { background: #F0E68C; }
+        .farm-plot.cow { background: #F5F5DC; }
+        .farm-plot.pig { background: #FFB6C1; }
+
+        .collect-btn {
+            background: linear-gradient(45deg, #32CD32, #228B22);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .collect-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .collect-btn:disabled {
+            background: #808080;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .message.success {
+            background: #90EE90;
+            color: #2E8B57;
+        }
+
+        .message.error {
+            background: #FFB6C1;
+            color: #8B0000;
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .stats h3 {
+            color: #2E8B57;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🌾 Farmer's Place 🌾</h1>
+            <p>Build your farming empire!</p>
+        </div>
+
+        <div class="resources">
+            <div class="resource">
+                <h3>💰 Money</h3>
+                <div class="amount" id="money">100</div>
+            </div>
+            <div class="resource">
+                <h3>🥬 Garden</h3>
+                <div class="amount" id="garden">0</div>
+            </div>
+            <div class="resource">
+                <h3>🥚 Eggs</h3>
+                <div class="amount" id="eggs">0</div>
+            </div>
+            <div class="resource">
+                <h3>🥛 Milk</h3>
+                <div class="amount" id="milk">0</div>
+            </div>
+            <div class="resource">
+                <h3>🥓 Bacon</h3>
+                <div class="amount" id="bacon">0</div>
+            </div>
+            <div class="resource">
+                <h3>💩 Fertilizer</h3>
+                <div class="amount" id="fertilizer">0</div>
+            </div>
+            <div class="resource">
+                <h3>💧 Water</h3>
+                <div class="amount" id="water">0</div>
+            </div>
+        </div>
+
+        <div class="buildings">
+            <div class="building" onclick="buyBuilding('garden')">
+                <h3>🌱 Garden Plot</h3>
+                <div class="cost">Cost: $10</div>
+                <div class="production">Produces: Garden items</div>
+                <div class="count" id="garden-count">0</div>
+            </div>
+            <div class="building" onclick="buyBuilding('chicken')">
+                <h3>🐔 Chicken Coop</h3>
+                <div class="cost">Cost: $25</div>
+                <div class="production">Produces: Eggs</div>
+                <div class="count" id="chicken-count">0</div>
+            </div>
+            <div class="building" onclick="buyBuilding('cow')">
+                <h3>🐄 Dairy Farm</h3>
+                <div class="cost">Cost: $50</div>
+                <div class="production">Produces: Milk</div>
+                <div class="count" id="cow-count">0</div>
+            </div>
+            <div class="building" onclick="buyBuilding('pig')">
+                <h3>🐷 Pig Farm</h3>
+                <div class="cost">Cost: $75</div>
+                <div class="production">Produces: Bacon</div>
+                <div class="count" id="pig-count">0</div>
+            </div>
+            <div class="building" onclick="buyBuilding('fertilizer')">
+                <h3>🏭 Fertilizer Factory</h3>
+                <div class="cost">Cost: $30</div>
+                <div class="production">Produces: Fertilizer</div>
+                <div class="count" id="fertilizer-count">0</div>
+            </div>
+            <div class="building" onclick="buyBuilding('water')">
+                <h3>💧 Water Well</h3>
+                <div class="cost">Cost: $15</div>
+                <div class="production">Produces: Water</div>
+                <div class="count" id="water-count">0</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="collect-btn" onclick="collectAll()">🔄 Collect All Resources</button>
+            <button class="collect-btn" onclick="sellAll()">💰 Sell All Resources</button>
+            <button class="collect-btn" onclick="useFertilizer()">💩 Use Fertilizer (2x Speed)</button>
+            <button class="collect-btn" onclick="waterCrops()">💧 Water Crops (Needed to grow)</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="farm-grid" id="farm-grid">
+            <!-- Farm plots will be generated here -->
+        </div>
+
+        <div class="stats">
+            <h3>📊 Farm Statistics</h3>
+            <div class="stats-grid">
+                <div>Total Gardens: <span id="total-gardens">0</span></div>
+                <div>Total Chickens: <span id="total-chickens">0</span></div>
+                <div>Total Cows: <span id="total-cows">0</span></div>
+                <div>Total Pigs: <span id="total-pigs">0</span></div>
+                <div>Total Fertilizer Factories: <span id="total-fertilizer">0</span></div>
+                <div>Total Water Wells: <span id="total-water">0</span></div>
+                <div>Total Earnings: $<span id="total-earnings">0</span></div>
+                <div>Resources Collected: <span id="resources-collected">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            money: 100,
+            garden: 0,
+            eggs: 0,
+            milk: 0,
+            bacon: 0,
+            fertilizer: 0,
+            water: 0,
+            buildings: {
+                garden: 0,
+                chicken: 0,
+                cow: 0,
+                pig: 0,
+                fertilizer: 0,
+                water: 0
+            },
+            totalEarnings: 0,
+            resourcesCollected: 0,
+            lastCollect: Date.now(),
+            fertilizerActive: false,
+            fertilizerEndTime: 0,
+            cropsWatered: false
+        };
+
+        // Building costs and production rates
+        const buildingData = {
+            garden: { cost: 10, production: 1, symbol: '🌱', name: 'Garden' },
+            chicken: { cost: 25, production: 2, symbol: '🐔', name: 'Chicken' },
+            cow: { cost: 50, production: 3, symbol: '🐄', name: 'Cow' },
+            pig: { cost: 75, production: 4, symbol: '🐷', name: 'Pig' },
+            fertilizer: { cost: 30, production: 1, symbol: '💩', name: 'Fertilizer' },
+            water: { cost: 15, production: 2, symbol: '💧', name: 'Water' }
+        };
+
+        // Resource prices
+        const resourcePrices = {
+            garden: 2,
+            eggs: 3,
+            milk: 5,
+            bacon: 8,
+            fertilizer: 4,
+            water: 1
+        };
+
+        // Initialize game
+        function initGame() {
+            updateDisplay();
+            generateFarmGrid();
+            setInterval(updateDisplay, 1000);
+        }
+
+        // Buy building
+        function buyBuilding(type) {
+            const building = buildingData[type];
+            if (gameState.money >= building.cost) {
+                gameState.money -= building.cost;
+                gameState.buildings[type]++;
+                updateDisplay();
+                showMessage(`Built a new ${building.name}!`, 'success');
+            } else {
+                showMessage('Not enough money!', 'error');
+            }
+        }
+
+        // Collect all resources
+        function collectAll() {
+            const now = Date.now();
+            const timeDiff = (now - gameState.lastCollect) / 1000; // seconds
+
+            // Check if fertilizer is active
+            let multiplier = 1;
+            if (gameState.fertilizerActive && now < gameState.fertilizerEndTime) {
+                multiplier = 2;
+            }
+
+            // Calculate production based on time passed
+            // Gardens only grow if watered
+            if (gameState.cropsWatered) {
+                gameState.garden += Math.floor(gameState.buildings.garden * buildingData.garden.production * timeDiff * multiplier);
+            }
+            gameState.eggs += Math.floor(gameState.buildings.chicken * buildingData.chicken.production * timeDiff * multiplier);
+            gameState.milk += Math.floor(gameState.buildings.cow * buildingData.cow.production * timeDiff * multiplier);
+            gameState.bacon += Math.floor(gameState.buildings.pig * buildingData.pig.production * timeDiff * multiplier);
+            gameState.fertilizer += Math.floor(gameState.buildings.fertilizer * buildingData.fertilizer.production * timeDiff);
+            gameState.water += Math.floor(gameState.buildings.water * buildingData.water.production * timeDiff);
+
+            gameState.lastCollect = now;
+            gameState.resourcesCollected += gameState.garden + gameState.eggs + gameState.milk + gameState.bacon + gameState.fertilizer + gameState.water;
+            
+            updateDisplay();
+            showMessage('Resources collected!', 'success');
+        }
+
+        // Sell all resources
+        function sellAll() {
+            const totalValue = 
+                gameState.garden * resourcePrices.garden +
+                gameState.eggs * resourcePrices.eggs +
+                gameState.milk * resourcePrices.milk +
+                gameState.bacon * resourcePrices.bacon +
+                gameState.fertilizer * resourcePrices.fertilizer +
+                gameState.water * resourcePrices.water;
+
+            if (totalValue > 0) {
+                gameState.money += totalValue;
+                gameState.totalEarnings += totalValue;
+                gameState.garden = 0;
+                gameState.eggs = 0;
+                gameState.milk = 0;
+                gameState.bacon = 0;
+                gameState.fertilizer = 0;
+                gameState.water = 0;
+                
+                updateDisplay();
+                showMessage(`Sold all resources for $${totalValue}!`, 'success');
+            } else {
+                showMessage('No resources to sell!', 'error');
+            }
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('money').textContent = gameState.money;
+            document.getElementById('garden').textContent = gameState.garden;
+            document.getElementById('eggs').textContent = gameState.eggs;
+            document.getElementById('milk').textContent = gameState.milk;
+            document.getElementById('bacon').textContent = gameState.bacon;
+            document.getElementById('fertilizer').textContent = gameState.fertilizer;
+            document.getElementById('water').textContent = gameState.water;
+
+            document.getElementById('garden-count').textContent = gameState.buildings.garden;
+            document.getElementById('chicken-count').textContent = gameState.buildings.chicken;
+            document.getElementById('cow-count').textContent = gameState.buildings.cow;
+            document.getElementById('pig-count').textContent = gameState.buildings.pig;
+            document.getElementById('fertilizer-count').textContent = gameState.buildings.fertilizer;
+            document.getElementById('water-count').textContent = gameState.buildings.water;
+
+            document.getElementById('total-gardens').textContent = gameState.buildings.garden;
+            document.getElementById('total-chickens').textContent = gameState.buildings.chicken;
+            document.getElementById('total-cows').textContent = gameState.buildings.cow;
+            document.getElementById('total-pigs').textContent = gameState.buildings.pig;
+            document.getElementById('total-fertilizer').textContent = gameState.buildings.fertilizer;
+            document.getElementById('total-water').textContent = gameState.buildings.water;
+            document.getElementById('total-earnings').textContent = gameState.totalEarnings;
+            document.getElementById('resources-collected').textContent = gameState.resourcesCollected;
+        }
+
+        // Generate farm grid
+        function generateFarmGrid() {
+            const grid = document.getElementById('farm-grid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const plot = document.createElement('div');
+                plot.className = 'farm-plot';
+                plot.textContent = '🌾';
+                plot.onclick = () => collectFromPlot(i);
+                grid.appendChild(plot);
+            }
+        }
+
+        // Collect from individual plot
+        function collectFromPlot(index) {
+            const plot = document.querySelectorAll('.farm-plot')[index];
+            const random = Math.random();
+            
+            if (random < 0.3 && gameState.buildings.garden > 0) {
+                gameState.garden++;
+                plot.textContent = '🥬';
+                plot.className = 'farm-plot garden';
+                showMessage('Collected garden item!', 'success');
+            } else if (random < 0.6 && gameState.buildings.chicken > 0) {
+                gameState.eggs++;
+                plot.textContent = '🥚';
+                plot.className = 'farm-plot chicken';
+                showMessage('Collected egg!', 'success');
+            } else if (random < 0.8 && gameState.buildings.cow > 0) {
+                gameState.milk++;
+                plot.textContent = '🥛';
+                plot.className = 'farm-plot cow';
+                showMessage('Collected milk!', 'success');
+            } else if (random < 1.0 && gameState.buildings.pig > 0) {
+                gameState.bacon++;
+                plot.textContent = '🥓';
+                plot.className = 'farm-plot pig';
+                showMessage('Collected bacon!', 'success');
+            } else {
+                plot.textContent = '🌾';
+                plot.className = 'farm-plot';
+                showMessage('Nothing to collect here yet!', 'error');
+            }
+            
+            gameState.resourcesCollected++;
+            updateDisplay();
+            
+            // Reset plot after 3 seconds
+            setTimeout(() => {
+                plot.textContent = '🌾';
+                plot.className = 'farm-plot';
+            }, 3000);
+        }
+
+        // Use fertilizer
+        function useFertilizer() {
+            if (gameState.fertilizer >= 1) {
+                gameState.fertilizer--;
+                gameState.fertilizerActive = true;
+                gameState.fertilizerEndTime = Date.now() + (30 * 1000); // 30 seconds
+                
+                updateDisplay();
+                showMessage('💩 Fertilizer activated! 2x production for 30 seconds!', 'success');
+                
+                // Deactivate fertilizer after 30 seconds
+                setTimeout(() => {
+                    gameState.fertilizerActive = false;
+                    showMessage('Fertilizer effect has worn off!', 'error');
+                }, 30000);
+            } else {
+                showMessage('Not enough fertilizer!', 'error');
+            }
+        }
+
+        // Water crops
+        function waterCrops() {
+            if (gameState.water >= 1) {
+                gameState.water--;
+                gameState.cropsWatered = true;
+                
+                updateDisplay();
+                showMessage('💧 Crops watered! Gardens will now grow!', 'success');
+                
+                // Crops need to be watered again after some time
+                setTimeout(() => {
+                    gameState.cropsWatered = false;
+                    showMessage('💧 Crops need water again!', 'error');
+                }, 20000); // 20 seconds
+            } else {
+                showMessage('Not enough water!', 'error');
+            }
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = 'message';
+            }, 3000);
+        }
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>

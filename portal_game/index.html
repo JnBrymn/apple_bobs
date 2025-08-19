@@ -1,0 +1,857 @@
+<!-- 
+PORTAL PUZZLE GAME - Portal 2 Style!
+A puzzle game where you:
+- Place blue and orange portals by clicking
+- Guide falling cubes to a button
+- The button opens the exit door when pressed
+- Solve increasingly complex puzzles
+- Use physics and portal mechanics to win!
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚪 Portal Puzzle Game 🚪</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Orbitron', monospace;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* Game container */
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #4a90e2;
+        }
+        
+        #title {
+            font-size: 2em;
+            font-weight: 900;
+            background: linear-gradient(45deg, #4a90e2, #7b68ee, #9370db);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        #stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1em;
+        }
+        
+        .stat {
+            background: rgba(74, 144, 226, 0.2);
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 1px solid #4a90e2;
+        }
+        
+        .stat-value {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        /* Game canvas */
+        #gameCanvas {
+            flex: 1;
+            background: #1a1a2e;
+            border: 2px solid #4a90e2;
+            margin: 10px;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+        
+        /* Controls panel */
+        #controls {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid #4ecdc4;
+            border-radius: 15px;
+            padding: 15px;
+            max-width: 250px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-title {
+            color: #4ecdc4;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .control-btn {
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid #4a90e2;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(74, 144, 226, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .control-btn.active {
+            background: rgba(78, 205, 196, 0.4);
+            border-color: #4ecdc4;
+        }
+        
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+            max-width: 280px;
+        }
+        
+        .instruction {
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 107, 107, 0.2);
+        }
+        
+        .instruction:last-child {
+            border-bottom: none;
+        }
+        
+        /* Level indicator */
+        #levelInfo {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        /* Victory screen */
+        .victory-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #4ecdc4;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            z-index: 1000;
+            animation: victoryPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes victoryPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        .victory-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .victory-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Header -->
+        <div id="header">
+            <h1 id="title">🚪 Portal Puzzle Game 🚪</h1>
+            <div id="stats">
+                <div class="stat">
+                    Level: <span class="stat-value" id="currentLevel">1</span>
+                </div>
+                <div class="stat">
+                    Cubes: <span class="stat-value" id="cubeCount">0</span>
+                </div>
+                <div class="stat">
+                    Button: <span class="stat-value" id="buttonStatus">❌</span>
+                </div>
+                <div class="stat">
+                    Door: <span class="stat-value" id="doorStatus">🔒</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game canvas -->
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Controls -->
+        <div id="controls">
+            <h3 style="color: #4ecdc4; margin-bottom: 15px;">🎮 Controls</h3>
+            <div class="control-group">
+                <div class="control-title">Portal Type:</div>
+                <button class="control-btn active" id="bluePortal">🔵 Blue Portal</button>
+                <button class="control-btn" id="orangePortal">🟠 Orange Portal</button>
+            </div>
+            <div class="control-group">
+                <div class="control-title">Actions:</div>
+                <button class="control-btn" id="clearPortals">🗑️ Clear Portals</button>
+                <button class="control-btn" id="resetLevel">🔄 Reset Level</button>
+                <button class="control-btn" id="nextLevel">⏭️ Next Level</button>
+            </div>
+            <div class="control-group">
+                <div class="control-title">Physics:</div>
+                <button class="control-btn" id="toggleGravity">🌍 Toggle Gravity</button>
+                <button class="control-btn" id="spawnCube">📦 Spawn Cube</button>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div id="instructions">
+            <h3 style="color: #ff6b6b; margin-bottom: 10px;">📚 How to Play</h3>
+            <div class="instruction">
+                <strong>🎯 Click</strong> to place portals on walls
+            </div>
+            <div class="instruction">
+                <strong>🔵 Blue Portal</strong> - Entry point
+            </div>
+            <div class="instruction">
+                <strong>🟠 Orange Portal</strong> - Exit point
+            </div>
+            <div class="instruction">
+                <strong>📦 Cubes</strong> fall from ceiling
+            </div>
+            <div class="instruction">
+                <strong>🔘 Button</strong> opens door when pressed
+            </div>
+            <div class="instruction">
+                <strong>🚪 Door</strong> - Your goal to escape!
+            </div>
+            <div class="instruction">
+                <strong>⚡ Cubes</strong> travel through portals
+            </div>
+            <div class="instruction">
+                <strong>🎯 Guide cubes</strong> to the button!
+            </div>
+        </div>
+        
+        <!-- Level info -->
+        <div id="levelInfo">
+            <h3 style="color: #ff6b6b; margin-bottom: 10px;">📋 Level Info</h3>
+            <div id="levelDescription">Place portals to guide the cube to the button!</div>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let gameState = {
+            currentLevel: 1,
+            portals: [],
+            cubes: [],
+            buttonPressed: false,
+            doorOpen: false,
+            selectedPortalType: 'blue',
+            gravity: true,
+            gameWon: false
+        };
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Level definitions
+        const levels = [
+            {
+                name: "Level 1: First Steps",
+                description: "Place a blue portal on the left wall and an orange portal above the button!",
+                walls: [
+                    { x: 0, y: 0, width: 20, height: canvas.height }, // Left wall
+                    { x: canvas.width - 20, y: 0, width: 20, height: canvas.height }, // Right wall
+                    { x: 0, y: 0, width: canvas.width, height: 20 }, // Top wall
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 } // Bottom wall
+                ],
+                button: { x: canvas.width / 2, y: canvas.height - 100, width: 60, height: 20 },
+                door: { x: canvas.width - 80, y: canvas.height - 120, width: 60, height: 80 },
+                cubeSpawn: { x: canvas.width / 2, y: 50 }
+            },
+            {
+                name: "Level 2: Double Trouble",
+                description: "Guide two cubes to the button using multiple portals!",
+                walls: [
+                    { x: 0, y: 0, width: 20, height: canvas.height },
+                    { x: canvas.width - 20, y: 0, width: 20, height: canvas.height },
+                    { x: 0, y: 0, width: canvas.width, height: 20 },
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+                    { x: canvas.width / 2 - 10, y: 100, width: 20, height: 200 } // Middle wall
+                ],
+                button: { x: canvas.width / 2, y: canvas.height - 100, width: 60, height: 20 },
+                door: { x: canvas.width - 80, y: canvas.height - 120, width: 60, height: 80 },
+                cubeSpawn: { x: canvas.width / 4, y: 50 }
+            },
+            {
+                name: "Level 3: Portal Maze",
+                description: "Navigate through a maze using strategic portal placement!",
+                walls: [
+                    { x: 0, y: 0, width: 20, height: canvas.height },
+                    { x: canvas.width - 20, y: 0, width: 20, height: canvas.height },
+                    { x: 0, y: 0, width: canvas.width, height: 20 },
+                    { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+                    { x: 100, y: 100, width: 20, height: 150 },
+                    { x: 200, y: 200, width: 20, height: 150 },
+                    { x: 300, y: 100, width: 20, height: 150 },
+                    { x: 400, y: 200, width: 20, height: 150 }
+                ],
+                button: { x: canvas.width / 2, y: canvas.height - 100, width: 60, height: 20 },
+                door: { x: canvas.width - 80, y: canvas.height - 120, width: 60, height: 80 },
+                cubeSpawn: { x: canvas.width / 2, y: 50 }
+            }
+        ];
+        
+        let currentLevelData = levels[0];
+        
+        // Portal class
+        class Portal {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type; // 'blue' or 'orange'
+                this.radius = 25;
+                this.active = true;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.active ? 1 : 0.5;
+                
+                // Portal glow effect
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                if (this.type === 'blue') {
+                    gradient.addColorStop(0, 'rgba(74, 144, 226, 0.8)');
+                    gradient.addColorStop(1, 'rgba(74, 144, 226, 0.2)');
+                } else {
+                    gradient.addColorStop(0, 'rgba(255, 165, 0, 0.8)');
+                    gradient.addColorStop(1, 'rgba(255, 165, 0, 0.2)');
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Portal border
+                ctx.strokeStyle = this.type === 'blue' ? '#4a90e2' : '#ffa500';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Portal center
+                ctx.fillStyle = this.type === 'blue' ? '#4a90e2' : '#ffa500';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            isPointInside(x, y) {
+                const distance = Math.sqrt((x - this.x) ** 2 + (y - this.y) ** 2);
+                return distance <= this.radius;
+            }
+        }
+        
+        // Cube class
+        class Cube {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.size = 20;
+                this.gravity = 0.5;
+                this.friction = 0.98;
+                this.bounce = 0.7;
+                this.inPortal = false;
+                this.portalCooldown = 0;
+            }
+            
+            update() {
+                if (gameState.gravity) {
+                    this.vy += this.gravity;
+                }
+                
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Check portal collision
+                if (this.portalCooldown <= 0) {
+                    this.checkPortalCollision();
+                } else {
+                    this.portalCooldown--;
+                }
+                
+                // Wall collision
+                this.checkWallCollision();
+                
+                // Button collision
+                this.checkButtonCollision();
+                
+                // Door collision
+                this.checkDoorCollision();
+            }
+            
+            checkPortalCollision() {
+                gameState.portals.forEach(portal => {
+                    if (portal.active && portal.isPointInside(this.x, this.y)) {
+                        this.teleport(portal);
+                    }
+                });
+            }
+            
+            teleport(fromPortal) {
+                // Find the other portal
+                const otherPortal = gameState.portals.find(p => 
+                    p !== fromPortal && p.type !== fromPortal.type && p.active
+                );
+                
+                if (otherPortal) {
+                    // Calculate exit velocity based on entry angle
+                    const dx = this.x - fromPortal.x;
+                    const dy = this.y - fromPortal.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 0) {
+                        const angle = Math.atan2(dy, dx);
+                        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                        
+                        this.x = otherPortal.x + Math.cos(angle) * (otherPortal.radius + this.size);
+                        this.y = otherPortal.y + Math.sin(angle) * (otherPortal.radius + this.size);
+                        
+                        this.vx = Math.cos(angle) * speed;
+                        this.vy = Math.sin(angle) * speed;
+                        
+                        this.portalCooldown = 10; // Prevent infinite portal loops
+                        
+                        // Portal effect
+                        createPortalEffect(fromPortal.x, fromPortal.y);
+                        createPortalEffect(otherPortal.x, otherPortal.y);
+                    }
+                }
+            }
+            
+            checkWallCollision() {
+                currentLevelData.walls.forEach(wall => {
+                    // Horizontal collision
+                    if (this.x - this.size < wall.x + wall.width &&
+                        this.x + this.size > wall.x &&
+                        this.y - this.size < wall.y + wall.height &&
+                        this.y + this.size > wall.y) {
+                        
+                        // Determine collision side
+                        const leftDist = Math.abs(this.x - (wall.x + wall.width));
+                        const rightDist = Math.abs(this.x - wall.x);
+                        const topDist = Math.abs(this.y - (wall.y + wall.height));
+                        const bottomDist = Math.abs(this.y - wall.y);
+                        
+                        const minDist = Math.min(leftDist, rightDist, topDist, bottomDist);
+                        
+                        if (minDist === leftDist) {
+                            this.x = wall.x + wall.width + this.size;
+                            this.vx = Math.abs(this.vx) * this.bounce;
+                        } else if (minDist === rightDist) {
+                            this.x = wall.x - this.size;
+                            this.vx = -Math.abs(this.vx) * this.bounce;
+                        } else if (minDist === topDist) {
+                            this.y = wall.y + wall.height + this.size;
+                            this.vy = Math.abs(this.vy) * this.bounce;
+                        } else if (minDist === bottomDist) {
+                            this.y = wall.y - this.size;
+                            this.vy = -Math.abs(this.vy) * this.bounce;
+                        }
+                    }
+                });
+            }
+            
+            checkButtonCollision() {
+                const button = currentLevelData.button;
+                if (this.x - this.size < button.x + button.width &&
+                    this.x + this.size > button.x &&
+                    this.y - this.size < button.y + button.height &&
+                    this.y + this.size > button.y) {
+                    
+                    if (!gameState.buttonPressed) {
+                        gameState.buttonPressed = true;
+                        showMessage("🔘 Button Pressed! Door is opening...");
+                    }
+                }
+            }
+            
+            checkDoorCollision() {
+                if (gameState.buttonPressed) {
+                    const door = currentLevelData.door;
+                    if (this.x - this.size < door.x + door.width &&
+                        this.x + this.size > door.x &&
+                        this.y - this.size < door.y + door.height &&
+                        this.y + this.size > door.y) {
+                        
+                        if (!gameState.gameWon) {
+                            gameState.gameWon = true;
+                            showVictoryScreen();
+                        }
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.save();
+                
+                // Cube shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(this.x - this.size + 2, this.y - this.size + 2, this.size * 2, this.size * 2);
+                
+                // Cube body
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
+                
+                // Cube highlights
+                ctx.fillStyle = '#A0522D';
+                ctx.fillRect(this.x - this.size, this.y - this.size, this.size * 2, 4);
+                ctx.fillRect(this.x - this.size, this.y - this.size, 4, this.size * 2);
+                
+                ctx.restore();
+            }
+        }
+        
+        // Portal effect particles
+        let portalEffects = [];
+        
+        function createPortalEffect(x, y) {
+            for (let i = 0; i < 10; i++) {
+                portalEffects.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    color: Math.random() > 0.5 ? '#4a90e2' : '#ffa500'
+                });
+            }
+        }
+        
+        function updatePortalEffects() {
+            portalEffects = portalEffects.filter(effect => {
+                effect.x += effect.vx;
+                effect.y += effect.vy;
+                effect.life--;
+                return effect.life > 0;
+            });
+        }
+        
+        function drawPortalEffects() {
+            portalEffects.forEach(effect => {
+                ctx.save();
+                ctx.globalAlpha = effect.life / 30;
+                ctx.fillStyle = effect.color;
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+        
+        // Game functions
+        function spawnCube() {
+            const spawn = currentLevelData.cubeSpawn;
+            gameState.cubes.push(new Cube(spawn.x, spawn.y));
+        }
+        
+        function clearPortals() {
+            gameState.portals = [];
+        }
+        
+        function resetLevel() {
+            gameState.cubes = [];
+            gameState.portals = [];
+            gameState.buttonPressed = false;
+            gameState.doorOpen = false;
+            gameState.gameWon = false;
+            portalEffects = [];
+        }
+        
+        function nextLevel() {
+            if (gameState.currentLevel < levels.length) {
+                gameState.currentLevel++;
+                currentLevelData = levels[gameState.currentLevel - 1];
+                resetLevel();
+                updateDisplay();
+            } else {
+                showMessage("🎉 You've completed all levels! Great job!");
+            }
+        }
+        
+        function showMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                border: 2px solid #4ecdc4;
+                border-radius: 15px;
+                padding: 20px;
+                color: white;
+                font-size: 1.2em;
+                z-index: 1000;
+                text-align: center;
+            `;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => messageDiv.remove(), 2000);
+        }
+        
+        function showVictoryScreen() {
+            const victoryDiv = document.createElement('div');
+            victoryDiv.className = 'victory-screen';
+            victoryDiv.innerHTML = `
+                <h2 style="color: #4ecdc4; margin-bottom: 20px;">🎉 Level Complete! 🎉</h2>
+                <p style="margin-bottom: 20px;">You successfully guided the cube through the portals!</p>
+                <button class="victory-btn" onclick="nextLevel()">Next Level</button>
+                <button class="victory-btn" onclick="resetLevel(); this.parentElement.remove()">Play Again</button>
+            `;
+            document.body.appendChild(victoryDiv);
+        }
+        
+        function updateDisplay() {
+            document.getElementById('currentLevel').textContent = gameState.currentLevel;
+            document.getElementById('cubeCount').textContent = gameState.cubes.length;
+            document.getElementById('buttonStatus').textContent = gameState.buttonPressed ? '✅' : '❌';
+            document.getElementById('doorStatus').textContent = gameState.buttonPressed ? '🔓' : '🔒';
+            document.getElementById('levelDescription').textContent = currentLevelData.description;
+        }
+        
+        // Drawing functions
+        function drawWalls() {
+            ctx.fillStyle = '#666';
+            currentLevelData.walls.forEach(wall => {
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            });
+        }
+        
+        function drawButton() {
+            ctx.fillStyle = gameState.buttonPressed ? '#4ecdc4' : '#ff6b6b';
+            ctx.fillRect(currentLevelData.button.x, currentLevelData.button.y, 
+                        currentLevelData.button.width, currentLevelData.button.height);
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(currentLevelData.button.x, currentLevelData.button.y, 
+                          currentLevelData.button.width, currentLevelData.button.height);
+            
+            // Button text
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('BUTTON', currentLevelData.button.x + currentLevelData.button.width / 2, 
+                        currentLevelData.button.y + currentLevelData.button.height / 2 + 4);
+        }
+        
+        function drawDoor() {
+            if (gameState.buttonPressed) {
+                ctx.fillStyle = '#4ecdc4';
+                ctx.fillRect(currentLevelData.door.x, currentLevelData.door.y, 
+                            currentLevelData.door.width, currentLevelData.door.height);
+                
+                // Door opening animation
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(currentLevelData.door.x + 5, currentLevelData.door.y + 5, 
+                            currentLevelData.door.width - 10, currentLevelData.door.height - 10);
+            } else {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(currentLevelData.door.x, currentLevelData.door.y, 
+                            currentLevelData.door.width, currentLevelData.door.height);
+            }
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(currentLevelData.door.x, currentLevelData.door.y, 
+                          currentLevelData.door.width, currentLevelData.door.height);
+            
+            // Door text
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('DOOR', currentLevelData.door.x + currentLevelData.door.width / 2, 
+                        currentLevelData.door.y + currentLevelData.door.height / 2 + 4);
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw walls
+            drawWalls();
+            
+            // Draw portals
+            gameState.portals.forEach(portal => portal.draw());
+            
+            // Draw button
+            drawButton();
+            
+            // Draw door
+            drawDoor();
+            
+            // Draw cubes
+            gameState.cubes.forEach(cube => cube.draw());
+            
+            // Draw portal effects
+            drawPortalEffects();
+        }
+        
+        function update() {
+            // Update cubes
+            gameState.cubes.forEach(cube => cube.update());
+            
+            // Update portal effects
+            updatePortalEffects();
+            
+            // Remove cubes that fall off screen
+            gameState.cubes = gameState.cubes.filter(cube => 
+                cube.y < canvas.height + 100 && cube.x > -100 && cube.x < canvas.width + 100
+            );
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check if clicking on a wall
+            let onWall = false;
+            currentLevelData.walls.forEach(wall => {
+                if (x >= wall.x && x <= wall.x + wall.width &&
+                    y >= wall.y && y <= wall.y + wall.height) {
+                    onWall = true;
+                }
+            });
+            
+            if (onWall) {
+                // Remove existing portal of the same type
+                gameState.portals = gameState.portals.filter(portal => portal.type !== gameState.selectedPortalType);
+                
+                // Add new portal
+                gameState.portals.push(new Portal(x, y, gameState.selectedPortalType));
+            }
+        });
+        
+        // Control button listeners
+        document.getElementById('bluePortal').addEventListener('click', () => {
+            gameState.selectedPortalType = 'blue';
+            updateControlButtons();
+        });
+        
+        document.getElementById('orangePortal').addEventListener('click', () => {
+            gameState.selectedPortalType = 'orange';
+            updateControlButtons();
+        });
+        
+        document.getElementById('clearPortals').addEventListener('click', clearPortals);
+        document.getElementById('resetLevel').addEventListener('click', resetLevel);
+        document.getElementById('nextLevel').addEventListener('click', nextLevel);
+        
+        document.getElementById('toggleGravity').addEventListener('click', () => {
+            gameState.gravity = !gameState.gravity;
+            document.getElementById('toggleGravity').textContent = 
+                gameState.gravity ? '🌍 Gravity ON' : '🌍 Gravity OFF';
+        });
+        
+        document.getElementById('spawnCube').addEventListener('click', spawnCube);
+        
+        function updateControlButtons() {
+            document.getElementById('bluePortal').classList.toggle('active', gameState.selectedPortalType === 'blue');
+            document.getElementById('orangePortal').classList.toggle('active', gameState.selectedPortalType === 'orange');
+        }
+        
+        // Initialize game
+        function init() {
+            spawnCube(); // Start with one cube
+            updateDisplay();
+            gameLoop();
+        }
+        
+        // Start the game
+        init();
+        
+        console.log('🚪 Portal Puzzle Game loaded! Click on walls to place portals!');
+    </script>
+</body>
+</html>
