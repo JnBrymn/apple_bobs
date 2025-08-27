@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker - Pixelated Cookie Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: repeating-linear-gradient(
+                90deg,
+                #87CEEB 0px,
+                #87CEEB 50px,
+                #4682B4 50px,
+                #4682B4 100px
+            );
+            height: 100vh;
+        }
+        
+        .game-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        .cookie-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cookie {
+            width: 200px;
+            height: 200px;
+            background: #D2691E;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 30px rgba(255, 165, 0, 0.6);
+            image-rendering: pixelated;
+        }
+        
+        .cookie:hover {
+            transform: scale(1.05);
+        }
+        
+        .cookie:active {
+            transform: scale(0.95);
+        }
+        
+        .cookie::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            width: 25px;
+            height: 25px;
+            background: #8B4513;
+            border-radius: 50%;
+            box-shadow: 
+                60px 20px 0 #8B4513,
+                120px 40px 0 #8B4513,
+                40px 80px 0 #8B4513,
+                100px 120px 0 #8B4513;
+        }
+        
+        .cookie::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: 80px;
+            width: 20px;
+            height: 20px;
+            background: #8B4513;
+            border-radius: 50%;
+        }
+        
+        .info-panel {
+            background: linear-gradient(135deg, #D3D3D3 0%, #C0C0C0 100%);
+            border: 2px solid #A9A9A9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-right: 20px;
+            box-shadow: 
+                0 4px 8px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.4);
+            min-width: 200px;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .info-panel::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(255,255,255,0.1) 2px,
+                rgba(255,255,255,0.1) 4px
+            );
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        
+        .panel-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        
+        .panel-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cursor-icon {
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .grandma-icon {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .farm-icon {
+            font-size: 18px;
+            color: #8B4513;
+        }
+        
+        .mine-icon {
+            font-size: 18px;
+            color: #696969;
+        }
+        
+        .factory-icon {
+            font-size: 18px;
+            color: #DC143C;
+        }
+        
+        .bank-icon {
+            font-size: 18px;
+            color: #FFD700;
+        }
+        
+        .temple-icon {
+            font-size: 18px;
+            color: #CD853F;
+        }
+        
+        .wizard-icon {
+            font-size: 18px;
+            color: #9932CC;
+        }
+        
+        .shipment-icon {
+            font-size: 18px;
+            color: #4169E1;
+        }
+        
+        .alchemy-icon {
+            font-size: 18px;
+            color: #32CD32;
+        }
+        
+        .portal-icon {
+            font-size: 18px;
+            color: #FF1493;
+        }
+        
+        .time-machine-icon {
+            font-size: 18px;
+            color: #00CED1;
+        }
+        
+        .antimatter-icon {
+            font-size: 18px;
+            color: #FF4500;
+        }
+        
+        .prism-icon {
+            font-size: 18px;
+            color: #9370DB;
+        }
+        
+        .chancemaker-icon {
+            font-size: 18px;
+            color: #FF69B4;
+        }
+        
+        .fractal-engine-icon {
+            font-size: 18px;
+            color: #00FA9A;
+        }
+        
+        .javascript-console-icon {
+            font-size: 18px;
+            color: #FFD700;
+        }
+        
+        .idleverse-icon {
+            font-size: 18px;
+            color: #FF4500;
+        }
+        
+        .cortex-baker-icon {
+            font-size: 18px;
+            color: #FF1493;
+        }
+        
+        .you-icon {
+            font-size: 18px;
+            color: #00CED1;
+        }
+        
+        .reality-bending-icon {
+            font-size: 18px;
+            color: #FFD700;
+        }
+        
+        .ultimate-icon {
+            font-size: 18px;
+            color: #FF69B4;
+        }
+        
+        .golden-cookie {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            animation: golden-glow 2s ease-in-out infinite alternate;
+            z-index: 1000;
+        }
+        
+        @keyframes golden-glow {
+            0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(255, 215, 0, 1); }
+        }
+        
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slide-in 0.5s ease-out;
+            max-width: 300px;
+        }
+        
+        @keyframes slide-in {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        .achievement-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .achievement-desc {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .prestige-section {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 250px;
+        }
+        
+        .prestige-title {
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .heavenly-chips {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .prestige-button {
+            background: #9C27B0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .prestige-button:hover {
+            background: #7B1FA2;
+        }
+        
+        .prestige-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .cookie-count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+            margin-bottom: 10px;
+        }
+        
+        .cps {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .upgrades {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 300px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .upgrade-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .upgrade-info {
+            flex: 1;
+        }
+        
+        .upgrade-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .upgrade-cost {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .upgrade-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .upgrade-button:hover {
+            background: #45a049;
+        }
+        
+        .upgrade-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .cookie-particles {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #D2691E;
+            border-radius: 50%;
+            animation: float-up 1s ease-out forwards;
+        }
+        
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .click-effect {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 165, 0, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: click-ripple 0.5s ease-out forwards;
+        }
+        
+        @keyframes click-ripple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+
+        .encouragements {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 300px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .encouragements h3 {
+            margin: 0 0 15px 0;
+            color: #8B4513;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .encouragement-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .encouragement-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .encouragement-info {
+            flex: 1;
+        }
+        
+        .encouragement-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+        
+        .encouragement-desc {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 2px;
+            font-style: italic;
+        }
+        
+        .encouragement-cost {
+            color: #888;
+            font-size: 10px;
+        }
+        
+        .encouragement-button {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        
+        .encouragement-button:hover {
+            background: #E55A2B;
+        }
+        
+        .encouragement-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="cookie-section">
+            <div class="cookie" id="cookie"></div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cursor-icon">🖱️</div>
+                </div>
+                CURSOR
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="grandma-icon">👵</div>
+                </div>
+                GRANDMA
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="farm-icon">🌾</div>
+                </div>
+                FARM
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="mine-icon">⛏️</div>
+                </div>
+                MINE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="factory-icon">🏭</div>
+                </div>
+                FACTORY
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="bank-icon">🏦</div>
+                </div>
+                BANK
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="temple-icon">🏛️</div>
+                </div>
+                TEMPLE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="wizard-icon">🧙‍♂️</div>
+                </div>
+                WIZARD TOWER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="shipment-icon">🚢</div>
+                </div>
+                SHIPMENT
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="alchemy-icon">🧪</div>
+                </div>
+                ALCHEMY LAB
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="portal-icon">🌀</div>
+                </div>
+                PORTAL
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="time-machine-icon">⏰</div>
+                </div>
+                TIME MACHINE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="antimatter-icon">⚛️</div>
+                </div>
+                ANTIMATTER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="prism-icon">💎</div>
+                </div>
+                PRISM
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="chancemaker-icon">🎲</div>
+                </div>
+                CHANCEMAKER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="fractal-engine-icon">🧠</div>
+                </div>
+                FRACTAL ENGINE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="javascript-console-icon">💻</div>
+                </div>
+                JAVASCRIPT CONSOLE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="idleverse-icon">🌐</div>
+                </div>
+                IDLEVERSE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cortex-baker-icon">🧠</div>
+                </div>
+                CORTEX BAKER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="you-icon">👤</div>
+                </div>
+                YOU
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="reality-bending-icon">🌐</div>
+                </div>
+                REALITY BENDING
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="ultimate-icon">🎉</div>
+                </div>
+                ULTIMATE UPGRADE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cookie-galaxy-icon">🌌</div>
+                </div>
+                COOKIE GALAXY
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="time-paradox-icon">⏳</div>
+                </div>
+                TIME PARADOX
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="quantum-cookie-icon">🌟</div>
+                </div>
+                QUANTUM COOKIE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cookie-dimension-icon">🌐</div>
+                </div>
+                COOKIE DIMENSION
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="infinity-baker-icon">🧠</div>
+                </div>
+                INFINITY BAKER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cookie-god-icon">👑</div>
+                </div>
+                COOKIE GOD
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="universe-cookie-icon">🌐</div>
+                </div>
+                UNIVERSE COOKIE
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="multiverse-baker-icon">🧠</div>
+                </div>
+                MULTIVERSE BAKER
+            </div>
+            <div class="panel-item">
+                <div class="icon">
+                    <div class="cookie-creation-icon">🍪</div>
+                </div>
+                COOKIE CREATION
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats">
+        <div class="cookie-count" id="cookieCount">0</div>
+        <div class="cps" id="cps">0 cookies per second</div>
+    </div>
+    
+    <div class="prestige-section">
+        <div class="prestige-title">Prestige</div>
+        <div class="heavenly-chips">Heavenly Chips: <span id="heavenlyChips">0</span></div>
+        <button class="prestige-button" id="prestigeBtn" onclick="prestige()" disabled>Prestige (Reset for Heavenly Chips)</button>
+    </div>
+    
+    <div class="upgrades">
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Cursor</div>
+                <div class="upgrade-cost">Cost: <span id="cursorCost">15</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="cursorBtn" onclick="buyCursor()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Grandma</div>
+                <div class="upgrade-cost">Cost: <span id="grandmaCost">100</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="grandmaBtn" onclick="buyGrandma()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Farm</div>
+                <div class="upgrade-cost">Cost: <span id="farmCost">1,100</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="farmBtn" onclick="buyFarm()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Mine</div>
+                <div class="upgrade-cost">Cost: <span id="mineCost">12,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="mineBtn" onclick="buyMine()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Factory</div>
+                <div class="upgrade-cost">Cost: <span id="factoryCost">130,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="factoryBtn" onclick="buyFactory()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Bank</div>
+                <div class="upgrade-cost">Cost: <span id="bankCost">1,400,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="bankBtn" onclick="buyBank()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Temple</div>
+                <div class="upgrade-cost">Cost: <span id="templeCost">20,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="templeBtn" onclick="buyTemple()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Wizard Tower</div>
+                <div class="upgrade-cost">Cost: <span id="wizardTowerCost">330,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="wizardTowerBtn" onclick="buyWizardTower()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Shipment</div>
+                <div class="upgrade-cost">Cost: <span id="shipmentCost">5,100,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="shipmentBtn" onclick="buyShipment()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Alchemy Lab</div>
+                <div class="upgrade-cost">Cost: <span id="alchemyLabCost">75,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="alchemyLabBtn" onclick="buyAlchemyLab()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Portal</div>
+                <div class="upgrade-cost">Cost: <span id="portalCost">1,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="portalBtn" onclick="buyPortal()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Time Machine</div>
+                <div class="upgrade-cost">Cost: <span id="timeMachineCost">14,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="timeMachineBtn" onclick="buyTimeMachine()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Antimatter</div>
+                <div class="upgrade-cost">Cost: <span id="antimatterCost">170,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="antimatterBtn" onclick="buyAntimatter()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Prism</div>
+                <div class="upgrade-cost">Cost: <span id="prismCost">2,100,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="prismBtn" onclick="buyPrism()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Chancemaker</div>
+                <div class="upgrade-cost">Cost: <span id="chancemakerCost">30,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="chancemakerBtn" onclick="buyChancemaker()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Fractal Engine</div>
+                <div class="upgrade-cost">Cost: <span id="fractalEngineCost">500,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="fractalEngineBtn" onclick="buyFractalEngine()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">JavaScript Console</div>
+                <div class="upgrade-cost">Cost: <span id="javascriptConsoleCost">1,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="javascriptConsoleBtn" onclick="buyJavaScriptConsole()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Idleverse</div>
+                <div class="upgrade-cost">Cost: <span id="idleverseCost">2,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="idleverseBtn" onclick="buyIdleverse()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Cortex Baker</div>
+                <div class="upgrade-cost">Cost: <span id="cortexBakerCost">1,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="cortexBakerBtn" onclick="buyCortexBaker()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">You</div>
+                <div class="upgrade-cost">Cost: <span id="youCost">10,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="youBtn" onclick="buyYou()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Reality Bending</div>
+                <div class="upgrade-cost">Cost: <span id="realityBendingCost">100,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="realityBendingBtn" onclick="buyRealityBending()">Buy</button>
+        </div>
+        <div class="upgrade-item">
+            <div class="upgrade-info">
+                <div class="upgrade-name">Ultimate Upgrade</div>
+                <div class="upgrade-cost">Cost: <span id="ultimateCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="upgrade-button" id="ultimateBtn" onclick="buyUltimate()">Buy</button>
+        </div>
+    </div>
+    
+    <div class="encouragements">
+        <h3>Upgrades</h3>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Reinforced Index Finger</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="reinforcedIndexCost">100</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="reinforcedIndexBtn" onclick="buyReinforcedIndex()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Carpal Tunnel Prevention Cream</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="carpalTunnelCost">500</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="carpalTunnelBtn" onclick="buyCarpalTunnel()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Ambidextrous</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="ambidextrousCost">10,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="ambidextrousBtn" onclick="buyAmbidextrous()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Thousand Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="thousandFingersCost">100,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="thousandFingersBtn" onclick="buyThousandFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Million Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="millionFingersCost">10,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="millionFingersBtn" onclick="buyMillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Billion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="billionFingersCost">1,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="billionFingersBtn" onclick="buyBillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Trillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="trillionFingersCost">100,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="trillionFingersBtn" onclick="buyTrillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Quadrillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="quadrillionFingersCost">10,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="quadrillionFingersBtn" onclick="buyQuadrillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Quintillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="quintillionFingersCost">1,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="quintillionFingersBtn" onclick="buyQuintillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Sextillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="sextillionFingersCost">100,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="sextillionFingersBtn" onclick="buySextillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Septillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="septillionFingersCost">10,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="septillionFingersBtn" onclick="buySeptillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Octillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="octillionFingersCost">1,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="octillionFingersBtn" onclick="buyOctillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Nonillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="nonillionFingersCost">100,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="nonillionFingersBtn" onclick="buyNonillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Decillion Fingers</div>
+                <div class="encouragement-desc">Clicking gains +1 cookie per click</div>
+                <div class="encouragement-cost">Cost: <span id="decillionFingersCost">10,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="decillionFingersBtn" onclick="buyDecillionFingers()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">One Mind</div>
+                <div class="encouragement-desc">Grandmas are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="oneMindCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="oneMindBtn" onclick="buyOneMind()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Exotic Nuts</div>
+                <div class="encouragement-desc">Farms are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="exoticNutsCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="exoticNutsBtn" onclick="buyExoticNuts()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Communal Brainsweep</div>
+                <div class="encouragement-desc">Mines are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="communalBrainsweepCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="communalBrainsweepBtn" onclick="buyCommunalBrainsweep()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Hive Mind</div>
+                <div class="encouragement-desc">Factories are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="hiveMindCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="hiveMindBtn" onclick="buyHiveMind()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Uncanny Cookie Clicker</div>
+                <div class="encouragement-desc">Banks are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="uncannyCookieClickerCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="uncannyCookieClickerBtn" onclick="buyUncannyCookieClicker()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Elder Pact</div>
+                <div class="encouragement-desc">Temples are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="elderPactCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="elderPactBtn" onclick="buyElderPact()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Elder Covenant</div>
+                <div class="encouragement-desc">Wizard Towers are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="elderCovenantCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="elderCovenantBtn" onclick="buyElderCovenant()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Shipment</div>
+                <div class="encouragement-desc">Shipments are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="shipmentUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="shipmentUpgradeBtn" onclick="buyShipmentUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Alchemy</div>
+                <div class="encouragement-desc">Alchemy Labs are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="alchemyUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="alchemyUpgradeBtn" onclick="buyAlchemyUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Portal</div>
+                <div class="encouragement-desc">Portals are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="portalUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="portalUpgradeBtn" onclick="buyPortalUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Time</div>
+                <div class="encouragement-desc">Time Machines are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="timeUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="timeUpgradeBtn" onclick="buyTimeUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Antimatter</div>
+                <div class="encouragement-desc">Antimatters are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="antimatterUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="antimatterUpgradeBtn" onclick="buyAntimatterUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Prism</div>
+                <div class="encouragement-desc">Prisms are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="prismUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="prismUpgradeBtn" onclick="buyPrismUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Chancemaker</div>
+                <div class="encouragement-desc">Chancemakers are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="chancemakerUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="chancemakerUpgradeBtn" onclick="buyChancemakerUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Fractal Engine</div>
+                <div class="encouragement-desc">Fractal Engines are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="fractalEngineUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="fractalEngineUpgradeBtn" onclick="buyFractalEngineUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">JavaScript Console</div>
+                <div class="encouragement-desc">JavaScript Consoles are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="javascriptConsoleUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="javascriptConsoleUpgradeBtn" onclick="buyJavaScriptConsoleUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Idleverse</div>
+                <div class="encouragement-desc">Idleverses are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="idleverseUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="idleverseUpgradeBtn" onclick="buyIdleverseUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Cortex Baker</div>
+                <div class="encouragement-desc">Cortex Bakers are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="cortexBakerUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="cortexBakerUpgradeBtn" onclick="buyCortexBakerUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">You</div>
+                <div class="encouragement-desc">Yous are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="youUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="youUpgradeBtn" onclick="buyYouUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Reality Bending</div>
+                <div class="encouragement-desc">Reality Bendings are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="realityBendingUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="realityBendingUpgradeBtn" onclick="buyRealityBendingUpgrade()">Buy</button>
+        </div>
+        <div class="encouragement-item">
+            <div class="encouragement-info">
+                <div class="encouragement-name">Ultimate Upgrade</div>
+                <div class="encouragement-desc">Ultimate Upgrades are twice as efficient</div>
+                <div class="encouragement-cost">Cost: <span id="ultimateUpgradeCost">1,000,000,000,000,000,000,000,000,000</span> cookies</div>
+            </div>
+            <button class="encouragement-button" id="ultimateUpgradeBtn" onclick="buyUltimateUpgrade()">Buy</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state with all upgrades
+        let cookies = 0;
+        let cursors = 0;
+        let grandmas = 0;
+        let farms = 0;
+        let mines = 0;
+        let factories = 0;
+        let banks = 0;
+        let temples = 0;
+        let wizardTowers = 0;
+        let shipments = 0;
+        let alchemyLabs = 0;
+        let portals = 0;
+        let timeMachines = 0;
+        let antimatters = 0;
+        let prisms = 0;
+        let chancemakers = 0;
+        let fractalEngines = 0;
+        let javascriptConsoles = 0;
+        let idleverses = 0;
+        let cortexBakers = 0;
+        let yous = 0;
+        let realityBendings = 0;
+        let ultimateUpgrades = 0;
+        let heavenlyChips = 0;
+        let goldenCookieActive = false;
+        let achievements = [];
+        
+        // Encouragement upgrades (clicking bonuses)
+        let reinforcedIndex = 0;
+        let carpalTunnel = 0;
+        let ambidextrous = 0;
+        let thousandFingers = 0;
+        let millionFingers = 0;
+        let billionFingers = 0;
+        let trillionFingers = 0;
+        let quadrillionFingers = 0;
+        let quintillionFingers = 0;
+        let sextillionFingers = 0;
+        let septillionFingers = 0;
+        let octillionFingers = 0;
+        let nonillionFingers = 0;
+        let decillionFingers = 0;
+        let oneMind = 0;
+        let exoticNuts = 0;
+        let communalBrainsweep = 0;
+        let hiveMind = 0;
+        let uncannyCookieClicker = 0;
+        let elderPact = 0;
+        let elderCovenant = 0;
+        let shipmentUpgrade = 0;
+        let alchemyUpgrade = 0;
+        let portalUpgrade = 0;
+        let timeUpgrade = 0;
+        let antimatterUpgrade = 0;
+        let prismUpgrade = 0;
+        let chancemakerUpgrade = 0;
+        let fractalEngineUpgrade = 0;
+        let javascriptConsoleUpgrade = 0;
+        let idleverseUpgrade = 0;
+        let cortexBakerUpgrade = 0;
+        let youUpgrade = 0;
+        let realityBendingUpgrade = 0;
+        let ultimateUpgrade = 0;
+        
+        // Costs for each upgrade
+        let cursorCost = 15;
+        let grandmaCost = 100;
+        let farmCost = 1100;
+        let mineCost = 12000;
+        let factoryCost = 130000;
+        let bankCost = 1400000;
+        let templeCost = 20000000;
+        let wizardTowerCost = 330000000;
+        let shipmentCost = 5100000000;
+        let alchemyLabCost = 75000000000;
+        let portalCost = 1000000000000;
+        let timeMachineCost = 14000000000000;
+        let antimatterCost = 170000000000000;
+        let prismCost = 2100000000000000;
+        let chancemakerCost = 30000000000000000;
+        let fractalEngineCost = 500000000000000000;
+        let javascriptConsoleCost = 1000000000000000000;
+        let idleverseCost = 2000000000000000000000;
+        let cortexBakerCost = 1000000000000000000000000000;
+        let youCost = 10000000000000000000000000000;
+        let realityBendingCost = 100000000000000000000000000000;
+        let ultimateCost = 1000000000000000000000000000000;
+        
+        // Encouragement upgrade costs
+        let reinforcedIndexCost = 100;
+        let carpalTunnelCost = 500;
+        let ambidextrousCost = 10000;
+        let thousandFingersCost = 100000;
+        let millionFingersCost = 10000000;
+        let billionFingersCost = 1000000000;
+        let trillionFingersCost = 100000000000;
+        let quadrillionFingersCost = 10000000000000;
+        let quintillionFingersCost = 1000000000000000;
+        let sextillionFingersCost = 100000000000000000;
+        let septillionFingersCost = 10000000000000000000;
+        let octillionFingersCost = 1000000000000000000000;
+        let nonillionFingersCost = 100000000000000000000000;
+        let decillionFingersCost = 10000000000000000000000000;
+        let oneMindCost = 1000000000000000000000000000000;
+        let exoticNutsCost = 1000000000000000000000000000000;
+        let communalBrainsweepCost = 1000000000000000000000000000000;
+        let hiveMindCost = 1000000000000000000000000000000;
+        let uncannyCookieClickerCost = 1000000000000000000000000000000;
+        let elderPactCost = 1000000000000000000000000000000;
+        let elderCovenantCost = 1000000000000000000000000000000;
+        let shipmentUpgradeCost = 1000000000000000000000000000000;
+        let alchemyUpgradeCost = 1000000000000000000000000000000;
+        let portalUpgradeCost = 1000000000000000000000000000000;
+        let timeUpgradeCost = 1000000000000000000000000000000;
+        let antimatterUpgradeCost = 1000000000000000000000000000000;
+        let prismUpgradeCost = 1000000000000000000000000000000;
+        let chancemakerUpgradeCost = 1000000000000000000000000000000;
+        let fractalEngineUpgradeCost = 1000000000000000000000000000000;
+        let javascriptConsoleUpgradeCost = 1000000000000000000000000000000;
+        let idleverseUpgradeCost = 1000000000000000000000000000000;
+        let cortexBakerUpgradeCost = 1000000000000000000000000000000;
+        let youUpgradeCost = 1000000000000000000000000000000;
+        let realityBendingUpgradeCost = 1000000000000000000000000000000;
+        let ultimateUpgradeCost = 1000000000000000000000000000000;
+        
+        // New upgrade costs
+        let cookieGalaxyCost = 10000000000000000000000000000000;
+        let timeParadoxCost = 100000000000000000000000000000000;
+        let quantumCookieCost = 100000000000000000000000000000000000;
+        let cookieDimensionCost = 1000000000000000000000000000000000000;
+        let infinityBakerCost = 10000000000000000000000000000000000000;
+        let cookieGodCost = 100000000000000000000000000000000000000;
+        let universeCookieCost = 1000000000000000000000000000000000000000;
+        let multiverseBakerCost = 1000000000000000000000000000000000000000;
+        let cookieCreationCost = 10000000000000000000000000000000000000000;
+        
+        // Cookie click function
+        function clickCookie() {
+            // Calculate clicking bonus from encouragements
+            const clickingBonus = 1 + reinforcedIndex + carpalTunnel + ambidextrous + 
+                                 thousandFingers + millionFingers + billionFingers + 
+                                 trillionFingers + quadrillionFingers + quintillionFingers + 
+                                 sextillionFingers + septillionFingers + octillionFingers + 
+                                 nonillionFingers + decillionFingers;
+            
+            cookies += clickingBonus;
+            updateDisplay();
+            createClickEffect();
+            createParticles();
+            checkAchievements();
+        }
+        
+        // Create click effect
+        function createClickEffect() {
+            const cookie = document.getElementById('cookie');
+            const rect = cookie.getBoundingClientRect();
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.style.left = (rect.left + rect.width / 2 - 10) + 'px';
+            effect.style.top = (rect.top + rect.height / 2 - 10) + 'px';
+            document.body.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 500);
+        }
+        
+        // Create floating particles
+        function createParticles() {
+            const cookie = document.getElementById('cookie');
+            const rect = cookie.getBoundingClientRect();
+            
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                particle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            }
+        }
+        
+        // Spawn golden cookie
+        function spawnGoldenCookie() {
+            if (goldenCookieActive) return;
+            
+            goldenCookieActive = true;
+            const goldenCookie = document.createElement('div');
+            goldenCookie.className = 'golden-cookie';
+            goldenCookie.style.left = (Math.random() * (window.innerWidth - 100)) + 'px';
+            goldenCookie.style.top = (Math.random() * (window.innerHeight - 100)) + 'px';
+            
+            goldenCookie.onclick = function() {
+                const bonus = Math.floor(cookies * 0.1) + 1;
+                cookies += bonus;
+                updateDisplay();
+                showAchievement('Golden Cookie!', `+${bonus.toLocaleString()} cookies!`);
+                goldenCookie.remove();
+                goldenCookieActive = false;
+            };
+            
+            document.body.appendChild(goldenCookie);
+            
+            // Remove golden cookie after 10 seconds
+            setTimeout(() => {
+                if (goldenCookie.parentNode) {
+                    goldenCookie.remove();
+                    goldenCookieActive = false;
+                }
+            }, 10000);
+        }
+        
+        // Show achievement
+        function showAchievement(title, description) {
+            const achievement = document.createElement('div');
+            achievement.className = 'achievement';
+            achievement.innerHTML = `
+                <div class="achievement-title">${title}</div>
+                <div class="achievement-desc">${description}</div>
+            `;
+            
+            document.body.appendChild(achievement);
+            
+            setTimeout(() => {
+                achievement.remove();
+            }, 3000);
+        }
+        
+        // Check achievements
+        function checkAchievements() {
+            const totalCookies = Math.floor(cookies);
+            
+            if (totalCookies >= 1 && !achievements.includes('First Cookie')) {
+                achievements.push('First Cookie');
+                showAchievement('First Cookie', 'Baked your first cookie!');
+            }
+            
+            if (totalCookies >= 10 && !achievements.includes('Cookie Baker')) {
+                achievements.push('Cookie Baker');
+                showAchievement('Cookie Baker', 'Baked 10 cookies!');
+            }
+            
+            if (totalCookies >= 100 && !achievements.includes('Cookie Master')) {
+                achievements.push('Cookie Master');
+                showAchievement('Cookie Master', 'Baked 100 cookies!');
+            }
+            
+            if (totalCookies >= 1000 && !achievements.includes('Cookie Expert')) {
+                achievements.push('Cookie Expert');
+                showAchievement('Cookie Expert', 'Baked 1,000 cookies!');
+            }
+            
+            if (cursors >= 1 && !achievements.includes('Cursor Master')) {
+                achievements.push('Cursor Master');
+                showAchievement('Cursor Master', 'Bought your first cursor!');
+            }
+            
+            if (grandmas >= 1 && !achievements.includes('Grandma Helper')) {
+                achievements.push('Grandma Helper');
+                showAchievement('Grandma Helper', 'Got help from grandma!');
+            }
+        }
+        
+        // Prestige function
+        function prestige() {
+            const totalCookies = Math.floor(cookies);
+            if (totalCookies < 1000000) return; // Need at least 1 million cookies
+            
+            const chips = Math.floor(Math.sqrt(totalCookies / 1000000));
+            heavenlyChips += chips;
+            
+            // Reset everything
+            cookies = 0;
+            cursors = 0;
+            grandmas = 0;
+            farms = 0;
+            mines = 0;
+            factories = 0;
+            banks = 0;
+            temples = 0;
+            wizardTowers = 0;
+            shipments = 0;
+            alchemyLabs = 0;
+            portals = 0;
+            timeMachines = 0;
+            antimatters = 0;
+            prisms = 0;
+            chancemakers = 0;
+            fractalEngines = 0;
+            javascriptConsoles = 0;
+            idleverses = 0;
+            cortexBakers = 0;
+            yous = 0;
+            realityBendings = 0;
+            ultimateUpgrades = 0;
+            
+            // Reset costs
+            cursorCost = 15;
+            grandmaCost = 100;
+            farmCost = 1100;
+            mineCost = 12000;
+            factoryCost = 130000;
+            bankCost = 1400000;
+            templeCost = 20000000;
+            wizardTowerCost = 330000000;
+            shipmentCost = 5100000000;
+            alchemyLabCost = 75000000000;
+            portalCost = 1000000000000;
+            timeMachineCost = 14000000000000;
+            antimatterCost = 170000000000000;
+            prismCost = 2100000000000000;
+            chancemakerCost = 30000000000000000;
+            fractalEngineCost = 500000000000000000;
+            javascriptConsoleCost = 1000000000000000000;
+            idleverseCost = 2000000000000000000000;
+            cortexBakerCost = 1000000000000000000000000000;
+            youCost = 10000000000000000000000000000;
+            realityBendingCost = 100000000000000000000000000000;
+            ultimateCost = 1000000000000000000000000000000;
+            
+            // Reset encouragement upgrades
+            reinforcedIndex = 0;
+            carpalTunnel = 0;
+            ambidextrous = 0;
+            thousandFingers = 0;
+            millionFingers = 0;
+            billionFingers = 0;
+            trillionFingers = 0;
+            quadrillionFingers = 0;
+            quintillionFingers = 0;
+            sextillionFingers = 0;
+            septillionFingers = 0;
+            octillionFingers = 0;
+            nonillionFingers = 0;
+            decillionFingers = 0;
+            oneMind = 0;
+            exoticNuts = 0;
+            communalBrainsweep = 0;
+            hiveMind = 0;
+            uncannyCookieClicker = 0;
+            elderPact = 0;
+            elderCovenant = 0;
+            shipmentUpgrade = 0;
+            alchemyUpgrade = 0;
+            portalUpgrade = 0;
+            timeUpgrade = 0;
+            antimatterUpgrade = 0;
+            prismUpgrade = 0;
+            chancemakerUpgrade = 0;
+            fractalEngineUpgrade = 0;
+            javascriptConsoleUpgrade = 0;
+            idleverseUpgrade = 0;
+            cortexBakerUpgrade = 0;
+            youUpgrade = 0;
+            realityBendingUpgrade = 0;
+            ultimateUpgrade = 0;
+            
+            // Reset encouragement costs
+            reinforcedIndexCost = 100;
+            carpalTunnelCost = 500;
+            ambidextrousCost = 10000;
+            thousandFingersCost = 100000;
+            millionFingersCost = 10000000;
+            billionFingersCost = 1000000000;
+            trillionFingersCost = 100000000000;
+            quadrillionFingersCost = 10000000000000;
+            quintillionFingersCost = 1000000000000000;
+            sextillionFingersCost = 100000000000000000;
+            septillionFingersCost = 10000000000000000000;
+            octillionFingersCost = 1000000000000000000000;
+            nonillionFingersCost = 100000000000000000000000;
+            decillionFingersCost = 10000000000000000000000000;
+            oneMindCost = 1000000000000000000000000000000;
+            exoticNutsCost = 1000000000000000000000000000000;
+            communalBrainsweepCost = 1000000000000000000000000000000;
+            hiveMindCost = 1000000000000000000000000000000;
+            uncannyCookieClickerCost = 1000000000000000000000000000000;
+            elderPactCost = 1000000000000000000000000000000;
+            elderCovenantCost = 1000000000000000000000000000000;
+            shipmentUpgradeCost = 1000000000000000000000000000000;
+            alchemyUpgradeCost = 1000000000000000000000000000000;
+            portalUpgradeCost = 1000000000000000000000000000000;
+            timeUpgradeCost = 1000000000000000000000000000000;
+            antimatterUpgradeCost = 1000000000000000000000000000000;
+            prismUpgradeCost = 1000000000000000000000000000000;
+            chancemakerUpgradeCost = 1000000000000000000000000000000;
+            fractalEngineUpgradeCost = 1000000000000000000000000000000;
+            javascriptConsoleUpgradeCost = 1000000000000000000000000000000;
+            idleverseUpgradeCost = 1000000000000000000000000000000;
+            cortexBakerUpgradeCost = 1000000000000000000000000000000;
+            youUpgradeCost = 1000000000000000000000000000000;
+            realityBendingUpgradeCost = 1000000000000000000000000000000;
+            ultimateUpgradeCost = 1000000000000000000000000000000;
+            
+            showAchievement('Prestige!', `Gained ${chips} Heavenly Chips!`);
+            updateDisplay();
+            updateUpgradeButtons();
+        }
+        
+        // Buy functions for all upgrades
+        function buyCursor() {
+            if (cookies >= cursorCost) {
+                cookies -= cursorCost;
+                cursors++;
+                cursorCost = Math.floor(cursorCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyGrandma() {
+            if (cookies >= grandmaCost) {
+                cookies -= grandmaCost;
+                grandmas++;
+                grandmaCost = Math.floor(grandmaCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyFarm() {
+            if (cookies >= farmCost) {
+                cookies -= farmCost;
+                farms++;
+                farmCost = Math.floor(farmCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyMine() {
+            if (cookies >= mineCost) {
+                cookies -= mineCost;
+                mines++;
+                mineCost = Math.floor(mineCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyFactory() {
+            if (cookies >= factoryCost) {
+                cookies -= factoryCost;
+                factories++;
+                factoryCost = Math.floor(factoryCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyBank() {
+            if (cookies >= bankCost) {
+                cookies -= bankCost;
+                banks++;
+                bankCost = Math.floor(bankCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyTemple() {
+            if (cookies >= templeCost) {
+                cookies -= templeCost;
+                temples++;
+                templeCost = Math.floor(templeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyWizardTower() {
+            if (cookies >= wizardTowerCost) {
+                cookies -= wizardTowerCost;
+                wizardTowers++;
+                wizardTowerCost = Math.floor(wizardTowerCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyShipment() {
+            if (cookies >= shipmentCost) {
+                cookies -= shipmentCost;
+                shipments++;
+                shipmentCost = Math.floor(shipmentCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyAlchemyLab() {
+            if (cookies >= alchemyLabCost) {
+                cookies -= alchemyLabCost;
+                alchemyLabs++;
+                alchemyLabCost = Math.floor(alchemyLabCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyPortal() {
+            if (cookies >= portalCost) {
+                cookies -= portalCost;
+                portals++;
+                portalCost = Math.floor(portalCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyTimeMachine() {
+            if (cookies >= timeMachineCost) {
+                cookies -= timeMachineCost;
+                timeMachines++;
+                timeMachineCost = Math.floor(timeMachineCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyAntimatter() {
+            if (cookies >= antimatterCost) {
+                cookies -= antimatterCost;
+                antimatters++;
+                antimatterCost = Math.floor(antimatterCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+        
+        function buyPrism() {
+            if (cookies >= prismCost) {
+                cookies -= prismCost;
+                prisms++;
+                prismCost = Math.floor(prismCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyChancemaker() {
+            if (cookies >= chancemakerCost) {
+                cookies -= chancemakerCost;
+                chancemakers++;
+                chancemakerCost = Math.floor(chancemakerCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyFractalEngine() {
+            if (cookies >= fractalEngineCost) {
+                cookies -= fractalEngineCost;
+                fractalEngines++;
+                fractalEngineCost = Math.floor(fractalEngineCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyJavaScriptConsole() {
+            if (cookies >= javascriptConsoleCost) {
+                cookies -= javascriptConsoleCost;
+                javascriptConsoles++;
+                javascriptConsoleCost = Math.floor(javascriptConsoleCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyIdleverse() {
+            if (cookies >= idleverseCost) {
+                cookies -= idleverseCost;
+                idleverses++;
+                idleverseCost = Math.floor(idleverseCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyCortexBaker() {
+            if (cookies >= cortexBakerCost) {
+                cookies -= cortexBakerCost;
+                cortexBakers++;
+                cortexBakerCost = Math.floor(cortexBakerCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyYou() {
+            if (cookies >= youCost) {
+                cookies -= youCost;
+                yous++;
+                youCost = Math.floor(youCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyRealityBending() {
+            if (cookies >= realityBendingCost) {
+                cookies -= realityBendingCost;
+                realityBendings++;
+                realityBendingCost = Math.floor(realityBendingCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        }
+
+        function buyUltimate() {
+            if (cookies >= ultimateCost) {
+                cookies -= ultimateCost;
+                ultimateUpgrades++;
+                ultimateCost = Math.floor(ultimateCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Ultimate Upgrade!', 'You are now ultimate!');
+            }
+        }
+        
+        // Encouragement upgrade functions
+        function buyReinforcedIndex() {
+            if (cookies >= reinforcedIndexCost) {
+                cookies -= reinforcedIndexCost;
+                reinforcedIndex++;
+                reinforcedIndexCost = Math.floor(reinforcedIndexCost * 1.15);
+                updateDisplay();
+                updateEncouragementButtons();
+                showAchievement('Reinforced Index!', 'Your finger is stronger!');
+            }
+        }
+        
+        function buyCarpalTunnel() {
+            if (cookies >= carpalTunnelCost) {
+                cookies -= carpalTunnelCost;
+                carpalTunnel++;
+                carpalTunnelCost = Math.floor(carpalTunnelCost * 1.15);
+                updateDisplay();
+                updateEncouragementButtons();
+                showAchievement('Carpal Tunnel Prevention!', 'Your wrists are safe!');
+            }
+        }
+        
+        function buyAmbidextrous() {
+            if (cookies >= ambidextrousCost) {
+                cookies -= ambidextrousCost;
+                ambidextrous++;
+                ambidextrousCost = Math.floor(ambidextrousCost * 1.15);
+                updateDisplay();
+                updateEncouragementButtons();
+                showAchievement('Ambidextrous!', 'You can use both hands!');
+            }
+        }
+        
+        function buyThousandFingers() {
+            if (cookies >= thousandFingersCost) {
+                cookies -= thousandFingersCost;
+                thousandFingers++;
+                thousandFingersCost = Math.floor(thousandFingersCost * 1.15);
+                updateDisplay();
+                updateEncouragementButtons();
+                showAchievement('Thousand Fingers!', 'You have many fingers!');
+            }
+        }
+        
+        function buyMillionFingers() {
+            if (cookies >= millionFingersCost) {
+                cookies -= millionFingersCost;
+                millionFingers++;
+                millionFingersCost = Math.floor(millionFingersCost * 1.15);
+                updateDisplay();
+                updateEncouragementButtons();
+                showAchievement('Million Fingers!', 'You have millions of fingers!');
+            }
+        }
+        
+        function buyBillionFingers() {
+            if (cookies >= billionFingersCost) {
+                cookies -= billionFingersCost;
+                billionFingers++;
+                billionFingersCost = Math.floor(billionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Billion Fingers!', 'You have billions of fingers!');
+            }
+        }
+        
+        function buyTrillionFingers() {
+            if (cookies >= trillionFingersCost) {
+                cookies -= trillionFingersCost;
+                trillionFingers++;
+                trillionFingersCost = Math.floor(trillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Trillion Fingers!', 'You have trillions of fingers!');
+            }
+        }
+        
+        function buyQuadrillionFingers() {
+            if (cookies >= quadrillionFingersCost) {
+                cookies -= quadrillionFingersCost;
+                quadrillionFingers++;
+                quadrillionFingersCost = Math.floor(quadrillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Quadrillion Fingers!', 'You have quadrillions of fingers!');
+            }
+        }
+        
+        function buyQuintillionFingers() {
+            if (cookies >= quintillionFingersCost) {
+                cookies -= quintillionFingersCost;
+                quintillionFingers++;
+                quintillionFingersCost = Math.floor(quintillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Quintillion Fingers!', 'You have quintillions of fingers!');
+            }
+        }
+        
+        function buySextillionFingers() {
+            if (cookies >= sextillionFingersCost) {
+                cookies -= sextillionFingersCost;
+                sextillionFingers++;
+                sextillionFingersCost = Math.floor(sextillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Sextillion Fingers!', 'You have sextillions of fingers!');
+            }
+        }
+        
+        function buySeptillionFingers() {
+            if (cookies >= septillionFingersCost) {
+                cookies -= septillionFingersCost;
+                septillionFingers++;
+                septillionFingersCost = Math.floor(septillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Septillion Fingers!', 'You have septillions of fingers!');
+            }
+        }
+        
+        function buyOctillionFingers() {
+            if (cookies >= octillionFingersCost) {
+                cookies -= octillionFingersCost;
+                octillionFingers++;
+                octillionFingersCost = Math.floor(octillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Octillion Fingers!', 'You have octillions of fingers!');
+            }
+        }
+        
+        function buyNonillionFingers() {
+            if (cookies >= nonillionFingersCost) {
+                cookies -= nonillionFingersCost;
+                nonillionFingers++;
+                nonillionFingersCost = Math.floor(nonillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Nonillion Fingers!', 'You have nonillions of fingers!');
+            }
+        }
+        
+        function buyDecillionFingers() {
+            if (cookies >= decillionFingersCost) {
+                cookies -= decillionFingersCost;
+                decillionFingers++;
+                decillionFingersCost = Math.floor(decillionFingersCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Decillion Fingers!', 'You have decillions of fingers!');
+            }
+        }
+        
+        function buyOneMind() {
+            if (cookies >= oneMindCost) {
+                cookies -= oneMindCost;
+                oneMind++;
+                oneMindCost = Math.floor(oneMindCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('One Mind!', 'Grandmas are twice as efficient!');
+            }
+        }
+        
+        function buyExoticNuts() {
+            if (cookies >= exoticNutsCost) {
+                cookies -= exoticNutsCost;
+                exoticNuts++;
+                exoticNutsCost = Math.floor(exoticNutsCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Exotic Nuts!', 'Farms are twice as efficient!');
+            }
+        }
+        
+        function buyCommunalBrainsweep() {
+            if (cookies >= communalBrainsweepCost) {
+                cookies -= communalBrainsweepCost;
+                communalBrainsweep++;
+                communalBrainsweepCost = Math.floor(communalBrainsweepCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Communal Brainsweep!', 'Mines are twice as efficient!');
+            }
+        }
+        
+        function buyHiveMind() {
+            if (cookies >= hiveMindCost) {
+                cookies -= hiveMindCost;
+                hiveMind++;
+                hiveMindCost = Math.floor(hiveMindCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Hive Mind!', 'Factories are twice as efficient!');
+            }
+        }
+        
+        function buyUncannyCookieClicker() {
+            if (cookies >= uncannyCookieClickerCost) {
+                cookies -= uncannyCookieClickerCost;
+                uncannyCookieClicker++;
+                uncannyCookieClickerCost = Math.floor(uncannyCookieClickerCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Uncanny Cookie Clicker!', 'Banks are twice as efficient!');
+            }
+        }
+        
+        function buyElderPact() {
+            if (cookies >= elderPactCost) {
+                cookies -= elderPactCost;
+                elderPact++;
+                elderPactCost = Math.floor(elderPactCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Elder Pact!', 'Temples are twice as efficient!');
+            }
+        }
+        
+        function buyElderCovenant() {
+            if (cookies >= elderCovenantCost) {
+                cookies -= elderCovenantCost;
+                elderCovenant++;
+                elderCovenantCost = Math.floor(elderCovenantCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Elder Covenant!', 'Wizard Towers are twice as efficient!');
+            }
+        }
+        
+        function buyShipmentUpgrade() {
+            if (cookies >= shipmentUpgradeCost) {
+                cookies -= shipmentUpgradeCost;
+                shipmentUpgrade++;
+                shipmentUpgradeCost = Math.floor(shipmentUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Shipment Upgrade!', 'Shipments are twice as efficient!');
+            }
+        }
+        
+        function buyAlchemyUpgrade() {
+            if (cookies >= alchemyUpgradeCost) {
+                cookies -= alchemyUpgradeCost;
+                alchemyUpgrade++;
+                alchemyUpgradeCost = Math.floor(alchemyUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Alchemy Upgrade!', 'Alchemy Labs are twice as efficient!');
+            }
+        }
+        
+        function buyPortalUpgrade() {
+            if (cookies >= portalUpgradeCost) {
+                cookies -= portalUpgradeCost;
+                portalUpgrade++;
+                portalUpgradeCost = Math.floor(portalUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Portal Upgrade!', 'Portals are twice as efficient!');
+            }
+        }
+        
+        function buyTimeUpgrade() {
+            if (cookies >= timeUpgradeCost) {
+                cookies -= timeUpgradeCost;
+                timeUpgrade++;
+                timeUpgradeCost = Math.floor(timeUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Time Upgrade!', 'Time Machines are twice as efficient!');
+            }
+        }
+        
+        function buyAntimatterUpgrade() {
+            if (cookies >= antimatterUpgradeCost) {
+                cookies -= antimatterUpgradeCost;
+                antimatterUpgrade++;
+                antimatterUpgradeCost = Math.floor(antimatterUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Antimatter Upgrade!', 'Antimatters are twice as efficient!');
+            }
+        }
+        
+        function buyPrismUpgrade() {
+            if (cookies >= prismUpgradeCost) {
+                cookies -= prismUpgradeCost;
+                prismUpgrade++;
+                prismUpgradeCost = Math.floor(prismUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Prism Upgrade!', 'Prisms are twice as efficient!');
+            }
+        }
+        
+        function buyChancemakerUpgrade() {
+            if (cookies >= chancemakerUpgradeCost) {
+                cookies -= chancemakerUpgradeCost;
+                chancemakerUpgrade++;
+                chancemakerUpgradeCost = Math.floor(chancemakerUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Chancemaker Upgrade!', 'Chancemakers are twice as efficient!');
+            }
+        }
+        
+        function buyFractalEngineUpgrade() {
+            if (cookies >= fractalEngineUpgradeCost) {
+                cookies -= fractalEngineUpgradeCost;
+                fractalEngineUpgrade++;
+                fractalEngineUpgradeCost = Math.floor(fractalEngineUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Fractal Engine Upgrade!', 'Fractal Engines are twice as efficient!');
+            }
+        }
+        
+        function buyJavaScriptConsoleUpgrade() {
+            if (cookies >= javascriptConsoleUpgradeCost) {
+                cookies -= javascriptConsoleUpgradeCost;
+                javascriptConsoleUpgrade++;
+                javascriptConsoleUpgradeCost = Math.floor(javascriptConsoleUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('JavaScript Console Upgrade!', 'JavaScript Consoles are twice as efficient!');
+            }
+        }
+        
+        function buyIdleverseUpgrade() {
+            if (cookies >= idleverseUpgradeCost) {
+                cookies -= idleverseUpgradeCost;
+                idleverseUpgrade++;
+                idleverseUpgradeCost = Math.floor(idleverseUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Idleverse Upgrade!', 'Idleverses are twice as efficient!');
+            }
+        }
+        
+        function buyCortexBakerUpgrade() {
+            if (cookies >= cortexBakerUpgradeCost) {
+                cookies -= cortexBakerUpgradeCost;
+                cortexBakerUpgrade++;
+                cortexBakerUpgradeCost = Math.floor(cortexBakerUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Cortex Baker Upgrade!', 'Cortex Bakers are twice as efficient!');
+            }
+        }
+        
+        function buyYouUpgrade() {
+            if (cookies >= youUpgradeCost) {
+                cookies -= youUpgradeCost;
+                youUpgrade++;
+                youUpgradeCost = Math.floor(youUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('You Upgrade!', 'Yous are twice as efficient!');
+            }
+        }
+        
+        function buyRealityBendingUpgrade() {
+            if (cookies >= realityBendingUpgradeCost) {
+                cookies -= realityBendingUpgradeCost;
+                realityBendingUpgrade++;
+                realityBendingUpgradeCost = Math.floor(realityBendingUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Reality Bending Upgrade!', 'Reality Bendings are twice as efficient!');
+            }
+        }
+        
+        function buyUltimateUpgrade() {
+            if (cookies >= ultimateUpgradeCost) {
+                cookies -= ultimateUpgradeCost;
+                ultimateUpgrade++;
+                ultimateUpgradeCost = Math.floor(ultimateUpgradeCost * 1.15);
+                updateDisplay();
+                updateUpgradeButtons();
+                showAchievement('Ultimate Upgrade!', 'Ultimate Upgrades are twice as efficient!');
+            }
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('cookieCount').textContent = Math.floor(cookies);
+            document.getElementById('heavenlyChips').textContent = heavenlyChips;
+            document.getElementById('cursorCost').textContent = cursorCost.toLocaleString();
+            document.getElementById('grandmaCost').textContent = grandmaCost.toLocaleString();
+            document.getElementById('farmCost').textContent = farmCost.toLocaleString();
+            document.getElementById('mineCost').textContent = mineCost.toLocaleString();
+            document.getElementById('factoryCost').textContent = factoryCost.toLocaleString();
+            document.getElementById('bankCost').textContent = bankCost.toLocaleString();
+            document.getElementById('templeCost').textContent = templeCost.toLocaleString();
+            document.getElementById('wizardTowerCost').textContent = wizardTowerCost.toLocaleString();
+            document.getElementById('shipmentCost').textContent = shipmentCost.toLocaleString();
+            document.getElementById('alchemyLabCost').textContent = alchemyLabCost.toLocaleString();
+            document.getElementById('portalCost').textContent = portalCost.toLocaleString();
+            document.getElementById('timeMachineCost').textContent = timeMachineCost.toLocaleString();
+            document.getElementById('antimatterCost').textContent = antimatterCost.toLocaleString();
+            document.getElementById('prismCost').textContent = prismCost.toLocaleString();
+            document.getElementById('chancemakerCost').textContent = chancemakerCost.toLocaleString();
+            document.getElementById('fractalEngineCost').textContent = fractalEngineCost.toLocaleString();
+            document.getElementById('javascriptConsoleCost').textContent = javascriptConsoleCost.toLocaleString();
+            document.getElementById('idleverseCost').textContent = idleverseCost.toLocaleString();
+            document.getElementById('cortexBakerCost').textContent = cortexBakerCost.toLocaleString();
+            document.getElementById('youCost').textContent = youCost.toLocaleString();
+            document.getElementById('realityBendingCost').textContent = realityBendingCost.toLocaleString();
+            document.getElementById('ultimateCost').textContent = ultimateCost.toLocaleString();
+            
+            // Update encouragement costs
+            document.getElementById('reinforcedIndexCost').textContent = reinforcedIndexCost.toLocaleString();
+            document.getElementById('carpalTunnelCost').textContent = carpalTunnelCost.toLocaleString();
+            document.getElementById('ambidextrousCost').textContent = ambidextrousCost.toLocaleString();
+            document.getElementById('thousandFingersCost').textContent = thousandFingersCost.toLocaleString();
+            document.getElementById('millionFingersCost').textContent = millionFingersCost.toLocaleString();
+            document.getElementById('billionFingersCost').textContent = billionFingersCost.toLocaleString();
+            document.getElementById('trillionFingersCost').textContent = trillionFingersCost.toLocaleString();
+            document.getElementById('quadrillionFingersCost').textContent = quadrillionFingersCost.toLocaleString();
+            document.getElementById('quintillionFingersCost').textContent = quintillionFingersCost.toLocaleString();
+            document.getElementById('sextillionFingersCost').textContent = sextillionFingersCost.toLocaleString();
+            document.getElementById('septillionFingersCost').textContent = septillionFingersCost.toLocaleString();
+            document.getElementById('octillionFingersCost').textContent = octillionFingersCost.toLocaleString();
+            document.getElementById('nonillionFingersCost').textContent = nonillionFingersCost.toLocaleString();
+            document.getElementById('decillionFingersCost').textContent = decillionFingersCost.toLocaleString();
+            document.getElementById('oneMindCost').textContent = oneMindCost.toLocaleString();
+            document.getElementById('exoticNutsCost').textContent = exoticNutsCost.toLocaleString();
+            document.getElementById('communalBrainsweepCost').textContent = communalBrainsweepCost.toLocaleString();
+            document.getElementById('hiveMindCost').textContent = hiveMindCost.toLocaleString();
+            document.getElementById('uncannyCookieClickerCost').textContent = uncannyCookieClickerCost.toLocaleString();
+            document.getElementById('elderPactCost').textContent = elderPactCost.toLocaleString();
+            document.getElementById('elderCovenantCost').textContent = elderCovenantCost.toLocaleString();
+            document.getElementById('shipmentUpgradeCost').textContent = shipmentUpgradeCost.toLocaleString();
+            document.getElementById('alchemyUpgradeCost').textContent = alchemyUpgradeCost.toLocaleString();
+            document.getElementById('portalUpgradeCost').textContent = portalUpgradeCost.toLocaleString();
+            document.getElementById('timeUpgradeCost').textContent = timeUpgradeCost.toLocaleString();
+            document.getElementById('antimatterUpgradeCost').textContent = antimatterUpgradeCost.toLocaleString();
+            document.getElementById('prismUpgradeCost').textContent = prismUpgradeCost.toLocaleString();
+            document.getElementById('chancemakerUpgradeCost').textContent = chancemakerUpgradeCost.toLocaleString();
+            document.getElementById('fractalEngineUpgradeCost').textContent = fractalEngineUpgradeCost.toLocaleString();
+            document.getElementById('javascriptConsoleUpgradeCost').textContent = javascriptConsoleUpgradeCost.toLocaleString();
+            document.getElementById('idleverseUpgradeCost').textContent = idleverseUpgradeCost.toLocaleString();
+            document.getElementById('cortexBakerUpgradeCost').textContent = cortexBakerUpgradeCost.toLocaleString();
+            document.getElementById('youUpgradeCost').textContent = youUpgradeCost.toLocaleString();
+            document.getElementById('realityBendingUpgradeCost').textContent = realityBendingUpgradeCost.toLocaleString();
+            document.getElementById('ultimateUpgradeCost').textContent = ultimateUpgradeCost.toLocaleString();
+            
+            const cps = cursors + (grandmas * 5 * (1 + oneMind)) + (farms * 25 * (1 + exoticNuts)) + (mines * 100 * (1 + communalBrainsweep)) + 
+                       (factories * 500 * (1 + hiveMind)) + (banks * 3000 * (1 + uncannyCookieClicker)) + (temples * 20000 * (1 + elderPact)) + 
+                       (wizardTowers * 166666 * (1 + elderCovenant)) + (shipments * 1000000 * (1 + shipmentUpgrade)) + 
+                       (alchemyLabs * 10000000 * (1 + alchemyUpgrade)) + (portals * 100000000 * (1 + portalUpgrade)) + 
+                       (timeMachines * 1000000000 * (1 + timeUpgrade)) + (antimatters * 10000000000 * (1 + antimatterUpgrade)) + 
+                       (prisms * 100000000000 * (1 + prismUpgrade)) + (chancemakers * 100000000000000000 * (1 + chancemakerUpgrade)) + 
+                       (fractalEngines * 1000000000000000000 * (1 + fractalEngineUpgrade)) + (javascriptConsoles * 1000000000000000000 * (1 + javascriptConsoleUpgrade)) + 
+                       (idleverses * 1000000000000000000000 * (1 + idleverseUpgrade)) + (cortexBakers * 1000000000000000000000000000 * (1 + cortexBakerUpgrade)) + 
+                       (yous * 10000000000000000000000000000 * (1 + youUpgrade)) + (realityBendings * 100000000000000000000000000000 * (1 + realityBendingUpgrade)) + 
+                       (ultimateUpgrades * 1000000000000000000000000000000 * (1 + ultimateUpgrade));
+            
+            document.getElementById('cps').textContent = cps.toLocaleString() + ' cookies per second';
+            
+            // Update prestige button
+            const totalCookies = Math.floor(cookies);
+            const prestigeBtn = document.getElementById('prestigeBtn');
+            if (totalCookies >= 1000000) {
+                const chips = Math.floor(Math.sqrt(totalCookies / 1000000));
+                prestigeBtn.textContent = `Prestige (+${chips} Heavenly Chips)`;
+                prestigeBtn.disabled = false;
+            } else {
+                prestigeBtn.textContent = `Prestige (Need 1,000,000 cookies)`;
+                prestigeBtn.disabled = true;
+            }
+        }
+        
+        // Update upgrade buttons
+        function updateUpgradeButtons() {
+            document.getElementById('cursorBtn').disabled = cookies < cursorCost;
+            document.getElementById('grandmaBtn').disabled = cookies < grandmaCost;
+            document.getElementById('farmBtn').disabled = cookies < farmCost;
+            document.getElementById('mineBtn').disabled = cookies < mineCost;
+            document.getElementById('factoryBtn').disabled = cookies < factoryCost;
+            document.getElementById('bankBtn').disabled = cookies < bankCost;
+            document.getElementById('templeBtn').disabled = cookies < templeCost;
+            document.getElementById('wizardTowerBtn').disabled = cookies < wizardTowerCost;
+            document.getElementById('shipmentBtn').disabled = cookies < shipmentCost;
+            document.getElementById('alchemyLabBtn').disabled = cookies < alchemyLabCost;
+            document.getElementById('portalBtn').disabled = cookies < portalCost;
+            document.getElementById('timeMachineBtn').disabled = cookies < timeMachineCost;
+            document.getElementById('antimatterBtn').disabled = cookies < antimatterCost;
+            document.getElementById('prismBtn').disabled = cookies < prismCost;
+            document.getElementById('chancemakerBtn').disabled = cookies < chancemakerCost;
+            document.getElementById('fractalEngineBtn').disabled = cookies < fractalEngineCost;
+            document.getElementById('javascriptConsoleBtn').disabled = cookies < javascriptConsoleCost;
+            document.getElementById('idleverseBtn').disabled = cookies < idleverseCost;
+            document.getElementById('cortexBakerBtn').disabled = cookies < cortexBakerCost;
+            document.getElementById('youBtn').disabled = cookies < youCost;
+            document.getElementById('realityBendingBtn').disabled = cookies < realityBendingCost;
+            document.getElementById('ultimateBtn').disabled = cookies < ultimateCost;
+        }
+        
+        // Update encouragement buttons
+        function updateEncouragementButtons() {
+            document.getElementById('reinforcedIndexBtn').disabled = cookies < reinforcedIndexCost;
+            document.getElementById('carpalTunnelBtn').disabled = cookies < carpalTunnelCost;
+            document.getElementById('ambidextrousBtn').disabled = cookies < ambidextrousCost;
+            document.getElementById('thousandFingersBtn').disabled = cookies < thousandFingersCost;
+            document.getElementById('millionFingersBtn').disabled = cookies < millionFingersCost;
+            document.getElementById('billionFingersBtn').disabled = cookies < billionFingersCost;
+            document.getElementById('trillionFingersBtn').disabled = cookies < trillionFingersCost;
+            document.getElementById('quadrillionFingersBtn').disabled = cookies < quadrillionFingersCost;
+            document.getElementById('quintillionFingersBtn').disabled = cookies < quintillionFingersCost;
+            document.getElementById('sextillionFingersBtn').disabled = cookies < sextillionFingersCost;
+            document.getElementById('septillionFingersBtn').disabled = cookies < septillionFingersCost;
+            document.getElementById('octillionFingersBtn').disabled = cookies < octillionFingersCost;
+            document.getElementById('nonillionFingersBtn').disabled = cookies < nonillionFingersCost;
+            document.getElementById('decillionFingersBtn').disabled = cookies < decillionFingersCost;
+            document.getElementById('oneMindBtn').disabled = cookies < oneMindCost;
+            document.getElementById('exoticNutsBtn').disabled = cookies < exoticNutsCost;
+            document.getElementById('communalBrainsweepBtn').disabled = cookies < communalBrainsweepCost;
+            document.getElementById('hiveMindBtn').disabled = cookies < hiveMindCost;
+            document.getElementById('uncannyCookieClickerBtn').disabled = cookies < uncannyCookieClickerCost;
+            document.getElementById('elderPactBtn').disabled = cookies < elderPactCost;
+            document.getElementById('elderCovenantBtn').disabled = cookies < elderCovenantCost;
+            document.getElementById('shipmentUpgradeBtn').disabled = cookies < shipmentUpgradeCost;
+            document.getElementById('alchemyUpgradeBtn').disabled = cookies < alchemyUpgradeCost;
+            document.getElementById('portalUpgradeBtn').disabled = cookies < portalUpgradeCost;
+            document.getElementById('timeUpgradeBtn').disabled = cookies < timeUpgradeCost;
+            document.getElementById('antimatterUpgradeBtn').disabled = cookies < antimatterUpgradeCost;
+            document.getElementById('prismUpgradeBtn').disabled = cookies < prismUpgradeCost;
+            document.getElementById('chancemakerUpgradeBtn').disabled = cookies < chancemakerUpgradeCost;
+            document.getElementById('fractalEngineUpgradeBtn').disabled = cookies < fractalEngineUpgradeCost;
+            document.getElementById('javascriptConsoleUpgradeBtn').disabled = cookies < javascriptConsoleUpgradeCost;
+            document.getElementById('idleverseUpgradeBtn').disabled = cookies < idleverseUpgradeCost;
+            document.getElementById('cortexBakerUpgradeBtn').disabled = cookies < cortexBakerUpgradeCost;
+            document.getElementById('youUpgradeBtn').disabled = cookies < youUpgradeCost;
+            document.getElementById('realityBendingUpgradeBtn').disabled = cookies < realityBendingUpgradeCost;
+            document.getElementById('ultimateUpgradeBtn').disabled = cookies < ultimateUpgradeCost;
+        }
+        
+        // Passive cookie generation
+        function generateCookies() {
+            const cps = cursors + (grandmas * 5 * (1 + oneMind)) + (farms * 25 * (1 + exoticNuts)) + (mines * 100 * (1 + communalBrainsweep)) + 
+                       (factories * 500 * (1 + hiveMind)) + (banks * 3000 * (1 + uncannyCookieClicker)) + (temples * 20000 * (1 + elderPact)) + 
+                       (wizardTowers * 166666 * (1 + elderCovenant)) + (shipments * 1000000 * (1 + shipmentUpgrade)) + 
+                       (alchemyLabs * 10000000 * (1 + alchemyUpgrade)) + (portals * 100000000 * (1 + portalUpgrade)) + 
+                       (timeMachines * 1000000000 * (1 + timeUpgrade)) + (antimatters * 10000000000 * (1 + antimatterUpgrade)) + 
+                       (prisms * 100000000000 * (1 + prismUpgrade)) + (chancemakers * 100000000000000000 * (1 + chancemakerUpgrade)) + 
+                       (fractalEngines * 1000000000000000000 * (1 + fractalEngineUpgrade)) + (javascriptConsoles * 1000000000000000000 * (1 + javascriptConsoleUpgrade)) + 
+                       (idleverses * 1000000000000000000000 * (1 + idleverseUpgrade)) + (cortexBakers * 1000000000000000000000000000 * (1 + cortexBakerUpgrade)) + 
+                       (yous * 10000000000000000000000000000 * (1 + youUpgrade)) + (realityBendings * 100000000000000000000000000000 * (1 + realityBendingUpgrade)) + 
+                       (ultimateUpgrades * 1000000000000000000000000000000 * (1 + ultimateUpgrade));
+            
+            cookies += cps / 10; // Update 10 times per second
+            updateDisplay();
+        }
+        
+        // Initialize game
+        function initGame() {
+            updateDisplay();
+            updateUpgradeButtons();
+            updateEncouragementButtons(); // Initialize encouragement buttons
+            
+            // Set up cookie click event
+            document.getElementById('cookie').addEventListener('click', clickCookie);
+            
+            // Set up passive generation
+            setInterval(generateCookies, 100);
+            
+            // Set up upgrade button updates
+            setInterval(updateUpgradeButtons, 100);
+            setInterval(updateEncouragementButtons, 100); // Update encouragement buttons periodically
+            
+            // Set up golden cookie spawning (every 30-60 seconds)
+            setInterval(() => {
+                if (Math.random() < 0.3) { // 30% chance every interval
+                    spawnGoldenCookie();
+                }
+            }, 30000);
+            
+            // Show welcome achievement
+            setTimeout(() => {
+                showAchievement('Welcome!', 'Start your cookie empire!');
+            }, 1000);
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>

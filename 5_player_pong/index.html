@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5-Player Pong - Total Chaos! 🏓</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Fredoka+One&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #1a1a2e;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #00ffff;
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            pointer-events: all;
+            z-index: 200;
+            box-shadow: 0 0 100px #00ffff;
+        }
+
+        .start-screen h1 {
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3.5em;
+            margin: 0 0 20px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .start-screen p {
+            color: #fff;
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #000000;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 1.4em;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 50px #00ffff;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 100px #ff00ff;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffff;
+            font-size: 1.2em;
+            pointer-events: none;
+            text-shadow: 0 0 20px #00ffff;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .score-board {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .player-score {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 2px solid;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .player1 { border-color: #ff6b6b; }
+        .player2 { border-color: #4ecdc4; }
+        .player3 { border-color: #45b7d1; }
+        .player4 { border-color: #96ceb4; }
+        .player5 { border-color: #f39c12; }
+
+        .game-info {
+            font-size: 1.1em;
+            color: #ffff00;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #00ffff;
+            color: #fff;
+            font-family: 'Fredoka One', cursive;
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 0 30px #00ffff;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #ff00ff;
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            pointer-events: all;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 0 100px #ff00ff;
+        }
+
+        .game-over h2 {
+            color: #ff00ff;
+            font-size: 2.5em;
+            margin: 0 0 20px 0;
+            text-shadow: 0 0 30px #ff00ff;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 1.3em;
+            cursor: pointer;
+            font-family: 'Orbitron', monospace;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle 1s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-overlay">
+        <div class="start-screen" id="startScreen">
+            <h1>🏓 5-PLAYER PONG 🏓</h1>
+            <p>1 Human vs 4 AI = EPIC BATTLE!</p>
+            <button class="start-btn" onclick="startGame()">🚀 START BATTLE! 🚀</button>
+        </div>
+
+        <div class="game-ui" id="gameUI" style="display: none;">
+            <div class="score-board">
+                <div class="player-score player1">AI 1: <span id="score1">0</span></div>
+                <div class="player-score player2">AI 2: <span id="score2">0</span></div>
+                <div class="player-score player3">AI 3: <span id="score3">0</span></div>
+                <div class="player-score player4">AI 4: <span id="score4">0</span></div>
+                <div class="player-score player5">YOU: <span id="score5">0</span></div>
+            </div>
+            <div class="game-info">Balls: <span id="ballCount">1</span> | Speed: <span id="gameSpeed">1</span>x</div>
+        </div>
+
+        <div class="controls" id="controls" style="display: none;">
+            <strong>🎮 CONTROLS:</strong><br><br>
+            <strong>YOU (Orange):</strong> Mouse movement<br>
+            <strong>AI 1 (Red):</strong> Left side - Automatic<br>
+            <strong>AI 2 (Blue):</strong> Top side - Automatic<br>
+            <strong>AI 3 (Green):</strong> Right side - Automatic<br>
+            <strong>AI 4 (Yellow):</strong> Bottom side - Automatic<br><br>
+            <strong>SPACE to add more balls!</strong><br>
+            <strong>Beat the AI to win! 🏆</strong>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2>🏆 GAME OVER! 🏆</h2>
+            <p style="color: #fff; font-size: 1.2em; margin-bottom: 20px;">Winner: <span id="winner">Player 1</span></p>
+            <button class="restart-btn" onclick="restartGame()">🔄 PLAY AGAIN! 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = 'start';
+        let scores = [0, 0, 0, 0, 0];
+        let ballCount = 1;
+        let gameSpeed = 1;
+        let winner = null;
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game objects
+        let paddles = [];
+        let balls = [];
+        let particles = [];
+        
+        // Paddle properties
+        const paddleWidth = 15;
+        const paddleHeight = 80;
+        const paddleSpeed = 8;
+        
+        // Ball properties
+        const ballRadius = 8;
+        const ballSpeed = 6;
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Input handling
+        let keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameState === 'playing') {
+                e.preventDefault();
+                addBall();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        // Mouse tracking for center player
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState === 'playing' && paddles[4]) {
+                paddles[4].y = e.clientY - paddleHeight / 2;
+                // Keep paddle on screen
+                if (paddles[4].y < 0) paddles[4].y = 0;
+                if (paddles[4].y > canvas.height - paddleHeight) {
+                    paddles[4].y = canvas.height - paddleHeight;
+                }
+            }
+        });
+        
+        // Start game
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+            document.getElementById('controls').style.display = 'block';
+            
+            initializeGame();
+            gameLoop();
+        }
+        
+        // Initialize game
+        function initializeGame() {
+            // Reset scores
+            scores = [0, 0, 0, 0, 0];
+            ballCount = 1;
+            gameSpeed = 1;
+            
+            // Create paddles around the edges + center
+            paddles = [
+                // Player 1 (Red) - Left side
+                {
+                    x: 50,
+                    y: canvas.height / 2 - paddleHeight / 2,
+                    width: paddleWidth,
+                    height: paddleHeight,
+                    color: '#ff6b6b',
+                    keys: { up: 'KeyW', down: 'KeyS' }
+                },
+                // Player 2 (Blue) - Top side
+                {
+                    x: canvas.width / 2 - paddleWidth / 2,
+                    y: 50,
+                    width: paddleHeight,
+                    height: paddleWidth,
+                    color: '#4ecdc4',
+                    keys: { up: 'ArrowUp', down: 'ArrowDown' }
+                },
+                // Player 3 (Green) - Right side
+                {
+                    x: canvas.width - 50 - paddleWidth,
+                    y: canvas.height / 2 - paddleHeight / 2,
+                    width: paddleWidth,
+                    height: paddleHeight,
+                    color: '#45b7d1',
+                    keys: { up: 'KeyI', down: 'KeyK' }
+                },
+                // Player 4 (Yellow) - Bottom side
+                {
+                    x: canvas.width / 2 - paddleWidth / 2,
+                    y: canvas.height - 50 - paddleWidth,
+                    width: paddleHeight,
+                    height: paddleWidth,
+                    color: '#96ceb4',
+                    keys: { up: 'KeyP', down: 'KeyL' }
+                },
+                // Player 5 (Orange) - Center
+                {
+                    x: canvas.width / 2 - paddleWidth / 2,
+                    y: canvas.height / 2 - paddleHeight / 2,
+                    width: paddleWidth,
+                    height: paddleHeight,
+                    color: '#f39c12',
+                    keys: { up: null, down: null } // Mouse controlled
+                }
+            ];
+            
+            // Create initial ball
+            balls = [{
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                vx: (Math.random() - 0.5) * ballSpeed * 2,
+                vy: (Math.random() - 0.5) * ballSpeed * 2,
+                color: '#ffff00'
+            }];
+            
+            particles = [];
+        }
+        
+        // Add more balls
+        function addBall() {
+            if (ballCount < 5) { // Max 5 balls
+                ballCount++;
+                balls.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * ballSpeed * 2,
+                    vy: (Math.random() - 0.5) * ballSpeed * 2,
+                    color: ['#ff00ff', '#00ffff', '#ffff00', '#ff8800'][Math.floor(Math.random() * 4)]
+                });
+                
+                // Increase game speed
+                gameSpeed += 0.2;
+            }
+        }
+        
+        // Update game objects
+        function updateGame() {
+            // Update AI paddles
+            updateAI();
+            
+            // Update paddles (only human player now)
+            paddles.forEach((paddle, index) => {
+                // Keep paddles on screen
+                if (index === 1 || index === 3) { // Top/Bottom paddles
+                    if (paddle.x < 0) paddle.x = 0;
+                    if (paddle.x > canvas.width - paddle.width) {
+                        paddle.x = canvas.width - paddle.width;
+                    }
+                } else { // Left/Right/Center paddles
+                    if (paddle.y < 0) paddle.y = 0;
+                    if (paddle.y > canvas.height - paddle.height) {
+                        paddle.y = canvas.height - paddle.height;
+                    }
+                }
+            });
+            
+            // Update balls
+            balls.forEach(ball => {
+                ball.x += ball.vx * gameSpeed;
+                ball.y += ball.vy * gameSpeed;
+                
+                // Ball collision with walls
+                if (ball.x <= 0 || ball.x >= canvas.width) {
+                    ball.vx *= -1;
+                    createParticles(ball.x, ball.y, ball.color);
+                }
+                if (ball.y <= 0 || ball.y >= canvas.height) {
+                    ball.vy *= -1;
+                    createParticles(ball.x, ball.y, ball.color);
+                }
+                
+                // Ball collision with paddles
+                paddles.forEach((paddle, index) => {
+                    if (checkCollision(ball, paddle)) {
+                        // Determine bounce direction based on paddle position
+                        if (index === 1 || index === 3) { // Top/Bottom paddles
+                            ball.vy *= -1;
+                            ball.vx += (ball.x - (paddle.x + paddle.width / 2)) * 0.1;
+                        } else { // Left/Right/Center paddles
+                            ball.vx *= -1;
+                            ball.vy += (ball.y - (paddle.y + paddle.height / 2)) * 0.1;
+                        }
+                        
+                        // Speed up ball slightly
+                        ball.vx *= 1.05;
+                        ball.vy *= 1.05;
+                        
+                        // Create particles
+                        createParticles(ball.x, ball.y, paddle.color);
+                        
+                        // Add score to the player who hit the ball
+                        scores[index]++;
+                    }
+                });
+                
+                // Check if ball is out of bounds
+                if (ball.x < -100 || ball.x > canvas.width + 100 || 
+                    ball.y < -100 || ball.y > canvas.height + 100) {
+                    // Reset ball to center
+                    ball.x = canvas.width / 2;
+                    ball.y = canvas.height / 2;
+                    ball.vx = (Math.random() - 0.5) * ballSpeed * 2;
+                    ball.vy = (Math.random() - 0.5) * ballSpeed * 2;
+                }
+            });
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Check for winner
+            checkWinner();
+            
+            // Update display
+            updateDisplay();
+        }
+        
+        // AI logic for automatic paddle movement
+        function updateAI() {
+            paddles.forEach((paddle, index) => {
+                if (index < 4) { // Only AI players (0-3)
+                    let targetY = paddle.y;
+                    
+                    // Find the closest ball to this AI paddle
+                    let closestBall = null;
+                    let closestDistance = Infinity;
+                    
+                    balls.forEach(ball => {
+                        let distance;
+                        if (index === 0 || index === 2) { // Left/Right paddles
+                            distance = Math.abs(ball.x - paddle.x);
+                        } else { // Top/Bottom paddles
+                            distance = Math.abs(ball.y - paddle.y);
+                        }
+                        
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestBall = ball;
+                        }
+                    });
+                    
+                    if (closestBall) {
+                        // Move paddle towards the ball
+                        if (index === 0 || index === 2) { // Left/Right paddles
+                            targetY = closestBall.y - paddle.height / 2;
+                        } else { // Top/Bottom paddles
+                            targetY = closestBall.x - paddle.width / 2;
+                        }
+                        
+                        // Add some AI "personality" - not perfect movement
+                        targetY += (Math.random() - 0.5) * 20;
+                        
+                        // Smooth movement towards target
+                        if (index === 0 || index === 2) { // Left/Right paddles
+                            if (paddle.y < targetY) {
+                                paddle.y += paddleSpeed * 0.8;
+                            } else if (paddle.y > targetY) {
+                                paddle.y -= paddleSpeed * 0.8;
+                            }
+                        } else { // Top/Bottom paddles
+                            if (paddle.x < targetY) {
+                                paddle.x += paddleSpeed * 0.8;
+                            } else if (paddle.x > targetY) {
+                                paddle.x -= paddleSpeed * 0.8;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Check collision between ball and paddle
+        function checkCollision(ball, paddle) {
+            return ball.x + ballRadius > paddle.x &&
+                   ball.x - ballRadius < paddle.x + paddle.width &&
+                   ball.y + ballRadius > paddle.y &&
+                   ball.y - ballRadius < paddle.y + paddle.height;
+        }
+        
+        // Create particles
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    maxLife: 30,
+                    color: color,
+                    size: Math.random() * 3 + 2
+                });
+            }
+        }
+        
+        // Check for winner
+        function checkWinner() {
+            const maxScore = 10;
+            for (let i = 0; i < scores.length; i++) {
+                if (scores[i] >= maxScore) {
+                    if (i === 4) {
+                        winner = "YOU WIN! 🏆";
+                    } else {
+                        winner = `AI ${i + 1} wins! 🤖`;
+                    }
+                    gameOver();
+                    return;
+                }
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('winner').textContent = winner;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('gameUI').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+        }
+        
+        // Restart game
+        function restartGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            startGame();
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('score1').textContent = scores[0];
+            document.getElementById('score2').textContent = scores[1];
+            document.getElementById('score3').textContent = scores[2];
+            document.getElementById('score4').textContent = scores[3];
+            document.getElementById('score5').textContent = scores[4];
+            document.getElementById('ballCount').textContent = ballCount;
+            document.getElementById('gameSpeed').textContent = gameSpeed.toFixed(1);
+        }
+        
+        // Draw game objects
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw center lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            
+            // Vertical center line
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            
+            // Horizontal center line
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            // Draw paddles
+            paddles.forEach(paddle => {
+                ctx.fillStyle = paddle.color;
+                ctx.shadowColor = paddle.color;
+                ctx.shadowBlur = 20;
+                ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+                ctx.shadowBlur = 0;
+                
+                // Paddle border
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
+            });
+            
+            // Draw balls
+            balls.forEach(ball => {
+                ctx.fillStyle = ball.color;
+                ctx.shadowColor = ball.color;
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Ball trail
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(ball.x - ball.vx * 2, ball.y - ball.vy * 2, ballRadius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+            
+            // Draw particles
+            particles.forEach(particle => {
+                const alpha = particle.life / particle.maxLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = particle.color;
+                ctx.shadowColor = particle.color;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updateGame();
+            }
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        resizeCanvas();
+    </script>
+</body>
+</html>

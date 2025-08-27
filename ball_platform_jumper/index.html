@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Platform Jumper - Don't Fall!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        .ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+        
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+        }
+        
+        .game-over h2 {
+            color: #FF6B6B;
+            margin-bottom: 20px;
+        }
+        
+        .restart-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .restart-btn:hover {
+            background: #45a049;
+        }
+        
+        .instructions {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 16px;
+            text-align: right;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui">
+        <div>Score: <span id="score">0</span></div>
+        <div>Platforms: <span id="platforms">0</span></div>
+        <div>Height: <span id="height">0</span>m</div>
+    </div>
+    
+    <div class="instructions">
+        <div>🎮 Use ARROW KEYS to move</div>
+        <div>⬆️ SPACE to jump</div>
+        <div>🎯 Don't fall down!</div>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="game-over" id="gameOver">
+        <h2>Game Over!</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>Platforms Survived: <span id="finalPlatforms">0</span></p>
+        <p>Max Height: <span id="finalHeight">0</span>m</p>
+        <button class="restart-btn" onclick="restartGame()">Play Again!</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Game variables
+        let score = 0;
+        let platformsSurvived = 0;
+        let maxHeight = 0;
+        let gameRunning = true;
+        let cameraY = 0;
+        
+        // Ball properties
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            radius: 15,
+            velocityX: 0,
+            velocityY: 0,
+            onGround: false,
+            color: '#FF6B6B'
+        };
+        
+        // Physics constants
+        const gravity = 0.8;
+        const friction = 0.85;
+        const jumpPower = -15;
+        const moveSpeed = 8;
+        
+        // Platforms array
+        let platforms = [];
+        
+        // Platform class
+        class Platform {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+                this.passed = false;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y - cameraY, this.width, this.height);
+                
+                // Add some depth effect
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fillRect(this.x, this.y - cameraY, this.width, 5);
+            }
+            
+            checkCollision(ball) {
+                return ball.x + ball.radius > this.x &&
+                       ball.x - ball.radius < this.x + this.width &&
+                       ball.y + ball.radius > this.y &&
+                       ball.y - ball.radius < this.y + this.height;
+            }
+        }
+        
+        // Generate initial platforms
+        function generateInitialPlatforms() {
+            // Starting platform
+            platforms.push(new Platform(canvas.width / 2 - 100, canvas.height - 50, 200, 20, '#4CAF50'));
+            
+            // Generate some random platforms
+            for (let i = 0; i < 15; i++) {
+                const x = Math.random() * (canvas.width - 150);
+                const y = canvas.height - 100 - (i + 1) * 120;
+                const width = 100 + Math.random() * 100;
+                const height = 15 + Math.random() * 10;
+                const colors = ['#FF9800', '#9C27B0', '#2196F3', '#FF5722', '#795548'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                platforms.push(new Platform(x, y, width, height, color));
+            }
+        }
+        
+        // Generate new platforms
+        function generateNewPlatforms() {
+            const lastPlatform = platforms[platforms.length - 1];
+            if (lastPlatform.y - cameraY < canvas.height + 200) {
+                for (let i = 0; i < 3; i++) {
+                    const x = Math.random() * (canvas.width - 150);
+                    const y = lastPlatform.y - 120 - (i * 120);
+                    const width = 100 + Math.random() * 100;
+                    const height = 15 + Math.random() * 10;
+                    const colors = ['#FF9800', '#9C27B0', '#2196F3', '#FF5722', '#795548', '#E91E63'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    platforms.push(new Platform(x, y, width, height, color));
+                }
+            }
+        }
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+        
+        // Update ball physics
+        function updateBall() {
+            // Apply gravity
+            ball.velocityY += gravity;
+            
+            // Handle input
+            if (keys['ArrowLeft'] || keys['KeyA']) {
+                ball.velocityX -= moveSpeed * 0.1;
+            }
+            if (keys['ArrowRight'] || keys['KeyD']) {
+                ball.velocityX += moveSpeed * 0.1;
+            }
+            if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && ball.onGround) {
+                ball.velocityY = jumpPower;
+                ball.onGround = false;
+            }
+            
+            // Apply friction
+            ball.velocityX *= friction;
+            
+            // Update position
+            ball.x += ball.velocityX;
+            ball.y += ball.velocityY;
+            
+            // Keep ball in bounds
+            if (ball.x - ball.radius < 0) {
+                ball.x = ball.radius;
+                ball.velocityX = 0;
+            }
+            if (ball.x + ball.radius > canvas.width) {
+                ball.x = canvas.width - ball.radius;
+                ball.velocityX = 0;
+            }
+            
+            // Check platform collisions
+            ball.onGround = false;
+            for (let platform of platforms) {
+                if (platform.checkCollision(ball)) {
+                    if (ball.velocityY > 0) {
+                        ball.y = platform.y - ball.radius;
+                        ball.velocityY = 0;
+                        ball.onGround = true;
+                        
+                        // Mark platform as passed
+                        if (!platform.passed) {
+                            platform.passed = true;
+                            platformsSurvived++;
+                            score += 10;
+                            document.getElementById('platforms').textContent = platformsSurvived;
+                            document.getElementById('score').textContent = score;
+                        }
+                    }
+                }
+            }
+            
+            // Check if ball fell off screen
+            if (ball.y - cameraY > canvas.height + 100) {
+                gameOver();
+            }
+        }
+        
+        // Update camera
+        function updateCamera() {
+            const targetY = ball.y - canvas.height / 2;
+            cameraY += (targetY - cameraY) * 0.1;
+            
+            // Update max height
+            const currentHeight = Math.floor((canvas.height - ball.y) / 10);
+            if (currentHeight > maxHeight) {
+                maxHeight = currentHeight;
+                document.getElementById('height').textContent = maxHeight;
+            }
+        }
+        
+        // Clean up old platforms
+        function cleanupPlatforms() {
+            platforms = platforms.filter(platform => platform.y - cameraY > -100);
+        }
+        
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw clouds
+            drawClouds();
+            
+            // Draw platforms
+            for (let platform of platforms) {
+                platform.draw();
+            }
+            
+            // Draw ball
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y - cameraY, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add ball shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y - cameraY + ball.radius + 5, ball.radius * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add ball highlight
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.beginPath();
+            ctx.arc(ball.x - ball.radius * 0.3, ball.y - cameraY - ball.radius * 0.3, ball.radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw decorative clouds
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            for (let i = 0; i < 5; i++) {
+                const x = (i * 300 + Date.now() * 0.01) % (canvas.width + 200) - 100;
+                const y = (i * 150) % 200 + 50;
+                drawCloud(x, y, 60 + Math.random() * 40);
+            }
+        }
+        
+        function drawCloud(x, y, size) {
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.4, y, size * 0.6, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.6, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.2, y - size * 0.3, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalPlatforms').textContent = platformsSurvived;
+            document.getElementById('finalHeight').textContent = maxHeight;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Restart game
+        function restartGame() {
+            score = 0;
+            platformsSurvived = 0;
+            maxHeight = 0;
+            gameRunning = true;
+            cameraY = 0;
+            
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 100;
+            ball.velocityX = 0;
+            ball.velocityY = 0;
+            ball.onGround = false;
+            
+            platforms = [];
+            generateInitialPlatforms();
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('platforms').textContent = platformsSurvived;
+            document.getElementById('height').textContent = maxHeight;
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameRunning) {
+                updateBall();
+                updateCamera();
+                generateNewPlatforms();
+                cleanupPlatforms();
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Start the game
+        generateInitialPlatforms();
+        gameLoop();
+    </script>
+</body>
+</html>

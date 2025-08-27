@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔷 GEOMETRY DASH - ALL LEVELS! 🔷</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fredoka+One&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            color: #00ffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px #00ffff, inset 0 0 30px rgba(0, 255, 255, 0.1);
+            background: radial-gradient(circle, #1a1a3a 0%, #0a0a2e 100%);
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 30px #00ffff;
+            z-index: 100;
+        }
+        
+        .start-screen h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ffff;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        .start-screen p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #88ffff;
+        }
+        
+        .start-btn {
+            background: linear-gradient(45deg, #00ffff, #0088ff);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            font-family: 'Orbitron', monospace;
+            color: #000;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px #00ffff;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px #00ffff;
+        }
+        
+        .level-select {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 30px #00ffff;
+            z-index: 100;
+            display: none;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .level-select h2 {
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .level-option {
+            background: linear-gradient(45deg, #333, #555);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #fff;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .level-option:hover {
+            transform: scale(1.05);
+            border-color: #ff8800;
+            box-shadow: 0 0 15px #ff8800;
+        }
+        
+        .level-option.selected {
+            border-color: #00ff00;
+            box-shadow: 0 0 20px #00ff00;
+            background: linear-gradient(45deg, #003300, #006600);
+        }
+        
+        .level-name {
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        .level-desc {
+            font-size: 0.8em;
+            color: #ccc;
+            text-align: center;
+        }
+        
+        .select-level-btn {
+            background: linear-gradient(45deg, #00ff00, #00aa00);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-family: 'Orbitron', monospace;
+            color: #000;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .select-level-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            z-index: 50;
+            display: none;
+        }
+        
+        .game-ui h3 {
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+        
+        .game-ui div {
+            margin: 5px 0;
+            color: #88ffff;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #ff0000;
+            box-shadow: 0 0 30px #ff0000;
+            z-index: 100;
+            display: none;
+        }
+        
+        .game-over h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ff0000;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(45deg, #ff0000, #ff8800);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-family: 'Orbitron', monospace;
+            color: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .victory {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 30px #00ff00;
+            z-index: 100;
+            display: none;
+        }
+        
+        .victory h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #00ff00;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            z-index: 50;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .instructions h4 {
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            color: #88ffff;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 30px #00ffff, 0 0 40px #00ffff; }
+        }
+        
+        .level-complete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 0, 0.9);
+            color: #000;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            z-index: 90;
+            display: none;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="start-screen" id="startScreen">
+            <h1>🔷 GEOMETRY DASH 🔷</h1>
+            <p>Jump, fly, and flip through all the levels!</p>
+            <button class="start-btn" onclick="showLevelSelect()">🎯 SELECT LEVEL!</button>
+        </div>
+        
+        <div class="level-select" id="levelSelect">
+            <h2>🎯 SELECT YOUR LEVEL</h2>
+            <div class="level-grid">
+                <div class="level-option" onclick="selectLevel(0)">
+                    <div class="level-name">Stereo Madness</div>
+                    <div class="level-desc">Easy - Simple jumps</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(1)">
+                    <div class="level-name">Back On Track</div>
+                    <div class="level-desc">Easy - Basic obstacles</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(2)">
+                    <div class="level-name">Polargeist</div>
+                    <div class="level-desc">Easy - Gravity changes</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(3)">
+                    <div class="level-name">Dry Out</div>
+                    <div class="level-desc">Easy - Flying sections</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(4)">
+                    <div class="level-name">Base After Base</div>
+                    <div class="level-desc">Normal - Speed changes</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(5)">
+                    <div class="level-name">Can't Let Go</div>
+                    <div class="level-desc">Normal - Tricky timing</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(6)">
+                    <div class="level-name">Jumper</div>
+                    <div class="level-desc">Normal - Jump patterns</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(7)">
+                    <div class="level-name">Time Machine</div>
+                    <div class="level-desc">Normal - Speed portals</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(8)">
+                    <div class="level-name">Cycles</div>
+                    <div class="level-desc">Hard - Complex patterns</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(9)">
+                    <div class="level-name">xStep</div>
+                    <div class="level-desc">Hard - Advanced jumps</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(10)">
+                    <div class="level-name">Clutterfunk</div>
+                    <div class="level-desc">Hard - Maze-like</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(11)">
+                    <div class="level-name">Theory of Everything</div>
+                    <div class="level-desc">Hard - Physics puzzles</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(12)">
+                    <div class="level-name">Electroman Adventures</div>
+                    <div class="level-desc">Harder - Electric theme</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(13)">
+                    <div class="level-name">Clubstep</div>
+                    <div class="level-desc">Harder - Demon level</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(14)">
+                    <div class="level-name">Electrodynamix</div>
+                    <div class="level-desc">Harder - Fast sections</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(15)">
+                    <div class="level-name">Hexagon Force</div>
+                    <div class="level-desc">Harder - Dual paths</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(16)">
+                    <div class="level-name">Blast Processing</div>
+                    <div class="level-desc">Harder - Explosive</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(17)">
+                    <div class="level-name">Theory of Everything 2</div>
+                    <div class="level-desc">Harder - Advanced physics</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(18)">
+                    <div class="level-name">Geometrical Dominator</div>
+                    <div class="level-desc">Harder - Shape shifting</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(19)">
+                    <div class="level-name">Deadlocked</div>
+                    <div class="level-desc">Harder - Final challenge</div>
+                </div>
+                <div class="level-option" onclick="selectLevel(20)">
+                    <div class="level-name">Fingerdash</div>
+                    <div class="level-desc">Harder - Touch controls</div>
+                </div>
+            </div>
+            <button class="select-level-btn" onclick="startGame()">🚀 START LEVEL!</button>
+        </div>
+        
+        <div class="game-ui" id="gameUI">
+            <h3>🎯 LEVEL STATUS</h3>
+            <div>Level: <span id="levelName">None</span></div>
+            <div>Progress: <span id="progress">0</span>%</div>
+            <div>Attempts: <span id="attempts">0</span></div>
+            <div>Best: <span id="bestProgress">0</span>%</div>
+        </div>
+        
+        <div class="instructions" id="instructions">
+            <h4>🎮 CONTROLS</h4>
+            <p><strong>SPACE / CLICK</strong> - Jump/Fly/Flip</p>
+            <p><strong>R</strong> - Restart level</p>
+            <p><strong>ESC</strong> - Back to menu</p>
+        </div>
+        
+        <div class="level-complete" id="levelComplete">
+            🎉 LEVEL COMPLETE! 🎉
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2 id="gameOverText">LEVEL FAILED!</h2>
+            <button class="restart-btn" onclick="restartLevel()">🔄 RETRY LEVEL</button>
+        </div>
+        
+        <div class="victory" id="victory">
+            <h2>🎉 ALL LEVELS COMPLETED! 🎉</h2>
+            <p>You're a Geometry Dash master!</p>
+            <button class="restart-btn" onclick="restartGame()">🔄 PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = 'menu';
+        let currentLevel = 0;
+        let progress = 0;
+        let attempts = 0;
+        let bestProgress = 0;
+        let levelCompleted = false;
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game objects
+        let player = {
+            x: 100,
+            y: 0,
+            width: 30,
+            height: 30,
+            velocityY: 0,
+            velocityX: 5,
+            onGround: false,
+            gravity: 0.8,
+            jumpPower: -15,
+            rotation: 0,
+            color: '#00ff00'
+        };
+        
+        let obstacles = [];
+        let platforms = [];
+        let checkpoints = [];
+        let levelEnd = null;
+        let cameraX = 0;
+        
+        // Level data
+        const levels = [
+            { name: "Stereo Madness", difficulty: "Easy", obstacles: 5, platforms: 8, checkpoints: 1 },
+            { name: "Back On Track", difficulty: "Easy", obstacles: 6, platforms: 10, checkpoints: 1 },
+            { name: "Polargeist", difficulty: "Easy", obstacles: 7, platforms: 12, checkpoints: 2 },
+            { name: "Dry Out", difficulty: "Easy", obstacles: 8, platforms: 15, checkpoints: 2 },
+            { name: "Base After Base", difficulty: "Normal", obstacles: 10, platforms: 18, checkpoints: 2 },
+            { name: "Can't Let Go", difficulty: "Normal", obstacles: 12, platforms: 20, checkpoints: 3 },
+            { name: "Jumper", difficulty: "Normal", obstacles: 14, platforms: 22, checkpoints: 3 },
+            { name: "Time Machine", difficulty: "Normal", obstacles: 16, platforms: 25, checkpoints: 3 },
+            { name: "Cycles", difficulty: "Hard", obstacles: 18, platforms: 28, checkpoints: 4 },
+            { name: "xStep", difficulty: "Hard", obstacles: 20, platforms: 30, checkpoints: 4 },
+            { name: "Clutterfunk", difficulty: "Hard", obstacles: 22, platforms: 32, checkpoints: 4 },
+            { name: "Theory of Everything", difficulty: "Hard", obstacles: 24, platforms: 35, checkpoints: 5 },
+            { name: "Electroman Adventures", difficulty: "Harder", obstacles: 26, platforms: 38, checkpoints: 5 },
+            { name: "Clubstep", difficulty: "Harder", obstacles: 28, platforms: 40, checkpoints: 5 },
+            { name: "Electrodynamix", difficulty: "Harder", obstacles: 30, platforms: 42, checkpoints: 6 },
+            { name: "Hexagon Force", difficulty: "Harder", obstacles: 32, platforms: 45, checkpoints: 6 },
+            { name: "Blast Processing", difficulty: "Harder", obstacles: 34, platforms: 48, checkpoints: 6 },
+            { name: "Theory of Everything 2", difficulty: "Harder", obstacles: 36, platforms: 50, checkpoints: 7 },
+            { name: "Geometrical Dominator", difficulty: "Harder", obstacles: 38, platforms: 52, checkpoints: 7 },
+            { name: "Deadlocked", difficulty: "Harder", obstacles: 40, platforms: 55, checkpoints: 7 },
+            { name: "Fingerdash", difficulty: "Harder", obstacles: 42, platforms: 58, checkpoints: 8 }
+        ];
+        
+        // Input handling
+        let keys = {};
+        let mouse = { clicked: false };
+        
+        // Initialize game
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            document.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                if (e.code === 'KeyR' && gameState === 'playing') {
+                    restartLevel();
+                }
+                if (e.code === 'Escape' && gameState === 'playing') {
+                    showLevelSelect();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+            });
+            
+            canvas.addEventListener('click', () => {
+                if (gameState === 'playing') {
+                    mouse.clicked = true;
+                }
+            });
+        }
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth - 40;
+            canvas.height = window.innerHeight - 40;
+        }
+        
+        // Show level selection
+        function showLevelSelect() {
+            gameState = 'menu';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'none';
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('levelSelect').style.display = 'block';
+        }
+        
+        // Select level
+        function selectLevel(levelIndex) {
+            // Remove previous selection
+            document.querySelectorAll('.level-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Select new level
+            currentLevel = levelIndex;
+            document.querySelectorAll('.level-option')[levelIndex].classList.add('selected');
+        }
+        
+        // Start game
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('levelSelect').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+            document.getElementById('instructions').style.display = 'block';
+            
+            // Reset game state
+            progress = 0;
+            attempts++;
+            levelCompleted = false;
+            
+            // Clear arrays
+            obstacles = [];
+            platforms = [];
+            checkpoints = [];
+            
+            // Create level
+            createLevel();
+            
+            // Update UI
+            updateUI();
+            
+            gameLoop();
+        }
+        
+        // Create level
+        function createLevel() {
+            const level = levels[currentLevel];
+            const levelWidth = 3000 + level.obstacles * 100;
+            
+            // Clear arrays
+            obstacles = [];
+            platforms = [];
+            checkpoints = [];
+            
+            // Create level based on actual Geometry Dash layouts
+            switch (currentLevel) {
+                case 0: // Stereo Madness
+                    createStereoMadness();
+                    break;
+                case 1: // Back On Track
+                    createBackOnTrack();
+                    break;
+                case 2: // Polargeist
+                    createPolargeist();
+                    break;
+                case 3: // Dry Out
+                    createDryOut();
+                    break;
+                case 4: // Base After Base
+                    createBaseAfterBase();
+                    break;
+                case 5: // Can't Let Go
+                    createCantLetGo();
+                    break;
+                case 6: // Jumper
+                    createJumper();
+                    break;
+                case 7: // Time Machine
+                    createTimeMachine();
+                    break;
+                case 8: // Cycles
+                    createCycles();
+                    break;
+                case 9: // xStep
+                    createXStep();
+                    break;
+                case 10: // Clutterfunk
+                    createClutterfunk();
+                    break;
+                case 11: // Theory of Everything
+                    createTheoryOfEverything();
+                    break;
+                case 12: // Electroman Adventures
+                    createElectromanAdventures();
+                    break;
+                case 13: // Clubstep
+                    createClubstep();
+                    break;
+                case 14: // Electrodynamix
+                    createElectrodynamix();
+                    break;
+                case 15: // Hexagon Force
+                    createHexagonForce();
+                    break;
+                case 16: // Blast Processing
+                    createBlastProcessing();
+                    break;
+                case 17: // Theory of Everything 2
+                    createTheoryOfEverything2();
+                    break;
+                case 18: // Geometrical Dominator
+                    createGeometricalDominator();
+                    break;
+                case 19: // Deadlocked
+                    createDeadlocked();
+                    break;
+                case 20: // Fingerdash
+                    createFingerdash();
+                    break;
+            }
+            
+            // Reset player
+            player.x = 100;
+            player.y = canvas.height - 150;
+            player.velocityY = 0;
+            player.velocityX = 5;
+            player.rotation = 0;
+            cameraX = 0;
+        }
+        
+        // Create Stereo Madness level
+        function createStereoMadness() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 800,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // First jump
+            obstacles.push({
+                x: 300,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Landing platform
+            platforms.push({
+                x: 400,
+                y: canvas.height - 100,
+                width: 200,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Second jump
+            obstacles.push({
+                x: 650,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Final platform
+            platforms.push({
+                x: 750,
+                y: canvas.height - 100,
+                width: 200,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Level end
+            levelEnd = {
+                x: 1000,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Back On Track level
+        function createBackOnTrack() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 600,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // First obstacle
+            obstacles.push({
+                x: 250,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Gap platform
+            platforms.push({
+                x: 350,
+                y: canvas.height - 100,
+                width: 150,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Second obstacle
+            obstacles.push({
+                x: 550,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Final platform
+            platforms.push({
+                x: 650,
+                y: canvas.height - 100,
+                width: 200,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Level end
+            levelEnd = {
+                x: 900,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Polargeist level
+        function createPolargeist() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 400,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // First jump
+            obstacles.push({
+                x: 200,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Mid-air platform
+            platforms.push({
+                x: 300,
+                y: canvas.height - 200,
+                width: 150,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Second jump
+            obstacles.push({
+                x: 500,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Final platform
+            platforms.push({
+                x: 600,
+                y: canvas.height - 100,
+                width: 200,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Level end
+            levelEnd = {
+                x: 850,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Dry Out level
+        function createDryOut() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 300,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // Flying section start
+            obstacles.push({
+                x: 250,
+                y: canvas.height - 80,
+                width: 30,
+                height: 30,
+                type: 'spike',
+                color: '#ff0000'
+            });
+            
+            // Flying platforms
+            for (let i = 0; i < 5; i++) {
+                platforms.push({
+                    x: 350 + i * 120,
+                    y: canvas.height - 250 + Math.sin(i) * 50,
+                    width: 80,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Landing platform
+            platforms.push({
+                x: 1000,
+                y: canvas.height - 100,
+                width: 200,
+                height: 20,
+                color: '#0088ff'
+            });
+            
+            // Level end
+            levelEnd = {
+                x: 1250,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Base After Base level
+        function createBaseAfterBase() {
+            // Multiple base platforms
+            for (let i = 0; i < 6; i++) {
+                platforms.push({
+                    x: i * 200,
+                    y: canvas.height - 100 - (i % 2) * 50,
+                    width: 150,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                if (i < 5) {
+                    obstacles.push({
+                        x: i * 200 + 100,
+                        y: canvas.height - 80 - (i % 2) * 50,
+                        width: 30,
+                        height: 30,
+                        type: 'spike',
+                        color: '#ff0000'
+                    });
+                }
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1300,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Can't Let Go level
+        function createCantLetGo() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 400,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // Tricky timing section
+            for (let i = 0; i < 4; i++) {
+                obstacles.push({
+                    x: 500 + i * 150,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                platforms.push({
+                    x: 450 + i * 150,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Jumper level
+        function createJumper() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 300,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // Jump patterns
+            for (let i = 0; i < 5; i++) {
+                const height = 150 + (i % 2) * 100;
+                platforms.push({
+                    x: 400 + i * 200,
+                    y: canvas.height - height,
+                    width: 120,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                obstacles.push({
+                    x: 350 + i * 200,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1400,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Time Machine level
+        function createTimeMachine() {
+            // Ground platform
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: 300,
+                height: 50,
+                color: '#0088ff'
+            });
+            
+            // Speed portals
+            for (let i = 0; i < 3; i++) {
+                obstacles.push({
+                    x: 400 + i * 200,
+                    y: canvas.height - 100,
+                    width: 50,
+                    height: 50,
+                    type: 'portal',
+                    color: '#ff00ff'
+                });
+                
+                platforms.push({
+                    x: 350 + i * 200,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1000,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Cycles level
+        function createCycles() {
+            // Complex pattern
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI) / 4;
+                const radius = 200;
+                const centerX = 400 + i * 150;
+                const centerY = canvas.height - 200;
+                
+                platforms.push({
+                    x: centerX + Math.cos(angle) * radius - 50,
+                    y: centerY + Math.sin(angle) * radius - 10,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                obstacles.push({
+                    x: centerX - 15,
+                    y: centerY - 15,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1600,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create xStep level
+        function createXStep() {
+            // X pattern obstacles
+            for (let i = 0; i < 6; i++) {
+                obstacles.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                obstacles.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 200,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 150,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Clutterfunk level
+        function createClutterfunk() {
+            // Maze-like structure
+            for (let i = 0; i < 10; i++) {
+                const x = 200 + i * 100;
+                const y = canvas.height - 100 - (i % 3) * 80;
+                
+                platforms.push({
+                    x: x,
+                    y: y,
+                    width: 80,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                if (i % 2 === 0) {
+                    obstacles.push({
+                        x: x + 25,
+                        y: y - 30,
+                        width: 30,
+                        height: 30,
+                        type: 'spike',
+                        color: '#ff0000'
+                    });
+                }
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1300,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Theory of Everything level
+        function createTheoryOfEverything() {
+            // Physics-based obstacles
+            for (let i = 0; i < 8; i++) {
+                obstacles.push({
+                    x: 300 + i * 120,
+                    y: canvas.height - 80,
+                    width: 40,
+                    height: 40,
+                    type: 'block',
+                    color: '#888888'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 120,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1300,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Electroman Adventures level
+        function createElectromanAdventures() {
+            // Electric theme
+            for (let i = 0; i < 6; i++) {
+                obstacles.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 80,
+                    width: 40,
+                    height: 40,
+                    type: 'saw',
+                    color: '#ffff00'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 150,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Clubstep level
+        function createClubstep() {
+            // Demon level - very hard
+            for (let i = 0; i < 12; i++) {
+                obstacles.push({
+                    x: 200 + i * 100,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                obstacles.push({
+                    x: 200 + i * 100,
+                    y: canvas.height - 200,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                platforms.push({
+                    x: 150 + i * 100,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1400,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Electrodynamix level
+        function createElectrodynamix() {
+            // Fast sections
+            for (let i = 0; i < 8; i++) {
+                obstacles.push({
+                    x: 300 + i * 120,
+                    y: canvas.height - 80,
+                    width: 40,
+                    height: 40,
+                    type: 'saw',
+                    color: '#ffff00'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 120,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1300,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Hexagon Force level
+        function createHexagonForce() {
+            // Dual paths
+            for (let i = 0; i < 6; i++) {
+                // Upper path
+                platforms.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 250,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                // Lower path
+                platforms.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+                
+                obstacles.push({
+                    x: 350 + i * 150,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Blast Processing level
+        function createBlastProcessing() {
+            // Explosive theme
+            for (let i = 0; i < 7; i++) {
+                obstacles.push({
+                    x: 300 + i * 130,
+                    y: canvas.height - 80,
+                    width: 40,
+                    height: 40,
+                    type: 'block',
+                    color: '#ff8800'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 130,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Theory of Everything 2 level
+        function createTheoryOfEverything2() {
+            // Advanced physics
+            for (let i = 0; i < 9; i++) {
+                obstacles.push({
+                    x: 300 + i * 110,
+                    y: canvas.height - 80,
+                    width: 35,
+                    height: 35,
+                    type: 'block',
+                    color: '#888888'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 110,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1300,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Geometrical Dominator level
+        function createGeometricalDominator() {
+            // Shape shifting theme
+            for (let i = 0; i < 8; i++) {
+                const shape = i % 3;
+                let obstacle;
+                
+                if (shape === 0) {
+                    obstacle = {
+                        x: 300 + i * 120,
+                        y: canvas.height - 80,
+                        width: 30,
+                        height: 30,
+                        type: 'spike',
+                        color: '#ff0000'
+                    };
+                } else if (shape === 1) {
+                    obstacle = {
+                        x: 300 + i * 120,
+                        y: canvas.height - 80,
+                        width: 40,
+                        height: 40,
+                        type: 'saw',
+                        color: '#ffff00'
+                    };
+                } else {
+                    obstacle = {
+                        x: 300 + i * 120,
+                        y: canvas.height - 80,
+                        width: 40,
+                        height: 40,
+                        type: 'block',
+                        color: '#888888'
+                    };
+                }
+                
+                obstacles.push(obstacle);
+                
+                platforms.push({
+                    x: 250 + i * 120,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Deadlocked level
+        function createDeadlocked() {
+            // Final challenge
+            for (let i = 0; i < 10; i++) {
+                obstacles.push({
+                    x: 200 + i * 100,
+                    y: canvas.height - 80,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                obstacles.push({
+                    x: 200 + i * 100,
+                    y: canvas.height - 200,
+                    width: 30,
+                    height: 30,
+                    type: 'spike',
+                    color: '#ff0000'
+                });
+                
+                platforms.push({
+                    x: 150 + i * 100,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Create Fingerdash level
+        function createFingerdash() {
+            // Touch-friendly design
+            for (let i = 0; i < 6; i++) {
+                obstacles.push({
+                    x: 300 + i * 150,
+                    y: canvas.height - 80,
+                    width: 40,
+                    height: 40,
+                    type: 'saw',
+                    color: '#ffff00'
+                });
+                
+                platforms.push({
+                    x: 250 + i * 150,
+                    y: canvas.height - 100,
+                    width: 100,
+                    height: 20,
+                    color: '#0088ff'
+                });
+            }
+            
+            // Level end
+            levelEnd = {
+                x: 1200,
+                y: canvas.height - 150,
+                width: 100,
+                height: 100,
+                color: '#00ff00'
+            };
+        }
+        
+        // Update game
+        function updateGame() {
+            // Update player
+            updatePlayer();
+            
+            // Update obstacles
+            updateObstacles();
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Update camera
+            updateCamera();
+            
+            // Check win/lose conditions
+            checkGameState();
+            
+            // Update UI
+            updateUI();
+        }
+        
+        // Update player
+        function updatePlayer() {
+            // Handle jumping
+            if ((keys['Space'] || mouse.clicked) && player.onGround) {
+                player.velocityY = player.jumpPower;
+                player.onGround = false;
+                mouse.clicked = false;
+            }
+            
+            // Apply gravity
+            if (!player.onGround) {
+                player.velocityY += player.gravity;
+            }
+            
+            // Update position
+            player.y += player.velocityY;
+            player.x += player.velocityX;
+            
+            // Update rotation
+            player.rotation += player.velocityX * 0.1;
+            
+            // Check ground collision
+            player.onGround = false;
+            platforms.forEach(platform => {
+                if (player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + platform.height + 10) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                }
+            });
+            
+            // Check wall collision
+            if (player.x < 0) {
+                player.x = 0;
+            }
+        }
+        
+        // Update obstacles
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                if (obstacle.type === 'saw') {
+                    obstacle.rotation += 0.2;
+                }
+            });
+        }
+        
+        // Check collisions
+        function checkCollisions() {
+            // Check obstacle collisions
+            obstacles.forEach(obstacle => {
+                if (checkCollision(player, obstacle)) {
+                    if (obstacle.type === 'portal') {
+                        // Portal effect - change gravity
+                        player.gravity = -player.gravity;
+                        player.jumpPower = -player.jumpPower;
+                    } else {
+                        // Death
+                        gameOver();
+                    }
+                }
+            });
+            
+            // Check checkpoint collisions
+            checkpoints.forEach(checkpoint => {
+                if (checkCollision(player, checkpoint) && !checkpoint.activated) {
+                    checkpoint.activated = true;
+                    checkpoint.color = '#ffff00';
+                }
+            });
+            
+            // Check level end collision
+            if (levelEnd && checkCollision(player, levelEnd)) {
+                    levelComplete();
+            }
+        }
+        
+        // Check collision between two objects
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width &&
+                   obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height &&
+                   obj1.y + obj1.height > obj2.y;
+        }
+        
+        // Update camera
+        function updateCamera() {
+            cameraX = player.x - canvas.width / 2;
+            if (cameraX < 0) cameraX = 0;
+            
+            // Update progress
+            progress = Math.floor((player.x / (levelEnd ? levelEnd.x : 3000)) * 100);
+            if (progress > 100) progress = 100;
+        }
+        
+        // Check game state
+        function checkGameState() {
+            if (player.y > canvas.height) {
+                gameOver();
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('gameOverText').textContent = 'LEVEL FAILED!';
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Level complete
+        function levelComplete() {
+            levelCompleted = true;
+            document.getElementById('levelComplete').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('levelComplete').style.display = 'none';
+                if (currentLevel < levels.length - 1) {
+                    currentLevel++;
+                    startGame();
+                } else {
+                    gameVictory();
+                }
+            }, 2000);
+        }
+        
+        // Game victory
+        function gameVictory() {
+            gameState = 'victory';
+            document.getElementById('victory').style.display = 'block';
+        }
+        
+        // Restart level
+        function restartLevel() {
+            document.getElementById('gameOver').style.display = 'none';
+            startGame();
+        }
+        
+        // Restart game
+        function restartGame() {
+            document.getElementById('victory').style.display = 'none';
+            currentLevel = 0;
+            showLevelSelect();
+        }
+        
+        // Update UI
+        function updateUI() {
+            document.getElementById('levelName').textContent = levels[currentLevel].name;
+            document.getElementById('progress').textContent = progress;
+            document.getElementById('attempts').textContent = attempts;
+            if (progress > bestProgress) {
+                bestProgress = progress;
+            }
+            document.getElementById('bestProgress').textContent = bestProgress;
+        }
+        
+        // Draw game
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = 'rgba(26, 26, 46, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Save context for camera transform
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+            
+            // Draw platforms
+            platforms.forEach(platform => {
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+            
+            // Draw obstacles
+            obstacles.forEach(obstacle => {
+                ctx.save();
+                ctx.translate(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2);
+                
+                if (obstacle.type === 'saw') {
+                    ctx.rotate(obstacle.rotation);
+                }
+                
+                ctx.fillStyle = obstacle.color;
+                
+                switch (obstacle.type) {
+                    case 'spike':
+                        ctx.beginPath();
+                        ctx.moveTo(0, obstacle.height / 2);
+                        ctx.lineTo(-obstacle.width / 2, -obstacle.height / 2);
+                        ctx.lineTo(obstacle.width / 2, -obstacle.height / 2);
+                        ctx.closePath();
+                        ctx.fill();
+                        break;
+                    case 'saw':
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obstacle.width / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                    default:
+                        ctx.fillRect(-obstacle.width / 2, -obstacle.height / 2, obstacle.width, obstacle.height);
+                }
+                
+                ctx.restore();
+            });
+            
+            // Draw checkpoints
+            checkpoints.forEach(checkpoint => {
+                ctx.fillStyle = checkpoint.color;
+                ctx.fillRect(checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height);
+            });
+            
+            // Draw level end
+            if (levelEnd) {
+                ctx.fillStyle = levelEnd.color;
+                ctx.fillRect(levelEnd.x, levelEnd.y, levelEnd.width, levelEnd.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText('END', levelEnd.x + levelEnd.width / 2, levelEnd.y + levelEnd.height / 2 + 7);
+            }
+            
+            // Draw player
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.rotate(player.rotation);
+            ctx.fillStyle = player.color;
+            ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            ctx.restore();
+            
+            // Restore context
+            ctx.restore();
+            
+            // Draw progress bar
+            const barWidth = canvas.width - 40;
+            const barHeight = 20;
+            const barX = 20;
+            const barY = canvas.height - 40;
+            
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(barX, barY, barWidth * (progress / 100), barHeight);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Orbitron';
+            ctx.textAlign = 'left';
+            ctx.fillText(`${progress}%`, barX + barWidth + 10, barY + 15);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updateGame();
+                drawGame();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Initialize game
+        init();
+    </script>
+</body>
+</html>

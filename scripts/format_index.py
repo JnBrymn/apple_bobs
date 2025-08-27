@@ -112,6 +112,28 @@ def generate_index_html(menu_html):
 
         <section id="projects">
             <h2>Apple Bobs Games</h2>
+            
+            <!-- Test Button for Debugging -->
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <button onclick="testSearch()" style="
+                    background: #ff9800;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">🧪 Test Search Function</button>
+            </div>
+            
+            <!-- Search Game Setting -->
+            <div class="search-container">
+                <input type="text" id="gameSearch" placeholder="🔍 Search for games..." class="search-input">
+                <div class="search-stats">
+                    <span id="searchResults">Showing all games</span>
+                </div>
+            </div>
+            
 {menu_html}<!-- it is super important to add this line to the index.html file. Do not remove this line. -->
         </section>
 

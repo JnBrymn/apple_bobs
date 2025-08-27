@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Architect - Build Your Dream World! 🌟</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, #0c1445 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Fredoka One', cursive;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #8b5cf6;
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            pointer-events: all;
+            z-index: 200;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+        }
+
+        .start-screen h1 {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3.5em;
+            margin: 0 0 20px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .start-screen p {
+            color: #666;
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #8b5cf6, #a855f7);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-size: 1.4em;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 1.2em;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .dream-points {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #fbbf24;
+        }
+
+        .islands-count {
+            font-size: 1.3em;
+            color: #34d399;
+        }
+
+        .build-menu {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: all;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .build-btn {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .build-btn:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .build-btn.active {
+            background: rgba(139, 92, 246, 0.6);
+            border-color: #8b5cf6;
+            box-shadow: 0 0 20px #8b5cf6;
+        }
+
+        .build-btn .cost {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ef4444;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7em;
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            max-width: 280px;
+            pointer-events: none;
+            border: 2px solid #8b5cf6;
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .floating-stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .star {
+            position: absolute;
+            color: #fbbf24;
+            animation: twinkle 3s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle 2s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="floating-stars">
+        <div class="star" style="top: 10%; left: 15%; font-size: 1.5em; animation-delay: 0s;">⭐</div>
+        <div class="star" style="top: 25%; right: 20%; font-size: 1.2em; animation-delay: 1s;">✨</div>
+        <div class="star" style="top: 60%; left: 10%; font-size: 1.8em; animation-delay: 2s;">🌟</div>
+        <div class="star" style="top: 80%; right: 15%; font-size: 1.3em; animation-delay: 0.5s;">💫</div>
+        <div class="star" style="top: 40%; left: 25%; font-size: 1.6em; animation-delay: 1.5s;">⭐</div>
+    </div>
+    
+    <div class="ui-overlay">
+        <div class="start-screen" id="startScreen">
+            <h1>🌟 Dream Architect 🌟</h1>
+            <p>Build your own magical floating world in the sky!</p>
+            <button class="start-btn" onclick="startGame()">🚀 Start Building! 🚀</button>
+        </div>
+
+        <div class="game-ui" id="gameUI" style="display: none;">
+            <div class="dream-points">Dream Points: <span id="dreamPoints">100</span></div>
+            <div class="islands-count">Islands: <span id="islandsCount">0</span></div>
+        </div>
+
+        <div class="build-menu" id="buildMenu" style="display: none;">
+            <button class="build-btn active" onclick="selectTool('island')" title="Floating Island">
+                🏝️
+                <div class="cost">25</div>
+            </button>
+            <button class="build-btn" onclick="selectTool('tree')" title="Magic Tree">
+                🌳
+                <div class="cost">15</div>
+            </button>
+            <button class="build-btn" onclick="selectTool('crystal')" title="Crystal">
+                💎
+                <div class="cost">20</div>
+            </button>
+            <button class="build-btn" onclick="selectTool('house')" title="Dream House">
+                🏠
+                <div class="cost">40</div>
+            </button>
+            <button class="build-btn" onclick="selectTool('portal')" title="Portal">
+                🌀
+                <div class="cost">60</div>
+            </button>
+        </div>
+
+        <div class="instructions" id="instructions" style="display: none;">
+            <strong>🌟 How to Build Dreams:</strong><br><br>
+            • Click to place objects<br>
+            • Islands float and connect<br>
+            • Trees grow and spread<br>
+            • Crystals glow and sparkle<br>
+            • Houses create dream energy<br>
+            • Portals connect worlds<br><br>
+            <strong>Let your imagination soar! 🚀</strong>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = 'start';
+        let dreamPoints = 100;
+        let islandsCount = 0;
+        let selectedTool = 'island';
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game objects
+        let islands = [];
+        let objects = [];
+        let particles = [];
+        let connections = [];
+        
+        // Mouse position
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        // Tool costs
+        const toolCosts = {
+            island: 25,
+            tree: 15,
+            crystal: 20,
+            house: 40,
+            portal: 60
+        };
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        // Click to build
+        canvas.addEventListener('click', (e) => {
+            if (gameState === 'playing') {
+                buildObject(e.clientX, e.clientY);
+            }
+        });
+        
+        // Start game
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+            document.getElementById('buildMenu').style.display = 'flex';
+            document.getElementById('instructions').style.display = 'block';
+            
+            gameLoop();
+        }
+        
+        // Select building tool
+        function selectTool(tool) {
+            selectedTool = tool;
+            
+            // Update active button
+            document.querySelectorAll('.build-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        // Build object
+        function buildObject(x, y) {
+            if (dreamPoints < toolCosts[selectedTool]) return;
+            
+            dreamPoints -= toolCosts[selectedTool];
+            
+            switch (selectedTool) {
+                case 'island':
+                    createIsland(x, y);
+                    break;
+                case 'tree':
+                    createTree(x, y);
+                    break;
+                case 'crystal':
+                    createCrystal(x, y);
+                    break;
+                case 'house':
+                    createHouse(x, y);
+                    break;
+                case 'portal':
+                    createPortal(x, y);
+                    break;
+            }
+            
+            updateDisplay();
+            createBuildParticles(x, y);
+        }
+        
+        // Create floating island
+        function createIsland(x, y) {
+            const island = {
+                x: x,
+                y: y,
+                radius: 40 + Math.random() * 20,
+                color: `hsl(${200 + Math.random() * 60}, 70%, 60%)`,
+                vy: 0,
+                connections: []
+            };
+            
+            islands.push(island);
+            islandsCount++;
+            
+            // Create connections to nearby islands
+            islands.forEach(otherIsland => {
+                if (otherIsland !== island) {
+                    const distance = Math.sqrt(
+                        Math.pow(island.x - otherIsland.x, 2) + 
+                        Math.pow(island.y - otherIsland.y, 2)
+                    );
+                    if (distance < 150) {
+                        connections.push({
+                            from: island,
+                            to: otherIsland,
+                            strength: 1 - (distance / 150)
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Create magic tree
+        function createTree(x, y) {
+            objects.push({
+                type: 'tree',
+                x: x,
+                y: y,
+                size: 30 + Math.random() * 20,
+                growth: 0,
+                maxGrowth: 100,
+                color: `hsl(${120 + Math.random() * 40}, 80%, 50%)`
+            });
+        }
+        
+        // Create crystal
+        function createCrystal(x, y) {
+            objects.push({
+                type: 'crystal',
+                x: x,
+                y: y,
+                size: 20 + Math.random() * 15,
+                rotation: 0,
+                glow: 0,
+                color: `hsl(${280 + Math.random() * 80}, 80%, 70%)`
+            });
+        }
+        
+        // Create dream house
+        function createHouse(x, y) {
+            objects.push({
+                type: 'house',
+                x: x,
+                y: y,
+                size: 35 + Math.random() * 15,
+                dreamEnergy: 0,
+                maxEnergy: 100,
+                color: `hsl(${30 + Math.random() * 60}, 80%, 60%)`
+            });
+        }
+        
+        // Create portal
+        function createPortal(x, y) {
+            objects.push({
+                type: 'portal',
+                x: x,
+                y: y,
+                size: 40 + Math.random() * 20,
+                rotation: 0,
+                pulse: 0,
+                color: `hsl(${180 + Math.random() * 60}, 80%, 60%)`
+            });
+        }
+        
+        // Create build particles
+        function createBuildParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 60,
+                    maxLife: 60,
+                    color: ['#fbbf24', '#8b5cf6', '#34d399', '#ef4444'][Math.floor(Math.random() * 4)]
+                });
+            }
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('dreamPoints').textContent = dreamPoints;
+            document.getElementById('islandsCount').textContent = islandsCount;
+        }
+        
+        // Update game objects
+        function updateGame() {
+            // Update islands physics
+            islands.forEach(island => {
+                // Simple floating physics
+                island.vy += 0.1;
+                island.y += island.vy;
+                
+                // Bounce off bottom
+                if (island.y + island.radius > canvas.height - 50) {
+                    island.y = canvas.height - 50 - island.radius;
+                    island.vy *= -0.8;
+                }
+                
+                // Bounce off top
+                if (island.y - island.radius < 50) {
+                    island.y = 50 + island.radius;
+                    island.vy *= -0.8;
+                }
+                
+                // Damping
+                island.vy *= 0.99;
+            });
+            
+            // Update objects
+            objects.forEach(obj => {
+                switch (obj.type) {
+                    case 'tree':
+                        obj.growth += 0.5;
+                        if (obj.growth > obj.maxGrowth) obj.growth = obj.maxGrowth;
+                        break;
+                    case 'crystal':
+                        obj.rotation += 0.02;
+                        obj.glow = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+                        break;
+                    case 'house':
+                        obj.dreamEnergy += 0.3;
+                        if (obj.dreamEnergy > obj.maxEnergy) obj.dreamEnergy = obj.maxEnergy;
+                        break;
+                    case 'portal':
+                        obj.rotation += 0.03;
+                        obj.pulse = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
+                        break;
+                }
+            });
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Generate dream points from objects
+            objects.forEach(obj => {
+                if (obj.type === 'house' && obj.dreamEnergy >= obj.maxEnergy) {
+                    dreamPoints += 5;
+                    obj.dreamEnergy = 0;
+                }
+            });
+        }
+        
+        // Draw game objects
+        function drawGame() {
+            // Clear canvas with gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0c1445');
+            gradient.addColorStop(0.5, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw connections between islands
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)';
+            ctx.lineWidth = 2;
+            connections.forEach(connection => {
+                ctx.globalAlpha = connection.strength;
+                ctx.beginPath();
+                ctx.moveTo(connection.from.x, connection.from.y);
+                ctx.lineTo(connection.to.x, connection.to.y);
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1;
+            
+            // Draw islands
+            islands.forEach(island => {
+                ctx.fillStyle = island.color;
+                ctx.shadowColor = island.color;
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(island.x, island.y, island.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Island border
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // Draw objects
+            objects.forEach(obj => {
+                ctx.save();
+                ctx.translate(obj.x, obj.y);
+                
+                switch (obj.type) {
+                    case 'tree':
+                        // Tree trunk
+                        ctx.fillStyle = '#8b4513';
+                        ctx.fillRect(-5, 0, 10, obj.size * 0.6);
+                        
+                        // Tree leaves
+                        const leafSize = obj.size * 0.4 * (obj.growth / obj.maxGrowth);
+                        ctx.fillStyle = obj.color;
+                        ctx.beginPath();
+                        ctx.arc(0, -leafSize/2, leafSize, 0, Math.PI * 2);
+                        ctx.fill();
+                        break;
+                        
+                    case 'crystal':
+                        ctx.rotate(obj.rotation);
+                        ctx.fillStyle = obj.color;
+                        ctx.shadowColor = obj.color;
+                        ctx.shadowBlur = 20 * obj.glow;
+                        
+                        // Crystal shape
+                        ctx.beginPath();
+                        ctx.moveTo(0, -obj.size);
+                        ctx.lineTo(obj.size * 0.7, 0);
+                        ctx.lineTo(0, obj.size);
+                        ctx.lineTo(-obj.size * 0.7, 0);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        break;
+                        
+                    case 'house':
+                        // House base
+                        ctx.fillStyle = obj.color;
+                        ctx.fillRect(-obj.size/2, -obj.size/2, obj.size, obj.size);
+                        
+                        // Roof
+                        ctx.fillStyle = '#8b4513';
+                        ctx.beginPath();
+                        ctx.moveTo(-obj.size/2, -obj.size/2);
+                        ctx.lineTo(0, -obj.size);
+                        ctx.lineTo(obj.size/2, -obj.size/2);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Door
+                        ctx.fillStyle = '#654321';
+                        ctx.fillRect(-5, -obj.size/4, 10, obj.size/2);
+                        
+                        // Dream energy indicator
+                        const energyBar = (obj.dreamEnergy / obj.maxEnergy) * obj.size;
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.fillRect(-obj.size/2, obj.size/2 + 5, energyBar, 5);
+                        break;
+                        
+                    case 'portal':
+                        ctx.rotate(obj.rotation);
+                        ctx.fillStyle = obj.color;
+                        ctx.shadowColor = obj.color;
+                        ctx.shadowBlur = 30 * obj.pulse;
+                        
+                        // Portal ring
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obj.size, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        // Inner portal
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obj.size * 0.7, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        ctx.shadowBlur = 0;
+                        break;
+                }
+                
+                ctx.restore();
+            });
+            
+            // Draw particles
+            particles.forEach(particle => {
+                const alpha = particle.life / particle.maxLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            
+            // Draw crosshair
+            if (gameState === 'playing') {
+                ctx.strokeStyle = '#8b5cf6';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#8b5cf6';
+                ctx.shadowBlur = 10;
+                
+                ctx.beginPath();
+                ctx.moveTo(mouseX - 15, mouseY);
+                ctx.lineTo(mouseX + 15, mouseY);
+                ctx.moveTo(mouseX, mouseY - 15);
+                ctx.lineTo(mouseX, mouseY + 15);
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updateGame();
+            }
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        resizeCanvas();
+    </script>
+</body>
+</html>

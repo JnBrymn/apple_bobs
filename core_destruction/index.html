@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIKAN STYLE - Core Destruction! 🍊</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #ff6b9d, #c44569, #f39c12, #e74c3c);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            font-family: 'Fredoka One', cursive;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .side-selector {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 5px solid #ff6b9d;
+            border-radius: 30px;
+            padding: 50px;
+            text-align: center;
+            pointer-events: all;
+            z-index: 200;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: bounceIn 1s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            70% { transform: translate(-50%, -50%) scale(0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .side-selector h1 {
+            background: linear-gradient(45deg, #ff6b9d, #c44569, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 4em;
+            margin: 0 0 20px 0;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+            animation: rainbowText 3s ease infinite;
+        }
+
+        @keyframes rainbowText {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(180deg); }
+        }
+
+        .side-selector p {
+            color: #666;
+            font-size: 1.4em;
+            margin-bottom: 40px;
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .side-buttons {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .side-btn {
+            width: 180px;
+            height: 180px;
+            border: none;
+            border-radius: 25px;
+            font-size: 2.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            font-family: 'Fredoka One', cursive;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .side-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .side-btn:hover::before {
+            left: 100%;
+        }
+
+        .side-btn:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+        }
+
+        .red-side {
+            background: linear-gradient(45deg, #ff4757, #ff3742, #ff3838);
+            color: white;
+            animation: redPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes redPulse {
+            0%, 100% { box-shadow: 0 15px 40px rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 15px 40px rgba(255, 71, 87, 0.8), 0 0 30px rgba(255, 71, 87, 0.6); }
+        }
+
+        .blue-side {
+            background: linear-gradient(45deg, #3742fa, #2f3542, #5352ed);
+            color: white;
+            animation: bluePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes bluePulse {
+            0%, 100% { box-shadow: 0 15px 40px rgba(55, 66, 250, 0.4); }
+            50% { box-shadow: 0 15px 40px rgba(55, 66, 250, 0.8), 0 0 30px rgba(55, 66, 250, 0.6); }
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: white;
+            font-size: 1.3em;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .health-container {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 15px 0;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .health-bar {
+            width: 250px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .health-fill {
+            height: 100%;
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .health-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: healthShine 2s ease-in-out infinite;
+        }
+
+        @keyframes healthShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .red-health .health-fill {
+            background: linear-gradient(90deg, #ff4757, #ff3742, #ff3838);
+        }
+
+        .blue-health .health-fill {
+            background: linear-gradient(90deg, #3742fa, #2f3542, #5352ed);
+        }
+
+        .weapon-selector {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: all;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .weapon-btn {
+            width: 100px;
+            height: 100px;
+            border: 4px solid #fff;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weapon-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%) rotate(45deg);
+            transition: transform 0.6s;
+        }
+
+        .weapon-btn:hover::before {
+            transform: translateX(100%) rotate(45deg);
+        }
+
+        .weapon-btn:hover {
+            transform: scale(1.15) translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .weapon-btn.active {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border-color: #ffd700;
+            box-shadow: 0 0 30px #ffd700, 0 10px 30px rgba(0,0,0,0.4);
+            transform: scale(1.1);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 5px solid #ff6b9d;
+            border-radius: 30px;
+            padding: 50px;
+            text-align: center;
+            pointer-events: all;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: bounceIn 0.8s ease;
+        }
+
+        .game-over h2 {
+            background: linear-gradient(45deg, #ff6b9d, #c44569, #f39c12);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3em;
+            margin: 0 0 30px 0;
+            animation: rainbowText 2s ease infinite;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #2ed573, #1e90ff);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 25px;
+            font-size: 1.4em;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: 'Fredoka One', cursive;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .instructions {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 1em;
+            max-width: 280px;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .mikan-emoji {
+            font-size: 1.5em;
+            animation: mikanBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes mikanBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-5px) rotate(5deg); }
+            75% { transform: translateY(-5px) rotate(-5deg); }
+        }
+
+        .floating-oranges {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .floating-orange {
+            position: absolute;
+            font-size: 2em;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="floating-oranges">
+        <div class="floating-orange" style="top: 10%; left: 10%; animation-delay: 0s;">🍊</div>
+        <div class="floating-orange" style="top: 20%; right: 15%; animation-delay: 1s;">🍊</div>
+        <div class="floating-orange" style="top: 60%; left: 5%; animation-delay: 2s;">🍊</div>
+        <div class="floating-orange" style="top: 80%; right: 10%; animation-delay: 3s;">🍊</div>
+        <div class="floating-orange" style="top: 40%; left: 20%; animation-delay: 4s;">🍊</div>
+    </div>
+    
+    <div class="ui-overlay">
+        <div class="side-selector" id="sideSelector">
+            <h1>🍊 MIKAN STYLE 🍊<br>CORE DESTRUCTION!</h1>
+            <p>Choose your side and let's have some FUN! 🎮✨</p>
+            <div class="side-buttons">
+                <button class="side-btn red-side" onclick="selectSide('red')">🔥 RED TEAM 🔥</button>
+                <button class="side-btn blue-side" onclick="selectSide('blue')">💧 BLUE TEAM 💧</button>
+            </div>
+        </div>
+
+        <div class="game-ui" id="gameUI" style="display: none;">
+            <div class="health-container red-health">
+                <div>🔥 RED CORE HEALTH 🔥</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="redHealth" style="width: 100%;"></div>
+                </div>
+            </div>
+            <div class="health-container blue-health">
+                <div>💧 BLUE CORE HEALTH 💧</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="blueHealth" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="weapon-selector" id="weaponSelector" style="display: none;">
+            <button class="weapon-btn active" onclick="selectWeapon('cannon')" title="Cannon - BOOM! 💣">💣</button>
+            <button class="weapon-btn" onclick="selectWeapon('pistol')" title="Pistol - Pew Pew! 🔫">🔫</button>
+            <button class="weapon-btn" onclick="selectWeapon('laser')" title="Laser - ZAP! ⚡">⚡</button>
+        </div>
+
+        <div class="instructions" id="instructions" style="display: none;">
+            <strong>🎮 HOW TO PLAY 🎮</strong><br><br>
+            <span class="mikan-emoji">🍊</span> Click to shoot your weapon!<br>
+            <span class="mikan-emoji">🍊</span> Destroy the enemy core!<br>
+            <span class="mikan-emoji">🍊</span> Try different weapons!<br>
+            <span class="mikan-emoji">🍊</span> Physics are AWESOME!<br><br>
+            <strong>LET'S GO! 🚀</strong>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <h2 id="winnerText">RED TEAM WINS! 🏆</h2>
+            <p style="font-size: 1.2em; color: #666; margin-bottom: 20px;">That was AMAZING! 🎉</p>
+            <button class="restart-btn" onclick="restartGame()">🎮 PLAY AGAIN! 🎮</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = 'selecting';
+        let playerSide = null;
+        let selectedWeapon = 'cannon';
+        let redHealth = 100;
+        let blueHealth = 100;
+        
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Physics objects
+        let particles = [];
+        let projectiles = [];
+        let cores = [];
+        let platforms = [];
+        
+        // Mouse position
+        let mouseX = 0;
+        let mouseY = 0;
+        
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        // Click to shoot
+        canvas.addEventListener('click', (e) => {
+            if (gameState === 'playing') {
+                shootWeapon(e.clientX, e.clientY);
+            }
+        });
+        
+        // Side selection
+        function selectSide(side) {
+            playerSide = side;
+            gameState = 'playing';
+            
+            // Add fun sound effect (visual feedback)
+            document.body.style.animation = 'gradientShift 0.5s ease';
+            setTimeout(() => {
+                document.body.style.animation = 'gradientShift 8s ease infinite';
+            }, 500);
+            
+            document.getElementById('sideSelector').style.display = 'none';
+            document.getElementById('gameUI').style.display = 'block';
+            document.getElementById('weaponSelector').style.display = 'flex';
+            document.getElementById('instructions').style.display = 'block';
+            
+            initializeGame();
+            gameLoop();
+        }
+        
+        // Weapon selection
+        function selectWeapon(weapon) {
+            selectedWeapon = weapon;
+            
+            // Update active button with fun animation
+            document.querySelectorAll('.weapon-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Add weapon selection effect
+            event.target.style.transform = 'scale(1.2) rotate(10deg)';
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1.1)';
+            }, 200);
+        }
+        
+        // Initialize game objects
+        function initializeGame() {
+            // Create cores with MIKAN style
+            cores = [
+                {
+                    x: canvas.width * 0.25,
+                    y: canvas.height * 0.8,
+                    radius: 70,
+                    health: 100,
+                    maxHealth: 100,
+                    side: 'red',
+                    color: '#ff4757',
+                    glowColor: '#ff6b9d'
+                },
+                {
+                    x: canvas.width * 0.75,
+                    y: canvas.height * 0.8,
+                    radius: 70,
+                    health: 100,
+                    maxHealth: 100,
+                    side: 'blue',
+                    color: '#3742fa',
+                    glowColor: '#5352ed'
+                }
+            ];
+            
+            // Create fun platforms
+            platforms = [
+                { x: 0, y: canvas.height - 60, width: canvas.width, height: 60, color: '#2f3542' },
+                { x: canvas.width * 0.1, y: canvas.height * 0.6, width: 120, height: 25, color: '#ff6b9d' },
+                { x: canvas.width * 0.75, y: canvas.height * 0.6, width: 120, height: 25, color: '#3742fa' },
+                { x: canvas.width * 0.4, y: canvas.height * 0.4, width: 140, height: 25, color: '#f39c12' }
+            ];
+            
+            // Reset health
+            redHealth = 100;
+            blueHealth = 100;
+            updateHealthBars();
+        }
+        
+        // Shoot weapon with MIKAN style effects
+        function shootWeapon(targetX, targetY) {
+            const core = cores.find(c => c.side === playerSide);
+            if (!core) return;
+            
+            const dx = targetX - core.x;
+            const dy = targetY - core.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            
+            let projectile;
+            
+            switch (selectedWeapon) {
+                case 'cannon':
+                    projectile = {
+                        x: core.x,
+                        y: core.y,
+                        vx: Math.cos(angle) * 10,
+                        vy: Math.sin(angle) * 10,
+                        radius: 12,
+                        damage: 30,
+                        side: playerSide,
+                        color: '#ffd700',
+                        glowColor: '#ffed4e',
+                        type: 'cannon',
+                        trail: []
+                    };
+                    break;
+                    
+                case 'pistol':
+                    projectile = {
+                        x: core.x,
+                        y: core.y,
+                        vx: Math.cos(angle) * 15,
+                        vy: Math.sin(angle) * 15,
+                        radius: 6,
+                        damage: 20,
+                        side: playerSide,
+                        color: '#ff6b9d',
+                        glowColor: '#ff4757',
+                        type: 'pistol',
+                        trail: []
+                    };
+                    break;
+                    
+                case 'laser':
+                    projectile = {
+                        x: core.x,
+                        y: core.y,
+                        vx: Math.cos(angle) * 25,
+                        vy: Math.sin(angle) * 25,
+                        radius: 4,
+                        damage: 12,
+                        side: playerSide,
+                        color: '#00d2d3',
+                        glowColor: '#54a0ff',
+                        type: 'laser',
+                        trail: []
+                    };
+                    break;
+            }
+            
+            projectiles.push(projectile);
+            
+            // Add shooting effect
+            createExplosion(core.x, core.y, core.glowColor, 8);
+        }
+        
+        // Update health bars with fun animations
+        function updateHealthBars() {
+            const redHealthPercent = (redHealth / 100) * 100;
+            const blueHealthPercent = (blueHealth / 100) * 100;
+            
+            document.getElementById('redHealth').style.width = redHealthPercent + '%';
+            document.getElementById('blueHealth').style.width = blueHealthPercent + '%';
+            
+            // Add health change effect
+            if (redHealth < 50 || blueHealth < 50) {
+                document.body.style.animation = 'gradientShift 0.3s ease';
+                setTimeout(() => {
+                    document.body.style.animation = 'gradientShift 8s ease infinite';
+                }, 300);
+            }
+        }
+        
+        // Check collision between two circles
+        function checkCollision(obj1, obj2) {
+            const dx = obj1.x - obj2.x;
+            const dy = obj1.y - obj2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < obj1.radius + obj2.radius;
+        }
+        
+        // Check collision with platforms
+        function checkPlatformCollision(obj) {
+            for (let platform of platforms) {
+                if (obj.x + obj.radius > platform.x && 
+                    obj.x - obj.radius < platform.x + platform.width &&
+                    obj.y + obj.radius > platform.y && 
+                    obj.y - obj.radius < platform.y + platform.height) {
+                    return platform;
+                }
+            }
+            return null;
+        }
+        
+        // Create explosion particles with MIKAN style
+        function createExplosion(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    radius: Math.random() * 5 + 2,
+                    color: color,
+                    glowColor: ['#ffd700', '#ff6b9d', '#3742fa', '#f39c12'][Math.floor(Math.random() * 4)],
+                    life: 80,
+                    maxLife: 80,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.2
+                });
+            }
+        }
+        
+        // Update game objects
+        function updateGame() {
+            // Update projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                
+                // Apply gravity
+                proj.vy += 0.4;
+                
+                // Update position
+                proj.x += proj.vx;
+                proj.y += proj.vy;
+                
+                // Add trail effect
+                proj.trail.push({ x: proj.x, y: proj.y });
+                if (proj.trail.length > 5) {
+                    proj.trail.shift();
+                }
+                
+                // Check platform collision
+                const platform = checkPlatformCollision(proj);
+                if (platform) {
+                    createExplosion(proj.x, proj.y, proj.glowColor, 10);
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+                
+                // Check core collision
+                for (let core of cores) {
+                    if (core.side !== proj.side && checkCollision(proj, core)) {
+                        // Damage core
+                        core.health -= proj.damage;
+                        
+                        // Update health variables
+                        if (core.side === 'red') {
+                            redHealth = core.health;
+                        } else {
+                            blueHealth = core.health;
+                        }
+                        
+                        updateHealthBars();
+                        
+                        // Create big explosion
+                        createExplosion(proj.x, proj.y, proj.glowColor, 25);
+                        
+                        // Remove projectile
+                        projectiles.splice(i, 1);
+                        
+                        // Check for game over
+                        if (core.health <= 0) {
+                            gameOver(core.side === 'red' ? 'blue' : 'red');
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                // Remove projectiles that go off screen
+                if (proj.x < -100 || proj.x > canvas.width + 100 || 
+                    proj.y < -100 || proj.y > canvas.height + 100) {
+                    projectiles.splice(i, 1);
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                
+                // Apply gravity
+                particle.vy += 0.3;
+                
+                // Update position
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                
+                // Update rotation
+                particle.rotation += particle.rotationSpeed;
+                
+                // Update life
+                particle.life--;
+                
+                // Remove dead particles
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+        
+        // Draw game objects with MIKAN style
+        function drawGame() {
+            // Clear canvas with gradient
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, 'rgba(255, 107, 157, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(196, 69, 105, 0.1)');
+            gradient.addColorStop(1, 'rgba(243, 156, 18, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw platforms with glow
+            for (let platform of platforms) {
+                ctx.shadowColor = platform.color;
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw cores with MIKAN style
+            for (let core of cores) {
+                // Core glow
+                ctx.shadowColor = core.glowColor;
+                ctx.shadowBlur = 30;
+                
+                // Core body
+                ctx.fillStyle = core.color;
+                ctx.beginPath();
+                ctx.arc(core.x, core.y, core.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core border
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                
+                // Health indicator with fun colors
+                const healthPercent = core.health / core.maxHealth;
+                let healthColor;
+                if (healthPercent > 0.6) {
+                    healthColor = '#2ed573';
+                } else if (healthPercent > 0.3) {
+                    healthColor = '#ffd700';
+                } else {
+                    healthColor = '#ff4757';
+                }
+                
+                ctx.fillStyle = healthColor;
+                ctx.beginPath();
+                ctx.arc(core.x, core.y, core.radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Side label with fun font
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px Fredoka One';
+                ctx.textAlign = 'center';
+                ctx.fillText(core.side.toUpperCase(), core.x, core.y + 8);
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw projectiles with trails
+            for (let proj of projectiles) {
+                // Draw trail
+                for (let j = 0; j < proj.trail.length; j++) {
+                    const trail = proj.trail[j];
+                    const alpha = j / proj.trail.length;
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.fillStyle = proj.glowColor;
+                    ctx.beginPath();
+                    ctx.arc(trail.x, trail.y, proj.radius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw projectile
+                ctx.globalAlpha = 1;
+                ctx.shadowColor = proj.glowColor;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = proj.color;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw particles with rotation
+            for (let particle of particles) {
+                const alpha = particle.life / particle.maxLife;
+                ctx.globalAlpha = alpha;
+                
+                ctx.save();
+                ctx.translate(particle.x, particle.y);
+                ctx.rotate(particle.rotation);
+                
+                // Particle glow
+                ctx.shadowColor = particle.glowColor;
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(-particle.radius/2, -particle.radius/2, particle.radius, particle.radius);
+                ctx.shadowBlur = 0;
+                
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+            
+            // Draw crosshair with MIKAN style
+            if (gameState === 'playing') {
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 3;
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 10;
+                
+                ctx.beginPath();
+                ctx.moveTo(mouseX - 15, mouseY);
+                ctx.lineTo(mouseX + 15, mouseY);
+                ctx.moveTo(mouseX, mouseY - 15);
+                ctx.lineTo(mouseX, mouseY + 15);
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Game over with celebration
+        function gameOver(winner) {
+            gameState = 'gameOver';
+            
+            const winnerText = winner.toUpperCase() + ' TEAM WINS! 🏆';
+            document.getElementById('winnerText').textContent = winnerText;
+            document.getElementById('gameOver').style.display = 'block';
+            
+            // Add celebration effect
+            document.body.style.animation = 'gradientShift 0.2s ease';
+            setTimeout(() => {
+                document.body.style.animation = 'gradientShift 8s ease infinite';
+            }, 200);
+        }
+        
+        // Restart game
+        function restartGame() {
+            gameState = 'selecting';
+            playerSide = null;
+            
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('sideSelector').style.display = 'block';
+            document.getElementById('gameUI').style.display = 'none';
+            document.getElementById('weaponSelector').style.display = 'none';
+            document.getElementById('instructions').style.display = 'none';
+            
+            // Clear arrays
+            particles = [];
+            projectiles = [];
+            cores = [];
+            platforms = [];
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                updateGame();
+            }
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game
+        resizeCanvas();
+    </script>
+</body>
+</html>

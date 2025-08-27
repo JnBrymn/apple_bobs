@@ -299,6 +299,12 @@ document.addEventListener('DOMContentLoaded', function() {
             resetAppleBucks();
         }
     });
+
+    // Initialize game search functionality with a small delay to ensure DOM is ready
+    setTimeout(() => {
+        console.log('🔍 Attempting to initialize search...');
+        initializeGameSearch();
+    }, 100);
 });
 
 // Make functions available globally for debugging
@@ -309,4 +315,213 @@ window.appleBobs = {
     getAppleBucks: () => appleBucks,
     giveAppleBucks: earnAppleBucks, // Alias for games to use
     giveAppleBucksDuringGame: giveAppleBucksDuringGame // For games to give AppleBucks during gameplay
-}; 
+};
+
+// Search Game Functionality
+function initializeGameSearch() {
+    console.log('🔍 Starting search initialization...');
+    
+    const searchInput = document.getElementById('gameSearch');
+    const searchResults = document.getElementById('searchResults');
+    const gameList = document.querySelector('.game-list');
+    
+    console.log('🔍 Search elements found:', {
+        searchInput: !!searchInput,
+        searchResults: !!searchResults,
+        gameList: !!gameList
+    });
+    
+    if (!searchInput || !searchResults || !gameList) {
+        console.log('❌ Search elements not found, skipping search initialization');
+        console.log('🔍 Available elements:', {
+            'gameSearch': document.getElementById('gameSearch'),
+            'searchResults': document.getElementById('searchResults'),
+            'game-list': document.querySelector('.game-list'),
+            'search-container': document.querySelector('.search-container')
+        });
+        return;
+    }
+    
+    console.log('✅ All search elements found, initializing...');
+    
+    // Add search event listeners
+    searchInput.addEventListener('input', function() {
+        console.log('🔍 Search input event triggered:', this.value);
+        const searchTerm = this.value.toLowerCase().trim();
+        filterGames(searchTerm);
+    });
+    
+    // Add search on Enter key
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            console.log('🔍 Enter key pressed, focusing first visible game');
+            // Focus on first visible game link
+            const firstVisibleLink = document.querySelector('.game-list li:not(.hidden) .game-link');
+            if (firstVisibleLink) {
+                firstVisibleLink.focus();
+            }
+        }
+    });
+    
+    // Add clear search on Escape key
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            console.log('🔍 Escape key pressed, clearing search');
+            this.value = '';
+            filterGames('');
+            this.focus();
+        }
+    });
+    
+    // Add search icon click to focus
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+        searchContainer.addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('search-container')) {
+                searchInput.focus();
+            }
+        });
+    }
+    
+    console.log('✅ Search functionality initialized successfully!');
+    
+    // Test the search functionality
+    setTimeout(() => {
+        console.log('🔍 Testing search functionality...');
+        filterGames('test');
+        setTimeout(() => {
+            filterGames('');
+            console.log('🔍 Search test completed');
+        }, 500);
+    }, 1000);
+}
+
+function filterGames(searchTerm) {
+    console.log('🔍 filterGames called with term:', searchTerm);
+    
+    const gameItems = document.querySelectorAll('.game-list li');
+    const searchResults = document.getElementById('searchResults');
+    let visibleCount = 0;
+    let totalCount = gameItems.length;
+    
+    console.log('🔍 Found game items:', totalCount);
+    
+    gameItems.forEach((item, index) => {
+        const gameLink = item.querySelector('.game-link');
+        const gameText = gameLink ? gameLink.textContent.toLowerCase() : '';
+        
+        console.log(`🔍 Game ${index + 1}:`, gameText);
+        
+        // Remove previous highlighting
+        item.classList.remove('highlighted');
+        
+        if (searchTerm === '') {
+            // Show all games
+            item.classList.remove('hidden');
+            visibleCount++;
+        } else if (gameText.includes(searchTerm)) {
+            // Show matching games
+            item.classList.remove('hidden');
+            item.classList.add('highlighted');
+            visibleCount++;
+            
+            // Highlight the matching text
+            highlightText(gameLink, searchTerm);
+        } else {
+            // Hide non-matching games
+            item.classList.add('hidden');
+        }
+    });
+    
+    console.log('🔍 Filtering complete. Visible:', visibleCount, 'Total:', totalCount);
+    
+    // Update search results display
+    if (searchTerm === '') {
+        searchResults.textContent = `Showing all ${totalCount} games`;
+    } else {
+        searchResults.textContent = `Found ${visibleCount} of ${totalCount} games`;
+        
+        // Add search term to results
+        if (visibleCount > 0) {
+            searchResults.innerHTML = `Found <strong>${visibleCount}</strong> of ${totalCount} games matching "<em>${searchTerm}</em>"`;
+        } else {
+            searchResults.innerHTML = `No games found matching "<em>${searchTerm}</em>"`;
+        }
+    }
+    
+    // Update search input styling
+    const searchInput = document.getElementById('gameSearch');
+    if (searchInput) {
+        if (searchTerm === '') {
+            searchInput.style.borderColor = '#ddd';
+        } else if (visibleCount > 0) {
+            searchInput.style.borderColor = '#4CAF50';
+        } else {
+            searchInput.style.borderColor = '#f44336';
+        }
+    }
+}
+
+function highlightText(element, searchTerm) {
+    if (!element || !searchTerm) return;
+    
+    const originalText = element.textContent;
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const highlightedText = originalText.replace(regex, '<mark style="background: #ffeb3b; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+    
+    // Only update if we haven't already highlighted
+    if (!element.dataset.originalText) {
+        element.dataset.originalText = originalText;
+    }
+    
+    if (element.innerHTML !== highlightedText) {
+        element.innerHTML = highlightedText;
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('gameSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        filterGames('');
+        searchInput.focus();
+    }
+}
+
+// Add search functionality to the global appleBobs object
+window.appleBobs.search = {
+    filterGames,
+    clearSearch,
+    initializeGameSearch
+};
+
+// Test function for debugging search
+function testSearch() {
+    console.log('🧪 Test Search Function called!');
+    
+    // Check if search elements exist
+    const searchInput = document.getElementById('gameSearch');
+    const searchResults = document.getElementById('searchResults');
+    const gameList = document.querySelector('.game-list');
+    
+    console.log('🧪 Search elements check:', {
+        searchInput: searchInput ? 'Found' : 'Missing',
+        searchResults: searchResults ? 'Found' : 'Missing',
+        gameList: gameList ? 'Found' : 'Missing'
+    });
+    
+    if (searchInput && searchResults && gameList) {
+        console.log('✅ All search elements found!');
+        
+        // Test the search functionality
+        searchInput.value = 'tetris';
+        filterGames('tetris');
+        
+        // Show success message
+        alert('Search test completed! Check console for details.');
+    } else {
+        console.log('❌ Some search elements are missing!');
+        alert('Search elements missing! Check console for details.');
+    }
+} 

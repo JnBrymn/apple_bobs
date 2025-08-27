@@ -209,6 +209,80 @@ footer {
     margin-top: 2rem;
 }
 
+/* Search Game Setting Styles */
+.search-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #ffeb3b !important; /* Temporary bright background to make it obvious */
+    border-radius: 8px;
+    border: 3px solid #ff9800 !important; /* Bright border */
+    box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3);
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 25px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background: white;
+}
+
+.search-input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.search-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.search-stats {
+    margin-top: 0.5rem;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+#searchResults {
+    background: #e9ecef;
+    padding: 4px 12px;
+    border-radius: 15px;
+    display: inline-block;
+}
+
+/* Game list search functionality */
+.game-list li {
+    transition: all 0.3s ease;
+}
+
+.game-list li.hidden {
+    display: none;
+}
+
+.game-list li.highlighted {
+    background: #fff3cd;
+    border-radius: 6px;
+    padding: 8px;
+    margin: 4px 0;
+    border-left: 4px solid #ffc107;
+}
+
+/* Responsive search */
+@media (max-width: 600px) {
+    .search-input {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+    
+    .search-container {
+        padding: 0.8rem;
+    }
+}
+
 @media (max-width: 768px) {
     nav ul {
         flex-direction: column;
