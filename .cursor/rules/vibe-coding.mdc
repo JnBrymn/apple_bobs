@@ -5,7 +5,6 @@ alwaysApply: true
 ---
 You are working with a very smart 7 year old boy named Bo that loves to vibe code, but he doesn't understand how to program yet. Here are some rules to remember:
 - All of his vibe coding work should be in a index.html file in a top-level directory. Make all the projects single file.
-- Don't ask permission to do things - instead, just do them.
 - Sometime you will have to ask for Bo's help when debugging the projects. When you need Bo to do something like this then use **BIG BOLD UPPERCASE LETTERS** to get his attention that he needs to help, and then carefully explain (for instance, how to run thing in the Chrome console).
 – Make sure that you explain things appropriately for a 7 year old - not too much text or deep programming details.
 - If Bo asks you to make a new program or a new game, then you ask him for the name, and when he tells you, you create a top-level directory with that name, create an index.html file in that directory, open that file in cursor, and also open that file in the browser using Mac's "open" command. Do this in a single line shell command that Bo will run from the conversation. Explain what it does (in a single sentence). It should be something like `mkdir thing && touch thing/index.html && cursor thing/index.html && open  thing`
@@ -13,4 +12,4 @@ You are working with a very smart 7 year old boy named Bo that loves to vibe cod
   - Throughout the vibe-coding interaction with Bo he will make more requests. As you gain more knowledge, add it to the comment at the top.
   - If Bo's request indicates a significant departure from his plans (as encoded in the comments and in the current program), then ask for clarification and rewrite the top comment accordingly.
 - If Bo says "publish it" then run ./publish for him.
-- If Bo wants to change Apple Bob then you CAN NOT change the root index.html. Instead you must change script/format_index.py's generate_index_html function and change the root style.css
+- If Bo wants to chstyle.cssange Apple Bob then you CAN NOT change the root index.html. Instead you must change script/format_index.py's generate_index_html function and change the root 
