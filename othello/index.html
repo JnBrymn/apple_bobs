@@ -1,0 +1,1061 @@
+<!--
+Multi-game board game collection
+Games included:
+- Othello: Two players flip pieces by surrounding opponent pieces
+- Chess: Full chess game with all pieces and rules
+- Checkers: Standard checkers with diagonal movement and king promotion
+- Chinese Checkers: 2-6 players, jump-based movement on star board
+- Hawaiian Checkers: Checkers but pieces can move forward and sideways (not just diagonal)
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Board Games Collection</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Arial', sans-serif;
+			background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			color: white;
+			padding: 20px;
+		}
+
+		.container {
+			text-align: center;
+			background: rgba(255, 255, 255, 0.1);
+			padding: 2rem;
+			border-radius: 20px;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+			max-width: 90vw;
+		}
+
+		h1 {
+			font-size: 2.5rem;
+			margin-bottom: 1rem;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+		}
+
+		.game-menu {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 1rem;
+			margin: 2rem 0;
+		}
+
+		.menu-button {
+			padding: 1.5rem;
+			font-size: 1.2rem;
+			background: rgba(255, 255, 255, 0.2);
+			color: white;
+			border: 2px solid white;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		.menu-button:hover {
+			background: rgba(255, 255, 255, 0.3);
+			transform: scale(1.05);
+		}
+
+		.player-selector {
+			margin: 1rem 0;
+		}
+
+		.player-selector select {
+			padding: 0.5rem 1rem;
+			font-size: 1.1rem;
+			border-radius: 5px;
+			background: rgba(255, 255, 255, 0.2);
+			color: white;
+			border: 2px solid white;
+		}
+
+		.game-info {
+			display: flex;
+			justify-content: space-around;
+			margin-bottom: 1.5rem;
+			flex-wrap: wrap;
+			gap: 1rem;
+		}
+
+		.player-info {
+			background: rgba(255, 255, 255, 0.15);
+			padding: 1rem;
+			border-radius: 10px;
+			min-width: 150px;
+		}
+
+		.player-info.active {
+			background: rgba(255, 215, 0, 0.3);
+			border: 2px solid gold;
+		}
+
+		.player-name {
+			font-size: 1.2rem;
+			font-weight: bold;
+			margin-bottom: 0.5rem;
+		}
+
+		.score {
+			font-size: 1.5rem;
+		}
+
+		.board-container {
+			display: inline-block;
+			background: #2d5016;
+			padding: 10px;
+			border-radius: 10px;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+		}
+
+		.board {
+			display: grid;
+			gap: 2px;
+			background: #1a4d1a;
+			padding: 2px;
+		}
+
+		.cell {
+			width: 60px;
+			height: 60px;
+			background: #2d5016;
+			border: 1px solid #1a4d1a;
+			cursor: pointer;
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: background 0.2s;
+		}
+
+		.cell:hover {
+			background: #3a6b1f;
+		}
+
+		.cell.valid {
+			background: rgba(255, 255, 0, 0.3);
+		}
+
+		.cell.valid:hover {
+			background: rgba(255, 255, 0, 0.5);
+		}
+
+		.cell.selected {
+			background: rgba(0, 255, 0, 0.5);
+		}
+
+		.cell.light {
+			background: #f0d9b5;
+		}
+
+		.cell.dark {
+			background: #b58863;
+		}
+
+		.piece {
+			width: 50px;
+			height: 50px;
+			border-radius: 50%;
+			position: absolute;
+			transition: transform 0.3s, background 0.3s;
+			z-index: 10;
+		}
+
+		.piece.black {
+			background: #000;
+			border: 2px solid #333;
+		}
+
+		.piece.white {
+			background: #fff;
+			border: 2px solid #ddd;
+		}
+
+		.piece.red {
+			background: #ff0000;
+			border: 2px solid #cc0000;
+		}
+
+		.piece.blue {
+			background: #0000ff;
+			border: 2px solid #0000cc;
+		}
+
+		.piece.green {
+			background: #00ff00;
+			border: 2px solid #00cc00;
+		}
+
+		.piece.yellow {
+			background: #ffff00;
+			border: 2px solid #cccc00;
+		}
+
+		.piece.orange {
+			background: #ff8800;
+			border: 2px solid #cc6600;
+		}
+
+		.piece.purple {
+			background: #8800ff;
+			border: 2px solid #6600cc;
+		}
+
+		.piece.king::after {
+			content: '♔';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 20px;
+		}
+
+		.chess-piece {
+			width: 50px;
+			height: 50px;
+			position: absolute;
+			font-size: 40px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			z-index: 10;
+		}
+
+		.status {
+			margin-top: 1.5rem;
+			font-size: 1.2rem;
+			min-height: 30px;
+		}
+
+		.status.winner {
+			color: gold;
+			font-size: 1.5rem;
+			font-weight: bold;
+		}
+
+		button {
+			margin-top: 1rem;
+			padding: 0.8rem 2rem;
+			font-size: 1.1rem;
+			background: rgba(255, 255, 255, 0.2);
+			color: white;
+			border: 2px solid white;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		button:hover {
+			background: rgba(255, 255, 255, 0.3);
+			transform: scale(1.05);
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		@media (max-width: 600px) {
+			.cell {
+				width: 40px;
+				height: 40px;
+			}
+
+			.piece, .chess-piece {
+				width: 35px;
+				height: 35px;
+				font-size: 28px;
+			}
+
+			h1 {
+				font-size: 2rem;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div id="menu-screen">
+			<h1>🎮 Board Games</h1>
+			<div class="game-menu">
+				<button class="menu-button" onclick="startGame('othello')">Othello</button>
+				<button class="menu-button" onclick="startGame('chess')">Chess</button>
+				<button class="menu-button" onclick="startGame('checkers')">Checkers</button>
+				<button class="menu-button" onclick="startGame('chinese-checkers')">Chinese Checkers</button>
+				<button class="menu-button" onclick="startGame('hawaiian-checkers')">Hawaiian Checkers</button>
+			</div>
+		</div>
+
+		<div id="game-screen" class="hidden">
+			<h1 id="game-title">Game</h1>
+			
+			<div id="player-selector-container" class="player-selector hidden">
+				<label>How many players? </label>
+				<select id="player-count-select">
+					<option value="2">2 Players</option>
+					<option value="3">3 Players</option>
+					<option value="4">4 Players</option>
+					<option value="5">5 Players</option>
+					<option value="6">6 Players</option>
+				</select>
+				<button onclick="confirmPlayerCount()">Start Game</button>
+			</div>
+
+			<div class="game-info" id="game-info"></div>
+
+			<div class="board-container">
+				<div class="board" id="board"></div>
+			</div>
+
+			<div class="status" id="status"></div>
+			<button onclick="resetGame()">New Game</button>
+			<button onclick="backToMenu()">Back to Menu</button>
+		</div>
+	</div>
+
+	<script>
+		let currentGame = null;
+		let gameState = {};
+
+		const CHESS_PIECES = {
+			'white': { 'king': '♔', 'queen': '♕', 'rook': '♖', 'bishop': '♗', 'knight': '♘', 'pawn': '♙' },
+			'black': { 'king': '♚', 'queen': '♛', 'rook': '♜', 'bishop': '♝', 'knight': '♞', 'pawn': '♟' }
+		};
+
+		function startGame(gameType) {
+			currentGame = gameType;
+			document.getElementById('menu-screen').classList.add('hidden');
+			document.getElementById('game-screen').classList.remove('hidden');
+			
+			if (gameType === 'chinese-checkers') {
+				document.getElementById('player-selector-container').classList.remove('hidden');
+				document.getElementById('game-title').textContent = 'Chinese Checkers';
+			} else {
+				document.getElementById('player-selector-container').classList.add('hidden');
+				initGame(gameType);
+			}
+		}
+
+		function confirmPlayerCount() {
+			const playerCount = parseInt(document.getElementById('player-count-select').value);
+			initGame('chinese-checkers', playerCount);
+		}
+
+		function backToMenu() {
+			document.getElementById('game-screen').classList.add('hidden');
+			document.getElementById('menu-screen').classList.remove('hidden');
+			currentGame = null;
+		}
+
+		function initGame(gameType, playerCount = 2) {
+			gameState = {
+				gameType: gameType,
+				board: [],
+				currentPlayer: 0,
+				selectedCell: null,
+				gameOver: false,
+				playerCount: playerCount
+			};
+
+			const titles = {
+				'othello': 'Othello',
+				'chess': 'Chess',
+				'checkers': 'Checkers',
+				'chinese-checkers': 'Chinese Checkers',
+				'hawaiian-checkers': 'Hawaiian Checkers'
+			};
+			document.getElementById('game-title').textContent = titles[gameType];
+
+			switch(gameType) {
+				case 'othello':
+					initOthello();
+					break;
+				case 'chess':
+					initChess();
+					break;
+				case 'checkers':
+					initCheckers();
+					break;
+				case 'chinese-checkers':
+					initChineseCheckers(playerCount);
+					break;
+				case 'hawaiian-checkers':
+					initHawaiianCheckers();
+					break;
+			}
+		}
+
+		// ========== OTHELLO ==========
+		function initOthello() {
+			const BOARD_SIZE = 8;
+			gameState.board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
+			gameState.board[3][3] = 'white';
+			gameState.board[3][4] = 'black';
+			gameState.board[4][3] = 'black';
+			gameState.board[4][4] = 'white';
+			gameState.currentPlayer = 'black';
+			createBoard(8, 8);
+			updateOthello();
+		}
+
+		function updateOthello() {
+			updateBoardDisplay();
+			const validMoves = getOthelloValidMoves(gameState.currentPlayer);
+			highlightValidMoves(validMoves);
+			updateOthelloScores();
+			updateOthelloStatus();
+		}
+
+		function getOthelloValidMoves(player) {
+			const validMoves = [];
+			const opponent = player === 'black' ? 'white' : 'black';
+			const BOARD_SIZE = 8;
+			
+			for (let row = 0; row < BOARD_SIZE; row++) {
+				for (let col = 0; col < BOARD_SIZE; col++) {
+					if (gameState.board[row][col] !== null) continue;
+					
+					const directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+					for (const [dr, dc] of directions) {
+						let r = row + dr, c = col + dc;
+						let foundOpponent = false;
+						while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && gameState.board[r][c] === opponent) {
+							foundOpponent = true;
+							r += dr; c += dc;
+						}
+						if (foundOpponent && r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && gameState.board[r][c] === player) {
+							validMoves.push({row, col});
+							break;
+						}
+					}
+				}
+			}
+			return validMoves;
+		}
+
+		function handleOthelloClick(row, col) {
+			if (gameState.gameOver || gameState.board[row][col] !== null) return;
+			const validMoves = getOthelloValidMoves(gameState.currentPlayer);
+			if (!validMoves.some(m => m.row === row && m.col === col)) return;
+			
+			gameState.board[row][col] = gameState.currentPlayer;
+			const piecesToFlip = getOthelloPiecesToFlip(row, col, gameState.currentPlayer);
+			piecesToFlip.forEach(({row: r, col: c}) => gameState.board[r][c] = gameState.currentPlayer);
+			
+			gameState.currentPlayer = gameState.currentPlayer === 'black' ? 'white' : 'black';
+			const nextValidMoves = getOthelloValidMoves(gameState.currentPlayer);
+			if (nextValidMoves.length === 0) {
+				const currentValidMoves = getOthelloValidMoves(gameState.currentPlayer === 'black' ? 'white' : 'black');
+				if (currentValidMoves.length === 0) {
+					gameState.gameOver = true;
+					endOthello();
+				} else {
+					gameState.currentPlayer = gameState.currentPlayer === 'black' ? 'white' : 'black';
+				}
+			}
+			updateOthello();
+		}
+
+		function getOthelloPiecesToFlip(row, col, player) {
+			const piecesToFlip = [];
+			const opponent = player === 'black' ? 'white' : 'black';
+			const directions = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+			const BOARD_SIZE = 8;
+			
+			for (const [dr, dc] of directions) {
+				const directionPieces = [];
+				let r = row + dr, c = col + dc;
+				while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && gameState.board[r][c] === opponent) {
+					directionPieces.push({row: r, col: c});
+					r += dr; c += dc;
+				}
+				if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && gameState.board[r][c] === player) {
+					piecesToFlip.push(...directionPieces);
+				}
+			}
+			return piecesToFlip;
+		}
+
+		function updateOthelloScores() {
+			let black = 0, white = 0;
+			for (let row = 0; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					if (gameState.board[row][col] === 'black') black++;
+					else if (gameState.board[row][col] === 'white') white++;
+				}
+			}
+			updateGameInfo([
+				{name: '⚫ Black', score: black, active: gameState.currentPlayer === 'black'},
+				{name: '⚪ White', score: white, active: gameState.currentPlayer === 'white'}
+			]);
+		}
+
+		function updateOthelloStatus() {
+			if (gameState.gameOver) return;
+			document.getElementById('status').textContent = `${gameState.currentPlayer === 'black' ? 'Black' : 'White'}'s turn`;
+		}
+
+		function endOthello() {
+			let black = 0, white = 0;
+			for (let row = 0; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					if (gameState.board[row][col] === 'black') black++;
+					else if (gameState.board[row][col] === 'white') white++;
+				}
+			}
+			const status = document.getElementById('status');
+			status.classList.add('winner');
+			if (black > white) status.textContent = `🎉 Black wins! (${black} - ${white})`;
+			else if (white > black) status.textContent = `🎉 White wins! (${white} - ${black})`;
+			else status.textContent = `🤝 It's a tie! (${black} - ${white})`;
+		}
+
+		// ========== CHESS ==========
+		function initChess() {
+			gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
+			const setup = [
+				['rook','knight','bishop','queen','king','bishop','knight','rook'],
+				['pawn','pawn','pawn','pawn','pawn','pawn','pawn','pawn']
+			];
+			for (let col = 0; col < 8; col++) {
+				gameState.board[0][col] = {type: setup[0][col], color: 'black'};
+				gameState.board[1][col] = {type: setup[1][col], color: 'black'};
+				gameState.board[6][col] = {type: setup[1][col], color: 'white'};
+				gameState.board[7][col] = {type: setup[0][col], color: 'white'};
+			}
+			gameState.currentPlayer = 'white';
+			createBoard(8, 8);
+			updateChess();
+		}
+
+		function updateChess() {
+			updateBoardDisplay();
+			if (gameState.selectedCell) {
+				const {row, col} = gameState.selectedCell;
+				const piece = gameState.board[row][col];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getChessValidMoves(row, col, piece);
+					highlightValidMoves(validMoves);
+				}
+			}
+			updateChessStatus();
+		}
+
+		function getChessValidMoves(row, col, piece) {
+			const moves = [];
+			const {type, color} = piece;
+			const opponent = color === 'white' ? 'black' : 'white';
+			
+			if (type === 'pawn') {
+				const direction = color === 'white' ? -1 : 1;
+				const startRow = color === 'white' ? 6 : 1;
+				if (!gameState.board[row + direction][col]) {
+					moves.push({row: row + direction, col});
+					if (row === startRow && !gameState.board[row + 2*direction][col]) {
+						moves.push({row: row + 2*direction, col});
+					}
+				}
+				for (const dc of [-1, 1]) {
+					if (col + dc >= 0 && col + dc < 8) {
+						const target = gameState.board[row + direction][col + dc];
+						if (target && target.color === opponent) {
+							moves.push({row: row + direction, col: col + dc});
+						}
+					}
+				}
+			} else if (type === 'rook') {
+				for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+					for (let i = 1; i < 8; i++) {
+						const r = row + dr*i, c = col + dc*i;
+						if (r < 0 || r >= 8 || c < 0 || c >= 8) break;
+						if (!gameState.board[r][c]) moves.push({row: r, col: c});
+						else {
+							if (gameState.board[r][c].color === opponent) moves.push({row: r, col: c});
+							break;
+						}
+					}
+				}
+			} else if (type === 'bishop') {
+				for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+					for (let i = 1; i < 8; i++) {
+						const r = row + dr*i, c = col + dc*i;
+						if (r < 0 || r >= 8 || c < 0 || c >= 8) break;
+						if (!gameState.board[r][c]) moves.push({row: r, col: c});
+						else {
+							if (gameState.board[r][c].color === opponent) moves.push({row: r, col: c});
+							break;
+						}
+					}
+				}
+			} else if (type === 'queen') {
+				for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+					for (let i = 1; i < 8; i++) {
+						const r = row + dr*i, c = col + dc*i;
+						if (r < 0 || r >= 8 || c < 0 || c >= 8) break;
+						if (!gameState.board[r][c]) moves.push({row: r, col: c});
+						else {
+							if (gameState.board[r][c].color === opponent) moves.push({row: r, col: c});
+							break;
+						}
+					}
+				}
+			} else if (type === 'king') {
+				for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+					const r = row + dr, c = col + dc;
+					if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+						if (!gameState.board[r][c] || gameState.board[r][c].color === opponent) {
+							moves.push({row: r, col: c});
+						}
+					}
+				}
+			} else if (type === 'knight') {
+				for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+					const r = row + dr, c = col + dc;
+					if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+						if (!gameState.board[r][c] || gameState.board[r][c].color === opponent) {
+							moves.push({row: r, col: c});
+						}
+					}
+				}
+			}
+			return moves;
+		}
+
+		function handleChessClick(row, col) {
+			if (gameState.gameOver) return;
+			
+			if (gameState.selectedCell) {
+				const {row: sr, col: sc} = gameState.selectedCell;
+				const piece = gameState.board[sr][sc];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getChessValidMoves(sr, sc, piece);
+					if (validMoves.some(m => m.row === row && m.col === col)) {
+						gameState.board[row][col] = piece;
+						gameState.board[sr][sc] = null;
+						gameState.selectedCell = null;
+						gameState.currentPlayer = gameState.currentPlayer === 'white' ? 'black' : 'white';
+					} else {
+						gameState.selectedCell = {row, col};
+					}
+				} else {
+					gameState.selectedCell = {row, col};
+				}
+			} else {
+				gameState.selectedCell = {row, col};
+			}
+			updateChess();
+		}
+
+		function updateChessStatus() {
+			if (gameState.gameOver) return;
+			updateGameInfo([
+				{name: '⚪ White', active: gameState.currentPlayer === 'white'},
+				{name: '⚫ Black', active: gameState.currentPlayer === 'black'}
+			]);
+			document.getElementById('status').textContent = `${gameState.currentPlayer === 'white' ? 'White' : 'Black'}'s turn`;
+		}
+
+		// ========== CHECKERS ==========
+		function initCheckers() {
+			gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
+			for (let row = 0; row < 3; row++) {
+				for (let col = 0; col < 8; col++) {
+					if ((row + col) % 2 === 1) gameState.board[row][col] = {color: 'black', king: false};
+				}
+			}
+			for (let row = 5; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					if ((row + col) % 2 === 1) gameState.board[row][col] = {color: 'white', king: false};
+				}
+			}
+			gameState.currentPlayer = 'white';
+			createBoard(8, 8);
+			updateCheckers();
+		}
+
+		function updateCheckers() {
+			updateBoardDisplay();
+			if (gameState.selectedCell) {
+				const {row, col} = gameState.selectedCell;
+				const piece = gameState.board[row][col];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getCheckersValidMoves(row, col, piece);
+					highlightValidMoves(validMoves);
+				}
+			}
+			updateCheckersStatus();
+		}
+
+		function getCheckersValidMoves(row, col, piece) {
+			const moves = [];
+			const {color, king} = piece;
+			const directions = king ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (color === 'white' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+			
+			for (const [dr, dc] of directions) {
+				const r = row + dr, c = col + dc;
+				if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+					if (!gameState.board[r][c]) {
+						moves.push({row: r, col: c});
+					} else if (gameState.board[r][c].color !== color) {
+						const r2 = r + dr, c2 = c + dc;
+						if (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 && !gameState.board[r2][c2]) {
+							moves.push({row: r2, col: c2});
+						}
+					}
+				}
+			}
+			return moves;
+		}
+
+		function handleCheckersClick(row, col) {
+			if (gameState.gameOver) return;
+			
+			if (gameState.selectedCell) {
+				const {row: sr, col: sc} = gameState.selectedCell;
+				const piece = gameState.board[sr][sc];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getCheckersValidMoves(sr, sc, piece);
+					const move = validMoves.find(m => m.row === row && m.col === col);
+					if (move) {
+						gameState.board[row][col] = piece;
+						gameState.board[sr][sc] = null;
+						
+						// Check for jump
+						if (Math.abs(row - sr) === 2) {
+							const jumpedRow = (row + sr) / 2;
+							const jumpedCol = (col + sc) / 2;
+							gameState.board[jumpedRow][jumpedCol] = null;
+						}
+						
+						// King promotion
+						if ((piece.color === 'white' && row === 0) || (piece.color === 'black' && row === 7)) {
+							piece.king = true;
+						}
+						
+						gameState.selectedCell = null;
+						gameState.currentPlayer = gameState.currentPlayer === 'white' ? 'black' : 'white';
+					} else {
+						gameState.selectedCell = {row, col};
+					}
+				} else {
+					gameState.selectedCell = {row, col};
+				}
+			} else {
+				gameState.selectedCell = {row, col};
+			}
+			updateCheckers();
+		}
+
+		function updateCheckersStatus() {
+			if (gameState.gameOver) return;
+			updateGameInfo([
+				{name: '⚪ White', active: gameState.currentPlayer === 'white'},
+				{name: '⚫ Black', active: gameState.currentPlayer === 'black'}
+			]);
+			document.getElementById('status').textContent = `${gameState.currentPlayer === 'white' ? 'White' : 'Black'}'s turn`;
+		}
+
+		// ========== CHINESE CHECKERS ==========
+		function initChineseCheckers(playerCount) {
+			gameState.playerCount = playerCount;
+			gameState.players = ['red', 'blue', 'green', 'yellow', 'orange', 'purple'].slice(0, playerCount);
+			gameState.currentPlayer = 0;
+			
+			// Create star-shaped board (simplified hexagonal)
+			const size = 13;
+			gameState.board = Array(size).fill(null).map(() => Array(size).fill(null));
+			gameState.boardMap = new Map();
+			
+			// Initialize starting positions for each player
+			const positions = [
+				[[0,6],[1,5],[1,6],[1,7],[2,4],[2,5],[2,6],[2,7],[2,8],[3,3],[3,4],[3,5]],
+				[[9,3],[9,4],[9,5],[10,2],[10,3],[10,4],[10,5],[10,6],[11,1],[11,2],[11,3],[12,0]],
+				[[9,9],[10,8],[10,9],[10,10],[10,11],[11,9],[11,10],[11,11],[12,12]],
+				[[0,6],[1,6],[1,7],[2,6],[2,7],[2,8],[3,7],[3,8],[3,9]],
+				[[6,0],[6,1],[7,0],[7,1],[7,2],[8,0],[8,1],[8,2],[8,3]],
+				[[6,12],[6,11],[7,12],[7,11],[7,10],[8,12],[8,11],[8,10],[8,9]]
+			];
+			
+			for (let i = 0; i < playerCount; i++) {
+				const playerColor = gameState.players[i];
+				const startPos = positions[i];
+				const endPos = positions[(i + playerCount/2) % playerCount];
+				startPos.forEach(([r, c]) => {
+					if (r < size && c < size) gameState.board[r][c] = {color: playerColor, home: true};
+				});
+			}
+			
+			createBoard(size, size);
+			updateChineseCheckers();
+		}
+
+		function updateChineseCheckers() {
+			updateBoardDisplay();
+			updateChineseCheckersStatus();
+		}
+
+		function handleChineseCheckersClick(row, col) {
+			// Simplified Chinese Checkers - basic implementation
+			if (gameState.selectedCell) {
+				const {row: sr, col: sc} = gameState.selectedCell;
+				const piece = gameState.board[sr][sc];
+				if (piece && piece.color === gameState.players[gameState.currentPlayer]) {
+					if (!gameState.board[row][col]) {
+						gameState.board[row][col] = piece;
+						gameState.board[sr][sc] = null;
+						gameState.selectedCell = null;
+						gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.playerCount;
+					} else {
+						gameState.selectedCell = {row, col};
+					}
+				} else {
+					gameState.selectedCell = {row, col};
+				}
+			} else {
+				gameState.selectedCell = {row, col};
+			}
+			updateChineseCheckers();
+		}
+
+		function updateChineseCheckersStatus() {
+			const colorNames = {red: '🔴 Red', blue: '🔵 Blue', green: '🟢 Green', yellow: '🟡 Yellow', orange: '🟠 Orange', purple: '🟣 Purple'};
+			const playerInfos = gameState.players.map((color, i) => ({
+				name: colorNames[color] || color,
+				active: i === gameState.currentPlayer
+			}));
+			updateGameInfo(playerInfos);
+			document.getElementById('status').textContent = `${colorNames[gameState.players[gameState.currentPlayer]]}'s turn`;
+		}
+
+		// ========== HAWAIIAN CHECKERS ==========
+		function initHawaiianCheckers() {
+			gameState.board = Array(8).fill(null).map(() => Array(8).fill(null));
+			for (let row = 0; row < 3; row++) {
+				for (let col = 0; col < 8; col++) {
+					if ((row + col) % 2 === 1) gameState.board[row][col] = {color: 'black', king: false};
+				}
+			}
+			for (let row = 5; row < 8; row++) {
+				for (let col = 0; col < 8; col++) {
+					if ((row + col) % 2 === 1) gameState.board[row][col] = {color: 'white', king: false};
+				}
+			}
+			gameState.currentPlayer = 'white';
+			createBoard(8, 8);
+			updateHawaiianCheckers();
+		}
+
+		function updateHawaiianCheckers() {
+			updateBoardDisplay();
+			if (gameState.selectedCell) {
+				const {row, col} = gameState.selectedCell;
+				const piece = gameState.board[row][col];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getHawaiianCheckersValidMoves(row, col, piece);
+					highlightValidMoves(validMoves);
+				}
+			}
+			updateHawaiianCheckersStatus();
+		}
+
+		function getHawaiianCheckersValidMoves(row, col, piece) {
+			const moves = [];
+			const {color, king} = piece;
+			// Forward and sideways (not just diagonal)
+			const directions = king ? [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]] : 
+				(color === 'white' ? [[-1,0],[0,-1],[0,1],[-1,-1],[-1,1]] : [[1,0],[0,-1],[0,1],[1,-1],[1,1]]);
+			
+			for (const [dr, dc] of directions) {
+				const r = row + dr, c = col + dc;
+				if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+					if (!gameState.board[r][c]) {
+						moves.push({row: r, col: c});
+					} else if (gameState.board[r][c].color !== color) {
+						const r2 = r + dr, c2 = c + dc;
+						if (r2 >= 0 && r2 < 8 && c2 >= 0 && c2 < 8 && !gameState.board[r2][c2]) {
+							moves.push({row: r2, col: c2});
+						}
+					}
+				}
+			}
+			return moves;
+		}
+
+		function handleHawaiianCheckersClick(row, col) {
+			if (gameState.gameOver) return;
+			
+			if (gameState.selectedCell) {
+				const {row: sr, col: sc} = gameState.selectedCell;
+				const piece = gameState.board[sr][sc];
+				if (piece && piece.color === gameState.currentPlayer) {
+					const validMoves = getHawaiianCheckersValidMoves(sr, sc, piece);
+					const move = validMoves.find(m => m.row === row && m.col === col);
+					if (move) {
+						gameState.board[row][col] = piece;
+						gameState.board[sr][sc] = null;
+						
+						// Check for jump
+						if (Math.abs(row - sr) === 2 || Math.abs(col - sc) === 2) {
+							const jumpedRow = (row + sr) / 2;
+							const jumpedCol = (col + sc) / 2;
+							if (jumpedRow >= 0 && jumpedRow < 8 && jumpedCol >= 0 && jumpedCol < 8) {
+								gameState.board[jumpedRow][jumpedCol] = null;
+							}
+						}
+						
+						// King promotion
+						if ((piece.color === 'white' && row === 0) || (piece.color === 'black' && row === 7)) {
+							piece.king = true;
+						}
+						
+						gameState.selectedCell = null;
+						gameState.currentPlayer = gameState.currentPlayer === 'white' ? 'black' : 'white';
+					} else {
+						gameState.selectedCell = {row, col};
+					}
+				} else {
+					gameState.selectedCell = {row, col};
+				}
+			} else {
+				gameState.selectedCell = {row, col};
+			}
+			updateHawaiianCheckers();
+		}
+
+		function updateHawaiianCheckersStatus() {
+			if (gameState.gameOver) return;
+			updateGameInfo([
+				{name: '⚪ White', active: gameState.currentPlayer === 'white'},
+				{name: '⚫ Black', active: gameState.currentPlayer === 'black'}
+			]);
+			document.getElementById('status').textContent = `${gameState.currentPlayer === 'white' ? 'White' : 'Black'}'s turn`;
+		}
+
+		// ========== COMMON FUNCTIONS ==========
+		function createBoard(rows, cols) {
+			const boardElement = document.getElementById('board');
+			boardElement.innerHTML = '';
+			boardElement.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+			
+			for (let row = 0; row < rows; row++) {
+				for (let col = 0; col < cols; col++) {
+					const cell = document.createElement('div');
+					cell.className = 'cell';
+					if (currentGame === 'chess' || currentGame === 'checkers' || currentGame === 'hawaiian-checkers') {
+						cell.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+					}
+					cell.dataset.row = row;
+					cell.dataset.col = col;
+					cell.addEventListener('click', () => handleCellClick(row, col));
+					boardElement.appendChild(cell);
+				}
+			}
+		}
+
+		function handleCellClick(row, col) {
+			switch(currentGame) {
+				case 'othello':
+					handleOthelloClick(row, col);
+					break;
+				case 'chess':
+					handleChessClick(row, col);
+					break;
+				case 'checkers':
+					handleCheckersClick(row, col);
+					break;
+				case 'chinese-checkers':
+					handleChineseCheckersClick(row, col);
+					break;
+				case 'hawaiian-checkers':
+					handleHawaiianCheckersClick(row, col);
+					break;
+			}
+		}
+
+		function updateBoardDisplay() {
+			const cells = document.querySelectorAll('.cell');
+			cells.forEach(cell => {
+				const row = parseInt(cell.dataset.row);
+				const col = parseInt(cell.dataset.col);
+				const piece = gameState.board[row] && gameState.board[row][col];
+				
+				// Clear cell
+				cell.querySelectorAll('.piece, .chess-piece').forEach(el => el.remove());
+				cell.classList.remove('valid', 'selected');
+				
+				// Add piece
+				if (piece) {
+					if (currentGame === 'chess') {
+						const chessPiece = document.createElement('div');
+						chessPiece.className = 'chess-piece';
+						chessPiece.textContent = CHESS_PIECES[piece.color][piece.type];
+						cell.appendChild(chessPiece);
+					} else if (currentGame === 'checkers' || currentGame === 'hawaiian-checkers') {
+						const checkersPiece = document.createElement('div');
+						checkersPiece.className = `piece ${piece.color}${piece.king ? ' king' : ''}`;
+						cell.appendChild(checkersPiece);
+					} else {
+						const gamePiece = document.createElement('div');
+						if (typeof piece === 'object' && piece.color) {
+							gamePiece.className = `piece ${piece.color}`;
+						} else {
+							gamePiece.className = `piece ${piece}`;
+						}
+						cell.appendChild(gamePiece);
+					}
+				}
+				
+				// Highlight selected
+				if (gameState.selectedCell && gameState.selectedCell.row === row && gameState.selectedCell.col === col) {
+					cell.classList.add('selected');
+				}
+			});
+		}
+
+		function highlightValidMoves(validMoves) {
+			const cells = document.querySelectorAll('.cell');
+			cells.forEach(cell => {
+				const row = parseInt(cell.dataset.row);
+				const col = parseInt(cell.dataset.col);
+				if (validMoves.some(m => m.row === row && m.col === col)) {
+					cell.classList.add('valid');
+				}
+			});
+		}
+
+		function updateGameInfo(players) {
+			const gameInfo = document.getElementById('game-info');
+			gameInfo.innerHTML = '';
+			players.forEach(player => {
+				const playerDiv = document.createElement('div');
+				playerDiv.className = `player-info${player.active ? ' active' : ''}`;
+				playerDiv.innerHTML = `
+					<div class="player-name">${player.name}</div>
+					${player.score !== undefined ? `<div class="score">${player.score}</div>` : ''}
+				`;
+				gameInfo.appendChild(playerDiv);
+			});
+		}
+
+		function resetGame() {
+			initGame(currentGame, gameState.playerCount || 2);
+			document.getElementById('status').classList.remove('winner');
+		}
+	</script>
+</body>
+</html>

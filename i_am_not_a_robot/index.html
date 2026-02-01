@@ -1,0 +1,946 @@
+<!--
+I Am Not A Robot Game
+- CAPTCHA-style game where you prove you're not a robot
+- Multiple challenge types:
+  - Image selection: "Select all images with traffic lights/bicycles/etc"
+  - Park the Waymo: Park the car in the parking spot
+  - Engage in a conversation: Type responses to have a conversation
+  - Math problems: Solve simple math problems
+- Need to complete multiple random challenges to win
+- Inspired by neal.fun's version
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>I Am Not A Robot</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Arial', sans-serif;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			color: #333;
+			padding: 20px;
+		}
+
+		.game-container {
+			background: white;
+			border-radius: 20px;
+			padding: 40px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+			max-width: 900px;
+			width: 100%;
+		}
+
+		h1 {
+			text-align: center;
+			color: #667eea;
+			font-size: 2.5rem;
+			margin-bottom: 30px;
+		}
+
+		.checkbox-container {
+			background: #f5f5f5;
+			border: 2px solid #ddd;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 30px;
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		.checkbox-container:hover {
+			background: #eeeeee;
+			border-color: #667eea;
+		}
+
+		.checkbox-container.checked {
+			background: #e8f0fe;
+			border-color: #667eea;
+		}
+
+		.checkbox {
+			width: 24px;
+			height: 24px;
+			border: 2px solid #666;
+			border-radius: 4px;
+			position: relative;
+			flex-shrink: 0;
+			background: white;
+		}
+
+		.checkbox.checked {
+			background: #667eea;
+			border-color: #667eea;
+		}
+
+		.checkbox.checked::after {
+			content: '✓';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: white;
+			font-size: 16px;
+			font-weight: bold;
+		}
+
+		.checkbox-label {
+			font-size: 1.2rem;
+			color: #333;
+		}
+
+		.challenge-screen {
+			display: none;
+		}
+
+		.challenge-screen.active {
+			display: block;
+		}
+
+		.challenge-text {
+			text-align: center;
+			font-size: 1.5rem;
+			margin-bottom: 30px;
+			color: #333;
+			font-weight: bold;
+		}
+
+		.progress {
+			text-align: center;
+			margin-bottom: 20px;
+			font-size: 1.1rem;
+			color: #666;
+		}
+
+		.message {
+			text-align: center;
+			padding: 20px;
+			border-radius: 10px;
+			margin-bottom: 20px;
+			font-size: 1.1rem;
+			font-weight: bold;
+			display: none;
+		}
+
+		.message.success {
+			background: #d4edda;
+			color: #155724;
+			border: 2px solid #c3e6cb;
+			display: block;
+		}
+
+		.message.error {
+			background: #f8d7da;
+			color: #721c24;
+			border: 2px solid #f5c6cb;
+			display: block;
+		}
+
+		.verify-button {
+			width: 100%;
+			padding: 15px;
+			font-size: 1.2rem;
+			background: #667eea;
+			color: white;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: all 0.3s;
+			font-weight: bold;
+			margin-top: 20px;
+		}
+
+		.verify-button:hover {
+			background: #5568d3;
+			transform: translateY(-2px);
+			box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+		}
+
+		.verify-button:disabled {
+			background: #ccc;
+			cursor: not-allowed;
+			transform: none;
+		}
+
+		/* Image selection challenge */
+		.image-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 15px;
+			margin-bottom: 30px;
+		}
+
+		.image-item {
+			aspect-ratio: 1;
+			border: 3px solid #ddd;
+			border-radius: 10px;
+			background: white;
+			cursor: pointer;
+			position: relative;
+			overflow: hidden;
+			transition: all 0.3s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.image-item:hover {
+			border-color: #667eea;
+			transform: scale(1.05);
+		}
+
+		.image-item.selected {
+			border-color: #667eea;
+			background: #e8f0fe;
+			box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+		}
+
+		.image-item.selected::after {
+			content: '✓';
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			background: #667eea;
+			color: white;
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: bold;
+			font-size: 20px;
+		}
+
+		/* Parking challenge */
+		.parking-area {
+			background: #e0e0e0;
+			border: 4px solid #333;
+			border-radius: 10px;
+			padding: 20px;
+			position: relative;
+			height: 400px;
+			margin-bottom: 20px;
+		}
+
+		.parking-spot {
+			position: absolute;
+			width: 150px;
+			height: 80px;
+			border: 3px dashed #666;
+			border-radius: 5px;
+			background: rgba(255, 255, 255, 0.5);
+		}
+
+		.parking-spot.target {
+			border-color: #4CAF50;
+			background: rgba(76, 175, 80, 0.2);
+		}
+
+		.car {
+			position: absolute;
+			width: 120px;
+			height: 60px;
+			background: #4285F4;
+			border-radius: 8px;
+			cursor: move;
+			transition: transform 0.1s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: white;
+			font-weight: bold;
+			font-size: 0.9rem;
+			user-select: none;
+		}
+
+		.car::before {
+			content: '🚗';
+			font-size: 40px;
+		}
+
+		.car.dragging {
+			z-index: 1000;
+			opacity: 0.8;
+		}
+
+		/* Conversation challenge */
+		.conversation-area {
+			background: #f5f5f5;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 20px;
+			max-height: 400px;
+			overflow-y: auto;
+		}
+
+		.chat-message {
+			margin-bottom: 15px;
+			padding: 10px 15px;
+			border-radius: 10px;
+			max-width: 80%;
+		}
+
+		.chat-message.bot {
+			background: #e3f2fd;
+			margin-right: auto;
+		}
+
+		.chat-message.user {
+			background: #667eea;
+			color: white;
+			margin-left: auto;
+		}
+
+		.chat-input-container {
+			display: flex;
+			gap: 10px;
+		}
+
+		.chat-input {
+			flex: 1;
+			padding: 12px;
+			font-size: 1rem;
+			border: 2px solid #ddd;
+			border-radius: 8px;
+		}
+
+		.chat-input:focus {
+			outline: none;
+			border-color: #667eea;
+		}
+
+		.send-button {
+			padding: 12px 24px;
+			background: #667eea;
+			color: white;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			font-weight: bold;
+		}
+
+		.send-button:hover {
+			background: #5568d3;
+		}
+
+		/* Math challenge */
+		.math-problem {
+			text-align: center;
+			font-size: 2rem;
+			margin: 40px 0;
+			color: #333;
+		}
+
+		.math-input {
+			width: 200px;
+			padding: 15px;
+			font-size: 1.5rem;
+			text-align: center;
+			border: 3px solid #667eea;
+			border-radius: 10px;
+			margin: 20px auto;
+			display: block;
+		}
+
+		.math-input:focus {
+			outline: none;
+			border-color: #5568d3;
+		}
+
+		/* Object drawings using CSS */
+		.traffic-light {
+			width: 60px;
+			height: 100px;
+			background: #333;
+			border-radius: 10px;
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-around;
+			padding: 10px;
+		}
+
+		.traffic-light::before,
+		.traffic-light::after {
+			content: '';
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: #666;
+		}
+
+		.traffic-light.red::before {
+			background: #ff4444;
+			box-shadow: 0 0 20px #ff4444;
+		}
+
+		.traffic-light.yellow::after {
+			background: #ffaa00;
+			box-shadow: 0 0 20px #ffaa00;
+		}
+
+		.traffic-light.green::before {
+			background: #44ff44;
+			box-shadow: 0 0 20px #44ff44;
+		}
+
+		.bicycle::before {
+			content: '🚲';
+			font-size: 60px;
+		}
+
+		.car-icon::before {
+			content: '🚗';
+			font-size: 60px;
+		}
+
+		.crosswalk {
+			width: 80px;
+			height: 60px;
+			background: repeating-linear-gradient(
+				to bottom,
+				#fff 0px,
+				#fff 8px,
+				#000 8px,
+				#000 16px
+			);
+			border-radius: 5px;
+		}
+
+		.fire-hydrant {
+			width: 30px;
+			height: 60px;
+			background: #ff4444;
+			border-radius: 5px 5px 0 0;
+			position: relative;
+		}
+
+		.fire-hydrant::before {
+			content: '';
+			position: absolute;
+			top: -10px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 40px;
+			height: 15px;
+			background: #ff4444;
+			border-radius: 50%;
+		}
+
+		.fire-hydrant::after {
+			content: '';
+			position: absolute;
+			bottom: 5px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 20px;
+			height: 20px;
+			background: #cc0000;
+			border-radius: 50%;
+		}
+
+		.mountain::before {
+			content: '🏔️';
+			font-size: 60px;
+		}
+
+		.bridge {
+			width: 80px;
+			height: 40px;
+			background: #8b7355;
+			border-radius: 5px;
+			position: relative;
+		}
+
+		.bridge::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: repeating-linear-gradient(
+				to right,
+				#6b5b3d 0px,
+				#6b5b3d 8px,
+				transparent 8px,
+				transparent 16px
+			);
+		}
+
+		.bus::before {
+			content: '🚌';
+			font-size: 60px;
+		}
+
+		.motorcycle::before {
+			content: '🏍️';
+			font-size: 60px;
+		}
+
+		.truck::before {
+			content: '🚚';
+			font-size: 60px;
+		}
+
+		.tree::before {
+			content: '🌳';
+			font-size: 60px;
+		}
+
+		.house::before {
+			content: '🏠';
+			font-size: 60px;
+		}
+
+		.boat::before {
+			content: '🚤';
+			font-size: 60px;
+		}
+
+		.stairs {
+			width: 50px;
+			height: 70px;
+			background: repeating-linear-gradient(
+				to bottom,
+				#ccc 0px,
+				#ccc 6px,
+				#999 6px,
+				#999 12px
+			);
+			border-radius: 3px;
+		}
+	</style>
+</head>
+<body>
+	<div class="game-container">
+		<h1>I Am Not A Robot</h1>
+
+		<div id="startScreen" class="challenge-screen active">
+			<div class="checkbox-container" id="robotCheckbox">
+				<div class="checkbox" id="checkbox"></div>
+				<div class="checkbox-label">I'm not a robot</div>
+			</div>
+		</div>
+
+		<div id="challengeScreen" class="challenge-screen">
+			<div class="progress" id="progress">Challenge 1 of 3</div>
+			<div class="message" id="message"></div>
+			<div class="challenge-text" id="challengeText"></div>
+			<div id="challengeContent"></div>
+			<button class="verify-button" id="verifyButton">Verify</button>
+		</div>
+
+		<div id="successScreen" class="challenge-screen">
+			<div class="message success">✅ Success! You have verified that you are not a robot.</div>
+		</div>
+	</div>
+
+	<script>
+		const imageChallenges = [
+			{ type: 'traffic lights', classes: ['traffic-light'] },
+			{ type: 'bicycles', classes: ['bicycle'] },
+			{ type: 'cars', classes: ['car-icon'] },
+			{ type: 'crosswalks', classes: ['crosswalk'] },
+			{ type: 'fire hydrants', classes: ['fire-hydrant'] },
+			{ type: 'mountains', classes: ['mountain'] },
+			{ type: 'bridges', classes: ['bridge'] },
+			{ type: 'buses', classes: ['bus'] },
+			{ type: 'motorcycles', classes: ['motorcycle'] },
+			{ type: 'trucks', classes: ['truck'] },
+			{ type: 'trees', classes: ['tree'] },
+			{ type: 'houses', classes: ['house'] },
+			{ type: 'boats', classes: ['boat'] },
+			{ type: 'stairs', classes: ['stairs'] }
+		];
+
+		const allObjectClasses = ['traffic-light', 'bicycle', 'car-icon', 'crosswalk', 'fire-hydrant', 
+			'mountain', 'bridge', 'bus', 'motorcycle', 'truck', 'tree', 'house', 'boat', 'stairs'];
+
+		const conversationPrompts = [
+			{ bot: "Hi! How are you doing today?", user: "I'm doing great, thanks!" },
+			{ bot: "What's your favorite color?", user: "I like blue." },
+			{ bot: "Do you like pizza?", user: "Yes, pizza is delicious!" },
+			{ bot: "What's the weather like?", user: "It's sunny and nice." },
+			{ bot: "Tell me a joke!", user: "Why did the chicken cross the road?" },
+			{ bot: "What's 2 + 2?", user: "Four." },
+			{ bot: "Are you a robot?", user: "No, I'm human." }
+		];
+
+		let currentChallenge = null;
+		let challengesCompleted = 0;
+		const challengesNeeded = 4;
+		let selectedImages = [];
+		let carPosition = { x: 50, y: 300 };
+		let parkingSpot = null;
+		let mathAnswer = null;
+		let conversationStep = 0;
+		let conversationData = null;
+
+		const robotCheckbox = document.getElementById('robotCheckbox');
+		const checkbox = document.getElementById('checkbox');
+		const startScreen = document.getElementById('startScreen');
+		const challengeScreen = document.getElementById('challengeScreen');
+		const successScreen = document.getElementById('successScreen');
+		const challengeText = document.getElementById('challengeText');
+		const challengeContent = document.getElementById('challengeContent');
+		const verifyButton = document.getElementById('verifyButton');
+		const message = document.getElementById('message');
+		const progress = document.getElementById('progress');
+
+		robotCheckbox.addEventListener('click', () => {
+			if (!checkbox.classList.contains('checked')) {
+				checkbox.classList.add('checked');
+				robotCheckbox.classList.add('checked');
+				setTimeout(() => {
+					startScreen.classList.remove('active');
+					challengeScreen.classList.add('active');
+					loadChallenge();
+				}, 500);
+			}
+		});
+
+		verifyButton.addEventListener('click', () => {
+			checkAnswer();
+		});
+
+		function loadChallenge() {
+			message.className = 'message';
+			challengeContent.innerHTML = '';
+			
+			const challengeTypes = ['image', 'parking', 'conversation', 'math'];
+			const randomType = challengeTypes[Math.floor(Math.random() * challengeTypes.length)];
+			currentChallenge = { type: randomType };
+
+			if (randomType === 'image') {
+				loadImageChallenge();
+			} else if (randomType === 'parking') {
+				loadParkingChallenge();
+			} else if (randomType === 'conversation') {
+				loadConversationChallenge();
+			} else if (randomType === 'math') {
+				loadMathChallenge();
+			}
+		}
+
+		function loadImageChallenge() {
+			selectedImages = [];
+			const randomChallenge = imageChallenges[Math.floor(Math.random() * imageChallenges.length)];
+			currentChallenge.imageType = randomChallenge.type;
+			currentChallenge.correctClasses = randomChallenge.classes;
+			
+			challengeText.textContent = `Select all images with ${randomChallenge.type}`;
+			
+			const correctCount = Math.floor(Math.random() * 4) + 3;
+			const imageArray = [];
+			
+			for (let i = 0; i < correctCount; i++) {
+				const variant = getRandomVariant(randomChallenge.classes[0]);
+				imageArray.push({ class: variant, correct: true });
+			}
+			
+			const remainingSlots = 9 - correctCount;
+			for (let i = 0; i < remainingSlots; i++) {
+				let randomClass;
+				do {
+					randomClass = allObjectClasses[Math.floor(Math.random() * allObjectClasses.length)];
+				} while (randomChallenge.classes.includes(randomClass));
+				
+				imageArray.push({ class: randomClass, correct: false });
+			}
+			
+			for (let i = imageArray.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[imageArray[i], imageArray[j]] = [imageArray[j], imageArray[i]];
+			}
+			
+			const imageGrid = document.createElement('div');
+			imageGrid.className = 'image-grid';
+			imageArray.forEach((item, index) => {
+				const imageItem = document.createElement('div');
+				imageItem.className = `image-item ${item.class}`;
+				imageItem.dataset.index = index;
+				imageItem.dataset.correct = item.correct;
+				imageItem.addEventListener('click', () => toggleImage(index));
+				imageGrid.appendChild(imageItem);
+			});
+			challengeContent.appendChild(imageGrid);
+		}
+
+		function loadParkingChallenge() {
+			challengeText.textContent = 'Park the Waymo in the parking spot';
+			
+			const parkingArea = document.createElement('div');
+			parkingArea.className = 'parking-area';
+			parkingArea.id = 'parkingArea';
+			challengeContent.appendChild(parkingArea);
+			
+			// Reset car position
+			carPosition = { x: 50, y: 300 };
+			
+			// Random parking spot position (using fixed dimensions - area is 400px height, width varies)
+			// We'll use setTimeout to ensure the element is rendered first
+			setTimeout(() => {
+				const maxX = Math.max(200, parkingArea.offsetWidth - 180);
+				const maxY = parkingArea.offsetHeight - 100;
+				const spotX = Math.floor(Math.random() * Math.max(100, maxX - 100)) + 50;
+				const spotY = Math.floor(Math.random() * Math.max(100, maxY - 100)) + 50;
+				parkingSpot = { x: spotX, y: spotY };
+			
+				const spot = document.createElement('div');
+				spot.className = 'parking-spot target';
+				spot.style.left = spotX + 'px';
+				spot.style.top = spotY + 'px';
+				parkingArea.appendChild(spot);
+			}, 10);
+			
+			// Car
+			const car = document.createElement('div');
+			car.className = 'car';
+			car.id = 'parkingCar';
+			car.style.left = carPosition.x + 'px';
+			car.style.top = carPosition.y + 'px';
+			
+			let isDragging = false;
+			let dragOffset = { x: 0, y: 0 };
+			
+			car.addEventListener('mousedown', (e) => {
+				isDragging = true;
+				car.classList.add('dragging');
+				const carRect = car.getBoundingClientRect();
+				dragOffset.x = e.clientX - carRect.left;
+				dragOffset.y = e.clientY - carRect.top;
+			});
+			
+			document.addEventListener('mousemove', (e) => {
+				if (isDragging) {
+					const rect = parkingArea.getBoundingClientRect();
+					carPosition.x = Math.max(0, Math.min(e.clientX - rect.left - dragOffset.x, parkingArea.offsetWidth - 120));
+					carPosition.y = Math.max(0, Math.min(e.clientY - rect.top - dragOffset.y, parkingArea.offsetHeight - 60));
+					car.style.left = carPosition.x + 'px';
+					car.style.top = carPosition.y + 'px';
+				}
+			});
+			
+			document.addEventListener('mouseup', () => {
+				isDragging = false;
+				car.classList.remove('dragging');
+			});
+			
+			parkingArea.appendChild(car);
+		}
+
+		function loadConversationChallenge() {
+			challengeText.textContent = 'Engage in a conversation';
+			conversationStep = 0;
+			conversationData = conversationPrompts[Math.floor(Math.random() * conversationPrompts.length)];
+			
+			const conversationArea = document.createElement('div');
+			conversationArea.className = 'conversation-area';
+			conversationArea.id = 'conversationArea';
+			
+			const botMessage = document.createElement('div');
+			botMessage.className = 'chat-message bot';
+			botMessage.textContent = conversationData.bot;
+			conversationArea.appendChild(botMessage);
+			
+			const inputContainer = document.createElement('div');
+			inputContainer.className = 'chat-input-container';
+			
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.className = 'chat-input';
+			input.id = 'chatInput';
+			input.placeholder = 'Type your response...';
+			
+			const sendButton = document.createElement('button');
+			sendButton.className = 'send-button';
+			sendButton.textContent = 'Send';
+			sendButton.addEventListener('click', () => handleChatSend(conversationArea, input));
+			
+			input.addEventListener('keypress', (e) => {
+				if (e.key === 'Enter') {
+					handleChatSend(conversationArea, input);
+				}
+			});
+			
+			inputContainer.appendChild(input);
+			inputContainer.appendChild(sendButton);
+			
+			challengeContent.appendChild(conversationArea);
+			challengeContent.appendChild(inputContainer);
+			input.focus();
+		}
+
+		function handleChatSend(conversationArea, input) {
+			const userText = input.value.trim();
+			if (!userText) return;
+			
+			const userMessage = document.createElement('div');
+			userMessage.className = 'chat-message user';
+			userMessage.textContent = userText;
+			conversationArea.appendChild(userMessage);
+			
+			input.value = '';
+			conversationStep++;
+			
+			conversationArea.scrollTop = conversationArea.scrollHeight;
+			
+			if (conversationStep >= 1) {
+				currentChallenge.conversationComplete = true;
+			}
+		}
+
+		function loadMathChallenge() {
+			const num1 = Math.floor(Math.random() * 20) + 1;
+			const num2 = Math.floor(Math.random() * 20) + 1;
+			mathAnswer = num1 + num2;
+			currentChallenge.answer = mathAnswer;
+			
+			challengeText.textContent = 'Solve this math problem';
+			
+			const problem = document.createElement('div');
+			problem.className = 'math-problem';
+			problem.textContent = `${num1} + ${num2} = ?`;
+			challengeContent.appendChild(problem);
+			
+			const input = document.createElement('input');
+			input.type = 'number';
+			input.className = 'math-input';
+			input.id = 'mathInput';
+			input.placeholder = 'Enter answer';
+			challengeContent.appendChild(input);
+			
+			input.addEventListener('keypress', (e) => {
+				if (e.key === 'Enter') {
+					checkAnswer();
+				}
+			});
+			
+			setTimeout(() => input.focus(), 100);
+		}
+
+		function getRandomVariant(baseClass) {
+			if (baseClass === 'traffic-light') {
+				const variants = ['red', 'yellow', 'green'];
+				return `traffic-light ${variants[Math.floor(Math.random() * variants.length)]}`;
+			}
+			return baseClass;
+		}
+
+		function toggleImage(index) {
+			const imageItem = document.querySelector(`[data-index="${index}"]`);
+			if (imageItem.classList.contains('selected')) {
+				imageItem.classList.remove('selected');
+				selectedImages = selectedImages.filter(i => i !== index);
+			} else {
+				imageItem.classList.add('selected');
+				selectedImages.push(index);
+			}
+		}
+
+		function checkAnswer() {
+			let isCorrect = false;
+
+			if (currentChallenge.type === 'image') {
+				const imageItems = document.querySelectorAll('.image-item');
+				let correctSelected = 0;
+				let incorrectSelected = 0;
+				let correctTotal = 0;
+				
+				imageItems.forEach((item) => {
+					const index = parseInt(item.dataset.index);
+					if (item.dataset.correct === 'true') {
+						correctTotal++;
+						if (selectedImages.includes(index)) {
+							correctSelected++;
+						}
+					} else {
+						if (selectedImages.includes(index)) {
+							incorrectSelected++;
+						}
+					}
+				});
+				
+				isCorrect = correctSelected === correctTotal && incorrectSelected === 0;
+				
+			} else if (currentChallenge.type === 'parking') {
+				const car = document.getElementById('parkingCar');
+				const carRect = car.getBoundingClientRect();
+				const parkingArea = document.getElementById('parkingArea');
+				const areaRect = parkingArea.getBoundingClientRect();
+				
+				const carX = carRect.left - areaRect.left + 60;
+				const carY = carRect.top - areaRect.top + 30;
+				const spotX = parkingSpot.x + 75;
+				const spotY = parkingSpot.y + 40;
+				
+				const distance = Math.sqrt(Math.pow(carX - spotX, 2) + Math.pow(carY - spotY, 2));
+				isCorrect = distance < 30;
+				
+			} else if (currentChallenge.type === 'conversation') {
+				isCorrect = currentChallenge.conversationComplete === true;
+				
+			} else if (currentChallenge.type === 'math') {
+				const input = document.getElementById('mathInput');
+				const userAnswer = parseInt(input.value);
+				isCorrect = userAnswer === currentChallenge.answer;
+			}
+
+			if (isCorrect) {
+				challengesCompleted++;
+				message.textContent = '✓ Correct! Loading next challenge...';
+				message.className = 'message success';
+				
+				if (challengesCompleted >= challengesNeeded) {
+					setTimeout(() => {
+						challengeScreen.classList.remove('active');
+						successScreen.classList.add('active');
+					}, 1500);
+				} else {
+					setTimeout(() => {
+						progress.textContent = `Challenge ${challengesCompleted + 1} of ${challengesNeeded}`;
+						loadChallenge();
+					}, 1500);
+				}
+			} else {
+				if (currentChallenge.type === 'image') {
+					message.textContent = 'Please try again. Select all matching images and nothing else.';
+				} else if (currentChallenge.type === 'parking') {
+					message.textContent = 'Please park the car in the green parking spot.';
+				} else if (currentChallenge.type === 'conversation') {
+					message.textContent = 'Please respond to the conversation.';
+				} else if (currentChallenge.type === 'math') {
+					message.textContent = 'Incorrect answer. Please try again.';
+				}
+				message.className = 'message error';
+				
+				setTimeout(() => {
+					message.className = 'message';
+					if (currentChallenge.type === 'image') {
+						selectedImages = [];
+						document.querySelectorAll('.image-item').forEach(item => item.classList.remove('selected'));
+					}
+				}, 2000);
+			}
+		}
+	</script>
+</body>
+</html>

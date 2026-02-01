@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Box Two - Escape Game</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			background: linear-gradient(135deg, #2c1810 0%, #1a0f08 50%, #0a0503 100%);
+			min-height: 100vh;
+			font-family: 'Georgia', serif;
+			color: #f4e4bc;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1000px;
+			margin: 0 auto;
+		}
+
+		.box-lid {
+			text-align: center;
+			margin-bottom: 30px;
+		}
+
+		.box-lid h1 {
+			font-size: 4em;
+			margin-bottom: 10px;
+			color: #d4af37;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+			font-family: 'Times New Roman', serif;
+		}
+
+		.keyholes {
+			font-size: 3em;
+			letter-spacing: 20px;
+			margin: 20px 0;
+		}
+
+		.note {
+			background: rgba(244, 228, 188, 0.15);
+			border: 3px solid #d4af37;
+			border-radius: 15px;
+			padding: 30px;
+			margin: 30px 0;
+			font-style: italic;
+			line-height: 1.8;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+		}
+
+		.note h2 {
+			color: #d4af37;
+			margin-bottom: 15px;
+			font-family: 'Times New Roman', serif;
+		}
+
+		.objects {
+			display: flex;
+			justify-content: center;
+			gap: 40px;
+			margin: 40px 0;
+			flex-wrap: wrap;
+		}
+
+		.object {
+			background: rgba(212, 175, 55, 0.2);
+			border: 3px solid #d4af37;
+			border-radius: 15px;
+			padding: 30px;
+			text-align: center;
+			cursor: pointer;
+			transition: all 0.3s;
+			min-width: 150px;
+		}
+
+		.object:hover {
+			transform: scale(1.1);
+			box-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+		}
+
+		.object.found {
+			background: rgba(76, 175, 80, 0.3);
+			border-color: #4CAF50;
+		}
+
+		.object-icon {
+			font-size: 4em;
+			margin-bottom: 10px;
+		}
+
+		.puzzle-box {
+			background: rgba(244, 228, 188, 0.1);
+			border: 3px solid #d4af37;
+			border-radius: 15px;
+			padding: 30px;
+			margin: 30px 0;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+		}
+
+		.puzzle-box.locked {
+			opacity: 0.4;
+			pointer-events: none;
+		}
+
+		.puzzle-box h2 {
+			color: #d4af37;
+			margin-bottom: 20px;
+			font-family: 'Times New Roman', serif;
+			font-size: 2em;
+		}
+
+		.riddle {
+			font-size: 1.3em;
+			line-height: 1.8;
+			margin: 20px 0;
+			padding: 20px;
+			background: rgba(0,0,0,0.3);
+			border-radius: 10px;
+			font-style: italic;
+		}
+
+		input, textarea {
+			background: rgba(244, 228, 188, 0.2);
+			border: 2px solid #d4af37;
+			border-radius: 8px;
+			padding: 12px 15px;
+			color: #f4e4bc;
+			font-size: 1.1em;
+			width: 100%;
+			max-width: 400px;
+			margin: 10px 0;
+			font-family: 'Georgia', serif;
+		}
+
+		input:focus, textarea:focus {
+			outline: none;
+			border-color: #ffd700;
+			box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+		}
+
+		button {
+			background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+			border: none;
+			border-radius: 8px;
+			padding: 15px 30px;
+			color: #1a0f08;
+			font-size: 1.2em;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+			margin: 10px 5px;
+			font-family: 'Georgia', serif;
+		}
+
+		button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 5px 20px rgba(212, 175, 55, 0.6);
+		}
+
+		.success {
+			background: rgba(76, 175, 80, 0.8);
+			color: white;
+			padding: 20px;
+			border-radius: 10px;
+			margin: 15px 0;
+			text-align: center;
+			font-weight: bold;
+			font-size: 1.2em;
+		}
+
+		.error {
+			background: rgba(255, 0, 0, 0.6);
+			color: white;
+			padding: 15px;
+			border-radius: 10px;
+			margin: 15px 0;
+		}
+
+		.code-display {
+			font-size: 2.5em;
+			letter-spacing: 15px;
+			color: #d4af37;
+			margin: 30px 0;
+			text-align: center;
+			font-family: 'Courier New', monospace;
+		}
+
+		#timer {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			background: rgba(212, 175, 55, 0.9);
+			padding: 15px 25px;
+			border-radius: 10px;
+			font-size: 1.5em;
+			font-weight: bold;
+			color: #1a0f08;
+			box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+		}
+
+		.victory {
+			text-align: center;
+			margin-top: 50px;
+			display: none;
+		}
+
+		.victory h1 {
+			font-size: 5em;
+			color: #d4af37;
+			margin-bottom: 30px;
+			text-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+		}
+
+		.club-badge {
+			font-size: 6em;
+			margin: 30px 0;
+		}
+	</style>
+</head>
+<body>
+	<!-- Bo wants: Box Two escape game - based on Neil Patrick Harris's Box Two with key, coin, riddles, and Sir Eriick Planhart's challenge -->
+	
+	<div id="timer">⏰ <span id="timeLeft">120:00</span></div>
+	
+	<div class="container">
+		<div class="box-lid">
+			<h1>📦 BOX TWO</h1>
+			<div class="keyholes">🔑 🔑 🔑</div>
+		</div>
+
+		<div class="note">
+			<h2>📜 A Note from Neil Patrick Harris</h2>
+			<p>Welcome, puzzle solver! You have been chosen to attempt Sir Eriick Planhart's challenge. Within this box, you will find a key and a coin. Use them wisely, solve the riddles, and prove yourself worthy of joining our elite club. Good luck!</p>
+		</div>
+
+		<div class="objects">
+			<div class="object" id="keyObject" onclick="findObject('key')">
+				<div class="object-icon">🗝️</div>
+				<div>Key</div>
+				<div id="keyStatus" style="font-size: 0.8em; margin-top: 10px; opacity: 0.5;">Click to examine</div>
+			</div>
+			<div class="object" id="coinObject" onclick="findObject('coin')">
+				<div class="object-icon">🪙</div>
+				<div>Coin</div>
+				<div id="coinStatus" style="font-size: 0.8em; margin-top: 10px; opacity: 0.5;">Click to examine</div>
+			</div>
+		</div>
+
+		<!-- Riddle 1: The Key Riddle -->
+		<div id="riddle1" class="puzzle-box">
+			<h2>🔐 Riddle One: The Key's Secret</h2>
+			<div class="riddle">
+				"I have cities, but no houses.<br>
+				I have mountains, but no trees.<br>
+				I have water, but no fish.<br>
+				What am I?"
+			</div>
+			<input type="text" id="riddle1Answer" placeholder="Enter your answer">
+			<button onclick="checkRiddle1()">Submit Answer</button>
+			<div id="riddle1Result"></div>
+		</div>
+
+		<!-- Riddle 2: The Coin Riddle -->
+		<div id="riddle2" class="puzzle-box locked">
+			<h2>🪙 Riddle Two: The Coin's Message</h2>
+			<div class="riddle">
+				"Look at the coin carefully. What number appears on it?<br>
+				Multiply that number by the number of letters in 'PLANHART'.<br>
+				What is your answer?"
+			</div>
+			<p style="margin: 15px 0; color: #d4af37;">💡 Hint: The coin shows the number 1. PLANHART has 8 letters.</p>
+			<input type="number" id="riddle2Answer" placeholder="Enter your answer">
+			<button onclick="checkRiddle2()">Submit Answer</button>
+			<div id="riddle2Result"></div>
+		</div>
+
+		<!-- Riddle 3: The Combination -->
+		<div id="riddle3" class="puzzle-box locked">
+			<h2>🧩 Riddle Three: The Final Combination</h2>
+			<div class="riddle">
+				"Combine your answers from Riddle One and Riddle Two.<br>
+				Take the first letter of the answer to Riddle One.<br>
+				Take the number from Riddle Two.<br>
+				What is the final code?"
+			</div>
+			<p style="margin: 15px 0; color: #d4af37;">💡 Format: Letter followed by number (e.g., M8)</p>
+			<input type="text" id="riddle3Answer" placeholder="Enter code (e.g., M8)">
+			<button onclick="checkRiddle3()">Submit Code</button>
+			<div id="riddle3Result"></div>
+		</div>
+
+		<!-- Final Challenge -->
+		<div id="finalChallenge" class="puzzle-box locked">
+			<h2>🏆 Sir Eriick Planhart's Final Challenge</h2>
+			<p style="font-size: 1.2em; margin: 20px 0;">Enter the secret code to join the elite club:</p>
+			<div class="code-display" id="codeDisplay">----</div>
+			<input type="text" id="finalCode" placeholder="Enter the secret code" style="text-align: center; font-size: 1.3em; letter-spacing: 5px;">
+			<button onclick="joinClub()" style="font-size: 1.5em; padding: 20px 40px;">🎯 JOIN THE CLUB</button>
+			<div id="finalResult"></div>
+		</div>
+
+		<!-- Victory Screen -->
+		<div id="victory" class="victory">
+			<h1>🎉 CONGRATULATIONS! 🎉</h1>
+			<div class="club-badge">🏅</div>
+			<p style="font-size: 2em; margin: 30px 0; color: #d4af37;">You have successfully completed</p>
+			<p style="font-size: 2.5em; margin: 20px 0; color: #d4af37; font-weight: bold;">SIR ERIICK PLANHART'S CHALLENGE</p>
+			<p style="font-size: 1.5em; margin: 30px 0;">You are now a member of the Elite Club!</p>
+			<p style="font-size: 1.3em; margin: 20px 0;">Time remaining: <span id="finalTime"></span></p>
+			<button onclick="location.reload()" style="font-size: 1.3em; padding: 20px 40px;">Play Again</button>
+		</div>
+	</div>
+
+	<script>
+		let timeLeft = 120 * 60; // 2 hours
+		let keyFound = false;
+		let coinFound = false;
+		let riddle1Solved = false;
+		let riddle2Solved = false;
+		let riddle3Solved = false;
+		let riddle1Answer = '';
+		let riddle2Answer = '';
+
+		function updateTimer() {
+			if (timeLeft <= 0) {
+				alert('⏰ TIME\'S UP! Challenge failed!');
+				location.reload();
+				return;
+			}
+			
+			const hours = Math.floor(timeLeft / 3600);
+			const minutes = Math.floor((timeLeft % 3600) / 60);
+			const seconds = timeLeft % 60;
+			
+			if (hours > 0) {
+				document.getElementById('timeLeft').textContent = 
+					`${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			} else {
+				document.getElementById('timeLeft').textContent = 
+					`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			}
+			timeLeft--;
+		}
+
+		setInterval(updateTimer, 1000);
+
+		function findObject(type) {
+			if (type === 'key') {
+				keyFound = true;
+				document.getElementById('keyObject').classList.add('found');
+				document.getElementById('keyStatus').textContent = '✓ Found!';
+				document.getElementById('keyStatus').style.opacity = '1';
+				document.getElementById('keyStatus').style.color = '#4CAF50';
+			} else if (type === 'coin') {
+				coinFound = true;
+				document.getElementById('coinObject').classList.add('found');
+				document.getElementById('coinStatus').textContent = '✓ Found! Shows: 1';
+				document.getElementById('coinStatus').style.opacity = '1';
+				document.getElementById('coinStatus').style.color = '#4CAF50';
+			}
+		}
+
+		function checkRiddle1() {
+			const answer = document.getElementById('riddle1Answer').value.toLowerCase().trim();
+			if (answer === 'map' || answer === 'a map') {
+				riddle1Answer = 'MAP';
+				riddle1Solved = true;
+				document.getElementById('riddle1Result').innerHTML = '<div class="success">✅ Correct! The answer is MAP. Remember this for later!</div>';
+				unlockPuzzle('riddle2');
+			} else {
+				document.getElementById('riddle1Result').innerHTML = '<div class="error">❌ Not quite! Think about what has cities, mountains, and water but no physical objects...</div>';
+			}
+		}
+
+		function checkRiddle2() {
+			const answer = parseInt(document.getElementById('riddle2Answer').value);
+			// Coin shows 1, PLANHART has 8 letters, so 1 * 8 = 8
+			if (answer === 8) {
+				riddle2Answer = 8;
+				riddle2Solved = true;
+				document.getElementById('riddle2Result').innerHTML = '<div class="success">✅ Correct! The answer is 8. Remember this number!</div>';
+				unlockPuzzle('riddle3');
+			} else {
+				document.getElementById('riddle2Result').innerHTML = '<div class="error">❌ Try again! Coin = 1, PLANHART = 8 letters</div>';
+			}
+		}
+
+		function checkRiddle3() {
+			const answer = document.getElementById('riddle3Answer').value.toUpperCase().trim();
+			// First letter of MAP is M, number from riddle 2 is 8, so M8
+			if (answer === 'M8') {
+				riddle3Solved = true;
+				document.getElementById('riddle3Result').innerHTML = '<div class="success">✅ Excellent! Code: M8</div>';
+				unlockPuzzle('finalChallenge');
+				document.getElementById('codeDisplay').textContent = 'M8';
+			} else {
+				document.getElementById('riddle3Result').innerHTML = '<div class="error">❌ Not quite! First letter of Riddle 1 answer + Riddle 2 number</div>';
+			}
+		}
+
+		function joinClub() {
+			const finalCode = document.getElementById('finalCode').value.toUpperCase().trim();
+			if (finalCode === 'M8' || finalCode === 'ELITE' || finalCode === 'PLANHART') {
+				document.getElementById('finalTime').textContent = document.getElementById('timeLeft').textContent;
+				document.querySelector('.container').style.display = 'none';
+				document.getElementById('victory').style.display = 'block';
+			} else {
+				document.getElementById('finalResult').innerHTML = '<div class="error">❌ That is not the correct code. Use the code from Riddle Three.</div>';
+			}
+		}
+
+		function unlockPuzzle(id) {
+			const puzzle = document.getElementById(id);
+			puzzle.classList.remove('locked');
+			puzzle.style.opacity = '1';
+			puzzle.style.pointerEvents = 'auto';
+		}
+	</script>
+</body>
+</html>
+

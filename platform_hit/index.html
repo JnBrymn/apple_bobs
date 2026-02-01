@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Platform Hit</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: Arial, sans-serif;
+			background: #1a1a2e;
+			color: #eee;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		#money {
+			font-size: 28px;
+			font-weight: bold;
+			color: #f5a623;
+			margin: 10px;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+		}
+		#container {
+			display: flex;
+			gap: 20px;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+		#gameArea {
+			position: relative;
+			width: 800px;
+			height: 600px;
+			border: 3px solid #0f3460;
+			background: #16213e;
+			cursor: crosshair;
+		}
+		#ball {
+			position: absolute;
+			width: 20px;
+			height: 20px;
+			background: #e94560;
+			border-radius: 50%;
+			box-shadow: 0 0 10px rgba(233, 69, 96, 0.6);
+			transition: none;
+		}
+		.platform {
+			position: absolute;
+			height: 10px;
+			background: linear-gradient(90deg, #0f3460, #533483);
+			border: 1px solid #7a5ba3;
+			border-radius: 2px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+		}
+		#shop {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			padding: 20px;
+			background: #0f3460;
+			border-radius: 10px;
+			min-width: 300px;
+			max-height: 600px;
+			overflow-y: auto;
+		}
+		.shop-item {
+			padding: 12px;
+			background: #16213e;
+			border: 2px solid #533483;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+		.shop-item:hover:not(:disabled) {
+			background: #1a2744;
+			border-color: #7a5ba3;
+			transform: translateX(5px);
+		}
+		.shop-item:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+		.shop-item-name {
+			font-weight: bold;
+			font-size: 16px;
+			margin-bottom: 5px;
+		}
+		.shop-item-desc {
+			font-size: 12px;
+			color: #aaa;
+			margin-bottom: 5px;
+		}
+		.shop-item-price {
+			color: #f5a623;
+			font-weight: bold;
+		}
+		.shop-item.owned {
+			border-color: #3ddc97;
+			background: #1a2e24;
+		}
+		#instructions {
+			text-align: center;
+			color: #aaa;
+			margin-bottom: 10px;
+			font-size: 14px;
+		}
+		.hit-effect {
+			position: absolute;
+			color: #f5a623;
+			font-weight: bold;
+			font-size: 20px;
+			pointer-events: none;
+			animation: floatUp 1s ease-out forwards;
+		}
+		.sell-effect {
+			position: absolute;
+			color: #3ddc97;
+			font-weight: bold;
+			font-size: 20px;
+			pointer-events: none;
+			animation: floatUp 1s ease-out forwards;
+		}
+		@keyframes floatUp {
+			to {
+				transform: translateY(-50px);
+				opacity: 0;
+			}
+		}
+		#crashScreen {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: #0078d4;
+			color: white;
+			font-family: 'Courier New', monospace;
+			display: none;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			z-index: 10000;
+			padding: 40px;
+			box-sizing: border-box;
+		}
+		#crashScreen.active {
+			display: flex;
+		}
+		.crash-text {
+			font-size: 24px;
+			line-height: 1.6;
+			text-align: left;
+			max-width: 800px;
+			margin-bottom: 30px;
+		}
+		.crash-title {
+			font-size: 48px;
+			font-weight: bold;
+			margin-bottom: 30px;
+			text-align: center;
+		}
+		.battery-icon {
+			font-size: 100px;
+			margin: 20px 0;
+			animation: batteryDrain 3s ease-out forwards;
+		}
+		@keyframes batteryDrain {
+			0% { content: '🔋'; }
+			25% { content: '🔋'; }
+			50% { content: '🪫'; }
+			100% { content: '🪫'; }
+		}
+		.crash-continue {
+			margin-top: 40px;
+			font-size: 18px;
+			color: #ccc;
+			text-align: center;
+		}
+		#victoryScreen {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			font-family: Arial, sans-serif;
+			display: none;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			z-index: 10001;
+			padding: 40px;
+			box-sizing: border-box;
+		}
+		#victoryScreen.active {
+			display: flex;
+		}
+		.victory-title {
+			font-size: 72px;
+			font-weight: bold;
+			margin-bottom: 30px;
+			text-align: center;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+			animation: victoryPulse 2s ease-in-out infinite;
+		}
+		@keyframes victoryPulse {
+			0%, 100% { transform: scale(1); }
+			50% { transform: scale(1.05); }
+		}
+		.victory-subtitle {
+			font-size: 32px;
+			margin-bottom: 20px;
+			text-align: center;
+			font-style: italic;
+		}
+		.victory-author {
+			font-size: 24px;
+			margin-top: 40px;
+			text-align: center;
+			color: #f5a623;
+		}
+		.victory-continue {
+			margin-top: 60px;
+			font-size: 20px;
+			color: #ddd;
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<div id="money">Money: $0</div>
+	<div id="instructions">Left-click to buy platform | Right-click platform to sell (get half money back)</div>
+	<div id="container">
+		<div id="gameArea">
+			<div id="ball"></div>
+		</div>
+		<div id="shop">
+			<h3 style="margin-top: 0;">Shop</h3>
+		</div>
+	</div>
+
+	<div id="crashScreen">
+		<div class="crash-title">:(</div>
+		<div class="crash-text">
+			Your PC ran into a problem and needs to restart.<br>
+			We're just collecting some error info, and then we'll restart for you.<br><br>
+			If you'd like to know more, you can search online later for this error:<br>
+			CRITICAL_MONEY_OVERFLOW_EXCEPTION<br><br>
+			Stop code: MONEY_TOO_HIGH
+		</div>
+		<div class="battery-icon">🔋</div>
+		<div class="crash-text" style="text-align: center;">
+			Battery: 0%<br>
+			Your device ran out of power.
+		</div>
+		<div class="crash-continue">
+			Press any key or click to continue...
+		</div>
+	</div>
+
+	<div id="victoryScreen">
+		<div class="victory-title">You Beat The Game!</div>
+		<div class="victory-subtitle">"the least expected way"</div>
+		<div class="victory-author">- Bo Berryman</div>
+		<div class="victory-continue">
+			Click or press any key to continue playing...
+		</div>
+	</div>
+
+	<script>
+		/*
+		Platform Hit Game
+		- Ball bounces in a box
+		- Click in game area to buy and place platforms (cost varies with upgrades)
+		- When ball hits a platform, earn $5 (or more with upgrades)
+		- Buy upgrades: Price Doubler, Triple Money, Faster Ball, Bigger Platforms, 
+		  Mega Platform, Auto Clicker, Bigger Ball, Extra Earnings, Cheaper Platforms
+		*/
+
+		let money = 999999; // Testing - will change back to 5 after approval
+		let platforms = [];
+		let ball = { x: 100, y: 100, vx: 3, vy: 4 };
+		let baseEarnings = 5;
+		let ballSpeed = 1;
+		let platformWidth = 100;
+		let lastHitPlatform = null;
+		let hitCooldown = 0;
+
+		let upgrades = {
+			priceDoubler: { owned: false, cost: 50 },
+			tripleMoney: { owned: false, cost: 200 },
+			fasterBall: { owned: false, cost: 100, level: 0 },
+			biggerPlatforms: { owned: false, cost: 75, level: 0 },
+			megaPlatform: { owned: false, cost: 300 },
+			autoClicker: { owned: false, cost: 500 },
+			biggerBall: { owned: false, cost: 150, level: 0 },
+			extraEarnings: { owned: false, cost: 80, level: 0 },
+			cheaperPlatforms: { owned: false, cost: 25, level: 0 }
+		};
+		let platformCost = 10;
+
+		const gameArea = document.getElementById('gameArea');
+		const ballEl = document.getElementById('ball');
+		const moneyEl = document.getElementById('money');
+		const shopEl = document.getElementById('shop');
+		const instructionsEl = document.getElementById('instructions');
+		const crashScreen = document.getElementById('crashScreen');
+		const victoryScreen = document.getElementById('victoryScreen');
+		let crashShown = false;
+
+		function showCrashScreen() {
+			if (crashShown) return;
+			crashShown = true;
+			crashScreen.classList.add('active');
+			
+			// Animate battery draining
+			const batteryEl = crashScreen.querySelector('.battery-icon');
+			setTimeout(() => {
+				batteryEl.textContent = '🪫';
+			}, 1500);
+		}
+
+		function hideCrashScreen() {
+			crashScreen.classList.remove('active');
+			// Show victory screen after crash screen
+			setTimeout(() => {
+				victoryScreen.classList.add('active');
+			}, 300);
+		}
+
+		function hideVictoryScreen() {
+			victoryScreen.classList.remove('active');
+		}
+
+		// Allow clicking or pressing any key to dismiss crash screen
+		crashScreen.addEventListener('click', hideCrashScreen);
+		document.addEventListener('keydown', (e) => {
+			if (crashScreen.classList.contains('active')) {
+				hideCrashScreen();
+			} else if (victoryScreen.classList.contains('active')) {
+				hideVictoryScreen();
+			}
+		});
+
+		// Allow clicking to dismiss victory screen
+		victoryScreen.addEventListener('click', hideVictoryScreen);
+
+		function formatMoney(amount) {
+			return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+		}
+
+		function updateMoney() {
+			moneyEl.textContent = `Money: $${formatMoney(money)}`;
+			instructionsEl.textContent = `Left-click to buy platform ($${platformCost}) | Right-click platform to sell (get $5 back)`;
+			
+			// Check for million dollar crash!
+			if (money >= 1000000 && !crashShown) {
+				setTimeout(() => showCrashScreen(), 500);
+			}
+			
+			updateShop();
+		}
+
+		function updateShop() {
+			shopEl.innerHTML = '<h3 style="margin-top: 0;">Shop</h3>';
+			
+			// Price Doubler
+			addShopItem('Price Doubler', 'Double money from hits', upgrades.priceDoubler.cost, upgrades.priceDoubler.owned, () => {
+				if (money >= upgrades.priceDoubler.cost && !upgrades.priceDoubler.owned) {
+					money -= upgrades.priceDoubler.cost;
+					upgrades.priceDoubler.owned = true;
+					updateMoney();
+				}
+			});
+
+			// Triple Money
+			addShopItem('Triple Money', 'Triple money from hits', upgrades.tripleMoney.cost, upgrades.tripleMoney.owned, () => {
+				if (money >= upgrades.tripleMoney.cost && !upgrades.tripleMoney.owned) {
+					money -= upgrades.tripleMoney.cost;
+					upgrades.tripleMoney.owned = true;
+					updateMoney();
+				}
+			});
+
+			// Faster Ball
+			addShopItem('Faster Ball', `Make ball faster (Level ${upgrades.fasterBall.level + 1})`, upgrades.fasterBall.cost, false, () => {
+				if (money >= upgrades.fasterBall.cost) {
+					money -= upgrades.fasterBall.cost;
+					upgrades.fasterBall.level++;
+					upgrades.fasterBall.cost = Math.floor(upgrades.fasterBall.cost * 1.5);
+					ballSpeed += 0.5;
+					updateMoney();
+				}
+			});
+
+			// Bigger Platforms
+			addShopItem('Bigger Platforms', `Make platforms wider (Level ${upgrades.biggerPlatforms.level + 1})`, upgrades.biggerPlatforms.cost, false, () => {
+				if (money >= upgrades.biggerPlatforms.cost) {
+					money -= upgrades.biggerPlatforms.cost;
+					upgrades.biggerPlatforms.level++;
+					upgrades.biggerPlatforms.cost = Math.floor(upgrades.biggerPlatforms.cost * 1.5);
+					platformWidth += 20;
+					platforms.forEach(p => p.width = platformWidth);
+					platforms.forEach(p => {
+						const el = document.querySelector(`[data-platform-id="${p.id}"]`);
+						if (el) el.style.width = platformWidth + 'px';
+					});
+					updateMoney();
+				}
+			});
+
+			// Mega Platform
+			addShopItem('Mega Platform', 'One huge platform across the middle', upgrades.megaPlatform.cost, upgrades.megaPlatform.owned, () => {
+				if (money >= upgrades.megaPlatform.cost && !upgrades.megaPlatform.owned) {
+					money -= upgrades.megaPlatform.cost;
+					upgrades.megaPlatform.owned = true;
+					// Add mega platform
+					const mega = {
+						id: 'mega',
+						x: 0,
+						y: 295,
+						width: 800,
+						height: 10
+					};
+					platforms.push(mega);
+					const el = document.createElement('div');
+					el.className = 'platform';
+					el.dataset.platformId = 'mega';
+					el.style.left = '0px';
+					el.style.top = '295px';
+					el.style.width = '800px';
+					gameArea.appendChild(el);
+					updateMoney();
+				}
+			});
+
+			// Auto Clicker
+			addShopItem('Auto Clicker', 'Earn $1 every second automatically', upgrades.autoClicker.cost, upgrades.autoClicker.owned, () => {
+				if (money >= upgrades.autoClicker.cost && !upgrades.autoClicker.owned) {
+					money -= upgrades.autoClicker.cost;
+					upgrades.autoClicker.owned = true;
+					updateMoney();
+				}
+			});
+
+			// Bigger Ball
+			addShopItem('Bigger Ball', `Make ball bigger (Level ${upgrades.biggerBall.level + 1})`, upgrades.biggerBall.cost, false, () => {
+				if (money >= upgrades.biggerBall.cost) {
+					money -= upgrades.biggerBall.cost;
+					upgrades.biggerBall.level++;
+					upgrades.biggerBall.cost = Math.floor(upgrades.biggerBall.cost * 1.5);
+					const newSize = 20 + upgrades.biggerBall.level * 5;
+					ballEl.style.width = newSize + 'px';
+					ballEl.style.height = newSize + 'px';
+					updateMoney();
+				}
+			});
+
+			// Extra Earnings
+			addShopItem('Extra Earnings', `+$2 per hit (Level ${upgrades.extraEarnings.level + 1})`, upgrades.extraEarnings.cost, false, () => {
+				if (money >= upgrades.extraEarnings.cost) {
+					money -= upgrades.extraEarnings.cost;
+					upgrades.extraEarnings.level++;
+					upgrades.extraEarnings.cost = Math.floor(upgrades.extraEarnings.cost * 1.4);
+					updateMoney();
+				}
+			});
+
+			// Cheaper Platforms
+			addShopItem('Cheaper Platforms', `Reduce platform cost (Level ${upgrades.cheaperPlatforms.level + 1})`, upgrades.cheaperPlatforms.cost, false, () => {
+				if (money >= upgrades.cheaperPlatforms.cost) {
+					money -= upgrades.cheaperPlatforms.cost;
+					upgrades.cheaperPlatforms.level++;
+					upgrades.cheaperPlatforms.cost = Math.floor(upgrades.cheaperPlatforms.cost * 1.6);
+					platformCost = Math.max(1, 10 - upgrades.cheaperPlatforms.level * 2);
+					updateMoney();
+				}
+			});
+		}
+
+		function addShopItem(name, desc, cost, owned, onClick) {
+			const item = document.createElement('div');
+			item.className = 'shop-item';
+			if (owned) item.classList.add('owned');
+			if (money < cost && !owned) item.disabled = true;
+			
+			item.innerHTML = `
+				<div class="shop-item-name">${name}${owned ? ' ✓' : ''}</div>
+				<div class="shop-item-desc">${desc}</div>
+				<div class="shop-item-price">$${cost}</div>
+			`;
+			
+			if (!owned) {
+				item.addEventListener('click', onClick);
+			}
+			
+			shopEl.appendChild(item);
+		}
+
+		// Click to buy platform
+		gameArea.addEventListener('click', (e) => {
+			if (money >= platformCost) {
+				const rect = gameArea.getBoundingClientRect();
+				const x = e.clientX - rect.left - platformWidth / 2;
+				const y = e.clientY - rect.top - 5;
+				
+				// Make sure platform is inside bounds
+				const clampedX = Math.max(0, Math.min(x, 800 - platformWidth));
+				const clampedY = Math.max(0, Math.min(y, 590));
+				
+				money -= platformCost;
+				
+				const platform = {
+					id: Date.now(),
+					x: clampedX,
+					y: clampedY,
+					width: platformWidth,
+					height: 10
+				};
+				platforms.push(platform);
+				
+				const el = document.createElement('div');
+				el.className = 'platform';
+				el.dataset.platformId = platform.id;
+				el.style.left = clampedX + 'px';
+				el.style.top = clampedY + 'px';
+				el.style.width = platformWidth + 'px';
+				gameArea.appendChild(el);
+				
+				updateMoney();
+			}
+		});
+
+		// Right-click to sell platform
+		gameArea.addEventListener('contextmenu', (e) => {
+			e.preventDefault(); // Prevent right-click menu
+			
+			const rect = gameArea.getBoundingClientRect();
+			const clickX = e.clientX - rect.left;
+			const clickY = e.clientY - rect.top;
+			
+			// Find platform that was clicked
+			for (let i = platforms.length - 1; i >= 0; i--) {
+				const platform = platforms[i];
+				// Don't allow selling the starting platform or mega platform
+				if (platform.id === 'start' || platform.id === 'mega') continue;
+				
+				if (clickX >= platform.x && clickX <= platform.x + platform.width &&
+					clickY >= platform.y && clickY <= platform.y + platform.height) {
+					
+					// Remove platform from array
+					platforms.splice(i, 1);
+					
+					// Remove platform element from DOM
+					const el = document.querySelector(`[data-platform-id="${platform.id}"]`);
+					if (el) el.remove();
+					
+					// Give money back (half of base cost)
+					const refund = 5;
+					money += refund;
+					
+					showSellEffect(clickX, clickY, refund);
+					updateMoney();
+					break;
+				}
+			}
+		});
+
+		function showHitEffect(x, y, amount) {
+			const effect = document.createElement('div');
+			effect.className = 'hit-effect';
+			effect.textContent = `+$${amount}`;
+			effect.style.left = x + 'px';
+			effect.style.top = y + 'px';
+			gameArea.appendChild(effect);
+			setTimeout(() => effect.remove(), 1000);
+		}
+
+		function showSellEffect(x, y, amount) {
+			const effect = document.createElement('div');
+			effect.className = 'sell-effect';
+			effect.textContent = `+$${amount} (sold)`;
+			effect.style.left = x + 'px';
+			effect.style.top = y + 'px';
+			gameArea.appendChild(effect);
+			setTimeout(() => effect.remove(), 1000);
+		}
+
+		function gameLoop() {
+			const ballSize = 20 + upgrades.biggerBall.level * 5;
+			const moveX = ball.vx * ballSpeed;
+			const moveY = ball.vy * ballSpeed;
+			
+			// Check platform hits BEFORE moving (to prevent passing through)
+			if (hitCooldown > 0) hitCooldown--;
+			
+			// Reset lastHitPlatform if ball is no longer touching that platform
+			if (lastHitPlatform !== null && hitCooldown === 0) {
+				let stillTouching = false;
+				for (let i = 0; i < platforms.length; i++) {
+					const platform = platforms[i];
+					if (platform.id === lastHitPlatform) {
+						const ballLeft = ball.x;
+						const ballRight = ball.x + ballSize;
+						const ballTop = ball.y;
+						const ballBottom = ball.y + ballSize;
+						const platformLeft = platform.x;
+						const platformRight = platform.x + platform.width;
+						const platformTop = platform.y;
+						const platformBottom = platform.y + platform.height;
+						
+						if (ballRight >= platformLeft && ballLeft <= platformRight &&
+							ballBottom >= platformTop && ballTop <= platformBottom) {
+							stillTouching = true;
+						}
+						break;
+					}
+				}
+				if (!stillTouching) {
+					lastHitPlatform = null;
+				}
+			}
+			
+			let hitPlatform = false;
+			
+			for (let i = 0; i < platforms.length; i++) {
+				const platform = platforms[i];
+				
+				// Check if ball will collide with platform
+				const nextBallLeft = ball.x + moveX;
+				const nextBallRight = ball.x + moveX + ballSize;
+				const nextBallTop = ball.y + moveY;
+				const nextBallBottom = ball.y + moveY + ballSize;
+				
+				const platformLeft = platform.x;
+				const platformRight = platform.x + platform.width;
+				const platformTop = platform.y;
+				const platformBottom = platform.y + platform.height;
+				
+				// Check if next position will collide
+				if (nextBallRight >= platformLeft && nextBallLeft <= platformRight &&
+					nextBallBottom >= platformTop && nextBallTop <= platformBottom &&
+					hitCooldown === 0 && lastHitPlatform !== platform.id) {
+					
+					// Determine which side was hit
+					const ballCenterX = ball.x + ballSize / 2;
+					const ballCenterY = ball.y + ballSize / 2;
+					const platformCenterX = platform.x + platform.width / 2;
+					const platformCenterY = platform.y + platform.height / 2;
+					
+					const dx = ballCenterX - platformCenterX;
+					const dy = ballCenterY - platformCenterY;
+					
+					// Bounce based on which side was hit
+					if (Math.abs(dy) > Math.abs(dx)) {
+						// Hit from top or bottom
+						ball.vy = -ball.vy;
+						// Position ball just outside platform
+						if (dy < 0) {
+							ball.y = platform.y - ballSize - 1;
+						} else {
+							ball.y = platform.y + platform.height + 1;
+						}
+					} else {
+						// Hit from left or right
+						ball.vx = -ball.vx;
+						// Position ball just outside platform
+						if (dx < 0) {
+							ball.x = platform.x - ballSize - 1;
+						} else {
+							ball.x = platform.x + platform.width + 1;
+						}
+					}
+					
+					// Calculate earnings
+					let earned = baseEarnings;
+					earned += upgrades.extraEarnings.level * 2;
+					if (upgrades.priceDoubler.owned) earned *= 2;
+					if (upgrades.tripleMoney.owned) earned *= 3;
+					
+					money += earned;
+					lastHitPlatform = platform.id;
+					hitCooldown = 10;
+					
+					showHitEffect(ball.x, ball.y - 20, earned);
+					updateMoney();
+					
+					hitPlatform = true;
+					break; // Only handle one collision per frame
+				}
+			}
+			
+			// Move ball (only if no collision happened)
+			if (!hitPlatform) {
+				ball.x += moveX;
+				ball.y += moveY;
+			}
+
+			// Bounce off walls
+			if (ball.x <= 0 || ball.x >= 800 - ballSize) {
+				ball.vx = -ball.vx;
+				ball.x = Math.max(0, Math.min(ball.x, 800 - ballSize));
+			}
+			if (ball.y <= 0 || ball.y >= 600 - ballSize) {
+				ball.vy = -ball.vy;
+				ball.y = Math.max(0, Math.min(ball.y, 600 - ballSize));
+			}
+
+			// Update ball position
+			ballEl.style.left = ball.x + 'px';
+			ballEl.style.top = ball.y + 'px';
+
+			requestAnimationFrame(gameLoop);
+		}
+
+		// Auto clicker
+		setInterval(() => {
+			if (upgrades.autoClicker.owned) {
+				money += 1;
+				updateMoney();
+			}
+		}, 1000);
+
+		// Initialize - add one starting platform
+		const startPlatform = {
+			id: 'start',
+			x: 300,
+			y: 300,
+			width: platformWidth,
+			height: 10
+		};
+		platforms.push(startPlatform);
+		const el = document.createElement('div');
+		el.className = 'platform';
+		el.dataset.platformId = 'start';
+		el.style.left = '300px';
+		el.style.top = '300px';
+		el.style.width = platformWidth + 'px';
+		gameArea.appendChild(el);
+
+		updateMoney();
+		gameLoop();
+	</script>
+</body>
+</html>
+

@@ -1,0 +1,348 @@
+<!-- Bo says: This is WAKE UP where trying harder keeps you awake, and secretly searching "search me" (now opens a new tab saying YOU WIN) makes you win without telling anyone else. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAKE UP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.5s ease;
+            overflow: hidden;
+        }
+
+
+        .game-container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 3px 3px 6px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3); }
+            to { text-shadow: 3px 3px 6px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.6); }
+        }
+
+        .instructions {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .instructions h2 {
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .instructions p {
+            line-height: 1.6;
+            font-size: 1.1em;
+        }
+
+        .sleep-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 20px;
+            font-family: 'Comic Sans MS', cursive;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sleep-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.4);
+        }
+
+        .sleep-button:active {
+            transform: scale(0.98);
+        }
+
+        .sleep-button.pulsing {
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .sleep-meter {
+            width: 100%;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .sleep-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 20px;
+        }
+
+        .sleep-fill.hard-trying {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ee5a6f 100%);
+            animation: shake 0.1s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .status {
+            font-size: 1.3em;
+            margin: 20px 0;
+            min-height: 30px;
+        }
+
+        .status.awake {
+            color: #ffd700;
+        }
+
+        .status.trying {
+            color: #ff6b6b;
+        }
+
+        .status.sleeping {
+            color: #4ecdc4;
+            font-size: 2em;
+            animation: fadeInOut 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .search-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .search-input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 15px;
+            color: white;
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 0.9em;
+            width: 150px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            opacity: 1;
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .search-button {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 15px;
+            color: white;
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 0.9em;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .click-count {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="search-box">
+        <input type="text" class="search-input" id="searchInput" placeholder="search..." onkeypress="handleSearchKeypress(event)">
+        <button class="search-button" onclick="handleSearch()">🔍</button>
+    </div>
+    
+    <div class="game-container">
+        <h1>WAKE UP</h1>
+        
+        <div class="instructions" id="instructions">
+            <h2>How to Play</h2>
+            <p>You're trying to fall asleep, but it's not working! Click the "Try to Sleep" button to attempt to fall asleep. The more you try, the harder it gets. Good luck!</p>
+            <button onclick="startGame()" style="margin-top: 15px; padding: 10px 20px; font-size: 1.1em; background: #4ecdc4; border: none; border-radius: 25px; color: white; cursor: pointer; font-family: 'Comic Sans MS', cursive;">Start Game</button>
+        </div>
+
+        <div id="gameArea" class="hidden">
+            <div class="status awake" id="status">You're wide awake...</div>
+            
+            <div class="sleep-meter">
+                <div class="sleep-fill" id="sleepFill"></div>
+            </div>
+            
+            <button class="sleep-button" id="sleepButton" onclick="tryToSleep()">Try to Sleep</button>
+            
+            <div class="click-count" id="clickCount">Attempts: 0</div>
+        </div>
+    </div>
+
+    <script>
+        let sleepLevel = 0;
+        let clickCount = 0;
+        let gameStarted = false;
+        let difficulty = 1;
+        let hasWon = false;
+
+        function startGame() {
+            document.getElementById('instructions').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            gameStarted = true;
+        }
+
+        function tryToSleep() {
+            if (!gameStarted || hasWon) return;
+            
+            clickCount++;
+            document.getElementById('clickCount').textContent = `Attempts: ${clickCount}`;
+            
+            const sleepButton = document.getElementById('sleepButton');
+            const sleepFill = document.getElementById('sleepFill');
+            const status = document.getElementById('status');
+            
+            // The harder you try, the harder it gets
+            difficulty = Math.min(clickCount * 0.5, 10);
+            sleepLevel = Math.max(0, sleepLevel - (5 + difficulty));
+            
+            sleepButton.classList.add('pulsing');
+            sleepFill.classList.add('hard-trying');
+            
+            status.textContent = "You're trying too hard! It's getting harder to sleep...";
+            status.className = 'status trying';
+            
+            setTimeout(() => {
+                sleepButton.classList.remove('pulsing');
+                sleepFill.classList.remove('hard-trying');
+            }, 500);
+            
+            sleepFill.style.width = sleepLevel + '%';
+        }
+
+        function handleSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm === 'search me') {
+                showWin();
+            }
+        }
+
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                handleSearch();
+            }
+        }
+
+        function showWin() {
+            if (hasWon) return;
+            hasWon = true;
+            
+            const winWindow = window.open('', '_blank');
+            if (winWindow) {
+                winWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>YOU WIN</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                min-height: 100vh;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                background: radial-gradient(circle, #ffd700, #ff8c00);
+                                font-family: 'Comic Sans MS', cursive, sans-serif;
+                                color: #1a1a1a;
+                            }
+                            h1 {
+                                font-size: 4em;
+                                text-shadow: 0 0 20px rgba(255,255,255,0.8);
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>YOU WIN!</h1>
+                    </body>
+                    </html>
+                `);
+                winWindow.document.close();
+            }
+            
+            // Disable the sleep button
+            const sleepButton = document.getElementById('sleepButton');
+            sleepButton.disabled = true;
+            sleepButton.style.opacity = '0.5';
+            sleepButton.style.cursor = 'not-allowed';
+        }
+    </script>
+</body>
+</html>
+

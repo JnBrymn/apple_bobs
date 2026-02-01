@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Simulato</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			background: black;
+			min-height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-family: Arial, sans-serif;
+		}
+
+		.container {
+			text-align: center;
+		}
+
+		h1 {
+			color: white;
+			margin-bottom: 20px;
+			font-size: 2.5em;
+		}
+
+		canvas {
+			background: black;
+		}
+
+		.info {
+			color: white;
+			margin-top: 20px;
+			font-size: 1.2em;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<canvas id="canvas"></canvas>
+		<div class="info">
+			<p>When a ball escapes through the hole, two more appear!</p>
+		</div>
+	</div>
+
+	<script>
+		// Bo wants: A circle with a hole at the bottom. A ball starts inside. 
+		// When the ball goes out through the hole, two more balls go into the circle.
+		const canvas = document.getElementById('canvas');
+		const ctx = canvas.getContext('2d');
+		
+		const size = Math.min(window.innerWidth - 40, window.innerHeight - 200, 800);
+		canvas.width = size;
+		canvas.height = size;
+
+		const centerX = canvas.width / 2;
+		const centerY = canvas.height / 2;
+		const circleRadius = size / 2 - 30;
+		const holeGap = 100; // Size of the gap at the bottom
+		const ballRadius = 8;
+		const rotationSpeed = 0.01; // How fast the circle spins
+
+		let balls = [];
+		let rotationAngle = 0; // Current rotation of the circle
+
+		class Ball {
+			constructor(x, y, vx = 0, vy = 0) {
+				this.x = x;
+				this.y = y;
+				this.radius = ballRadius;
+				this.vx = vx || (Math.random() - 0.5) * 2;
+				this.vy = vy || (Math.random() - 0.5) * 2;
+				this.color = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
+			}
+
+			update() {
+				// Apply gravity (normal downward gravity)
+				this.vy += 0.2;
+				
+				// Update position
+				this.x += this.vx;
+				this.y += this.vy;
+
+				// Check collision with circle boundary (accounting for rotation)
+				const dx = this.x - centerX;
+				const dy = this.y - centerY;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				const maxDist = circleRadius - this.radius;
+				
+				// Get angle relative to center, then subtract rotation to get angle in circle's frame
+				let angle = Math.atan2(dy, dx) - rotationAngle;
+				// Normalize angle to 0-2π
+				while (angle < 0) angle += Math.PI * 2;
+				while (angle >= Math.PI * 2) angle -= Math.PI * 2;
+				
+				// Check if ball is at the hole position (hole is at bottom = Math.PI/2 in circle's frame)
+				const holeAngleSize = Math.asin(holeGap / (2 * circleRadius));
+				const holeCenterAngle = Math.PI / 2;
+				// Check if angle is within the hole range
+				let angleDiff = Math.abs(angle - holeCenterAngle);
+				if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+				const isAtHole = angleDiff < holeAngleSize;
+				
+				// Check if ball is moving outward (toward the wall)
+				const normalX = dx / dist;
+				const normalY = dy / dist;
+				const movingOutward = (this.vx * normalX + this.vy * normalY) > 0;
+				
+				// Only allow escape if: at hole AND moving outward AND already past the boundary
+				const canEscape = isAtHole && movingOutward && dist > maxDist;
+				
+				// If ball is outside the boundary and can't escape, bounce it back
+				if (dist > maxDist && !canEscape) {
+					// Reflect velocity
+					const dot = this.vx * normalX + this.vy * normalY;
+					this.vx -= 2 * dot * normalX;
+					this.vy -= 2 * dot * normalY;
+					
+					// Damping (reduced for more sensitive bouncing)
+					this.vx *= 0.98;
+					this.vy *= 0.98;
+					
+					// Push ball back inside with safety margin
+					this.x = centerX + normalX * maxDist;
+					this.y = centerY + normalY * maxDist;
+				} else if (dist > maxDist && canEscape) {
+					// Ball is escaping through hole - allow it but don't constrain
+					// This is fine, let it go
+				} else if (dist > maxDist - 1) {
+					// Safety check: if ball is very close to boundary, ensure it stays inside
+					// unless it's at the hole
+					if (!isAtHole) {
+						this.x = centerX + normalX * maxDist;
+						this.y = centerY + normalY * maxDist;
+					}
+				}
+			}
+
+			draw() {
+				ctx.beginPath();
+				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+				ctx.fillStyle = this.color;
+				ctx.fill();
+				ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+				ctx.lineWidth = 1;
+				ctx.stroke();
+			}
+
+			isOutside() {
+				const dx = this.x - centerX;
+				const dy = this.y - centerY;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				return dist > circleRadius + this.radius;
+			}
+		}
+
+		// Draw the circle with a hole
+		function drawCircle() {
+			ctx.save();
+			ctx.translate(centerX, centerY);
+			ctx.rotate(rotationAngle);
+			ctx.translate(-centerX, -centerY);
+			
+			ctx.strokeStyle = 'white';
+			ctx.lineWidth = 10;
+			
+			// Draw arc from top-left to just before the hole (hole is at bottom, which is Math.PI/2)
+			const holeAngle = Math.asin(holeGap / (2 * circleRadius));
+			ctx.beginPath();
+			ctx.arc(centerX, centerY, circleRadius, Math.PI / 2 + holeAngle, 
+				Math.PI / 2 - holeAngle + Math.PI * 2);
+			ctx.stroke();
+			
+			ctx.restore();
+		}
+
+		// Initialize with one ball
+		function init() {
+			balls = [new Ball(centerX, centerY - circleRadius / 2)];
+		}
+
+		// Check and resolve collisions between balls
+		function checkBallCollisions() {
+			for (let i = 0; i < balls.length; i++) {
+				for (let j = i + 1; j < balls.length; j++) {
+					const ball1 = balls[i];
+					const ball2 = balls[j];
+					
+					const dx = ball2.x - ball1.x;
+					const dy = ball2.y - ball1.y;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+					const minDist = ball1.radius + ball2.radius;
+					
+					if (dist < minDist && dist > 0) {
+						// Balls are colliding
+						const angle = Math.atan2(dy, dx);
+						const sin = Math.sin(angle);
+						const cos = Math.cos(angle);
+						
+						// Rotate ball1's position and velocity
+						const x1 = 0;
+						const y1 = 0;
+						const x2 = dx * cos + dy * sin;
+						const y2 = dy * cos - dx * sin;
+						
+						const vx1 = ball1.vx * cos + ball1.vy * sin;
+						const vy1 = ball1.vy * cos - ball1.vx * sin;
+						const vx2 = ball2.vx * cos + ball2.vy * sin;
+						const vy2 = ball2.vy * cos - ball2.vx * sin;
+						
+						// Collision response (swap velocities in the collision direction)
+						const vx1Final = vx2;
+						const vx2Final = vx1;
+						
+						// Separate balls to prevent overlap
+						const overlap = minDist - dist;
+						const separationX = (x2 > 0 ? overlap : -overlap) * cos;
+						const separationY = (x2 > 0 ? overlap : -overlap) * sin;
+						
+						ball1.x -= separationX * 0.5;
+						ball1.y -= separationY * 0.5;
+						ball2.x += separationX * 0.5;
+						ball2.y += separationY * 0.5;
+						
+						// Rotate velocities back
+						ball1.vx = vx1Final * cos - vy1 * sin;
+						ball1.vy = vy1 * cos + vx1Final * sin;
+						ball2.vx = vx2Final * cos - vy2 * sin;
+						ball2.vy = vy2 * cos + vx2Final * sin;
+					}
+				}
+			}
+		}
+
+		function gameLoop() {
+			// Update rotation
+			rotationAngle += rotationSpeed;
+
+			// Clear canvas
+			ctx.fillStyle = 'black';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			// Draw circle
+			drawCircle();
+
+			// Update balls
+			for (let i = 0; i < balls.length; i++) {
+				balls[i].update();
+			}
+			
+			// Check ball-to-ball collisions
+			checkBallCollisions();
+			
+			// Draw balls and check for escaped balls
+			const ballsToRemove = [];
+			for (let i = 0; i < balls.length; i++) {
+				balls[i].draw();
+
+				// Check if ball escaped through the hole
+				if (balls[i].isOutside()) {
+					ballsToRemove.push(i);
+				}
+			}
+
+			// Remove escaped balls and add two new ones
+			for (let i = ballsToRemove.length - 1; i >= 0; i--) {
+				balls.splice(ballsToRemove[i], 1);
+				// Add two new balls in the middle of the circle
+				balls.push(new Ball(centerX, centerY));
+				balls.push(new Ball(centerX, centerY));
+			}
+
+
+			requestAnimationFrame(gameLoop);
+		}
+
+		init();
+		gameLoop();
+	</script>
+</body>
+</html>
+

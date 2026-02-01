@@ -1,0 +1,197 @@
+<!--
+Sierpinski Triangle Illusion - A fractal pattern that creates a triangle shape
+This uses the chaos game algorithm: start with a point, then repeatedly move halfway 
+toward one of three triangle vertices chosen at random
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sierpinski Triangle</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Comic Sans MS, sans-serif;
+			background: #1a1a1a;
+			color: #fff;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			padding: 20px;
+		}
+
+		h1 {
+			color: #4CAF50;
+			margin-bottom: 20px;
+		}
+
+		canvas {
+			border: 2px solid #4CAF50;
+			background: #000;
+			max-width: 100%;
+		}
+
+		.controls {
+			margin-top: 20px;
+			display: flex;
+			gap: 15px;
+			align-items: center;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+
+		button {
+			padding: 10px 20px;
+			background: #4CAF50;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+			font-family: Comic Sans MS, sans-serif;
+		}
+
+		button:hover {
+			background: #45a049;
+		}
+
+		input[type="number"] {
+			padding: 8px;
+			background: #333;
+			color: white;
+			border: 1px solid #555;
+			border-radius: 5px;
+			font-size: 14px;
+			font-family: Comic Sans MS, sans-serif;
+			width: 120px;
+		}
+
+		.control-group {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		.info {
+			margin-top: 15px;
+			color: #aaa;
+			text-align: center;
+			font-size: 14px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Sierpinski Triangle</h1>
+	<canvas id="canvas"></canvas>
+	<div class="controls">
+		<button id="restartBtn">Restart</button>
+		<div class="control-group">
+			<label for="maxPoints">Max Dots:</label>
+			<input type="number" id="maxPoints" value="50000" min="1" max="1000000">
+		</div>
+		<span id="pointCount">Points: 0</span>
+	</div>
+	<div class="info">
+		Watch the triangle pattern appear as points are added!
+	</div>
+
+	<script>
+		const canvas = document.getElementById('canvas');
+		const ctx = canvas.getContext('2d');
+		const restartBtn = document.getElementById('restartBtn');
+		const pointCountDisplay = document.getElementById('pointCount');
+		const maxPointsInput = document.getElementById('maxPoints');
+
+		// Set canvas size
+		const size = 600;
+		canvas.width = size;
+		canvas.height = size;
+
+		// Define the vertices of the triangle (in canvas coordinates)
+		const padding = 50;
+		const triangleSize = size - padding * 2;
+		const vertices = [
+			{ x: size / 2, y: padding },  // Top vertex
+			{ x: padding, y: size - padding },  // Bottom left
+			{ x: size - padding, y: size - padding }  // Bottom right
+		];
+
+		let currentX = size / 2;
+		let currentY = size / 2;
+		let pointCount = 0;
+		let animationId = null;
+
+		function getRandomVertex() {
+			return vertices[Math.floor(Math.random() * 3)];
+		}
+
+		function drawPoint(x, y) {
+			ctx.fillStyle = '#4CAF50';
+			ctx.fillRect(x, y, 1, 1);
+		}
+
+		function addPoint() {
+			// Choose a random vertex
+			const vertex = getRandomVertex();
+
+			// Move halfway toward the chosen vertex
+			currentX = (currentX + vertex.x) / 2;
+			currentY = (currentY + vertex.y) / 2;
+
+			// Draw the point
+			drawPoint(currentX, currentY);
+			pointCount++;
+			pointCountDisplay.textContent = `Points: ${pointCount}`;
+		}
+
+		function animate() {
+			const maxPoints = parseInt(maxPointsInput.value) || 50000;
+			
+			// Add multiple points per frame for speed
+			for (let i = 0; i < 100; i++) {
+				if (pointCount < maxPoints) {
+					addPoint();
+				}
+			}
+			
+			if (pointCount < maxPoints) {
+				animationId = requestAnimationFrame(animate);
+			}
+		}
+
+		function restart() {
+			// Clear canvas
+			ctx.fillStyle = '#000';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			// Reset position
+			currentX = size / 2;
+			currentY = size / 2;
+			pointCount = 0;
+			pointCountDisplay.textContent = `Points: ${pointCount}`;
+
+			// Cancel any running animation
+			if (animationId) {
+				cancelAnimationFrame(animationId);
+			}
+
+			// Start animation
+			animate();
+		}
+
+		restartBtn.addEventListener('click', restart);
+
+		// Start the animation
+		restart();
+	</script>
+</body>
+</html>

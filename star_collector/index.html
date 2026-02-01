@@ -1,0 +1,339 @@
+<!-- Star Collector Game - Click stars to collect them and earn points! Stars appear randomly on the screen. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Star Collector</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+			min-height: 100vh;
+			overflow: hidden;
+			position: relative;
+		}
+
+		.game-container {
+			position: relative;
+			width: 100vw;
+			height: 100vh;
+		}
+
+		.ui {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			z-index: 100;
+			background: rgba(255, 255, 255, 0.9);
+			padding: 20px 30px;
+			border-radius: 15px;
+			box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+		}
+
+		.score {
+			font-size: 2.5em;
+			font-weight: bold;
+			color: #ffd700;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+		}
+
+		.stars-collected {
+			font-size: 1.2em;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		.star {
+			position: absolute;
+			font-size: 3em;
+			cursor: pointer;
+			user-select: none;
+			animation: twinkle 1s ease-in-out infinite;
+			transition: transform 0.2s;
+		}
+
+		.star:hover {
+			transform: scale(1.2);
+		}
+
+		.star.collected {
+			animation: collect 0.3s ease-out forwards;
+		}
+
+		@keyframes twinkle {
+			0%, 100% { 
+				transform: scale(1) rotate(0deg);
+				opacity: 1;
+			}
+			50% { 
+				transform: scale(1.1) rotate(5deg);
+				opacity: 0.8;
+			}
+		}
+
+		@keyframes collect {
+			0% {
+				transform: scale(1);
+				opacity: 1;
+			}
+			100% {
+				transform: scale(2) rotate(360deg);
+				opacity: 0;
+			}
+		}
+
+		.special-star {
+			font-size: 4em;
+			animation: specialTwinkle 0.8s ease-in-out infinite;
+		}
+
+		@keyframes specialTwinkle {
+			0%, 100% { 
+				transform: scale(1) rotate(0deg);
+				opacity: 1;
+				filter: drop-shadow(0 0 10px #ffd700);
+			}
+			50% { 
+				transform: scale(1.3) rotate(180deg);
+				opacity: 0.9;
+				filter: drop-shadow(0 0 20px #ffd700);
+			}
+		}
+
+		.particle {
+			position: absolute;
+			width: 10px;
+			height: 10px;
+			background: #ffd700;
+			border-radius: 50%;
+			pointer-events: none;
+			animation: particleFloat 1s ease-out forwards;
+		}
+
+		@keyframes particleFloat {
+			0% {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			100% {
+				opacity: 0;
+				transform: translateY(-50px) scale(0);
+			}
+		}
+
+		.instructions {
+			position: absolute;
+			bottom: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(255, 255, 255, 0.9);
+			padding: 15px 25px;
+			border-radius: 10px;
+			text-align: center;
+			font-size: 1.1em;
+			color: #333;
+			z-index: 100;
+		}
+
+		.combo {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 4em;
+			font-weight: bold;
+			color: #ffd700;
+			text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+			pointer-events: none;
+			z-index: 200;
+			animation: comboPop 0.5s ease-out forwards;
+			display: none;
+		}
+
+		@keyframes comboPop {
+			0% {
+				transform: translate(-50%, -50%) scale(0);
+				opacity: 0;
+			}
+			50% {
+				transform: translate(-50%, -50%) scale(1.2);
+				opacity: 1;
+			}
+			100% {
+				transform: translate(-50%, -50%) scale(1);
+				opacity: 0;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="game-container" id="gameContainer">
+		<div class="ui">
+			<div class="score" id="score">0</div>
+			<div class="stars-collected">Stars: <span id="starsCount">0</span></div>
+		</div>
+
+		<div class="instructions">
+			Click the stars ⭐ to collect them! Special stars ⭐ are worth more points!
+		</div>
+
+		<div class="combo" id="combo"></div>
+	</div>
+
+	<script>
+		let score = 0;
+		let starsCollected = 0;
+		let stars = [];
+		let starId = 0;
+		let comboCount = 0;
+		let lastClickTime = 0;
+
+		const gameContainer = document.getElementById('gameContainer');
+		const scoreDisplay = document.getElementById('score');
+		const starsCountDisplay = document.getElementById('starsCount');
+		const comboDisplay = document.getElementById('combo');
+
+		function createStar(isSpecial = false) {
+			const star = document.createElement('div');
+			star.className = isSpecial ? 'star special-star' : 'star';
+			star.textContent = '⭐';
+			star.id = 'star-' + starId++;
+			
+			// Random position
+			const x = Math.random() * (window.innerWidth - 100) + 50;
+			const y = Math.random() * (window.innerHeight - 100) + 50;
+			star.style.left = x + 'px';
+			star.style.top = y + 'px';
+
+			star.onclick = () => collectStar(star, isSpecial);
+			
+			gameContainer.appendChild(star);
+			stars.push(star);
+
+			// Remove star after 5 seconds if not collected
+			setTimeout(() => {
+				if (star.parentNode) {
+					star.style.transition = 'opacity 0.5s';
+					star.style.opacity = '0';
+					setTimeout(() => {
+						if (star.parentNode) {
+							star.remove();
+							stars = stars.filter(s => s !== star);
+						}
+					}, 500);
+				}
+			}, 5000);
+		}
+
+		function collectStar(star, isSpecial) {
+			star.classList.add('collected');
+			
+			// Calculate points
+			let points = isSpecial ? 50 : 10;
+			
+			// Combo bonus
+			const currentTime = Date.now();
+			if (currentTime - lastClickTime < 1000) {
+				comboCount++;
+				if (comboCount > 1) {
+					points *= comboCount;
+					showCombo(comboCount);
+				}
+			} else {
+				comboCount = 1;
+			}
+			lastClickTime = currentTime;
+
+			score += points;
+			starsCollected++;
+			updateDisplay();
+
+			// Create particles
+			createParticles(star);
+
+			// Remove star
+			setTimeout(() => {
+				if (star.parentNode) {
+					star.remove();
+					stars = stars.filter(s => s !== star);
+				}
+			}, 300);
+		}
+
+		function createParticles(star) {
+			const rect = star.getBoundingClientRect();
+			const centerX = rect.left + rect.width / 2;
+			const centerY = rect.top + rect.height / 2;
+
+			for (let i = 0; i < 8; i++) {
+				const particle = document.createElement('div');
+				particle.className = 'particle';
+				particle.style.left = centerX + 'px';
+				particle.style.top = centerY + 'px';
+				particle.style.background = `hsl(${Math.random() * 60 + 40}, 100%, 50%)`;
+				
+				const angle = (Math.PI * 2 * i) / 8;
+				const distance = 30 + Math.random() * 20;
+				particle.style.setProperty('--end-x', centerX + Math.cos(angle) * distance + 'px');
+				particle.style.setProperty('--end-y', centerY + Math.sin(angle) * distance + 'px');
+				
+				gameContainer.appendChild(particle);
+				
+				setTimeout(() => {
+					if (particle.parentNode) {
+						particle.remove();
+					}
+				}, 1000);
+			}
+		}
+
+		function showCombo(count) {
+			comboDisplay.textContent = `COMBO x${count}!`;
+			comboDisplay.style.display = 'block';
+			setTimeout(() => {
+				comboDisplay.style.display = 'none';
+			}, 500);
+		}
+
+		function updateDisplay() {
+			scoreDisplay.textContent = score.toLocaleString();
+			starsCountDisplay.textContent = starsCollected;
+		}
+
+		// Create stars periodically
+		function spawnStars() {
+			// Regular star
+			createStar(false);
+			
+			// Sometimes create a special star
+			if (Math.random() < 0.3) {
+				setTimeout(() => createStar(true), 500);
+			}
+		}
+
+		// Start spawning stars
+		setInterval(spawnStars, 1500);
+		
+		// Initial stars
+		for (let i = 0; i < 3; i++) {
+			setTimeout(() => createStar(Math.random() < 0.2), i * 500);
+		}
+
+		// Reset combo if no clicks for 2 seconds
+		setInterval(() => {
+			const currentTime = Date.now();
+			if (currentTime - lastClickTime > 2000) {
+				comboCount = 0;
+			}
+		}, 100);
+	</script>
+</body>
+</html>
+

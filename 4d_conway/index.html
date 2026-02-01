@@ -1,0 +1,872 @@
+<!--
+4D Conway's Game of Life
+Features:
+- 4D cellular automaton (x, y, z, w dimensions)
+- View 3D slices of the 4D space
+- Navigate through the 4th dimension (w-axis)
+- Each cell has 80 neighbors in 4D space
+- Similar controls to 3D version but with 4D navigation
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Conway's Game of Life - 4D</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Comic Sans MS, sans-serif;
+			background: #1a1a1a;
+			color: #fff;
+			padding: 20px;
+			overflow-x: hidden;
+		}
+
+		.container {
+			max-width: 1400px;
+			margin: 0 auto;
+		}
+
+		h1 {
+			text-align: center;
+			margin-bottom: 20px;
+			color: #4CAF50;
+		}
+
+		.controls {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 15px;
+			margin-bottom: 20px;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.control-group {
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+		}
+
+		label {
+			font-size: 12px;
+			color: #aaa;
+		}
+
+		button {
+			padding: 10px 20px;
+			background: #4CAF50;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+			transition: background 0.3s;
+		}
+
+		button:hover {
+			background: #45a049;
+		}
+
+		button:disabled {
+			background: #666;
+			cursor: not-allowed;
+		}
+
+		button.stop {
+			background: #f44336;
+		}
+
+		button.stop:hover {
+			background: #da190b;
+		}
+
+		select, input[type="range"] {
+			padding: 8px;
+			background: #333;
+			color: white;
+			border: 1px solid #555;
+			border-radius: 5px;
+		}
+
+		.speed-display, .size-display, .w-display {
+			font-size: 12px;
+			color: #4CAF50;
+			min-width: 80px;
+		}
+
+		.canvas-container {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 20px;
+			position: relative;
+		}
+
+		#gameCanvas {
+			width: 800px;
+			height: 600px;
+			border: 2px solid #4CAF50;
+			background: #000;
+		}
+
+		.info {
+			text-align: center;
+			color: #aaa;
+			font-size: 14px;
+			margin-top: 10px;
+		}
+
+		.generation {
+			text-align: center;
+			font-size: 18px;
+			color: #4CAF50;
+			margin-bottom: 10px;
+		}
+
+		.w-slice-info {
+			text-align: center;
+			font-size: 16px;
+			color: #ff6b6b;
+			margin-bottom: 10px;
+		}
+
+		.rules-box {
+			background: #2a2a2a;
+			border: 2px solid #4CAF50;
+			border-radius: 10px;
+			padding: 20px;
+			margin-bottom: 20px;
+			max-width: 800px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		.rules-title {
+			color: #4CAF50;
+			font-size: 20px;
+			margin-bottom: 15px;
+			text-align: center;
+			cursor: pointer;
+			user-select: none;
+		}
+
+		.rules-title:hover {
+			color: #66ff66;
+		}
+
+		.rules-content {
+			color: #ddd;
+			font-size: 16px;
+			line-height: 1.6;
+		}
+
+		.rules-content.hidden {
+			display: none;
+		}
+
+		.rule-item {
+			margin-bottom: 15px;
+			padding-left: 25px;
+			position: relative;
+		}
+
+		.rule-item::before {
+			content: "•";
+			color: #4CAF50;
+			font-size: 24px;
+			position: absolute;
+			left: 0;
+		}
+
+		.camera-info {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			background: rgba(0, 0, 0, 0.7);
+			padding: 10px;
+			border-radius: 5px;
+			font-size: 12px;
+			color: #aaa;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Conway's Game of Life - 4D! 🎮✨</h1>
+		
+		<div class="rules-box">
+			<div class="rules-title" id="rulesTitle">📖 How It Works (Click to Show/Hide)</div>
+			<div class="rules-content hidden" id="rulesContent">
+				<p style="margin-bottom: 15px; text-align: center; color: #4CAF50; font-size: 18px;">
+					<strong>It's like a tiny 4D world where cells live or die!</strong>
+				</p>
+				
+				<div class="rule-item">
+					<strong>Each green cube is a living cell.</strong> Each empty space is a dead cell.
+				</div>
+				
+				<div class="rule-item">
+					<strong>Each cell has 80 neighbors</strong> (all the cubes around it in 4D space - that's way more than 3D!).
+				</div>
+				
+				<div class="rule-item">
+					<strong>We can't see 4D directly, so we show 3D "slices"</strong> - like looking at one page of a 4D book at a time!
+				</div>
+				
+				<div class="rule-item">
+					<strong>Use the W-Slice slider to move through the 4th dimension</strong> and see different 3D slices of your 4D world!
+				</div>
+				
+				<div class="rule-item">
+					<strong>If a living cell has 13-45 neighbors, it stays alive!</strong> Otherwise, it dies.
+				</div>
+				
+				<div class="rule-item">
+					<strong>If a dead cell has 13-45 neighbors, it comes to life!</strong> Like magic!
+				</div>
+				
+				<div class="rule-item">
+					<strong>Drag with your mouse to rotate the 3D view!</strong> Scroll to zoom in and out.
+				</div>
+				
+				<p style="margin-top: 20px; text-align: center; color: #aaa; font-size: 14px;">
+					Try clicking "Random" in the preset patterns to see a cool 4D pattern!
+				</p>
+			</div>
+		</div>
+		
+		<div class="generation" id="generation">Generation: 0</div>
+		<div class="w-slice-info" id="wSliceInfo">Viewing W-Slice: 0 / 19</div>
+		
+		<div class="controls">
+			<button id="playPauseBtn">Start</button>
+			<button id="clearBtn">Clear</button>
+			<button id="resetBtn">Reset</button>
+			
+			<div class="control-group">
+				<label>Speed</label>
+				<div style="display: flex; align-items: center; gap: 10px;">
+					<input type="range" id="speedSlider" min="1" max="20" value="5">
+					<span class="speed-display" id="speedDisplay">5</span>
+				</div>
+			</div>
+			
+			<div class="control-group">
+				<label>Board Size (3D)</label>
+				<div style="display: flex; align-items: center; gap: 10px;">
+					<input type="range" id="sizeSlider" min="10" max="30" value="20" step="5">
+					<span class="size-display" id="sizeDisplay">20x20x20</span>
+				</div>
+			</div>
+			
+			<div class="control-group">
+				<label>W-Slice (4th Dimension)</label>
+				<div style="display: flex; align-items: center; gap: 10px;">
+					<input type="range" id="wSlider" min="0" max="19" value="10" step="1">
+					<span class="w-display" id="wDisplay">10</span>
+				</div>
+			</div>
+			
+			<div class="control-group">
+				<label>Preset Patterns</label>
+				<select id="presetSelect">
+					<option value="none">None (Draw Your Own)</option>
+					<option value="random">Random</option>
+					<option value="block">4D Block</option>
+					<option value="line">4D Line</option>
+					<option value="hypercube">Hypercube</option>
+					<option value="sphere">4D Sphere</option>
+				</select>
+			</div>
+		</div>
+		
+		<div class="canvas-container">
+			<div class="camera-info">
+				🖱️ WASD to rotate | Scroll to zoom | Left-click to toggle cells | Use W-Slice slider to see 4D!
+			</div>
+			<div id="gameCanvas"></div>
+		</div>
+		
+		<div class="info">
+			Click on cubes to toggle them on/off. Use presets to load patterns. Drag to rotate the 3D view! Move the W-Slice slider to explore the 4th dimension!
+		</div>
+	</div>
+
+	<script>
+		// Three.js setup
+		let scene, camera, renderer;
+		let boardSize = 20;
+		let wSize = 20; // 4th dimension size
+		let board = []; // 4D board: board[w][z][y][x]
+		let nextBoard = [];
+		let isRunning = false;
+		let animationId = null;
+		let generation = 0;
+		let speed = 5;
+		let lastUpdate = 0;
+		let initialBoard = [];
+		let cellMeshes = [];
+		let raycaster, mouse;
+		let isMouseDown = false;
+		let currentWSlice = 10; // Which w-slice we're viewing
+		
+		// Camera controls
+		let cameraAngleX = Math.PI / 4;
+		let cameraAngleY = Math.PI / 4;
+		let cameraDistance = boardSize * 1.2;
+		let isDragging = false;
+		let lastMouseX = 0;
+		let lastMouseY = 0;
+		let keysPressed = {};
+
+		// 4D Life rule: 13-45/13-45 (symmetric rule for 4D)
+		// Survival: 13-45 neighbors
+		// Birth: 13-45 neighbors
+		const MIN_NEIGHBORS = 13;
+		const MAX_NEIGHBORS = 45;
+		
+		function shouldSurvive(neighborCount) {
+			return neighborCount >= MIN_NEIGHBORS && neighborCount <= MAX_NEIGHBORS;
+		}
+		
+		function shouldBirth(neighborCount) {
+			return neighborCount >= MIN_NEIGHBORS && neighborCount <= MAX_NEIGHBORS;
+		}
+
+		function initThreeJS() {
+			const container = document.getElementById('gameCanvas');
+			
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x000000);
+
+			camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
+			camera.position.set(boardSize * 0.8, boardSize * 0.8, boardSize * 0.8);
+			camera.lookAt(boardSize / 2, boardSize / 2, boardSize / 2);
+
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(800, 600);
+			container.appendChild(renderer.domElement);
+			
+			// Manual camera controls
+			updateCameraPosition();
+
+			// Add lights
+			const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+			scene.add(ambientLight);
+
+			const directionalLight1 = new THREE.DirectionalLight(0x4CAF50, 0.8);
+			directionalLight1.position.set(1, 1, 1);
+			scene.add(directionalLight1);
+
+			const directionalLight2 = new THREE.DirectionalLight(0x4CAF50, 0.4);
+			directionalLight2.position.set(-1, -1, -1);
+			scene.add(directionalLight2);
+
+			// Raycaster for mouse picking
+			raycaster = new THREE.Raycaster();
+			mouse = new THREE.Vector2();
+
+			// Mouse events
+			renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+			renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+			renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+			renderer.domElement.addEventListener('wheel', onMouseWheel, false);
+			renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+			
+			// Keyboard events for WASD rotation
+			window.addEventListener('keydown', onKeyDown, false);
+			window.addEventListener('keyup', onKeyUp, false);
+		}
+		
+		function updateCameraPosition() {
+			const centerX = boardSize / 2;
+			const centerY = boardSize / 2;
+			const centerZ = boardSize / 2;
+			
+			camera.position.x = centerX + cameraDistance * Math.sin(cameraAngleY) * Math.cos(cameraAngleX);
+			camera.position.y = centerY + cameraDistance * Math.sin(cameraAngleX);
+			camera.position.z = centerZ + cameraDistance * Math.cos(cameraAngleY) * Math.cos(cameraAngleX);
+			camera.lookAt(centerX, centerY, centerZ);
+		}
+
+		function initBoard() {
+			board = [];
+			nextBoard = [];
+			for (let w = 0; w < wSize; w++) {
+				board[w] = [];
+				nextBoard[w] = [];
+				for (let z = 0; z < boardSize; z++) {
+					board[w][z] = [];
+					nextBoard[w][z] = [];
+					for (let y = 0; y < boardSize; y++) {
+						board[w][z][y] = [];
+						nextBoard[w][z][y] = [];
+						for (let x = 0; x < boardSize; x++) {
+							board[w][z][y][x] = 0;
+							nextBoard[w][z][y][x] = 0;
+						}
+					}
+				}
+			}
+			initialBoard = JSON.parse(JSON.stringify(board));
+			generation = 0;
+			updateGeneration();
+			updateVisualization();
+		}
+
+		function getColorFromNeighborCount(neighborCount) {
+			// Map neighbor count (0-80) to a color gradient
+			const maxNeighbors = 80;
+			const ratio = neighborCount / maxNeighbors;
+			
+			// Create a gradient from dark green to bright yellow
+			let r, g, b;
+			if (ratio < 0.5) {
+				const localRatio = ratio * 2;
+				r = Math.floor(74 + localRatio * 181);
+				g = Math.floor(175 + localRatio * 80);
+				b = Math.floor(50 - localRatio * 50);
+			} else {
+				const localRatio = (ratio - 0.5) * 2;
+				r = 255;
+				g = 255;
+				b = Math.floor(205 - localRatio * 205);
+			}
+			
+			return (r << 16) | (g << 8) | b;
+		}
+
+		function updateVisualization() {
+			// Remove old meshes
+			cellMeshes.forEach(mesh => {
+				scene.remove(mesh);
+				mesh.geometry.dispose();
+				mesh.material.dispose();
+			});
+			cellMeshes = [];
+
+			// Create cubes for living cells in the current w-slice
+			const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+			const w = currentWSlice;
+
+			for (let z = 0; z < boardSize; z++) {
+				for (let y = 0; y < boardSize; y++) {
+					for (let x = 0; x < boardSize; x++) {
+						if (board[w][z][y][x] === 1) {
+							const neighborCount = countNeighbors(x, y, z, w);
+							const color = getColorFromNeighborCount(neighborCount);
+							
+							const material = new THREE.MeshPhongMaterial({ 
+								color: color,
+								emissive: color,
+								emissiveIntensity: 0.2
+							});
+							
+							const cube = new THREE.Mesh(geometry, material);
+							cube.position.set(x, y, z);
+							cube.userData = { x, y, z, w };
+							scene.add(cube);
+							cellMeshes.push(cube);
+						}
+					}
+				}
+			}
+			
+			updateWSliceInfo();
+		}
+
+		function countNeighbors(x, y, z, w) {
+			let count = 0;
+			for (let dw = -1; dw <= 1; dw++) {
+				for (let dz = -1; dz <= 1; dz++) {
+					for (let dy = -1; dy <= 1; dy++) {
+						for (let dx = -1; dx <= 1; dx++) {
+							if (dx === 0 && dy === 0 && dz === 0 && dw === 0) continue;
+							// Wrap around using modulo (toroidal)
+							const nw = (w + dw + wSize) % wSize;
+							const nx = (x + dx + boardSize) % boardSize;
+							const ny = (y + dy + boardSize) % boardSize;
+							const nz = (z + dz + boardSize) % boardSize;
+							count += board[nw][nz][ny][nx];
+						}
+					}
+				}
+			}
+			return count;
+		}
+
+		function updateGeneration() {
+			document.getElementById('generation').textContent = `Generation: ${generation}`;
+		}
+		
+		function updateWSliceInfo() {
+			document.getElementById('wSliceInfo').textContent = `Viewing W-Slice: ${currentWSlice} / ${wSize - 1}`;
+		}
+
+		function nextGeneration() {
+			for (let w = 0; w < wSize; w++) {
+				for (let z = 0; z < boardSize; z++) {
+					for (let y = 0; y < boardSize; y++) {
+						for (let x = 0; x < boardSize; x++) {
+							const neighbors = countNeighbors(x, y, z, w);
+							if (board[w][z][y][x] === 1) {
+								// Survive if neighbor count matches survival rule
+								nextBoard[w][z][y][x] = shouldSurvive(neighbors) ? 1 : 0;
+							} else {
+								// Birth if neighbor count matches birth rule
+								nextBoard[w][z][y][x] = shouldBirth(neighbors) ? 1 : 0;
+							}
+						}
+					}
+				}
+			}
+			
+			const temp = board;
+			board = nextBoard;
+			nextBoard = temp;
+			generation++;
+			updateGeneration();
+			updateVisualization();
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+			
+			// Handle WASD rotation
+			const rotationSpeed = 0.02;
+			if (keysPressed['w'] || keysPressed['W']) {
+				cameraAngleX -= rotationSpeed;
+				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
+				updateCameraPosition();
+			}
+			if (keysPressed['s'] || keysPressed['S']) {
+				cameraAngleX += rotationSpeed;
+				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
+				updateCameraPosition();
+			}
+			if (keysPressed['a'] || keysPressed['A']) {
+				cameraAngleY -= rotationSpeed;
+				updateCameraPosition();
+			}
+			if (keysPressed['d'] || keysPressed['D']) {
+				cameraAngleY += rotationSpeed;
+				updateCameraPosition();
+			}
+			
+			if (isRunning) {
+				const currentTime = performance.now();
+				if (currentTime - lastUpdate >= 1000 / speed) {
+					nextGeneration();
+					lastUpdate = currentTime;
+				}
+			}
+			
+			renderer.render(scene, camera);
+		}
+		
+		function onKeyDown(event) {
+			keysPressed[event.key] = true;
+		}
+		
+		function onKeyUp(event) {
+			keysPressed[event.key] = false;
+		}
+
+		function startSimulation() {
+			if (!isRunning) {
+				isRunning = true;
+				document.getElementById('playPauseBtn').textContent = 'Stop';
+				document.getElementById('playPauseBtn').classList.add('stop');
+				lastUpdate = performance.now();
+			}
+		}
+
+		function stopSimulation() {
+			if (isRunning) {
+				isRunning = false;
+				document.getElementById('playPauseBtn').textContent = 'Start';
+				document.getElementById('playPauseBtn').classList.remove('stop');
+			}
+		}
+
+		function onMouseDown(event) {
+			if (event.button === 0) { // Left mouse button
+				if (!isRunning) {
+					isMouseDown = true;
+					handleMouseClick(event);
+				}
+			} else if (event.button === 2 || event.button === 1) { // Right or middle mouse button
+				isDragging = true;
+				lastMouseX = event.clientX;
+				lastMouseY = event.clientY;
+			}
+		}
+
+		function onMouseMove(event) {
+			if (isDragging) {
+				const deltaX = event.clientX - lastMouseX;
+				const deltaY = event.clientY - lastMouseY;
+				
+				cameraAngleY += deltaX * 0.01;
+				cameraAngleX += deltaY * 0.01;
+				
+				// Limit vertical rotation
+				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
+				
+				updateCameraPosition();
+				
+				lastMouseX = event.clientX;
+				lastMouseY = event.clientY;
+			} else if (isMouseDown && !isRunning) {
+				handleMouseClick(event);
+			}
+		}
+
+		function onMouseUp(event) {
+			if (event.button === 0) {
+				isMouseDown = false;
+			} else {
+				isDragging = false;
+			}
+		}
+		
+		function onMouseWheel(event) {
+			event.preventDefault();
+			cameraDistance += event.deltaY * 0.01;
+			cameraDistance = Math.max(boardSize * 0.5, Math.min(boardSize * 3, cameraDistance));
+			updateCameraPosition();
+		}
+
+		function handleMouseClick(event) {
+			const rect = renderer.domElement.getBoundingClientRect();
+			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+			raycaster.setFromCamera(mouse, camera);
+			const intersects = raycaster.intersectObjects(cellMeshes);
+
+			if (intersects.length > 0) {
+				const clickedMesh = intersects[0].object;
+				const { x, y, z, w } = clickedMesh.userData;
+				toggleCell(x, y, z, w);
+			} else {
+				// Try to add a cell near where clicked
+				const distance = boardSize * 0.5;
+				const direction = new THREE.Vector3();
+				raycaster.ray.direction.normalize();
+				const point = raycaster.ray.origin.clone().add(
+					raycaster.ray.direction.multiplyScalar(distance)
+				);
+				
+				const x = Math.round(point.x);
+				const y = Math.round(point.y);
+				const z = Math.round(point.z);
+				
+				if (x >= 0 && x < boardSize && 
+					y >= 0 && y < boardSize && 
+					z >= 0 && z < boardSize) {
+					toggleCell(x, y, z, currentWSlice);
+				}
+			}
+		}
+
+		function toggleCell(x, y, z, w) {
+			if (x >= 0 && x < boardSize && 
+				y >= 0 && y < boardSize && 
+				z >= 0 && z < boardSize &&
+				w >= 0 && w < wSize) {
+				board[w][z][y][x] = board[w][z][y][x] === 1 ? 0 : 1;
+				initialBoard = JSON.parse(JSON.stringify(board));
+				updateVisualization();
+			}
+		}
+
+		function loadPreset(preset) {
+			stopSimulation();
+			initBoard();
+			
+			const centerX = Math.floor(boardSize / 2);
+			const centerY = Math.floor(boardSize / 2);
+			const centerZ = Math.floor(boardSize / 2);
+			const centerW = Math.floor(wSize / 2);
+			
+			switch(preset) {
+				case 'random':
+					for (let w = 0; w < wSize; w++) {
+						for (let z = 0; z < boardSize; z++) {
+							for (let y = 0; y < boardSize; y++) {
+								for (let x = 0; x < boardSize; x++) {
+									board[w][z][y][x] = Math.random() > 0.9 ? 1 : 0;
+								}
+							}
+						}
+					}
+					break;
+					
+				case 'block':
+					// 2x2x2x2 block in 4D
+					for (let dw = 0; dw < 2; dw++) {
+						for (let dz = 0; dz < 2; dz++) {
+							for (let dy = 0; dy < 2; dy++) {
+								for (let dx = 0; dx < 2; dx++) {
+									const x = centerX + dx;
+									const y = centerY + dy;
+									const z = centerZ + dz;
+									const w = centerW + dw;
+									if (x >= 0 && x < boardSize && 
+										y >= 0 && y < boardSize && 
+										z >= 0 && z < boardSize &&
+										w >= 0 && w < wSize) {
+										board[w][z][y][x] = 1;
+									}
+								}
+							}
+						}
+					}
+					break;
+					
+				case 'line':
+					// Simple line pattern in 4D
+					for (let i = -3; i <= 3; i++) {
+						const x = centerX + i;
+						const y = centerY;
+						const z = centerZ;
+						const w = centerW;
+						if (x >= 0 && x < boardSize && 
+							y >= 0 && y < boardSize && 
+							z >= 0 && z < boardSize &&
+							w >= 0 && w < wSize) {
+							board[w][z][y][x] = 1;
+						}
+					}
+					break;
+					
+				case 'hypercube':
+					// A 4D hypercube (tesseract) pattern
+					const size = 3;
+					for (let dw = -1; dw <= 1; dw++) {
+						for (let dz = -1; dz <= 1; dz++) {
+							for (let dy = -1; dy <= 1; dy++) {
+								for (let dx = -1; dx <= 1; dx++) {
+									// Only corners of the hypercube
+									if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) + Math.abs(dw) <= 1 ||
+										(Math.abs(dx) === 1 && Math.abs(dy) === 1 && Math.abs(dz) === 1 && Math.abs(dw) === 1)) {
+										const x = centerX + dx * size;
+										const y = centerY + dy * size;
+										const z = centerZ + dz * size;
+										const w = centerW + dw * size;
+										if (x >= 0 && x < boardSize && 
+											y >= 0 && y < boardSize && 
+											z >= 0 && z < boardSize &&
+											w >= 0 && w < wSize) {
+											board[w][z][y][x] = 1;
+										}
+									}
+								}
+							}
+						}
+					}
+					break;
+					
+				case 'sphere':
+					// 4D sphere
+					const radius = Math.floor(boardSize / 4);
+					for (let w = 0; w < wSize; w++) {
+						for (let z = 0; z < boardSize; z++) {
+							for (let y = 0; y < boardSize; y++) {
+								for (let x = 0; x < boardSize; x++) {
+									const dx = x - centerX;
+									const dy = y - centerY;
+									const dz = z - centerZ;
+									const dw = w - centerW;
+									const dist = Math.sqrt(dx*dx + dy*dy + dz*dz + dw*dw);
+									if (dist <= radius) {
+										board[w][z][y][x] = 1;
+									}
+								}
+							}
+						}
+					}
+					break;
+			}
+			
+			initialBoard = JSON.parse(JSON.stringify(board));
+			updateVisualization();
+		}
+
+		// Event listeners
+		document.getElementById('playPauseBtn').addEventListener('click', () => {
+			if (isRunning) {
+				stopSimulation();
+			} else {
+				startSimulation();
+			}
+		});
+
+		document.getElementById('clearBtn').addEventListener('click', () => {
+			stopSimulation();
+			initBoard();
+		});
+
+		document.getElementById('resetBtn').addEventListener('click', () => {
+			stopSimulation();
+			board = JSON.parse(JSON.stringify(initialBoard));
+			generation = 0;
+			updateGeneration();
+			updateVisualization();
+		});
+
+		document.getElementById('speedSlider').addEventListener('input', (e) => {
+			speed = parseInt(e.target.value);
+			document.getElementById('speedDisplay').textContent = speed;
+		});
+
+		document.getElementById('sizeSlider').addEventListener('input', (e) => {
+			stopSimulation();
+			boardSize = parseInt(e.target.value);
+			document.getElementById('sizeDisplay').textContent = `${boardSize}x${boardSize}x${boardSize}`;
+			cameraDistance = boardSize * 1.2;
+			updateCameraPosition();
+			initBoard();
+		});
+		
+		document.getElementById('wSlider').addEventListener('input', (e) => {
+			currentWSlice = parseInt(e.target.value);
+			document.getElementById('wDisplay').textContent = currentWSlice;
+			updateVisualization();
+		});
+
+		document.getElementById('presetSelect').addEventListener('change', (e) => {
+			if (e.target.value !== 'none') {
+				loadPreset(e.target.value);
+			}
+		});
+
+		document.getElementById('rulesTitle').addEventListener('click', () => {
+			const rulesContent = document.getElementById('rulesContent');
+			rulesContent.classList.toggle('hidden');
+			const rulesTitle = document.getElementById('rulesTitle');
+			if (rulesContent.classList.contains('hidden')) {
+				rulesTitle.textContent = '📖 How It Works (Click to Show/Hide)';
+			} else {
+				rulesTitle.textContent = '📖 How It Works (Click to Hide)';
+			}
+		});
+
+		// Initialize
+		initThreeJS();
+		initBoard();
+		animate();
+	</script>
+</body>
+</html>
+
+

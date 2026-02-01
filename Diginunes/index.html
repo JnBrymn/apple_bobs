@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Diginunes</title>
+	<style>
+		/* Comment: Pokemon-style video game where characters are still cards
+		   - Real-time battles (both act at the same time)
+		   - Start with the weakest Diginune card (Sparky)
+		   - Enemy always uses Sparky, but scales to match your card's strength
+		   - Collect new cards as you win battles
+		   - Can switch between collected cards after every win (if you have more than one)
+		*/
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: Arial, sans-serif;
+			background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
+			min-height: 100vh;
+			overflow: hidden;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#gameContainer {
+			width: 100vw;
+			height: 100vh;
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.battle-area {
+			display: flex;
+			justify-content: space-around;
+			align-items: center;
+			width: 100%;
+			max-width: 1200px;
+			padding: 20px;
+		}
+
+		.card {
+			width: 280px;
+			height: 400px;
+			background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+			border: 4px solid #4a4a6a;
+			border-radius: 20px;
+			padding: 20px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+			display: flex;
+			flex-direction: column;
+			position: relative;
+			transition: transform 0.3s, box-shadow 0.3s;
+		}
+
+		.card.player-card {
+			border-color: #4a9eff;
+			box-shadow: 0 10px 30px rgba(74, 158, 255, 0.4);
+		}
+
+		.card.enemy-card {
+			border-color: #ff4a4a;
+			box-shadow: 0 10px 30px rgba(255, 74, 74, 0.4);
+		}
+
+		.card.attacking {
+			animation: attackShake 0.3s;
+		}
+
+		.card.hit {
+			animation: hitFlash 0.3s;
+		}
+
+		@keyframes attackShake {
+			0%, 100% { transform: translateX(0); }
+			25% { transform: translateX(-10px); }
+			75% { transform: translateX(10px); }
+		}
+
+		@keyframes hitFlash {
+			0%, 100% { background: linear-gradient(145deg, #2a2a4a, #1a1a3a); }
+			50% { background: linear-gradient(145deg, #ff4a4a, #cc0000); }
+		}
+
+		.card-name {
+			font-size: 24px;
+			font-weight: bold;
+			color: #fff;
+			text-align: center;
+			margin-bottom: 10px;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+		}
+
+		.card-image {
+			width: 100%;
+			height: 180px;
+			background: linear-gradient(135deg, #3a3a5a, #2a2a4a);
+			border-radius: 10px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-size: 80px;
+			margin-bottom: 15px;
+			border: 2px solid #4a4a6a;
+		}
+
+		.card-stats {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.stat-row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.stat-label {
+			font-size: 14px;
+			color: #aaa;
+		}
+
+		.stat-value {
+			font-size: 16px;
+			font-weight: bold;
+			color: #fff;
+		}
+
+		.health-bar-container {
+			width: 100%;
+			height: 20px;
+			background: #333;
+			border-radius: 10px;
+			overflow: hidden;
+			border: 2px solid #555;
+		}
+
+		.health-bar {
+			height: 100%;
+			background: linear-gradient(90deg, #4caf50, #8bc34a);
+			transition: width 0.3s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			font-size: 12px;
+			font-weight: bold;
+		}
+
+		.health-bar.low {
+			background: linear-gradient(90deg, #f44336, #ff9800);
+		}
+
+		.controls {
+			position: absolute;
+			bottom: 30px;
+			display: flex;
+			gap: 15px;
+		}
+
+		.attack-btn {
+			padding: 15px 30px;
+			font-size: 18px;
+			font-weight: bold;
+			background: linear-gradient(145deg, #4a9eff, #2a7fff);
+			border: 3px solid #6abfff;
+			border-radius: 10px;
+			color: #fff;
+			cursor: pointer;
+			transition: transform 0.2s, box-shadow 0.2s;
+			box-shadow: 0 5px 15px rgba(74, 158, 255, 0.4);
+		}
+
+		.attack-btn:hover {
+			transform: scale(1.05);
+			box-shadow: 0 7px 20px rgba(74, 158, 255, 0.6);
+		}
+
+		.attack-btn:active {
+			transform: scale(0.95);
+		}
+
+		.attack-btn:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		.hud {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			background: rgba(0,0,0,0.7);
+			padding: 15px 25px;
+			border-radius: 10px;
+			border: 2px solid #4a4a6a;
+		}
+
+		.hud-item {
+			font-size: 16px;
+			margin: 5px 0;
+			color: #fff;
+		}
+
+		.vs-text {
+			font-size: 48px;
+			font-weight: bold;
+			color: #fff;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+			margin: 0 40px;
+		}
+
+		.battle-log {
+			position: absolute;
+			bottom: 100px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(0,0,0,0.8);
+			padding: 10px 20px;
+			border-radius: 10px;
+			font-size: 18px;
+			color: #fff;
+			min-width: 300px;
+			text-align: center;
+			display: none;
+		}
+
+		.battle-log.show {
+			display: block;
+			animation: fadeInOut 2s;
+		}
+
+		@keyframes fadeInOut {
+			0%, 100% { opacity: 0; }
+			20%, 80% { opacity: 1; }
+		}
+
+		.start-screen {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.95);
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.start-screen h1 {
+			font-size: 48px;
+			margin-bottom: 20px;
+			color: #4a9eff;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+		}
+
+		.start-screen p {
+			font-size: 20px;
+			margin-bottom: 30px;
+			color: #aaa;
+			text-align: center;
+			max-width: 600px;
+		}
+
+		.start-btn {
+			padding: 20px 40px;
+			font-size: 24px;
+			font-weight: bold;
+			background: linear-gradient(145deg, #4a9eff, #2a7fff);
+			border: 3px solid #6abfff;
+			border-radius: 15px;
+			color: #fff;
+			cursor: pointer;
+			transition: transform 0.2s;
+		}
+
+		.start-btn:hover {
+			transform: scale(1.1);
+		}
+
+		.card-select-screen {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.95);
+			display: none;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.card-select-screen.show {
+			display: flex;
+		}
+
+		.card-select-title {
+			font-size: 36px;
+			margin-bottom: 30px;
+			color: #4a9eff;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+		}
+
+		.card-grid {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 20px;
+			justify-content: center;
+			max-width: 1000px;
+			padding: 20px;
+		}
+
+		.selectable-card {
+			width: 200px;
+			height: 280px;
+			background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+			border: 4px solid #4a4a6a;
+			border-radius: 15px;
+			padding: 15px;
+			box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+			display: flex;
+			flex-direction: column;
+			cursor: pointer;
+			transition: transform 0.2s, border-color 0.2s;
+		}
+
+		.selectable-card:hover {
+			transform: scale(1.05);
+			border-color: #4a9eff;
+		}
+
+		.selectable-card.selected {
+			border-color: #4a9eff;
+			box-shadow: 0 0 20px rgba(74, 158, 255, 0.6);
+		}
+
+		.selectable-card .card-image {
+			height: 120px;
+			font-size: 60px;
+		}
+
+		.selectable-card .card-name {
+			font-size: 18px;
+		}
+
+		.selectable-card .stat-row {
+			font-size: 12px;
+		}
+
+		.selectable-card .stat-value {
+			font-size: 14px;
+		}
+	</style>
+</head>
+<body>
+	<div id="gameContainer">
+		<div class="start-screen" id="startScreen">
+			<h1>DIGINUNES</h1>
+			<p>Battle with your Diginune cards! Click ATTACK to fight. Win battles to collect new cards!</p>
+			<button class="start-btn" id="startBtn">START BATTLE</button>
+		</div>
+
+		<div class="hud" id="hud">
+			<div class="hud-item">Wins: <span id="wins">0</span></div>
+			<div class="hud-item">Cards: <span id="cardCount">1</span></div>
+		</div>
+
+		<div class="battle-area" id="battleArea" style="display: none;">
+			<div class="card player-card" id="playerCard">
+				<div class="card-name" id="playerName">Loading...</div>
+				<div class="card-image" id="playerImage">⚡</div>
+				<div class="card-stats">
+					<div class="stat-row">
+						<span class="stat-label">HP:</span>
+						<span class="stat-value" id="playerHP">100/100</span>
+					</div>
+					<div class="health-bar-container">
+						<div class="health-bar" id="playerHealthBar" style="width: 100%"></div>
+					</div>
+					<div class="stat-row">
+						<span class="stat-label">Attack:</span>
+						<span class="stat-value" id="playerAttack">10</span>
+					</div>
+					<div class="stat-row">
+						<span class="stat-label">Speed:</span>
+						<span class="stat-value" id="playerSpeed">5</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="vs-text">VS</div>
+
+			<div class="card enemy-card" id="enemyCard">
+				<div class="card-name" id="enemyName">Loading...</div>
+				<div class="card-image" id="enemyImage">🔥</div>
+				<div class="card-stats">
+					<div class="stat-row">
+						<span class="stat-label">HP:</span>
+						<span class="stat-value" id="enemyHP">100/100</span>
+					</div>
+					<div class="health-bar-container">
+						<div class="health-bar" id="enemyHealthBar" style="width: 100%"></div>
+					</div>
+					<div class="stat-row">
+						<span class="stat-label">Attack:</span>
+						<span class="stat-value" id="enemyAttack">10</span>
+					</div>
+					<div class="stat-row">
+						<span class="stat-label">Speed:</span>
+						<span class="stat-value" id="enemySpeed">5</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="controls" id="controls" style="display: none;">
+			<button class="attack-btn" id="attackBtn">ATTACK!</button>
+		</div>
+
+		<div class="battle-log" id="battleLog"></div>
+
+		<div class="card-select-screen" id="cardSelectScreen">
+			<div class="card-select-title">Choose Your Diginune!</div>
+			<div class="card-grid" id="cardGrid"></div>
+			<button class="start-btn" id="selectCardBtn" style="margin-top: 30px; display: none;">START BATTLE</button>
+		</div>
+	</div>
+
+	<script>
+		// Diginune cards database
+		const diginunes = [
+			{ name: "Sparky", emoji: "⚡", hp: 50, maxHp: 50, attack: 8, speed: 7, rarity: "weak" },
+			{ name: "Flamey", emoji: "🔥", hp: 60, maxHp: 60, attack: 10, speed: 5, rarity: "weak" },
+			{ name: "Splashy", emoji: "💧", hp: 55, maxHp: 55, attack: 9, speed: 6, rarity: "weak" },
+			{ name: "Leafy", emoji: "🌿", hp: 65, maxHp: 65, attack: 7, speed: 8, rarity: "weak" },
+			{ name: "Rocky", emoji: "🪨", hp: 70, maxHp: 70, attack: 12, speed: 3, rarity: "normal" },
+			{ name: "Windy", emoji: "💨", hp: 45, maxHp: 45, attack: 11, speed: 10, rarity: "normal" },
+			{ name: "Frosty", emoji: "❄️", hp: 75, maxHp: 75, attack: 13, speed: 4, rarity: "normal" },
+			{ name: "Zappy", emoji: "⚡", hp: 80, maxHp: 80, attack: 15, speed: 9, rarity: "strong" },
+			{ name: "Inferno", emoji: "🔥", hp: 90, maxHp: 90, attack: 18, speed: 6, rarity: "strong" },
+			{ name: "Tidal", emoji: "💧", hp: 85, maxHp: 85, attack: 16, speed: 7, rarity: "strong" }
+		];
+
+		// Game state
+		let playerCard = null;
+		let enemyCard = null;
+		let wins = 0;
+		let playerCards = [];
+		let battleActive = false;
+		let attackCooldown = 0;
+		let enemyAttackTimer = 0;
+
+		// Initialize game
+		function initGame() {
+			// Start with weakest card
+			const starterCard = JSON.parse(JSON.stringify(diginunes[0])); // Sparky
+			playerCards = [starterCard];
+			playerCard = JSON.parse(JSON.stringify(starterCard)); // Make a fresh copy
+			wins = 0;
+			updateHUD();
+		}
+
+		function updateHUD() {
+			document.getElementById('wins').textContent = wins;
+			document.getElementById('cardCount').textContent = playerCards.length;
+		}
+
+		function startBattle() {
+			document.getElementById('startScreen').style.display = 'none';
+			document.getElementById('cardSelectScreen').classList.remove('show');
+			document.getElementById('battleArea').style.display = 'flex';
+			document.getElementById('controls').style.display = 'flex';
+			
+			// Make sure player card is fully healed
+			playerCard.hp = playerCard.maxHp;
+			
+			// Enemy is always Sparky, but scaled to match player's strength
+			const baseSparky = diginunes[0]; // Sparky
+			enemyCard = JSON.parse(JSON.stringify(baseSparky));
+			
+			// Scale Sparky's stats to match player's card
+			const playerPower = playerCard.maxHp + playerCard.attack + playerCard.speed;
+			const basePower = baseSparky.maxHp + baseSparky.attack + baseSparky.speed;
+			const scaleFactor = playerPower / basePower;
+			
+			enemyCard.maxHp = Math.round(baseSparky.maxHp * scaleFactor);
+			enemyCard.hp = enemyCard.maxHp;
+			enemyCard.attack = Math.round(baseSparky.attack * scaleFactor);
+			enemyCard.speed = Math.round(baseSparky.speed * scaleFactor);
+			
+			updateCards();
+			battleActive = true;
+			attackCooldown = 0;
+			enemyAttackTimer = 0;
+			
+			showBattleLog("Battle started!");
+		}
+
+		function showCardSelect() {
+			document.getElementById('battleArea').style.display = 'none';
+			document.getElementById('controls').style.display = 'none';
+			document.getElementById('cardSelectScreen').classList.add('show');
+			
+			const cardGrid = document.getElementById('cardGrid');
+			cardGrid.innerHTML = '';
+			
+			const canSwitch = playerCards.length > 1;
+			const titleElement = document.querySelector('.card-select-title');
+			if (canSwitch) {
+				titleElement.textContent = 'Choose Your Diginune!';
+			} else {
+				titleElement.textContent = 'Ready for Battle!';
+			}
+			
+			playerCards.forEach((card, index) => {
+				const cardElement = document.createElement('div');
+				cardElement.className = 'selectable-card';
+				if (playerCard && card.name === playerCard.name) {
+					cardElement.classList.add('selected');
+				}
+				
+				// If only one card, make it look selected but not clickable
+				if (!canSwitch) {
+					cardElement.style.cursor = 'default';
+					cardElement.style.opacity = '0.8';
+				}
+				
+				cardElement.innerHTML = `
+					<div class="card-name">${card.name}</div>
+					<div class="card-image">${card.emoji}</div>
+					<div class="card-stats">
+						<div class="stat-row">
+							<span class="stat-label">HP:</span>
+							<span class="stat-value">${card.maxHp}</span>
+						</div>
+						<div class="stat-row">
+							<span class="stat-label">Attack:</span>
+							<span class="stat-value">${card.attack}</span>
+						</div>
+						<div class="stat-row">
+							<span class="stat-label">Speed:</span>
+							<span class="stat-value">${card.speed}</span>
+						</div>
+					</div>
+				`;
+				
+				if (canSwitch) {
+					cardElement.addEventListener('click', () => {
+						// Remove selected class from all cards
+						document.querySelectorAll('.selectable-card').forEach(c => c.classList.remove('selected'));
+						// Add selected class to clicked card
+						cardElement.classList.add('selected');
+						// Set as player card (make a fresh copy with full HP)
+						playerCard = JSON.parse(JSON.stringify(card));
+						playerCard.hp = playerCard.maxHp;
+						document.getElementById('selectCardBtn').style.display = 'block';
+					});
+				}
+				
+				cardGrid.appendChild(cardElement);
+			});
+			
+			// If no card selected yet, select the first one
+			if (!playerCard && playerCards.length > 0) {
+				playerCard = JSON.parse(JSON.stringify(playerCards[0]));
+				playerCard.hp = playerCard.maxHp;
+				if (cardGrid.firstChild) {
+					cardGrid.firstChild.classList.add('selected');
+				}
+				document.getElementById('selectCardBtn').style.display = 'block';
+			} else if (playerCard) {
+				// Make sure current card is selected and button is shown
+				document.getElementById('selectCardBtn').style.display = 'block';
+			}
+		}
+
+		function updateCards() {
+			// Update player card
+			document.getElementById('playerName').textContent = playerCard.name;
+			document.getElementById('playerImage').textContent = playerCard.emoji;
+			document.getElementById('playerHP').textContent = `${playerCard.hp}/${playerCard.maxHp}`;
+			document.getElementById('playerAttack').textContent = playerCard.attack;
+			document.getElementById('playerSpeed').textContent = playerCard.speed;
+			
+			const playerHealthPercent = (playerCard.hp / playerCard.maxHp) * 100;
+			const playerHealthBar = document.getElementById('playerHealthBar');
+			playerHealthBar.style.width = playerHealthPercent + '%';
+			playerHealthBar.textContent = playerCard.hp + '/' + playerCard.maxHp;
+			playerHealthBar.classList.toggle('low', playerHealthPercent < 30);
+			
+			// Update enemy card
+			document.getElementById('enemyName').textContent = enemyCard.name;
+			document.getElementById('enemyImage').textContent = enemyCard.emoji;
+			document.getElementById('enemyHP').textContent = `${enemyCard.hp}/${enemyCard.maxHp}`;
+			document.getElementById('enemyAttack').textContent = enemyCard.attack;
+			document.getElementById('enemySpeed').textContent = enemyCard.speed;
+			
+			const enemyHealthPercent = (enemyCard.hp / enemyCard.maxHp) * 100;
+			const enemyHealthBar = document.getElementById('enemyHealthBar');
+			enemyHealthBar.style.width = enemyHealthPercent + '%';
+			enemyHealthBar.textContent = enemyCard.hp + '/' + enemyCard.maxHp;
+			enemyHealthBar.classList.toggle('low', enemyHealthPercent < 30);
+		}
+
+		function playerAttack() {
+			if (!battleActive || attackCooldown > 0) return;
+			
+			const damage = Math.floor(playerCard.attack * (0.8 + Math.random() * 0.4));
+			enemyCard.hp = Math.max(0, enemyCard.hp - damage);
+			
+			// Visual feedback
+			document.getElementById('playerCard').classList.add('attacking');
+			setTimeout(() => {
+				document.getElementById('playerCard').classList.remove('attacking');
+				document.getElementById('enemyCard').classList.add('hit');
+				setTimeout(() => {
+					document.getElementById('enemyCard').classList.remove('hit');
+				}, 300);
+			}, 150);
+			
+			showBattleLog(`${playerCard.name} attacks for ${damage} damage!`);
+			updateCards();
+			
+			// Cooldown based on speed (faster = shorter cooldown)
+			attackCooldown = 2000 - (playerCard.speed * 100);
+			
+			checkBattleEnd();
+		}
+
+		function enemyAttack() {
+			if (!battleActive) return;
+			
+			const damage = Math.floor(enemyCard.attack * (0.8 + Math.random() * 0.4));
+			playerCard.hp = Math.max(0, playerCard.hp - damage);
+			
+			// Visual feedback
+			document.getElementById('enemyCard').classList.add('attacking');
+			setTimeout(() => {
+				document.getElementById('enemyCard').classList.remove('attacking');
+				document.getElementById('playerCard').classList.add('hit');
+				setTimeout(() => {
+					document.getElementById('playerCard').classList.remove('hit');
+				}, 300);
+			}, 150);
+			
+			showBattleLog(`${enemyCard.name} attacks for ${damage} damage!`);
+			updateCards();
+			
+			checkBattleEnd();
+		}
+
+		function checkBattleEnd() {
+			if (enemyCard.hp <= 0) {
+				battleActive = false;
+				wins++;
+				updateHUD();
+				
+				// Maybe get a new card
+				if (Math.random() < 0.4 && playerCards.length < diginunes.length) {
+					const availableCards = diginunes.filter(card => 
+						!playerCards.some(pc => pc.name === card.name)
+					);
+					if (availableCards.length > 0) {
+						const newCard = JSON.parse(JSON.stringify(availableCards[Math.floor(Math.random() * availableCards.length)]));
+						playerCards.push(newCard);
+						showBattleLog(`You won! Got new card: ${newCard.name}!`, 3000);
+					} else {
+						showBattleLog("You won! No new cards available.", 3000);
+					}
+				} else {
+					showBattleLog("You won!", 3000);
+				}
+				
+				setTimeout(() => {
+					showCardSelect();
+				}, 3000);
+			} else if (playerCard.hp <= 0) {
+				battleActive = false;
+				showBattleLog("You lost! Game Over!", 3000);
+				setTimeout(() => {
+					initGame();
+					document.getElementById('startScreen').style.display = 'flex';
+					document.getElementById('battleArea').style.display = 'none';
+					document.getElementById('controls').style.display = 'none';
+					document.getElementById('cardSelectScreen').classList.remove('show');
+				}, 3000);
+			}
+		}
+
+		function showBattleLog(message, duration = 2000) {
+			const log = document.getElementById('battleLog');
+			log.textContent = message;
+			log.classList.add('show');
+			setTimeout(() => {
+				log.classList.remove('show');
+			}, duration);
+		}
+
+		// Game loop
+		function gameLoop() {
+			if (battleActive) {
+				// Update cooldowns
+				if (attackCooldown > 0) {
+					attackCooldown -= 16;
+				}
+				
+				// Enemy attacks based on speed
+				enemyAttackTimer += 16;
+				const enemyAttackInterval = 2000 - (enemyCard.speed * 100);
+				if (enemyAttackTimer >= enemyAttackInterval) {
+					enemyAttack();
+					enemyAttackTimer = 0;
+				}
+			}
+			requestAnimationFrame(gameLoop);
+		}
+
+		// Event listeners
+		document.getElementById('startBtn').addEventListener('click', () => {
+			initGame();
+			showCardSelect();
+		});
+
+		document.getElementById('selectCardBtn').addEventListener('click', () => {
+			startBattle();
+		});
+
+		document.getElementById('attackBtn').addEventListener('click', playerAttack);
+
+		// Start game loop
+		gameLoop();
+	</script>
+</body>
+</html>

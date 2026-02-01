@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Rocket Game</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background: #000;
+			font-family: Arial, sans-serif;
+		}
+		canvas {
+			display: block;
+			width: 100vw;
+			height: 100vh;
+		}
+		#timer {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			color: #fff;
+			font-size: 24px;
+			font-weight: bold;
+			z-index: 10;
+		}
+		#rocketLives {
+			position: absolute;
+			top: 60px;
+			left: 20px;
+			color: #fff;
+			font-size: 20px;
+			font-weight: bold;
+			z-index: 10;
+		}
+		#level {
+			position: absolute;
+			top: 100px;
+			left: 20px;
+			color: #fff;
+			font-size: 20px;
+			font-weight: bold;
+			z-index: 10;
+		}
+		#gameOver {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: #ff0000;
+			font-size: 48px;
+			font-weight: bold;
+			text-align: center;
+			z-index: 10;
+			display: none;
+		}
+		#levelStart {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: #ffff00;
+			font-size: 64px;
+			font-weight: bold;
+			text-align: center;
+			z-index: 10;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div id="timer">00:00</div>
+	<div id="rocketLives">Rocket Lives: 3</div>
+	<div id="level">Level: 1</div>
+	<div id="gameOver">GAME OVER<br><span style="font-size: 24px;">Press R to try again</span></div>
+	<div id="levelStart">Level 1</div>
+	<canvas id="gameCanvas"></canvas>
+
+	<script>
+		// Game setup
+		const canvas = document.getElementById('gameCanvas');
+		const ctx = canvas.getContext('2d');
+		const gameOverDiv = document.getElementById('gameOver');
+		const timerDiv = document.getElementById('timer');
+		const rocketLivesDiv = document.getElementById('rocketLives');
+		const levelDiv = document.getElementById('level');
+		const levelStartDiv = document.getElementById('levelStart');
+		
+		// Rocket lives
+		let rocketLives = 3;
+		
+		// Level system
+		let currentLevel = 1;
+		
+		// Constants
+		const ROTATION_SPEED = 180; // degrees per second
+		const THRUST_POWER = 0.3; // velocity multiplier per frame
+		const FRICTION = 0.98; // friction to slow down over time
+		const ROCKET_SIZE = 15; // size of rocket for collision detection
+		const BAD_ENEMY_SPEED = 0.5; // speed for bad enemy movement
+		const SPAWN_OFFSET = 40; // offset from edge for spawn position (to show key labels)
+		
+		// Game state
+		let gameState = 'playing'; // 'playing' or 'exploded'
+		
+		// Timer
+		let gameStartTime = Date.now();
+		
+		// Rockets array
+		let rockets = [];
+		
+		// Enemies array
+		let enemies = [];
+		
+		// Key patterns following triangle shape (left, thrust, right)
+		const keyPatterns = [
+			['a', 'w', 'd'],   // awd
+			['s', 'e', 'f'],   // sef
+			['d', 'r', 'g'],   // drg
+			['f', 't', 'h'],   // fth
+			['g', 'y', 'j'],   // gyj
+			['h', 'u', 'k'],   // huk
+			['j', 'i', 'l'],   // jil
+			['k', 'o', ';'],   // ko;
+			['l', 'p', '\''],  // lp'
+			['z', 's', 'c'],   // zsc
+			['x', 'd', 'v'],   // xdv
+			['c', 'f', 'b'],   // cfb
+			['v', 'g', 'n'],   // vgn
+			['b', 'h', 'm'],   // bhm
+			['n', 'j', ','],   // nj,
+			['m', 'k', '.']    // mk.
+		];
+		
+		// Get all keys currently in use by rockets
+		function getUsedKeys() {
+			const usedKeys = new Set();
+			for (const rocket of rockets) {
+				usedKeys.add(rocket.leftKey);
+				usedKeys.add(rocket.thrustKey);
+				usedKeys.add(rocket.rightKey);
+			}
+			return usedKeys;
+		}
+		
+		// Get available patterns that don't overlap with used keys
+		function getAvailablePatterns() {
+			const usedKeys = getUsedKeys();
+			return keyPatterns.filter(pattern => {
+				return !usedKeys.has(pattern[0]) && 
+				       !usedKeys.has(pattern[1]) && 
+				       !usedKeys.has(pattern[2]);
+			});
+		}
+		
+		// Create a new rocket
+		function createRocket(immediateSpawn = false) {
+			const availablePatterns = getAvailablePatterns();
+			if (availablePatterns.length === 0) {
+				return null; // No available patterns
+			}
+			
+			// Randomly select a pattern
+			const pattern = availablePatterns[Math.floor(Math.random() * availablePatterns.length)];
+			
+			// Pick a random edge (0=top, 1=right, 2=bottom, 3=left)
+			const edge = Math.floor(Math.random() * 4);
+			const centerX = canvas.width / 2;
+			const centerY = canvas.height / 2;
+			
+			let x, y;
+			if (edge === 0) { // top
+				x = Math.random() * canvas.width;
+				y = ROCKET_SIZE + SPAWN_OFFSET;
+			} else if (edge === 1) { // right
+				x = canvas.width - ROCKET_SIZE - SPAWN_OFFSET;
+				y = Math.random() * canvas.height;
+			} else if (edge === 2) { // bottom
+				x = Math.random() * canvas.width;
+				y = canvas.height - ROCKET_SIZE - SPAWN_OFFSET;
+			} else { // left
+				x = ROCKET_SIZE + SPAWN_OFFSET;
+				y = Math.random() * canvas.height;
+			}
+			
+			// Calculate angle toward center
+			const dx = centerX - x;
+			const dy = centerY - y;
+			let angleToCenter = Math.atan2(dy, dx) * (180 / Math.PI);
+			
+			// Add random offset of +/- 45 degrees
+			const randomOffset = (Math.random() * 90) - 45;
+			const angle = angleToCenter + randomOffset;
+			
+			// Set initial velocity toward center with some speed
+			const initialSpeed = 2;
+			const angleRad = (angle * Math.PI) / 180;
+			
+			return {
+				x: x,
+				y: y,
+				velX: Math.cos(angleRad) * initialSpeed,
+				velY: Math.sin(angleRad) * initialSpeed,
+				angle: angle,
+				leftKey: pattern[0],
+				rightKey: pattern[2],
+				thrustKey: pattern[1],
+				health: 10,
+				power: 10,
+				spawnState: immediateSpawn ? 'spawning' : 'preparing', // 'preparing', 'spawning', 'active'
+				spawnTime: immediateSpawn ? Date.now() : Date.now() + 3000, // Spawn immediately or after 3 seconds
+				invincibleUntil: immediateSpawn ? Date.now() + 3000 : 0 // Will be set when spawning
+			};
+		}
+		
+		// Resize canvas to fit screen
+		function resizeCanvas() {
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+		}
+		resizeCanvas();
+		window.addEventListener('resize', resizeCanvas);
+		
+		// Explosion particles
+		let explosionParticles = [];
+		
+		// Input tracking
+		const keys = {};
+		
+		// Key event listeners
+		document.addEventListener('keydown', (e) => {
+			const key = e.key.toLowerCase();
+			keys[key] = true;
+			
+			// Restart game with R key when game over
+			if (key === 'r' && gameState === 'gameover') {
+				restartGame();
+			}
+		});
+		
+		document.addEventListener('keyup', (e) => {
+			keys[e.key.toLowerCase()] = false;
+		});
+		
+		// Create boss enemy
+		function createBossEnemy(health) {
+			const radius = canvas.height * 0.1; // 10% of vertical space
+			return {
+				shape: 'circle',
+				radius: radius,
+				x: canvas.width * 0.2 + Math.random() * canvas.width * 0.6,
+				y: canvas.height * 0.2 + Math.random() * canvas.height * 0.6,
+				xvel: 0,
+				yvel: 0,
+				health: health,
+				color: '#ff0000', // red
+				type: 'boss',
+				boss: true, // boss enemy - crashing into it is not bad
+				lastHitTime: 0
+			};
+		}
+		
+		// Create tracker enemy (chases rockets, reduces lives)
+		function createTrackerEnemy(health) {
+			const radius = canvas.height * 0.08; // 8% of vertical space
+			return {
+				shape: 'circle',
+				radius: radius,
+				x: canvas.width * 0.2 + Math.random() * canvas.width * 0.6,
+				y: canvas.height * 0.2 + Math.random() * canvas.height * 0.6,
+				xvel: 0,
+				yvel: 0,
+				health: health,
+				color: '#ff00ff', // magenta
+				type: 'bad', // bad enemy
+				boss: false,
+				lastHitTime: 0
+			};
+		}
+		
+		// Setup enemies for current level
+		function setupLevel(level) {
+			enemies = [];
+			
+			if (level === 1) {
+				// Level 1: 1 boss (strength 30)
+				enemies.push(createBossEnemy(30));
+			} else if (level === 2) {
+				// Level 2: 1 boss (strength 40) + 1 tracker (strength 30)
+				enemies.push(createBossEnemy(40));
+				enemies.push(createTrackerEnemy(30));
+			} else if (level === 3) {
+				// Level 3: 1 boss (strength 50) + 2 trackers (strength 20 each)
+				enemies.push(createBossEnemy(50));
+				enemies.push(createTrackerEnemy(20));
+				enemies.push(createTrackerEnemy(20));
+			} else if (level === 4) {
+				// Level 4: 2 bosses (strength 30 each) + 2 trackers (strength 20 each)
+				enemies.push(createBossEnemy(30));
+				enemies.push(createBossEnemy(30));
+				enemies.push(createTrackerEnemy(20));
+				enemies.push(createTrackerEnemy(20));
+			} else if (level === 5) {
+				// Level 5: 2 bosses (strength 30 each) + 3 trackers (strength 20 each)
+				enemies.push(createBossEnemy(30));
+				enemies.push(createBossEnemy(30));
+				enemies.push(createTrackerEnemy(20));
+				enemies.push(createTrackerEnemy(20));
+				enemies.push(createTrackerEnemy(20));
+			}
+		}
+		
+		// Remove crashed rocket (spawn immediately if no rockets left)
+		function resetCrashedRocket(crashedRocketIndex) {
+			// Don't reset if game is over (lives below 1)
+			if (rocketLives < 1 || gameState === 'gameover') {
+				return;
+			}
+			
+			gameState = 'playing';
+			gameOverDiv.style.display = 'none';
+			
+			// Remove crashed rocket
+			rockets.splice(crashedRocketIndex, 1);
+			
+			// If no rockets left, spawn immediately
+			if (rockets.length === 0) {
+				const newRocket = createRocket(true); // immediate spawn
+				if (newRocket) {
+					rockets.push(newRocket);
+				}
+			}
+		}
+		
+		// Initialize first rocket (spawn immediately since no rockets exist)
+		const firstRocket = createRocket(true);
+		if (firstRocket) {
+			rockets.push(firstRocket);
+		}
+		
+		// Initialize enemies for level 1
+		setupLevel(currentLevel);
+		
+		// Initialize rocket lives display
+		updateRocketLivesDisplay();
+		
+		// Update level display
+		function updateLevelDisplay() {
+			levelDiv.textContent = `Level: ${currentLevel}`;
+		}
+		
+		// Show level start message
+		function showLevelStart() {
+			levelStartDiv.textContent = `Level ${currentLevel}`;
+			levelStartDiv.style.display = 'block';
+			setTimeout(() => {
+				levelStartDiv.style.display = 'none';
+			}, 2000); // Show for 2 seconds
+		}
+		
+		updateLevelDisplay();
+		showLevelStart(); // Show level 1 at start
+		
+		// Create explosion
+		function createExplosion(x, y) {
+			// Add particles to existing array instead of replacing
+			for (let i = 0; i < 30; i++) {
+				const angle = (Math.PI * 2 * i) / 30;
+				const speed = 2 + Math.random() * 4;
+				explosionParticles.push({
+					x: x,
+					y: y,
+					velX: Math.cos(angle) * speed,
+					velY: Math.sin(angle) * speed,
+					life: 60, // frames
+					size: 3 + Math.random() * 4
+				});
+			}
+		}
+		
+		// Update game state
+		function update() {
+			// Stop updating if game over
+			if (gameState === 'gameover') {
+				return;
+			}
+			
+			// Always update explosion particles
+			for (let i = explosionParticles.length - 1; i >= 0; i--) {
+				const particle = explosionParticles[i];
+				particle.x += particle.velX;
+				particle.y += particle.velY;
+				particle.life--;
+				
+				if (particle.life <= 0) {
+					explosionParticles.splice(i, 1);
+				}
+			}
+			
+			if (gameState === 'exploded') {
+				// Immediately respawn crashed rockets (no delay)
+				// This is handled per-rocket in the loop below
+			}
+			
+			// Update enemies
+			// First, coordinate trackers to target different rockets
+			const trackers = enemies.filter(e => !e.boss);
+			const trackableRockets = rockets.filter(r => r.spawnState !== 'preparing');
+			
+			if (trackers.length > 0 && trackableRockets.length > 0) {
+				// Assign each tracker to a different rocket
+				for (let t = 0; t < trackers.length; t++) {
+					const tracker = trackers[t];
+					// Assign tracker to rocket at index (t % trackableRockets.length) to distribute evenly
+					const targetRocket = trackableRockets[t % trackableRockets.length];
+					
+					const dx = targetRocket.x - tracker.x;
+					const dy = targetRocket.y - tracker.y;
+					const distance = Math.sqrt(dx * dx + dy * dy);
+					
+					if (distance > 0) {
+						// Normalize direction and apply constant speed
+						tracker.xvel = (dx / distance) * BAD_ENEMY_SPEED;
+						tracker.yvel = (dy / distance) * BAD_ENEMY_SPEED;
+					}
+				}
+			}
+			
+			// Update all enemy positions
+			for (let i = enemies.length - 1; i >= 0; i--) {
+				const enemy = enemies[i];
+				enemy.x += enemy.xvel;
+				enemy.y += enemy.yvel;
+			}
+			
+			// Check if we need to prepare a new rocket
+			const activeRockets = rockets.filter(r => r.spawnState === 'active' || r.spawnState === 'spawning');
+			const preparingRockets = rockets.filter(r => r.spawnState === 'preparing');
+			
+			// Level 4+: allow up to 3 rockets (2 active + 1 preparing)
+			// Levels 1-3: allow up to 2 rockets (1 active + 1 preparing)
+			let shouldPrepare = false;
+			if (currentLevel >= 4) {
+				// Level 4+: prepare when we have 1 or 2 active rockets (but not already preparing)
+				shouldPrepare = (activeRockets.length === 1 || activeRockets.length === 2) && preparingRockets.length === 0;
+			} else {
+				// Levels 1-3: prepare when we have 1 active rocket (but not already preparing)
+				shouldPrepare = activeRockets.length === 1 && preparingRockets.length === 0;
+			}
+			
+			if (shouldPrepare) {
+				// Create a new rocket in preparing state
+				const newRocket = createRocket(false); // delayed spawn
+				if (newRocket) {
+					rockets.push(newRocket);
+				}
+			}
+			
+			// Update all rockets
+			for (let r = rockets.length - 1; r >= 0; r--) {
+				const rocket = rockets[r];
+				let crashed = false;
+				
+				// Handle spawn states
+				const currentTime = Date.now();
+				if (rocket.spawnState === 'preparing') {
+					// Check if it's time to spawn
+					if (currentTime >= rocket.spawnTime) {
+						rocket.spawnState = 'spawning';
+						rocket.invincibleUntil = currentTime + 3000; // 3 seconds invincibility
+					}
+					// Preparing rockets don't move or respond to controls
+					continue;
+				}
+				
+				// Check if still invincible
+				const isInvincible = currentTime < rocket.invincibleUntil;
+				if (rocket.spawnState === 'spawning' && !isInvincible) {
+					rocket.spawnState = 'active';
+				}
+				
+				// Rotation
+				if (keys[rocket.leftKey]) {
+					rocket.angle -= (ROTATION_SPEED / 60); // 60 FPS
+				}
+				if (keys[rocket.rightKey]) {
+					rocket.angle += (ROTATION_SPEED / 60);
+				}
+				
+				// Thrust
+				if (keys[rocket.thrustKey]) {
+					const angleRad = (rocket.angle * Math.PI) / 180;
+					rocket.velX += Math.cos(angleRad) * THRUST_POWER;
+					rocket.velY += Math.sin(angleRad) * THRUST_POWER;
+				}
+				
+				// Apply friction
+				rocket.velX *= FRICTION;
+				rocket.velY *= FRICTION;
+				
+				// Update position
+				rocket.x += rocket.velX;
+				rocket.y += rocket.velY;
+				
+				// Check collision with other rockets (skip if invincible or preparing)
+				if (!isInvincible && rocket.spawnState !== 'preparing') {
+					for (let r2 = rockets.length - 1; r2 >= 0; r2--) {
+						if (r2 === r) continue; // Skip self
+						const otherRocket = rockets[r2];
+						// Skip if other rocket is invincible or preparing
+						if (otherRocket.spawnState === 'preparing' || 
+						    (Date.now() < otherRocket.invincibleUntil)) continue;
+						
+						const dx = rocket.x - otherRocket.x;
+						const dy = rocket.y - otherRocket.y;
+						const distance = Math.sqrt(dx * dx + dy * dy);
+						
+						if (distance < ROCKET_SIZE * 2) {
+							// Rockets collide - both explode (bad death, costs 2 lives)
+							createExplosion(rocket.x, rocket.y);
+							createExplosion(otherRocket.x, otherRocket.y);
+							rocketLives -= 2;
+							updateRocketLivesDisplay();
+							resetCrashedRocket(r);
+							if (r2 > r) {
+								resetCrashedRocket(r2 - 1);
+							} else {
+								resetCrashedRocket(r2);
+							}
+							crashed = true;
+							break;
+						}
+					}
+				}
+				
+				// Check collision with enemies (skip if invincible or preparing)
+				if (!crashed && !isInvincible && rocket.spawnState !== 'preparing') {
+					for (let i = enemies.length - 1; i >= 0; i--) {
+						const enemy = enemies[i];
+						if (enemy.shape === 'circle') {
+							const dx = rocket.x - enemy.x;
+							const dy = rocket.y - enemy.y;
+							const distance = Math.sqrt(dx * dx + dy * dy);
+							
+							if (distance < enemy.radius + ROCKET_SIZE) {
+								// Collision! Rocket crashes into enemy
+								// Deal damage equal to rocket's health
+								enemy.health -= rocket.health;
+								
+								// Check if enemy should explode
+								if (enemy.health <= 0) {
+									// Enemy explodes
+									createExplosion(enemy.x, enemy.y);
+									enemies.splice(i, 1);
+								}
+								
+								// Rocket explodes
+								createExplosion(rocket.x, rocket.y);
+								
+								// Reduce rocket lives based on enemy type
+								if (enemy.boss) {
+									// Boss enemy - good crash, don't reduce lives
+								} else if (enemy.type === 'bad') {
+									// Bad enemy - bad death, reduce lives
+									rocketLives--;
+									updateRocketLivesDisplay();
+								}
+								
+								resetCrashedRocket(r);
+								crashed = true;
+								break;
+							}
+						}
+					}
+				}
+				
+				// Check for edge collisions (skip if invincible or preparing)
+				if (!crashed && !isInvincible && rocket.spawnState !== 'preparing' &&
+					(rocket.x < ROCKET_SIZE || rocket.x > canvas.width - ROCKET_SIZE ||
+					rocket.y < ROCKET_SIZE || rocket.y > canvas.height - ROCKET_SIZE)) {
+					// Explode! (bad death)
+					createExplosion(rocket.x, rocket.y);
+					rocketLives--;
+					updateRocketLivesDisplay();
+					resetCrashedRocket(r);
+				}
+			}
+			
+			// Update gameState based on whether any rockets exist
+			if (rockets.length === 0 && gameState === 'exploded') {
+				gameState = 'playing';
+			}
+			
+			// Check if all boss enemies are defeated - advance to next level
+			const bossEnemies = enemies.filter(e => e.boss);
+			if (bossEnemies.length === 0 && currentLevel < 5) {
+				currentLevel++;
+				setupLevel(currentLevel);
+				updateLevelDisplay();
+				showLevelStart();
+			}
+		}
+		
+		// Draw rocket
+		function drawRocket(rocket) {
+			const currentTime = Date.now();
+			const isInvincible = currentTime < rocket.invincibleUntil;
+			const isPreparing = rocket.spawnState === 'preparing';
+			
+			// Set opacity based on state
+			let alpha = 1.0;
+			if (isPreparing) {
+				// Blinking effect - gets faster as spawn time approaches
+				const timeUntilSpawn = rocket.spawnTime - currentTime;
+				const totalPrepareTime = 3000; // 3 seconds
+				const progress = 1 - (timeUntilSpawn / totalPrepareTime); // 0 to 1 as we approach spawn
+				// Blink speed increases from slow (200ms) to fast (50ms) as progress increases
+				const blinkSpeed = 200 - (progress * 150); // 200ms to 50ms
+				alpha = 0.3 + 0.4 * Math.sin(currentTime / blinkSpeed); // Blinks between 0.3 and 0.7
+			} else if (isInvincible) {
+				// Flashing effect when invincible
+				alpha = 0.5 + 0.5 * Math.sin(currentTime / 100); // Flashes
+			}
+			
+			// Draw control keys above rocket (not rotated)
+			ctx.save();
+			ctx.globalAlpha = alpha;
+			ctx.fillStyle = '#ffff00';
+			ctx.font = 'bold 16px Arial';
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'bottom';
+			
+			// Draw keys in a row: [left] [thrust] [right]
+			const keyY = rocket.y - 25;
+			const spacing = 25;
+			
+			// Left key
+			ctx.fillStyle = keys[rocket.leftKey] ? '#00ff00' : '#ffff00';
+			ctx.fillRect(rocket.x - spacing - 12, keyY - 18, 24, 20);
+			ctx.fillStyle = '#000';
+			ctx.fillText(rocket.leftKey.toUpperCase(), rocket.x - spacing, keyY);
+			
+			// Thrust key
+			ctx.fillStyle = keys[rocket.thrustKey] ? '#00ff00' : '#ffff00';
+			ctx.fillRect(rocket.x - 12, keyY - 18, 24, 20);
+			ctx.fillStyle = '#000';
+			ctx.fillText(rocket.thrustKey.toUpperCase(), rocket.x, keyY);
+			
+			// Right key
+			ctx.fillStyle = keys[rocket.rightKey] ? '#00ff00' : '#ffff00';
+			ctx.fillRect(rocket.x + spacing - 12, keyY - 18, 24, 20);
+			ctx.fillStyle = '#000';
+			ctx.fillText(rocket.rightKey.toUpperCase(), rocket.x + spacing, keyY);
+			
+			ctx.restore();
+			
+			// Draw rocket body (rotated)
+			ctx.save();
+			ctx.globalAlpha = alpha;
+			ctx.translate(rocket.x, rocket.y);
+			ctx.rotate((rocket.angle * Math.PI) / 180);
+			
+			// Draw rocket body (triangle) - different color if invincible
+			if (isInvincible && !isPreparing) {
+				ctx.fillStyle = '#00ffff'; // Cyan when invincible
+			} else {
+				ctx.fillStyle = '#fff';
+			}
+			ctx.beginPath();
+			ctx.moveTo(15, 0); // nose
+			ctx.lineTo(-10, -8); // left corner
+			ctx.lineTo(-10, 8); // right corner
+			ctx.closePath();
+			ctx.fill();
+			
+			// Draw thrust flame when thrusting (only if not preparing)
+			if (!isPreparing && keys[rocket.thrustKey]) {
+				ctx.fillStyle = '#ff6600';
+				ctx.beginPath();
+				ctx.moveTo(-10, -5);
+				ctx.lineTo(-20, 0);
+				ctx.lineTo(-10, 5);
+				ctx.closePath();
+				ctx.fill();
+			}
+			
+			ctx.restore();
+			
+			// Draw rocket health (only if not preparing)
+			if (!isPreparing) {
+				ctx.save();
+				ctx.globalAlpha = alpha;
+				ctx.fillStyle = '#00ff00';
+				ctx.font = '14px Arial';
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'top';
+				ctx.fillText(`HP: ${rocket.health}`, rocket.x, rocket.y + 20);
+				ctx.restore();
+			}
+		}
+		
+		// Draw enemies
+		function drawEnemies() {
+			for (const enemy of enemies) {
+				if (enemy.shape === 'circle') {
+					// Draw circle enemy
+					ctx.save();
+					ctx.fillStyle = enemy.color;
+					ctx.beginPath();
+					ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.restore();
+					
+					// Draw enemy health
+					ctx.save();
+					ctx.fillStyle = '#ffffff';
+					ctx.font = '16px Arial';
+					ctx.textAlign = 'center';
+					ctx.textBaseline = 'middle';
+					ctx.fillText(`HP: ${enemy.health}`, enemy.x, enemy.y);
+					ctx.restore();
+				}
+			}
+		}
+		
+		// Draw explosion
+		function drawExplosion() {
+			for (const particle of explosionParticles) {
+				const alpha = particle.life / 60;
+				ctx.fillStyle = `rgba(255, ${100 + Math.random() * 155}, 0, ${alpha})`;
+				ctx.beginPath();
+				ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		}
+		
+		// Update timer display
+		function updateTimer() {
+			const elapsed = Date.now() - gameStartTime;
+			const seconds = Math.floor(elapsed / 1000);
+			const minutes = Math.floor(seconds / 60);
+			const displaySeconds = seconds % 60;
+			timerDiv.textContent = `${String(minutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
+		}
+		
+		// Update rocket lives display
+		function updateRocketLivesDisplay() {
+			rocketLivesDiv.textContent = `Rocket Lives: ${rocketLives}`;
+			
+			// Game over if lives less than 1
+			if (rocketLives < 1) {
+				gameState = 'gameover';
+				gameOverDiv.style.display = 'block';
+			}
+		}
+		
+		// Restart game
+		function restartGame() {
+			gameState = 'playing';
+			rocketLives = 3;
+			currentLevel = 1;
+			rockets = [];
+			enemies = [];
+			explosionParticles = [];
+			gameOverDiv.style.display = 'none';
+			gameStartTime = Date.now();
+			
+			// Setup level 1
+			setupLevel(currentLevel);
+			updateLevelDisplay();
+			updateRocketLivesDisplay();
+			showLevelStart();
+			
+			// Spawn first rocket
+			const firstRocket = createRocket(true);
+			if (firstRocket) {
+				rockets.push(firstRocket);
+			}
+		}
+		
+		// Draw everything
+		function draw() {
+			// Clear canvas
+			ctx.fillStyle = '#000000';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+			
+			// Draw stars
+			ctx.fillStyle = '#fff';
+			for (let i = 0; i < 50; i++) {
+				const x = (i * 37) % canvas.width;
+				const y = (i * 53) % canvas.height;
+				ctx.fillRect(x, y, 1, 1);
+			}
+			
+			// Draw enemies
+			drawEnemies();
+			
+			// Draw explosion particles if any exist
+			if (explosionParticles.length > 0) {
+				drawExplosion();
+			}
+			
+			// Draw all rockets
+			for (const rocket of rockets) {
+				drawRocket(rocket);
+			}
+		}
+		
+		// Game loop
+		function gameLoop() {
+			update();
+			updateTimer();
+			draw();
+			requestAnimationFrame(gameLoop);
+		}
+		
+		// Start the game - draw first frame immediately
+		draw();
+		gameLoop();
+	</script>
+</body>
+</html>
+

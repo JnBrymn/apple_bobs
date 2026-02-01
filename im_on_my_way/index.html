@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>I'm On My Way - Knight's Tour Game</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700&display=swap" rel="stylesheet">
+	<style>
+		body {
+			font-family: 'Overpass', sans-serif;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			margin: 0;
+			background: black;
+			color: white;
+			text-transform: uppercase;
+		}
+
+		.container {
+			text-align: center;
+			padding: 20px;
+		}
+
+		h1 {
+			font-size: 2.5em;
+			margin-bottom: 10px;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+		}
+
+		.setup {
+			margin-bottom: 20px;
+		}
+
+		.setup input {
+			padding: 10px;
+			font-size: 1.2em;
+			border: none;
+			border-radius: 5px;
+			margin: 0 10px;
+			width: 60px;
+		}
+
+		.setup button {
+			padding: 10px 20px;
+			font-size: 1.2em;
+			background: #ff6b6b;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		.setup button:hover {
+			background: #ff5252;
+		}
+
+		.board {
+			display: inline-grid;
+			gap: 2px;
+			background: #333;
+			padding: 2px;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+		}
+
+		.cell {
+			width: 50px;
+			height: 50px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 30px;
+			background: #fff;
+			color: #333;
+			cursor: pointer;
+			border-radius: 3px;
+			transition: all 0.2s;
+			position: relative;
+		}
+
+		.cell:hover {
+			transform: scale(1.1);
+			box-shadow: 0 0 10px rgba(255,255,255,0.5);
+		}
+
+		.cell.visited {
+			background: #4ecdc4;
+			color: white;
+		}
+
+		.cell.knight {
+			background: #ff6b6b;
+			color: white;
+			font-weight: bold;
+		}
+
+		.cell.valid {
+			background: #ffe66d;
+			cursor: pointer;
+		}
+
+		.cell.invalid {
+			cursor: not-allowed;
+		}
+
+		.cell.move-number {
+			font-size: 12px;
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			color: #666;
+			font-weight: bold;
+		}
+
+		.cell.visited .move-number {
+			color: white;
+		}
+
+		.info {
+			margin-top: 20px;
+			font-size: 1.2em;
+		}
+
+		.win-message {
+			font-size: 2em;
+			color: #ffe66d;
+			margin-top: 20px;
+			animation: bounce 0.5s infinite;
+		}
+
+		.game-over-message {
+			font-size: 2em;
+			color: #ff6b6b;
+			margin-top: 20px;
+			font-weight: bold;
+		}
+
+		.restart-button {
+			padding: 12px 24px;
+			font-size: 1.2em;
+			background: #4ecdc4;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			margin-top: 15px;
+		}
+
+		.restart-button:hover {
+			background: #45b7aa;
+		}
+
+		@keyframes bounce {
+			0%, 100% { transform: translateY(0); }
+			50% { transform: translateY(-10px); }
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>I'm On My Way!</h1>
+		<div class="setup">
+			<label>Board Size:</label>
+			<input type="number" id="boardSize" min="5" value="5">
+			<button onclick="startGame()">Start Game</button>
+		</div>
+		<div id="board"></div>
+		<div class="info">
+			<p id="status">Click Start Game to begin!</p>
+			<p id="moves">Moves: 0</p>
+		</div>
+		<div id="winMessage"></div>
+		<div id="gameOverMessage"></div>
+		<div id="restartButtonContainer"></div>
+	</div>
+
+	<script>
+		let boardSize = 5;
+		let board = [];
+		let knightRow = 0;
+		let knightCol = 0;
+		let moveNumber = 0;
+		let visited = new Set();
+		
+		// Background music
+		let audioContext = null;
+		let musicPlaying = false;
+		
+		function initAudio() {
+			try {
+				audioContext = new (window.AudioContext || window.webkitAudioContext)();
+			} catch (e) {
+				console.log('Audio not supported');
+			}
+		}
+		
+		function startBackgroundMusic() {
+			if (!audioContext || musicPlaying) return;
+			
+			musicPlaying = true;
+			
+			// Create a catchy background melody
+			const melody = [
+				{ freq: 262, duration: 0.5 }, // C
+				{ freq: 294, duration: 0.5 }, // D
+				{ freq: 330, duration: 0.5 }, // E
+				{ freq: 392, duration: 0.5 }, // G
+				{ freq: 330, duration: 0.5 }, // E
+				{ freq: 294, duration: 0.5 }, // D
+				{ freq: 262, duration: 1.0 }, // C
+				{ freq: 0, duration: 0.3 },   // Rest
+				{ freq: 349, duration: 0.5 }, // F
+				{ freq: 392, duration: 0.5 }, // G
+				{ freq: 440, duration: 0.5 }, // A
+				{ freq: 523, duration: 0.5 }, // C high
+				{ freq: 440, duration: 0.5 }, // A
+				{ freq: 392, duration: 0.5 }, // G
+				{ freq: 349, duration: 1.0 }, // F
+				{ freq: 0, duration: 0.3 }    // Rest
+			];
+			
+			let noteIndex = 0;
+			
+			function playNote() {
+				if (!musicPlaying) return;
+				
+				const note = melody[noteIndex];
+				
+				if (note.freq > 0) {
+					const oscillator = audioContext.createOscillator();
+					const gainNode = audioContext.createGain();
+					
+					oscillator.connect(gainNode);
+					gainNode.connect(audioContext.destination);
+					
+					oscillator.frequency.value = note.freq;
+					oscillator.type = 'sine';
+					
+					gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+					gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + note.duration);
+					
+					oscillator.start(audioContext.currentTime);
+					oscillator.stop(audioContext.currentTime + note.duration);
+				}
+				
+				noteIndex = (noteIndex + 1) % melody.length;
+				
+				const totalDuration = melody.reduce((sum, n) => sum + n.duration, 0);
+				setTimeout(playNote, note.duration * 1000);
+			}
+			
+			playNote();
+		}
+
+		// Knight's possible moves (8 directions)
+		const knightMoves = [
+			[-2, -1], [-2, 1], [-1, -2], [-1, 2],
+			[1, -2], [1, 2], [2, -1], [2, 1]
+		];
+
+		function startGame() {
+			boardSize = parseInt(document.getElementById('boardSize').value);
+			if (boardSize < 5) {
+				alert('Board size must be at least 5!');
+				return;
+			}
+
+			// Start music if not already playing
+			if (!audioContext) {
+				initAudio();
+			}
+			if (audioContext && audioContext.state === 'suspended') {
+				audioContext.resume();
+			}
+			startBackgroundMusic();
+
+			// Clear messages
+			document.getElementById('winMessage').innerHTML = '';
+			document.getElementById('gameOverMessage').innerHTML = '';
+			document.getElementById('restartButtonContainer').innerHTML = '';
+
+			// Initialize board
+			board = Array(boardSize).fill(null).map(() => Array(boardSize).fill(0));
+			visited.clear();
+			moveNumber = 0;
+
+			// Start knight in center
+			knightRow = Math.floor(boardSize / 2);
+			knightCol = Math.floor(boardSize / 2);
+
+			// Mark starting position
+			const startKey = `${knightRow},${knightCol}`;
+			visited.add(startKey);
+			board[knightRow][knightCol] = ++moveNumber;
+
+			renderBoard();
+			updateStatus();
+		}
+
+		function isValidMove(row, col) {
+			// Check if position is on board
+			if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+				return false;
+			}
+
+			// Check if already visited
+			const key = `${row},${col}`;
+			if (visited.has(key)) {
+				return false;
+			}
+
+			// Check if it's a valid knight move
+			const rowDiff = Math.abs(row - knightRow);
+			const colDiff = Math.abs(col - knightCol);
+
+			return (rowDiff === 2 && colDiff === 1) || (rowDiff === 1 && colDiff === 2);
+		}
+
+		function getValidMoves() {
+			const valid = [];
+			for (const [dr, dc] of knightMoves) {
+				const newRow = knightRow + dr;
+				const newCol = knightCol + dc;
+				if (isValidMove(newRow, newCol)) {
+					valid.push([newRow, newCol]);
+				}
+			}
+			return valid;
+		}
+
+		function moveKnight(row, col) {
+			if (!isValidMove(row, col)) {
+				return false;
+			}
+
+			// Move knight
+			knightRow = row;
+			knightCol = col;
+
+			// Mark as visited
+			const key = `${row},${col}`;
+			visited.add(key);
+			board[row][col] = ++moveNumber;
+
+			renderBoard();
+			updateStatus();
+
+			// Check win condition
+			if (visited.size === boardSize * boardSize) {
+				showWinMessage();
+				return true;
+			}
+
+			// Check game over condition (no valid moves left)
+			const validMoves = getValidMoves();
+			if (validMoves.length === 0) {
+				showGameOver();
+			}
+
+			return true;
+		}
+
+		function renderBoard() {
+			const boardDiv = document.getElementById('board');
+			boardDiv.innerHTML = '';
+			boardDiv.style.gridTemplateColumns = `repeat(${boardSize}, 50px)`;
+			boardDiv.className = 'board';
+
+			const validMoves = getValidMoves();
+			const validSet = new Set(validMoves.map(([r, c]) => `${r},${c}`));
+
+			for (let row = 0; row < boardSize; row++) {
+				for (let col = 0; col < boardSize; col++) {
+					const cell = document.createElement('div');
+					cell.className = 'cell';
+					const key = `${row},${col}`;
+
+					if (row === knightRow && col === knightCol) {
+						cell.className += ' knight';
+						cell.textContent = 'K';
+					} else if (visited.has(key)) {
+						cell.className += ' visited';
+						if (board[row][col] > 0) {
+							const moveNum = document.createElement('span');
+							moveNum.className = 'move-number';
+							moveNum.textContent = board[row][col];
+							cell.appendChild(moveNum);
+						}
+					} else if (validSet.has(key)) {
+						cell.className += ' valid';
+					}
+
+					cell.onclick = () => moveKnight(row, col);
+					boardDiv.appendChild(cell);
+				}
+			}
+		}
+
+		function updateStatus() {
+			const total = boardSize * boardSize;
+			const remaining = total - visited.size;
+			document.getElementById('status').textContent = 
+				`Visit all ${total} squares! ${remaining} remaining.`;
+			document.getElementById('moves').textContent = `Moves: ${moveNumber}`;
+		}
+
+		function showWinMessage() {
+			const winDiv = document.getElementById('winMessage');
+			winDiv.innerHTML = '<div class="win-message">🎉 You Did It! 🎉</div>';
+			document.getElementById('gameOverMessage').innerHTML = '';
+			document.getElementById('status').textContent = 
+				`Amazing! You visited all ${boardSize * boardSize} squares!`;
+			showRestartButton();
+		}
+
+		function showGameOver() {
+			const gameOverDiv = document.getElementById('gameOverMessage');
+			gameOverDiv.innerHTML = '<div class="game-over-message">💀 Game Over! 💀</div>';
+			document.getElementById('winMessage').innerHTML = '';
+			const total = boardSize * boardSize;
+			const remaining = total - visited.size;
+			document.getElementById('status').textContent = 
+				`No more moves available! You visited ${visited.size} out of ${total} squares. ${remaining} squares left.`;
+			showRestartButton();
+		}
+
+		function showRestartButton() {
+			const restartContainer = document.getElementById('restartButtonContainer');
+			restartContainer.innerHTML = '<button class="restart-button" onclick="startGame()">🔄 Restart Game</button>';
+		}
+
+		// Allow Enter key to start game
+		document.getElementById('boardSize').addEventListener('keypress', (e) => {
+			if (e.key === 'Enter') {
+				startGame();
+			}
+		});
+		
+		// Initialize audio on page load
+		window.addEventListener('load', () => {
+			initAudio();
+			// Try to start music immediately (will work after user interaction)
+			document.addEventListener('click', () => {
+				if (audioContext && !musicPlaying) {
+					startBackgroundMusic();
+				}
+			}, { once: true });
+		});
+	</script>
+</body>
+</html>

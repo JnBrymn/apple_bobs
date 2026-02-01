@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Box One - Escape Game</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+			min-height: 100vh;
+			font-family: 'Georgia', serif;
+			color: white;
+			padding: 20px;
+		}
+
+		.container {
+			max-width: 1000px;
+			margin: 0 auto;
+		}
+
+		.box-top {
+			text-align: center;
+			margin-bottom: 40px;
+		}
+
+		.box-top h1 {
+			font-size: 4em;
+			margin-bottom: 20px;
+			color: #d4af37;
+			text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+			font-family: 'Times New Roman', serif;
+		}
+
+		.box-top p {
+			font-size: 1.3em;
+			font-style: italic;
+			color: #f4e4bc;
+		}
+
+		.trivia-section {
+			background: rgba(244, 228, 188, 0.1);
+			border: 3px solid #d4af37;
+			border-radius: 15px;
+			padding: 30px;
+			margin: 30px 0;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+		}
+
+		.trivia-card {
+			background: rgba(212, 175, 55, 0.2);
+			border: 2px solid #d4af37;
+			border-radius: 10px;
+			padding: 25px;
+			margin: 20px 0;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		.trivia-card:hover {
+			transform: scale(1.02);
+			box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+		}
+
+		.trivia-card.answered {
+			background: rgba(76, 175, 80, 0.3);
+			border-color: #4CAF50;
+		}
+
+		.trivia-question {
+			font-size: 1.4em;
+			margin-bottom: 15px;
+			color: #d4af37;
+		}
+
+		.trivia-options {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			margin-top: 15px;
+		}
+
+		.option-btn {
+			background: rgba(255,255,255,0.1);
+			border: 2px solid rgba(255,255,255,0.3);
+			border-radius: 8px;
+			padding: 15px;
+			color: white;
+			font-size: 1.1em;
+			cursor: pointer;
+			transition: all 0.3s;
+		}
+
+		.option-btn:hover {
+			background: rgba(212, 175, 55, 0.3);
+			border-color: #d4af37;
+		}
+
+		.option-btn.correct {
+			background: rgba(76, 175, 80, 0.5);
+			border-color: #4CAF50;
+		}
+
+		.option-btn.wrong {
+			background: rgba(255, 0, 0, 0.3);
+			border-color: #ff4444;
+		}
+
+		.hidden-compartment {
+			display: none;
+			background: rgba(0,0,0,0.7);
+			border: 3px solid #d4af37;
+			border-radius: 15px;
+			padding: 30px;
+			margin: 30px 0;
+			text-align: center;
+		}
+
+		.hidden-compartment.revealed {
+			display: block;
+			animation: reveal 0.5s ease-out;
+		}
+
+		@keyframes reveal {
+			from { opacity: 0; transform: translateY(20px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+
+		.code-display {
+			font-size: 3em;
+			letter-spacing: 20px;
+			color: #d4af37;
+			margin: 30px 0;
+			font-family: 'Courier New', monospace;
+		}
+
+		input {
+			background: rgba(244, 228, 188, 0.2);
+			border: 2px solid #d4af37;
+			border-radius: 8px;
+			padding: 15px;
+			color: #f4e4bc;
+			font-size: 1.3em;
+			width: 100%;
+			max-width: 400px;
+			margin: 20px 0;
+			text-align: center;
+			font-family: 'Courier New', monospace;
+		}
+
+		input:focus {
+			outline: none;
+			border-color: #ffd700;
+			box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+		}
+
+		button {
+			background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+			border: none;
+			border-radius: 8px;
+			padding: 15px 30px;
+			color: #1a0f08;
+			font-size: 1.2em;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+			margin: 10px;
+			font-family: 'Georgia', serif;
+		}
+
+		button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 5px 20px rgba(212, 175, 55, 0.6);
+		}
+
+		.success {
+			background: rgba(76, 175, 80, 0.8);
+			color: white;
+			padding: 20px;
+			border-radius: 10px;
+			margin: 20px 0;
+			text-align: center;
+			font-weight: bold;
+			font-size: 1.2em;
+		}
+
+		#timer {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			background: rgba(212, 175, 55, 0.9);
+			padding: 15px 25px;
+			border-radius: 10px;
+			font-size: 1.5em;
+			font-weight: bold;
+			color: #1a0f08;
+			box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+		}
+
+		.victory {
+			text-align: center;
+			margin-top: 50px;
+			display: none;
+		}
+
+		.victory h1 {
+			font-size: 5em;
+			color: #d4af37;
+			margin-bottom: 30px;
+			text-shadow: 0 0 30px rgba(212, 175, 55, 0.8);
+		}
+	</style>
+</head>
+<body>
+	<!-- Bo wants: Box One escape game - starts as trivia cards, reveals hidden codes and compartments as you progress -->
+	
+	<div id="timer">⏰ <span id="timeLeft">120:00</span></div>
+	
+	<div class="container">
+		<div class="box-top">
+			<h1>📦 BOX ONE</h1>
+			<p>Presented by Neil Patrick Harris</p>
+			<p style="margin-top: 20px; font-size: 1em;">A single-player puzzle experience</p>
+		</div>
+
+		<div class="trivia-section">
+			<h2 style="color: #d4af37; margin-bottom: 20px; font-size: 2em;">🎴 Trivia Cards</h2>
+			<p style="margin-bottom: 20px; font-size: 1.1em;">Answer the trivia questions. Look carefully - the answers may reveal hidden secrets...</p>
+
+			<!-- Trivia Card 1 -->
+			<div class="trivia-card" id="card1">
+				<div class="trivia-question">Question 1: What is the capital of France?</div>
+				<div class="trivia-options">
+					<button class="option-btn" onclick="answerQuestion(1, 'Paris', true)">A) Paris</button>
+					<button class="option-btn" onclick="answerQuestion(1, 'London', false)">B) London</button>
+					<button class="option-btn" onclick="answerQuestion(1, 'Berlin', false)">C) Berlin</button>
+					<button class="option-btn" onclick="answerQuestion(1, 'Madrid', false)">D) Madrid</button>
+				</div>
+				<div id="card1Result"></div>
+			</div>
+
+			<!-- Trivia Card 2 -->
+			<div class="trivia-card" id="card2">
+				<div class="trivia-question">Question 2: How many sides does a triangle have?</div>
+				<div class="trivia-options">
+					<button class="option-btn" onclick="answerQuestion(2, '2', false)">A) 2</button>
+					<button class="option-btn" onclick="answerQuestion(2, '3', true)">B) 3</button>
+					<button class="option-btn" onclick="answerQuestion(2, '4', false)">C) 4</button>
+					<button class="option-btn" onclick="answerQuestion(2, '5', false)">D) 5</button>
+				</div>
+				<div id="card2Result"></div>
+			</div>
+
+			<!-- Trivia Card 3 -->
+			<div class="trivia-card" id="card3">
+				<div class="trivia-question">Question 3: What is 5 + 7?</div>
+				<div class="trivia-options">
+					<button class="option-btn" onclick="answerQuestion(3, '10', false)">A) 10</button>
+					<button class="option-btn" onclick="answerQuestion(3, '11', false)">B) 11</button>
+					<button class="option-btn" onclick="answerQuestion(3, '12', true)">C) 12</button>
+					<button class="option-btn" onclick="answerQuestion(3, '13', false)">D) 13</button>
+				</div>
+				<div id="card3Result"></div>
+			</div>
+
+			<!-- Trivia Card 4 -->
+			<div class="trivia-card" id="card4">
+				<div class="trivia-question">Question 4: What color do you get when you mix red and blue?</div>
+				<div class="trivia-options">
+					<button class="option-btn" onclick="answerQuestion(4, 'Green', false)">A) Green</button>
+					<button class="option-btn" onclick="answerQuestion(4, 'Purple', true)">B) Purple</button>
+					<button class="option-btn" onclick="answerQuestion(4, 'Orange', false)">C) Orange</button>
+					<button class="option-btn" onclick="answerQuestion(4, 'Yellow', false)">D) Yellow</button>
+				</div>
+				<div id="card4Result"></div>
+			</div>
+
+			<!-- Trivia Card 5 -->
+			<div class="trivia-card" id="card5">
+				<div class="trivia-question">Question 5: How many letters are in the word "PUZZLE"?</div>
+				<div class="trivia-options">
+					<button class="option-btn" onclick="answerQuestion(5, '5', false)">A) 5</button>
+					<button class="option-btn" onclick="answerQuestion(5, '6', true)">B) 6</button>
+					<button class="option-btn" onclick="answerQuestion(5, '7', false)">C) 7</button>
+					<button class="option-btn" onclick="answerQuestion(5, '8', false)">D) 8</button>
+				</div>
+				<div id="card5Result"></div>
+			</div>
+		</div>
+
+		<!-- Hidden Compartment 1: Revealed after all trivia -->
+		<div class="hidden-compartment" id="compartment1">
+			<h2 style="color: #d4af37; font-size: 2em; margin-bottom: 20px;">🔓 Hidden Compartment Revealed!</h2>
+			<p style="font-size: 1.3em; margin: 20px 0;">Look at the first letters of the correct answers:</p>
+			<p style="font-size: 1.5em; color: #d4af37; margin: 20px 0;">P - 3 - 1 - P - 6</p>
+			<p style="font-size: 1.2em; margin: 20px 0;">Now take the positions: 1st, 3rd, 1st, 4th, 6th letter of the alphabet</p>
+			<p style="font-size: 1.5em; color: #ffd700; margin: 30px 0; font-family: 'Courier New', monospace;">A - C - A - D - F</p>
+			<p style="font-size: 1.2em; margin: 20px 0;">Enter the code: <strong>ACADF</strong></p>
+		</div>
+
+		<!-- Hidden Compartment 2: Code Entry -->
+		<div class="hidden-compartment" id="compartment2">
+			<h2 style="color: #d4af37; font-size: 2em; margin-bottom: 20px;">🔐 Enter the Code</h2>
+			<input type="text" id="codeInput" placeholder="Enter code" maxlength="5">
+			<button onclick="checkCode()">Submit Code</button>
+			<div id="codeResult"></div>
+		</div>
+
+		<!-- Final Challenge -->
+		<div class="hidden-compartment" id="finalChallenge">
+			<h2 style="color: #d4af37; font-size: 2.5em; margin-bottom: 30px;">🏆 Final Challenge</h2>
+			<p style="font-size: 1.5em; margin: 30px 0;">Congratulations! You've unlocked the final puzzle.</p>
+			<p style="font-size: 1.3em; margin: 20px 0;">The final code is the sum of all trivia answer numbers: 1 + 3 + 12 + 4 + 6 = ?</p>
+			<input type="number" id="finalAnswer" placeholder="Enter final answer">
+			<button onclick="completeGame()" style="font-size: 1.5em; padding: 20px 40px;">🎯 COMPLETE BOX ONE</button>
+			<div id="finalResult"></div>
+		</div>
+
+		<!-- Victory Screen -->
+		<div id="victory" class="victory">
+			<h1>🎉 BOX ONE COMPLETE! 🎉</h1>
+			<p style="font-size: 2em; margin: 30px 0; color: #d4af37;">You have successfully solved all puzzles!</p>
+			<p style="font-size: 1.5em; margin: 20px 0;">Time remaining: <span id="finalTime"></span></p>
+			<button onclick="location.reload()" style="font-size: 1.3em; padding: 20px 40px;">Play Again</button>
+		</div>
+	</div>
+
+	<script>
+		let timeLeft = 120 * 60; // 2 hours
+		let answeredCards = 0;
+		let correctAnswers = [];
+		let codeRevealed = false;
+
+		function updateTimer() {
+			if (timeLeft <= 0) {
+				alert('⏰ TIME\'S UP! Game Over!');
+				location.reload();
+				return;
+			}
+			
+			const hours = Math.floor(timeLeft / 3600);
+			const minutes = Math.floor((timeLeft % 3600) / 60);
+			const seconds = timeLeft % 60;
+			
+			if (hours > 0) {
+				document.getElementById('timeLeft').textContent = 
+					`${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			} else {
+				document.getElementById('timeLeft').textContent = 
+					`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+			}
+			timeLeft--;
+		}
+
+		setInterval(updateTimer, 1000);
+
+		function answerQuestion(cardNum, answer, isCorrect) {
+			const card = document.getElementById('card' + cardNum);
+			const resultDiv = document.getElementById('card' + cardNum + 'Result');
+			const buttons = card.querySelectorAll('.option-btn');
+			
+			// Disable all buttons
+			buttons.forEach(btn => {
+				btn.style.pointerEvents = 'none';
+				if (btn.textContent.includes(answer)) {
+					if (isCorrect) {
+						btn.classList.add('correct');
+					} else {
+						btn.classList.add('wrong');
+					}
+				}
+			});
+
+			// Mark correct button
+			buttons.forEach(btn => {
+				if (btn.onclick.toString().includes('true')) {
+					if (!btn.classList.contains('wrong')) {
+						btn.classList.add('correct');
+					}
+				}
+			});
+
+			if (isCorrect) {
+				card.classList.add('answered');
+				answeredCards++;
+				correctAnswers.push(answer);
+				resultDiv.innerHTML = '<div class="success">✅ Correct! Keep going...</div>';
+				
+				if (answeredCards === 5) {
+					setTimeout(() => {
+						revealCompartment1();
+					}, 1000);
+				}
+			} else {
+				resultDiv.innerHTML = '<div style="background: rgba(255,0,0,0.6); padding: 10px; border-radius: 5px; margin-top: 10px;">❌ Try again!</div>';
+				setTimeout(() => {
+					resultDiv.innerHTML = '';
+					buttons.forEach(btn => {
+						btn.style.pointerEvents = 'auto';
+						btn.classList.remove('correct', 'wrong');
+					});
+				}, 2000);
+			}
+		}
+
+		function revealCompartment1() {
+			document.getElementById('compartment1').classList.add('revealed');
+			setTimeout(() => {
+				document.getElementById('compartment2').classList.add('revealed');
+			}, 2000);
+		}
+
+		function checkCode() {
+			const code = document.getElementById('codeInput').value.toUpperCase().trim();
+			if (code === 'ACADF') {
+				document.getElementById('codeResult').innerHTML = '<div class="success">✅ Code Accepted! Final challenge unlocked!</div>';
+				setTimeout(() => {
+					document.getElementById('finalChallenge').classList.add('revealed');
+				}, 1500);
+			} else {
+				document.getElementById('codeResult').innerHTML = '<div style="background: rgba(255,0,0,0.6); padding: 15px; border-radius: 5px; margin-top: 10px;">❌ Incorrect code. Check the hidden compartment again.</div>';
+			}
+		}
+
+		function completeGame() {
+			const answer = parseInt(document.getElementById('finalAnswer').value);
+			if (answer === 26) { // 1 + 3 + 12 + 4 + 6 = 26
+				document.getElementById('finalTime').textContent = document.getElementById('timeLeft').textContent;
+				document.querySelector('.container').style.display = 'none';
+				document.getElementById('victory').style.display = 'block';
+			} else {
+				document.getElementById('finalResult').innerHTML = '<div style="background: rgba(255,0,0,0.6); padding: 15px; border-radius: 5px; margin-top: 10px;">❌ Not quite! Add: 1 + 3 + 12 + 4 + 6</div>';
+			}
+		}
+	</script>
+</body>
+</html>
+

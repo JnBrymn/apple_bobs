@@ -13,8 +13,8 @@ import qrcode
 def find_game_pages():
     """Find all index.html files except the root one."""
     pages = glob.glob("**/index.html", recursive=True)
-    # Filter out the root index.html
-    pages = [page for page in pages if page != "index.html"]
+    # Filter out the root index.html and normalize paths for cross-platform
+    pages = [page.replace("\\", "/") for page in pages if page != "index.html"]
     return sorted(pages)
 
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
@@ -43,11 +43,9 @@ def create_menu_html(pages):
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def generate_qr_code(game_path):
     """Generate QR code for a game if it doesn't exist."""
-    # Ensure qr_codes directory exists
-    os.makedirs("qr_codes", exist_ok=True)
-    
-    # QR code filename
+    # QR code filename (may have subdirs, e.g. fire_feild/progress_quest)
     qr_filename = f"qr_codes/{game_path}.png"
+    os.makedirs(os.path.dirname(qr_filename), exist_ok=True)
     
     # Check if QR code already exists
     if os.path.exists(qr_filename):

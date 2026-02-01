@@ -1,0 +1,384 @@
+<!--
+Poly-Go: A game of Go played on a 3D polytope
+- Currently using icosahedron
+- Players alternate placing stones (black starts)
+- Click on any vertex to place a stone
+- Future: detect liberties, capture stones, undo/redo
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Poly-Go</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background: #1a1a1a;
+			font-family: Arial, sans-serif;
+		}
+		#info {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			color: white;
+			z-index: 100;
+			background: rgba(0,0,0,0.7);
+			padding: 10px;
+			border-radius: 5px;
+		}
+		#canvas-container {
+			width: 100vw;
+			height: 100vh;
+		}
+	</style>
+</head>
+<body>
+	<div id="info">
+		<div>Current Player: <span id="current-player">Black</span></div>
+		<div>Click a vertex to place a stone</div>
+		<div>Use WASD to rotate</div>
+	</div>
+	<div id="canvas-container"></div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+	<script>
+		// Game state
+		let currentPlayer = 'black'; // 'black' or 'white'
+		const stones = new Map(); // vertex index -> player color
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+
+		// Rotation controls
+		const keys = {};
+		const rotationSpeed = 0.02;
+
+		// Scene setup
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0x1a1a1a);
+
+		const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+		camera.position.set(0, 0, 5);
+
+		const renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+		// Lighting
+		const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+		scene.add(ambientLight);
+		const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+		directionalLight.position.set(5, 5, 5);
+		scene.add(directionalLight);
+
+		// Polytope definition: Icosahedron
+		// Vertices: 12 vertices using golden ratio coordinates
+		const φ = (1 + Math.sqrt(5)) / 2; // Golden ratio
+		const scale = 2; // Scale factor for size
+		
+		const polytopeVertices = [
+			[0, 1, φ], [0, 1, -φ], [0, -1, φ], [0, -1, -φ],
+			[1, φ, 0], [1, -φ, 0], [-1, φ, 0], [-1, -φ, 0],
+			[φ, 0, 1], [φ, 0, -1], [-φ, 0, 1], [-φ, 0, -1]
+		].map(v => {
+			// Normalize and scale
+			const vec = new THREE.Vector3(v[0], v[1], v[2]).normalize();
+			return vec.multiplyScalar(scale);
+		});
+
+		// Edges: 30 edges connecting vertices
+		// Create edge set for quick lookup
+		const edgeSet = new Set();
+		const polytopeEdges = [
+			[0, 2], [0, 4], [0, 6], [0, 8], [0, 10],
+			[1, 3], [1, 4], [1, 6], [1, 9], [1, 11],
+			[2, 5], [2, 7], [2, 8], [2, 10],
+			[3, 5], [3, 7], [3, 9], [3, 11],
+			[4, 6], [4, 8], [4, 9],
+			[5, 7], [5, 8], [5, 9],
+			[6, 10], [6, 11],
+			[7, 10], [7, 11],
+			[8, 9],
+			[10, 11]
+		];
+		polytopeEdges.forEach(edge => {
+			edgeSet.add(`${Math.min(edge[0], edge[1])},${Math.max(edge[0], edge[1])}`);
+		});
+
+		// Helper function to check if an edge exists
+		function hasEdge(v1, v2) {
+			return edgeSet.has(`${Math.min(v1, v2)},${Math.max(v1, v2)}`);
+		}
+
+		// Faces: 20 triangular faces
+		// Correct face definitions from Paul Bourke icosahedron.vf file
+		// Mapping from vf file vertices (v1-v12) to our vertex indices (0-11):
+		// vf file uses: a=1, b=φ
+		// v1:(0,b,-a)=(0,φ,-1) → our 8:(φ,0,1) after coordinate transform
+		// v2:(b,a,0)=(φ,1,0) → our 4:(1,φ,0)
+		// v3:(-b,a,0)=(-φ,1,0) → our 6:(-1,φ,0)
+		// v4:(0,b,a)=(0,φ,1) → our 0:(0,1,φ)
+		// v5:(0,-b,a)=(0,-φ,1) → our 2:(0,-1,φ)
+		// v6:(-a,0,b)=(-1,0,φ) → our 10:(-φ,0,1)
+		// v7:(0,-b,-a)=(0,-φ,-1) → our 3:(0,-1,-φ)
+		// v8:(a,0,-b)=(1,0,-φ) → our 9:(φ,0,-1)
+		// v9:(a,0,b)=(1,0,φ) → our 8:(φ,0,1) - wait, this conflicts
+		// 
+		// Actually, let's map by matching normalized coordinates:
+		// After careful analysis, the mapping is:
+		// v1→1, v2→4, v3→6, v4→0, v5→2, v6→10, v7→3, v8→9, v9→8, v10→11, v11→5, v12→7
+		// But this needs verification. Let's use the face connectivity from the vf file
+		// and map it correctly to our vertex indices.
+		
+		// Mapping: vf vertex index (1-12) → our vertex index (0-11)
+		// Based on coordinate matching: v1→1, v2→4, v3→6, v4→0, v5→2, v6→10, 
+		// v7→3, v8→9, v9→8, v10→11, v11→5, v12→7
+		const vfToOur = [null, 1, 4, 6, 0, 2, 10, 3, 9, 8, 11, 5, 7]; // index 0 unused
+		
+		// Faces from icosahedron.vf file, mapped to our vertex indices
+		const polytopeFaces = [
+			// f1: v1 v2 v3 → [1, 4, 6]
+			[vfToOur[1], vfToOur[2], vfToOur[3]],
+			// f2: v4 v3 v2 → [0, 6, 4]
+			[vfToOur[4], vfToOur[3], vfToOur[2]],
+			// f3: v4 v5 v6 → [0, 2, 10]
+			[vfToOur[4], vfToOur[5], vfToOur[6]],
+			// f4: v4 v9 v5 → [0, 8, 2]
+			[vfToOur[4], vfToOur[9], vfToOur[5]],
+			// f5: v1 v7 v8 → [1, 3, 9]
+			[vfToOur[1], vfToOur[7], vfToOur[8]],
+			// f6: v1 v10 v7 → [1, 11, 3]
+			[vfToOur[1], vfToOur[10], vfToOur[7]],
+			// f7: v5 v11 v12 → [2, 5, 7]
+			[vfToOur[5], vfToOur[11], vfToOur[12]],
+			// f8: v7 v12 v11 → [3, 7, 5]
+			[vfToOur[7], vfToOur[12], vfToOur[11]],
+			// f9: v3 v6 v10 → [6, 10, 11]
+			[vfToOur[3], vfToOur[6], vfToOur[10]],
+			// f10: v12 v10 v6 → [7, 11, 10]
+			[vfToOur[12], vfToOur[10], vfToOur[6]],
+			// f11: v2 v8 v9 → [4, 9, 8]
+			[vfToOur[2], vfToOur[8], vfToOur[9]],
+			// f12: v11 v9 v8 → [5, 8, 9]
+			[vfToOur[11], vfToOur[9], vfToOur[8]],
+			// f13: v4 v6 v3 → [0, 10, 6]
+			[vfToOur[4], vfToOur[6], vfToOur[3]],
+			// f14: v4 v2 v9 → [0, 4, 8]
+			[vfToOur[4], vfToOur[2], vfToOur[9]],
+			// f15: v1 v3 v10 → [1, 6, 11]
+			[vfToOur[1], vfToOur[3], vfToOur[10]],
+			// f16: v1 v8 v2 → [1, 9, 4]
+			[vfToOur[1], vfToOur[8], vfToOur[2]],
+			// f17: v7 v10 v12 → [3, 11, 7]
+			[vfToOur[7], vfToOur[10], vfToOur[12]],
+			// f18: v7 v11 v8 → [3, 5, 9]
+			[vfToOur[7], vfToOur[11], vfToOur[8]],
+			// f19: v5 v12 v6 → [2, 7, 10]
+			[vfToOur[5], vfToOur[12], vfToOur[6]],
+			// f20: v5 v9 v11 → [2, 8, 5]
+			[vfToOur[5], vfToOur[9], vfToOur[11]]
+		];
+
+		// Verify all faces are valid (check in console)
+		(function verifyAllFaces() {
+			const invalid = [];
+			polytopeFaces.forEach((face, i) => {
+				const [a, b, c] = face;
+				if (!hasEdge(a, b) || !hasEdge(b, c) || !hasEdge(c, a)) {
+					invalid.push(`Face ${i}: [${a}, ${b}, ${c}]`);
+				}
+			});
+			if (invalid.length > 0) {
+				console.error('Invalid faces detected:', invalid);
+			} else {
+				console.log('All 20 faces verified successfully');
+			}
+		})();
+
+		// Create a group to hold everything that should rotate together
+		const polytopeGroup = new THREE.Group();
+		scene.add(polytopeGroup);
+
+		// Create polytope mesh from explicit data
+		const geometry = new THREE.BufferGeometry();
+		const vertices = polytopeVertices.map(v => [v.x, v.y, v.z]).flat();
+		const indices = polytopeFaces.flat();
+		
+		geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+		geometry.setIndex(indices);
+		geometry.computeVertexNormals();
+		
+		const material = new THREE.MeshPhongMaterial({ 
+			color: 0x8B4513,
+			wireframe: false,
+			side: THREE.FrontSide // Only render front faces
+		});
+		const polytopeMesh = new THREE.Mesh(geometry, material);
+		polytopeGroup.add(polytopeMesh);
+
+		// Add black edges
+		const edgesGeometry = new THREE.EdgesGeometry(geometry);
+		const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+		const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+		polytopeGroup.add(edges);
+
+		// Create clickable vertex spheres (invisible but larger for easier clicking)
+		const vertexObjects = [];
+		polytopeVertices.forEach((vertex, index) => {
+			const sphereGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+			const sphereMaterial = new THREE.MeshBasicMaterial({ 
+				color: 0x00ff00,
+				transparent: true,
+				opacity: 0.3,
+				visible: false // Make invisible but still clickable
+			});
+			const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+			sphere.position.copy(vertex);
+			sphere.userData.vertexIndex = index;
+			polytopeGroup.add(sphere);
+			vertexObjects.push(sphere);
+		});
+
+		// Create visible vertex markers (small dots)
+		const vertexMarkers = [];
+		polytopeVertices.forEach((vertex, index) => {
+			const markerGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+			const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+			const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+			marker.position.copy(vertex);
+			polytopeGroup.add(marker);
+			vertexMarkers.push(marker);
+		});
+
+		// Create stone objects (will be added when placed)
+		const stoneMeshes = [];
+
+		// Function to check if a point is occluded by the polytope
+		function isPointOccluded(point) {
+			const direction = new THREE.Vector3().subVectors(point, camera.position).normalize();
+			const raycaster = new THREE.Raycaster(camera.position, direction);
+			const intersects = raycaster.intersectObject(polytopeMesh);
+			
+			if (intersects.length > 0) {
+				const distanceToPoint = camera.position.distanceTo(point);
+				const distanceToPolytope = intersects[0].distance;
+				// If polytope is closer than the point, the point is occluded
+				return distanceToPolytope < distanceToPoint - 0.01; // Small epsilon for floating point
+			}
+			return false;
+		}
+
+		// Function to update stone visibility based on occlusion
+		function updateStoneVisibility() {
+			stoneMeshes.forEach(stone => {
+				const worldPosition = new THREE.Vector3();
+				stone.getWorldPosition(worldPosition);
+				const occluded = isPointOccluded(worldPosition);
+				stone.visible = !occluded;
+			});
+		}
+
+		// Mouse click handler
+		function onMouseClick(event) {
+			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+			mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+			raycaster.setFromCamera(mouse, camera);
+			
+			// First check if ray hits the polytope mesh (to detect occlusion)
+			const polytopeIntersects = raycaster.intersectObject(polytopeMesh);
+			const vertexIntersects = raycaster.intersectObjects(vertexObjects);
+
+			if (vertexIntersects.length > 0) {
+				const clickedVertex = vertexIntersects[0].object;
+				const vertexIndex = clickedVertex.userData.vertexIndex;
+				const vertexDistance = vertexIntersects[0].distance;
+
+				// Check if vertex is occluded by the polytope mesh
+				// If polytope is hit and it's closer than the vertex, vertex is on the back
+				if (polytopeIntersects.length > 0 && polytopeIntersects[0].distance < vertexDistance) {
+					return; // Vertex is occluded, can't click it
+				}
+
+				// Check if vertex already has a stone
+				if (stones.has(vertexIndex)) {
+					return; // Can't place on occupied vertex
+				}
+
+				// Place stone
+				stones.set(vertexIndex, currentPlayer);
+				const vertex = polytopeVertices[vertexIndex];
+
+				// Create stone mesh
+				const stoneGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+				const stoneColor = currentPlayer === 'black' ? 0x000000 : 0xffffff;
+				const stoneMaterial = new THREE.MeshPhongMaterial({ 
+					color: stoneColor,
+					shininess: 100,
+					side: THREE.FrontSide // Only render front faces
+				});
+				const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
+				stone.position.copy(vertex);
+				stone.userData.vertexIndex = vertexIndex;
+				stone.raycast = function() {}; // Make stones non-clickable
+				polytopeGroup.add(stone);
+				stoneMeshes.push(stone);
+
+				// Update visibility immediately
+				updateStoneVisibility();
+
+				// Switch player
+				currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+				document.getElementById('current-player').textContent = 
+					currentPlayer === 'black' ? 'Black' : 'White';
+			}
+		}
+
+		window.addEventListener('click', onMouseClick);
+
+		// WASD keyboard controls
+		window.addEventListener('keydown', (event) => {
+			keys[event.key.toLowerCase()] = true;
+		});
+
+		window.addEventListener('keyup', (event) => {
+			keys[event.key.toLowerCase()] = false;
+		});
+
+		// Handle window resize
+		window.addEventListener('resize', () => {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		});
+
+		// Animation loop
+		function animate() {
+			requestAnimationFrame(animate);
+			
+			// WASD rotation controls
+			if (keys['w']) {
+				polytopeGroup.rotation.x -= rotationSpeed;
+			}
+			if (keys['s']) {
+				polytopeGroup.rotation.x += rotationSpeed;
+			}
+			if (keys['a']) {
+				polytopeGroup.rotation.y += rotationSpeed;
+			}
+			if (keys['d']) {
+				polytopeGroup.rotation.y -= rotationSpeed;
+			}
+
+			// Update stone visibility based on occlusion
+			updateStoneVisibility();
+
+			renderer.render(scene, camera);
+		}
+
+		animate();
+	</script>
+</body>
+</html>

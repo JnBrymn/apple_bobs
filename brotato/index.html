@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Brotato - Wave Survival Game</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background: #000000;
+			font-family: 'Bungee', cursive;
+		}
+		canvas {
+			display: block;
+			width: 100vw;
+			height: 100vh;
+			image-rendering: auto;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: optimizeQuality;
+		}
+		#ui {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			color: #00ff00;
+			font-size: 14px;
+			font-family: 'Bungee', cursive;
+			z-index: 10;
+			background: #000000;
+			padding: 8px;
+			border: 2px solid #00ff00;
+			border-radius: 0;
+			image-rendering: pixelated;
+		}
+		#waveInfo {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			color: #ffff00;
+			font-size: 16px;
+			font-family: 'Bungee', cursive;
+			font-weight: bold;
+			z-index: 10;
+			background: #000000;
+			padding: 10px;
+			border: 2px solid #ffff00;
+			border-radius: 0;
+			image-rendering: pixelated;
+		}
+		#shop {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: #000000;
+			color: #00ff00;
+			padding: 20px;
+			border-radius: 0;
+			border: 4px solid #00ff00;
+			z-index: 20;
+			display: none;
+			max-width: 600px;
+			width: 80%;
+			font-family: 'Bungee', cursive;
+			image-rendering: pixelated;
+		}
+		#shop h2 {
+			margin-top: 0;
+			text-align: center;
+			color: #ffff00;
+			font-size: 20px;
+			font-family: 'Bungee', cursive;
+		}
+		.shop-item {
+			position: relative;
+			background: #001100;
+			padding: 6px 8px;
+			margin: 5px 0;
+			border-radius: 0;
+			border: 2px solid #00ff00;
+			cursor: pointer;
+			transition: none;
+			font-family: 'Bungee', cursive;
+			font-size: 11px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+		.shop-item-content {
+			flex: 1;
+		}
+		.shop-item-price {
+			color: #ffff00;
+			font-weight: bold;
+			font-size: 13px;
+			white-space: nowrap;
+		}
+		.shop-item-lock {
+			position: absolute;
+			top: 4px;
+			right: 4px;
+			font-size: 16px;
+			opacity: 0.9;
+		}
+		.shop-lock-btn {
+			background: #002200;
+			border: 2px solid #00ff00;
+			color: #ffff00;
+			cursor: pointer;
+			padding: 2px 6px;
+			font-size: 14px;
+			line-height: 1;
+			border-radius: 2px;
+			font-family: 'Bungee', cursive;
+		}
+		.shop-lock-btn:hover {
+			background: #003300;
+			border-color: #ffff00;
+		}
+		.shop-lock-btn.locked {
+			border-color: #ffff00;
+			background: #004400;
+		}
+		.shop-item:hover {
+			background: #003300;
+			border-color: #ffff00;
+		}
+		.shop-item h3 {
+			margin: 0 0 3px 0;
+			color: #ffff00;
+			font-size: 12px;
+			font-family: 'Bungee', cursive;
+		}
+		.shop-item p {
+			margin: 3px 0;
+			font-size: 10px;
+			color: #00ff00;
+			font-family: 'Bungee', cursive;
+		}
+		#gameOver {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: #ff0000;
+			font-size: 32px;
+			font-weight: bold;
+			font-family: 'Bungee', cursive;
+			text-align: center;
+			z-index: 30;
+			display: none;
+			background: #000000;
+			padding: 30px;
+			border: 4px solid #ff0000;
+			border-radius: 0;
+			image-rendering: pixelated;
+		}
+		#gameOver button {
+			margin-top: 20px;
+			padding: 10px 20px;
+			font-size: 16px;
+			font-family: 'Bungee', cursive;
+			background: #000000;
+			color: #00ff00;
+			border: 2px solid #00ff00;
+			border-radius: 0;
+			cursor: pointer;
+		}
+		#gameOver button:hover {
+			background: #001100;
+			border-color: #ffff00;
+		}
+		#inventory {
+			position: absolute;
+			bottom: 10px;
+			right: 10px;
+			z-index: 10;
+		}
+		#inventoryBtn {
+			background: #000000;
+			color: #00ff00;
+			border: 2px solid #00ff00;
+			padding: 8px 16px;
+			border-radius: 0;
+			cursor: pointer;
+			font-size: 12px;
+			font-weight: bold;
+			font-family: 'Bungee', cursive;
+			image-rendering: pixelated;
+		}
+		#inventoryBtn:hover {
+			background: #001100;
+			border-color: #ffff00;
+		}
+		#inventoryPanel {
+			position: absolute;
+			bottom: 60px;
+			right: 10px;
+			background: #000000;
+			color: #00ff00;
+			padding: 15px;
+			border-radius: 0;
+			border: 3px solid #00ff00;
+			z-index: 20;
+			display: none;
+			max-width: 400px;
+			max-height: 500px;
+			overflow-y: auto;
+			font-family: 'Bungee', cursive;
+			image-rendering: pixelated;
+		}
+		#inventoryPanel h3 {
+			margin-top: 0;
+			color: #ffff00;
+			font-size: 14px;
+			font-family: 'Bungee', cursive;
+		}
+		.inventory-item {
+			background: #001100;
+			padding: 8px;
+			margin: 4px 0;
+			border-radius: 0;
+			border: 2px solid #00ff00;
+			font-family: 'Bungee', cursive;
+			cursor: pointer;
+		}
+		.inventory-item:hover {
+			background: #002200;
+			border-color: #ffff00;
+		}
+		.inventory-item.selected {
+			border-color: #ffff00;
+			background: #003300;
+		}
+		.inventory-item-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		.inventory-item-name {
+			font-weight: bold;
+			color: #ffff00;
+			font-size: 12px;
+			font-family: 'Bungee', cursive;
+		}
+		.inventory-item-stats {
+			font-size: 10px;
+			margin-top: 5px;
+			color: #00ff00;
+			font-family: 'Bungee', cursive;
+		}
+		.inventory-item-actions {
+			margin-top: 8px;
+			display: flex;
+			gap: 5px;
+		}
+		.inventory-btn {
+			background: #000000;
+			color: #00ff00;
+			border: 2px solid #00ff00;
+			padding: 4px 8px;
+			border-radius: 0;
+			cursor: pointer;
+			font-size: 10px;
+			font-family: 'Bungee', cursive;
+		}
+		.inventory-btn:hover {
+			background: #001100;
+			border-color: #ffff00;
+		}
+		.inventory-btn.sell {
+			background: #000000;
+			border-color: #ff0000;
+			color: #ff0000;
+		}
+		.inventory-btn.sell:hover {
+			background: #110000;
+			border-color: #ff8800;
+		}
+		.inventory-btn.combine {
+			background: #000000;
+			border-color: #00ff00;
+			color: #00ff00;
+		}
+		.inventory-btn.combine:hover {
+			background: #001100;
+			border-color: #ffff00;
+		}
+		#itemDetail {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: #000000;
+			color: #00ff00;
+			padding: 20px;
+			border-radius: 0;
+			border: 4px solid #00ff00;
+			z-index: 30;
+			display: none;
+			max-width: 500px;
+			font-family: 'Bungee', cursive;
+			image-rendering: pixelated;
+		}
+		#itemDetail h3 {
+			margin-top: 0;
+			color: #ffff00;
+			font-size: 16px;
+			font-family: 'Bungee', cursive;
+		}
+		#itemDetail button {
+			margin-top: 15px;
+			padding: 8px 16px;
+			background: #000000;
+			color: #00ff00;
+			border: 2px solid #00ff00;
+			border-radius: 0;
+			cursor: pointer;
+			font-size: 12px;
+			font-family: 'Bungee', cursive;
+		}
+		#itemDetail button:hover {
+			background: #001100;
+			border-color: #ffff00;
+		}
+		#characterSelect {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: #16213e;
+			color: #fff;
+			padding: 30px;
+			border-radius: 10px;
+			border: 3px solid #0f3460;
+			z-index: 40;
+			display: none;
+			max-width: 700px;
+			width: 90%;
+			max-height: 80vh;
+			overflow-y: auto;
+		}
+		#characterSelect h2 {
+			margin-top: 0;
+			color: #e94560;
+			text-align: center;
+		}
+		.character-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+			gap: 8px;
+			margin-top: 20px;
+		}
+		.character-card {
+			background: #0f3460;
+			padding: 6px;
+			border-radius: 4px;
+			border: 1px solid #1a4a7a;
+			cursor: pointer;
+			transition: all 0.2s;
+			text-align: center;
+		}
+		.character-card:hover {
+			background: #1a4a7a;
+			border-color: #e94560;
+			transform: scale(1.05);
+		}
+		.character-card.locked {
+			opacity: 0.5;
+			cursor: not-allowed;
+			position: relative;
+		}
+		.character-card.locked::after {
+			content: 'LOCKED';
+			position: absolute;
+			top: 2px;
+			right: 2px;
+			font-size: 6px;
+			font-family: 'Bungee', cursive;
+			color: #ff0000;
+		}
+		.character-card.selected {
+			border-color: #00ff00;
+			background: #1a4a7a;
+		}
+		.character-name {
+			font-weight: bold;
+			font-size: 10px;
+			color: #e94560;
+			margin-bottom: 3px;
+		}
+		.character-stats {
+			font-size: 7px;
+			color: #aaa;
+			margin-top: 2px;
+		}
+		.character-emoji {
+			font-size: 16px;
+			margin-bottom: 2px;
+			font-family: 'Bungee', cursive;
+			color: #ffffff;
+		}
+	</style>
+</head>
+<body>
+	<div id="ui">
+		<div>Money: $<span id="moneyDisplay">0</span></div>
+		<div>Health: <span id="health">100</span>/<span id="maxHealth">100</span></div>
+		<div>Level: <span id="level">1</span></div>
+		<div>XP: <span id="xp">0</span>/<span id="xpNeeded">10</span></div>
+		<div>Weapons: <span id="weaponCount">1</span>/6</div>
+	</div>
+	<div id="waveInfo">
+		<div>Wave <span id="wave">1</span></div>
+		<div style="font-size: 16px;">Enemies: <span id="enemiesLeft">0</span></div>
+		<div style="font-size: 20px; color: #ffff00; margin-top: 5px;">Time: <span id="waveTimer">30</span></div>
+	</div>
+	<div id="shop">
+		<h2>Choose an Upgrade!</h2>
+		<div style="color: #ffff00; font-size: 16px; margin-bottom: 10px;">Your money: $<span id="shopMoneyDisplay">0</span></div>
+		<div id="shopStats" style="background: #0a0a1a; padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 2px solid #333;">
+			<h3 style="margin-top: 0; color: #e94560; font-size: 16px;">Your Stats:</h3>
+			<div id="shopStatsContent" style="font-size: 12px; line-height: 1.6;"></div>
+		</div>
+		<div id="shopItems"></div>
+		<div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+			<button id="shopRerollBtn" style="padding: 6px 12px; font-size: 12px; font-family: 'Bungee', cursive; background: #001100; color: #ffff00; border: 2px solid #00ff00; cursor: pointer;">Reroll ($10)</button>
+			<button id="shopReadyBtn" style="padding: 6px 12px; font-size: 12px; font-family: 'Bungee', cursive; background: #003300; color: #00ff00; border: 2px solid #00ff00; cursor: pointer;">Ready for next wave</button>
+		</div>
+	</div>
+	<div id="gameOver">
+		<div>GAME OVER</div>
+		<div style="font-size: 24px; margin-top: 10px;">You survived <span id="finalWave">0</span> waves!</div>
+		<button onclick="restartGame()">Play Again</button>
+	</div>
+	<div id="inventory" style="display: none;">
+		<div id="inventoryPanel">
+			<h3>Your Guns</h3>
+			<p style="font-size: 10px; color: #888;">Click two of the same gun (same level) to combine (max Lv5).</p>
+			<div id="inventoryItems"></div>
+		</div>
+	</div>
+	<div id="itemDetail">
+		<h3 id="detailName"></h3>
+		<div id="detailStats"></div>
+		<button onclick="closeItemDetail()">Close</button>
+	</div>
+	<div id="characterSelect">
+		<h2>Choose Your Potato!</h2>
+		<div id="characterGrid" class="character-grid"></div>
+		<button onclick="startGameWithCharacter()" style="margin-top: 20px; padding: 15px 30px; background: #e94560; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; width: 100%; font-family: 'Bungee', cursive;">Start Game</button>
+	</div>
+	<canvas id="gameCanvas"></canvas>
+
+	<script>
+		// Game setup
+		const canvas = document.getElementById('gameCanvas');
+		const ctx = canvas.getContext('2d');
+		const playerImage = new Image();
+		playerImage.src = 'player.png';
+		const enemyImage = new Image();
+		enemyImage.src = 'enemy.png';
+		
+		// Set canvas size - ULTRA HD (2x resolution for super sharp graphics)
+		const pixelRatio = window.devicePixelRatio || 2;
+		canvas.width = Math.floor(window.innerWidth * pixelRatio * 2); // 2x Ultra HD
+		canvas.height = Math.floor(window.innerHeight * pixelRatio * 2); // 2x Ultra HD
+		canvas.style.width = window.innerWidth + 'px';
+		canvas.style.height = window.innerHeight + 'px';
+		
+		window.addEventListener('resize', () => {
+			const pixelRatio = window.devicePixelRatio || 2;
+			canvas.width = Math.floor(window.innerWidth * pixelRatio * 2); // Ultra HD
+			canvas.height = Math.floor(window.innerHeight * pixelRatio * 2); // Ultra HD
+			canvas.style.width = window.innerWidth + 'px';
+			canvas.style.height = window.innerHeight + 'px';
+			player.x = Math.min(player.x, canvas.width - player.radius);
+			player.y = Math.min(player.y, canvas.height - player.radius);
+		});
+		
+		// Game state
+		let gameState = 'characterSelect'; // 'characterSelect', 'playing', 'shop', 'gameOver'
+		let wave = 1;
+		let enemies = [];
+		let trees = [];
+		let projectiles = [];
+		let moneyDrops = []; // { x, y, amount } - must pick up before wave ends
+		let weaponDrops = []; // { x, y, weaponType } - must pick up (disappear at wave end)
+		let money = 0;
+		let xp = 0;
+		let xpNeeded = 10;
+		let level = 1;
+		let health = 100;
+		let maxHealth = 100;
+		let waveCompleteTimer = null;
+		let waveTimer = 0; // Time remaining in current wave (seconds)
+		let waveDuration = 30; // Wave duration in seconds
+		let enemySpawnTimer = 0; // Timer for continuous enemy spawning
+		let enemySpawnInterval = 2000; // Spawn enemy every 2 seconds (milliseconds)
+		let selectedCharacter = null;
+		let highestWaveReached = 0;
+		let unlockedPotatoes = [0]; // Start with first potato unlocked
+		const MAX_POTATOES = 100;
+		
+		// Potato characters
+		const potatoCharacters = [
+			{ id: 0, name: 'Basic Potato', emoji: '🥔', unlockWave: 0, bonus: { damage: 0, speed: 0, health: 0 } },
+			{ id: 1, name: 'Fast Potato', emoji: '🏃', unlockWave: 1, bonus: { damage: 0, speed: 0.5, health: 0 } },
+			{ id: 2, name: 'Tank Potato', emoji: '🛡️', unlockWave: 2, bonus: { damage: 0, speed: 0, health: 50 } },
+			{ id: 3, name: 'Damage Potato', emoji: '⚔️', unlockWave: 3, bonus: { damage: 0.3, speed: 0, health: 0 } },
+			{ id: 4, name: 'Speed Demon', emoji: '💨', unlockWave: 4, bonus: { damage: 0, speed: 1, health: -20 } },
+			{ id: 5, name: 'Warrior Potato', emoji: '🗡️', unlockWave: 5, bonus: { damage: 0.2, speed: 0.2, health: 20 } },
+			{ id: 6, name: 'Lucky Potato', emoji: '🍀', unlockWave: 6, bonus: { damage: 0, speed: 0, health: 0, critChance: 20 } },
+			{ id: 7, name: 'Vampire Potato', emoji: '🧛', unlockWave: 7, bonus: { damage: 0, speed: 0, health: 0, lifeSteal: 10 } },
+			{ id: 8, name: 'Ninja Potato', emoji: '🥷', unlockWave: 8, bonus: { damage: 0.1, speed: 0.3, health: 0, dodge: 15 } },
+			{ id: 9, name: 'Titan Potato', emoji: '👹', unlockWave: 9, bonus: { damage: 0.4, speed: -0.5, health: 100 } },
+			{ id: 10, name: 'Ghost Potato', emoji: '👻', unlockWave: 10, bonus: { damage: 0, speed: 0.5, health: -30, dodge: 25 } },
+			{ id: 11, name: 'Legendary Potato', emoji: '⭐', unlockWave: 11, bonus: { damage: 0.5, speed: 0.3, health: 50, critChance: 15 } }
+		];
+		
+		// Generate 88 more potatoes
+		for (let i = 12; i < 100; i++) {
+			const types = ['Power', 'Swift', 'Tough', 'Deadly', 'Quick', 'Strong', 'Fast', 'Mighty', 'Brave', 'Wild', 'Cool', 'Epic', 'Super', 'Ultra', 'Mega', 'Turbo', 'Hyper', 'Pro', 'Elite', 'Master'];
+			const names = ['Potato', 'Spud', 'Tater', 'Tuber', 'Fry', 'Chip', 'Mash', 'Baked', 'Roast', 'Crisp'];
+			const type = types[Math.floor(Math.random() * types.length)];
+			const name = names[Math.floor(Math.random() * names.length)];
+			const fullName = `${type} ${name}`;
+			
+			// Random bonuses
+			const bonus = {
+				damage: Math.random() * 0.4,
+				speed: Math.random() * 0.6,
+				health: (Math.random() - 0.5) * 100,
+				critChance: Math.random() < 0.3 ? Math.random() * 30 : 0,
+				lifeSteal: Math.random() < 0.2 ? Math.random() * 15 : 0,
+				dodge: Math.random() < 0.2 ? Math.random() * 25 : 0
+			};
+			
+			potatoCharacters.push({
+				id: i,
+				name: fullName,
+				emoji: '🥔',
+				unlockWave: i,
+				bonus: bonus
+			});
+		}
+		
+		// Player
+		const player = {
+			x: canvas.width / 2,
+			y: canvas.height / 2,
+			radius: 22,
+			speed: 3,
+			weapons: []
+		};
+		
+		// Weapon types (level 1-5: damage scales by 1 + (level-1)*0.25)
+		const weaponTypes = {
+			pistol: { name: 'Pistol', damage: 10, fireRate: 500, range: 300, color: '#ffaa00', description: 'Basic sidearm' },
+			pea_shooter: { name: 'Pea Shooter', damage: 4, fireRate: 250, range: 280, color: '#88ff88', description: 'Tiny but rapid' },
+			boom_stick: { name: 'Boom Stick', damage: 22, fireRate: 900, range: 180, color: '#cc6600', description: 'Loud and messy' },
+			zapper: { name: 'Zapper', damage: 7, fireRate: 180, range: 380, color: '#00ffff', description: 'Electric zap' },
+			scattergun: { name: 'Scattergun', damage: 12, fireRate: 700, range: 220, color: '#ff8800', description: 'Wide spread' },
+			laser: { name: 'Laser', damage: 8, fireRate: 200, range: 400, color: '#00ccff', description: 'Fast beam' },
+			rocket: { name: 'Rocket Launcher', damage: 30, fireRate: 1500, range: 350, color: '#ff0000', description: 'Explosive' },
+			smg: { name: 'SMG', damage: 6, fireRate: 150, range: 250, color: '#ffff00', description: 'Spray and pray' },
+			sniper: { name: 'Sniper', damage: 50, fireRate: 2000, range: 500, color: '#00ff00', description: 'One shot, one hit' },
+			blaster: { name: 'Blaster', damage: 14, fireRate: 400, range: 320, color: '#ff00ff', description: 'Plasma burst' },
+			minigun: { name: 'Minigun', damage: 5, fireRate: 80, range: 260, color: '#888888', description: 'Brrrrt' },
+			railgun: { name: 'Railgun', damage: 45, fireRate: 1800, range: 450, color: '#4488ff', description: 'Hyper velocity' },
+			flamer: { name: 'Flamer', damage: 9, fireRate: 120, range: 200, color: '#ff4400', description: 'Toasty' },
+			crossbow: { name: 'Crossbow', damage: 28, fireRate: 1200, range: 340, color: '#8B4513', description: 'Medieval tech' },
+			bubble_gun: { name: 'Bubble Gun', damage: 3, fireRate: 300, range: 240, color: '#aaddff', description: 'Harmless looking' },
+			mega_blast: { name: 'Mega Blast', damage: 35, fireRate: 1400, range: 300, color: '#ff0088', description: 'Big boom' },
+			stinger: { name: 'Stinger', damage: 11, fireRate: 350, range: 290, color: '#aaff00', description: 'Quick sting' },
+			thumper: { name: 'Thumper', damage: 25, fireRate: 600, range: 270, color: '#664422', description: 'Heavy thump' }
+		};
+		
+		// Stats
+		let stats = {
+			damage: 1,
+			attackSpeed: 1,
+			health: 0,
+			regen: 0,
+			speed: 0,
+			lifeSteal: 0, // Percentage of damage healed
+			critChance: 0, // Percentage chance for crit
+			critDamage: 2, // Multiplier for crit damage
+			dodge: 0, // Percentage chance to dodge
+			armor: 0, // Flat damage reduction
+			range: 1 // Multiplier for weapon range (1 = 100%)
+		};
+		
+		// Shop upgrades pool (used by showShop / refreshShopItems)
+		const shopUpgrades = [
+			{ tier: 2, name: 'New Weapon', description: 'Add a random weapon',
+				effect: () => {
+					const weaponKeys = Object.keys(weaponTypes);
+					const randomWeapon = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+					if (player.weapons.length < 6) {
+						const angleStep = (Math.PI * 2) / (player.weapons.length + 1);
+						player.weapons.push({
+							type: randomWeapon,
+							level: 1,
+							lastFire: 0,
+							angle: 0,
+							baseAngle: angleStep * player.weapons.length
+						});
+					} else if (tryAutoCombineWeapon(randomWeapon, 1)) {
+						// At max weapons: auto-combine if same type+level exists (max Lv5)
+					}
+				}
+			},
+			{ tier: 1, name: '+20% Damage', description: 'Increase all damage',
+				effect: () => { stats.damage += 0.2; }
+			},
+			{ tier: 1, name: '+20% Attack Speed', description: 'Fire weapons faster',
+				effect: () => { stats.attackSpeed += 0.2; }
+			},
+			{ tier: 1, name: '+20 Max Health', description: 'Increase maximum health',
+				effect: () => {
+					maxHealth += 20;
+					health = Math.min(health + 20, maxHealth);
+				}
+			},
+			{ tier: 0, name: 'Health Regen', description: 'Regenerate 1 HP per second',
+				effect: () => { stats.regen += 1; }
+			},
+			{ tier: 0, name: '+10% Speed', description: 'Move faster',
+				effect: () => {
+					stats.speed += 0.1;
+					player.speed = 3 + stats.speed;
+				}
+			},
+			{ tier: 1, name: '+5% Life Steal', description: 'Heal for 5% of damage dealt',
+				effect: () => { stats.lifeSteal += 5; }
+			},
+			{ tier: 1, name: '+10% Crit Chance', description: '10% chance for critical hits',
+				effect: () => { stats.critChance += 10; }
+			},
+			{ tier: 2, name: '+25% Crit Chance', description: '25% more chance for critical hits',
+				effect: () => { stats.critChance += 25; }
+			},
+			{ tier: 0, name: '+5% Dodge', description: '5% chance to avoid damage',
+				effect: () => { stats.dodge += 5; }
+			},
+			{ tier: 1, name: '+1 Armor', description: 'Reduce incoming damage by 1',
+				effect: () => { stats.armor += 1; }
+			},
+			{ tier: 1, name: '+20% Range', description: 'Weapons reach 20% farther',
+				effect: () => { stats.range += 0.2; }
+			},
+			{ tier: 1, name: '+15% Speed', description: 'Move 15% faster',
+				effect: () => {
+					stats.speed += 0.15;
+					player.speed = 3 + stats.speed;
+				}
+			}
+		];
+		
+		// Inventory = guns only (player.weapons). Selection for combine.
+		let selectedWeaponIndex = null;
+		
+		// Locked shop upgrades (persist across reroll and across waves)
+		let lockedShopItems = [];
+		
+		// Start with one pistol (level 1)
+		player.weapons.push({
+			type: 'pistol',
+			level: 1,
+			lastFire: 0,
+			angle: 0,
+			baseAngle: 0
+		});
+		
+		// Input
+		const keys = {};
+		const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+		
+		window.addEventListener('keydown', (e) => {
+			keys[e.key.toLowerCase()] = true;
+		});
+		
+		window.addEventListener('keyup', (e) => {
+			keys[e.key.toLowerCase()] = false;
+		});
+		
+		canvas.addEventListener('mousemove', (e) => {
+			const rect = canvas.getBoundingClientRect();
+			mouse.x = e.clientX - rect.left;
+			mouse.y = e.clientY - rect.top;
+		});
+		
+		canvas.addEventListener('click', (e) => {
+			const rect = canvas.getBoundingClientRect();
+			mouse.x = e.clientX - rect.left;
+			mouse.y = e.clientY - rect.top;
+		});
+		
+		// Enemy class
+		class Enemy {
+			constructor(isElite = false) {
+				// Spawn from edge
+				const side = Math.floor(Math.random() * 4);
+				if (side === 0) { // top
+					this.x = Math.random() * canvas.width;
+					this.y = -20;
+				} else if (side === 1) { // right
+					this.x = canvas.width + 20;
+					this.y = Math.random() * canvas.height;
+				} else if (side === 2) { // bottom
+					this.x = Math.random() * canvas.width;
+					this.y = canvas.height + 20;
+				} else { // left
+					this.x = -20;
+					this.y = Math.random() * canvas.height;
+				}
+				
+				this.isElite = isElite;
+				
+				if (isElite) {
+					// Elite enemies: bigger, stronger, faster
+					this.radius = 20 + Math.random() * 15; // 20-35 (bigger)
+					this.speed = (1.5 + wave * 0.3) * 1.5; // 1.5x faster
+					this.health = (50 + wave * 10) * 2; // 2x health
+					this.maxHealth = this.health;
+					this.xp = (5 + Math.floor(wave / 2)) * 2; // 2x XP
+					this.damage = 2; // Deals more damage
+					// Elite enemies - brighter purple
+					this.color = `hsl(${270 + Math.random() * 20}, 90%, 45%)`;
+				} else {
+					// Normal enemies - all purple
+					this.radius = 10 + Math.random() * 10;
+					this.speed = 1 + wave * 0.2;
+					this.health = 20 + wave * 5;
+					this.maxHealth = this.health;
+					this.xp = 2 + Math.floor(wave / 2);
+					this.damage = 1;
+					this.color = `hsl(${270 + Math.random() * 30}, 70%, 50%)`;
+				}
+			}
+			
+			update() {
+				// Move toward player
+				const dx = player.x - this.x;
+				const dy = player.y - this.y;
+				const dist = Math.sqrt(dx * dx + dy * dy);
+				
+				if (dist > 0) {
+					this.x += (dx / dist) * this.speed;
+					this.y += (dy / dist) * this.speed;
+				}
+				
+				// Check collision with player
+				const playerDist = Math.sqrt(
+					Math.pow(player.x - this.x, 2) + 
+					Math.pow(player.y - this.y, 2)
+				);
+				
+				if (playerDist < player.radius + this.radius) {
+					// Check dodge
+					if (Math.random() * 100 >= stats.dodge) {
+						// Calculate damage with armor
+						let damage = this.damage;
+						damage = Math.max(0.1, damage - stats.armor);
+						health -= damage;
+						if (health <= 0) {
+							gameState = 'gameOver';
+							document.getElementById('finalWave').textContent = wave;
+							document.getElementById('gameOver').style.display = 'block';
+						}
+					}
+				}
+			}
+			
+			draw() {
+				// Drawing is now handled in main draw() function for terrible graphics
+				// This method is kept for compatibility but does nothing
+			}
+		}
+		
+		// Tree class - stationary, does not move or attack. Drops random weapon when killed.
+		class Tree {
+			constructor() {
+				// Spawn somewhere on the map (with margin so not on edge)
+				const margin = 80;
+				this.x = margin + Math.random() * (canvas.width - margin * 2);
+				this.y = margin + Math.random() * (canvas.height - margin * 2);
+				this.radius = 18;
+				this.health = 40 + wave * 8;
+				this.maxHealth = this.health;
+				this.color = '#228B22'; // forest green
+			}
+			update() {
+				// Trees don't move
+			}
+		}
+		
+		// Projectile class
+		class Projectile {
+			constructor(x, y, angle, damage, range, color) {
+				this.x = x;
+				this.y = y;
+				this.angle = angle;
+				this.speed = 8;
+				this.damage = damage;
+				this.range = range;
+				this.distance = 0;
+				this.color = color;
+				this.radius = 3;
+			}
+			
+			update() {
+				this.x += Math.cos(this.angle) * this.speed;
+				this.y += Math.sin(this.angle) * this.speed;
+				this.distance += this.speed;
+				
+				// Check collision with enemies
+				for (let i = enemies.length - 1; i >= 0; i--) {
+					const enemy = enemies[i];
+					const dist = Math.sqrt(
+						Math.pow(this.x - enemy.x, 2) + 
+						Math.pow(this.y - enemy.y, 2)
+					);
+					
+					if (dist < this.radius + enemy.radius) {
+						// Calculate damage with crit chance
+						let finalDamage = this.damage * stats.damage;
+						const isCrit = Math.random() * 100 < stats.critChance;
+						if (isCrit) {
+							finalDamage *= 2; // Crits always deal double damage
+						}
+						
+						const damageDealt = Math.min(finalDamage, enemy.health);
+						enemy.health -= finalDamage;
+						
+						// Life steal
+						if (stats.lifeSteal > 0) {
+							const healAmount = (damageDealt * stats.lifeSteal) / 100;
+							health = Math.min(maxHealth, health + healAmount);
+						}
+						
+						if (enemy.health <= 0) {
+							xp += enemy.xp;
+							// Drop money at enemy position (must pick up before wave ends)
+							const dropAmount = enemy.xp * 2 + Math.floor(Math.random() * 5);
+							moneyDrops.push({ x: enemy.x, y: enemy.y, amount: dropAmount, radius: 24 });
+							enemies.splice(i, 1);
+							
+							// Check level up (but don't interrupt wave - shop shows at end of wave)
+							if (xp >= xpNeeded) {
+								xp -= xpNeeded;
+								level++;
+								xpNeeded = Math.floor(xpNeeded * 1.5);
+								// Shop will show when wave timer ends
+							}
+						}
+						return true; // Hit something
+					}
+				}
+				
+				// Check collision with trees
+				for (let i = trees.length - 1; i >= 0; i--) {
+					const tree = trees[i];
+					const dist = Math.sqrt(
+						Math.pow(this.x - tree.x, 2) + 
+						Math.pow(this.y - tree.y, 2)
+					);
+					
+					if (dist < this.radius + tree.radius) {
+						let finalDamage = this.damage * stats.damage;
+						const isCrit = Math.random() * 100 < stats.critChance;
+						if (isCrit) finalDamage *= 2;
+						
+						tree.health -= finalDamage;
+						
+						if (tree.health <= 0) {
+							trees.splice(i, 1);
+							// Drop weapon pickup - player must walk over it to collect
+							const weaponKeys = Object.keys(weaponTypes);
+							const randomWeapon = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+							weaponDrops.push({ x: tree.x, y: tree.y, weaponType: randomWeapon, radius: 35 });
+						}
+						return true; // Hit something
+					}
+				}
+				
+				return this.distance > this.range;
+			}
+			
+			draw() {
+				// Drawing is now handled in main draw() function for terrible graphics
+				// This method is kept for compatibility but does nothing
+			}
+		}
+		
+		// Spawn enemies (and sometimes trees - 5% chance for tree)
+		function spawnEnemies() {
+			const enemyCount = 6 + wave * 3; // More monsters each wave (was 5 + wave*2)
+			const shouldSpawnElite = wave >= 5;
+			const eliteChance = Math.min(0.3, (wave - 5) * 0.05);
+			
+			for (let i = 0; i < enemyCount; i++) {
+				setTimeout(() => {
+					if (gameState === 'playing') {
+						if (Math.random() < 0.05) {
+							trees.push(new Tree());
+						} else {
+							const isElite = shouldSpawnElite && Math.random() < eliteChance;
+							enemies.push(new Enemy(isElite));
+						}
+					}
+				}, i * 500);
+			}
+		}
+		
+		// If at max weapons, try to auto-combine with existing same type+level (max level 5).
+		function tryAutoCombineWeapon(type, level) {
+			level = level || 1;
+			if (level >= 5) return false;
+			const idx = player.weapons.findIndex(w => w.type === type && (w.level || 1) === level);
+			if (idx === -1) return false;
+			const baseAngle = player.weapons[idx].baseAngle;
+			player.weapons[idx] = {
+				type: type,
+				level: level + 1,
+				lastFire: 0,
+				angle: 0,
+				baseAngle: baseAngle
+			};
+			return true;
+		}
+		
+		// Spawn a single enemy or tree (for continuous spawning)
+		function spawnSingleEnemy() {
+			if (gameState === 'playing' && waveTimer > 0) {
+				if (Math.random() < 0.05) {
+					trees.push(new Tree());
+				} else {
+					const shouldSpawnElite = wave >= 5; // Start spawning elites at wave 5
+					const eliteChance = Math.min(0.3, (wave - 5) * 0.05); // 0% at wave 5, up to 30% at wave 11+
+					const isElite = shouldSpawnElite && Math.random() < eliteChance;
+					enemies.push(new Enemy(isElite));
+				}
+			}
+		}
+		
+		// Fire weapon
+		function fireWeapon(weapon, weaponIndex) {
+			const now = Date.now();
+			const weaponData = weaponTypes[weapon.type];
+			const fireRate = weaponData.fireRate / stats.attackSpeed;
+			
+			// Effective range = weapon range * player range stat
+			const effectiveRange = weaponData.range * (stats.range || 1);
+			
+			// Find nearest target (enemy or tree)
+			let nearestTarget = null;
+			let nearestDist = Infinity;
+			
+			enemies.forEach(enemy => {
+				const dist = Math.sqrt(
+					Math.pow(enemy.x - player.x, 2) + 
+					Math.pow(enemy.y - player.y, 2)
+				);
+				if (dist < nearestDist) {
+					nearestDist = dist;
+					nearestTarget = enemy;
+				}
+			});
+			trees.forEach(tree => {
+				const dist = Math.sqrt(
+					Math.pow(tree.x - player.x, 2) + 
+					Math.pow(tree.y - player.y, 2)
+				);
+				if (dist < nearestDist) {
+					nearestDist = dist;
+					nearestTarget = tree;
+				}
+			});
+			
+			// Only attack if there is a target AND it is within range
+			if (!nearestTarget || nearestDist > effectiveRange) {
+				return; // Don't fire - no target in range
+			}
+			
+			if (now - weapon.lastFire >= fireRate) {
+				weapon.lastFire = now;
+				
+				// Calculate angle to nearest target
+				const targetX = nearestTarget.x;
+				const targetY = nearestTarget.y;
+				const dx = targetX - player.x;
+				const dy = targetY - player.y;
+				const targetAngle = Math.atan2(dy, dx);
+				
+				// Smoothly rotate weapon to aim at target (very fast tracking)
+				const angleDiff = targetAngle - weapon.angle;
+				// Normalize angle difference to -PI to PI
+				let normalizedDiff = angleDiff;
+				while (normalizedDiff > Math.PI) normalizedDiff -= Math.PI * 2;
+				while (normalizedDiff < -Math.PI) normalizedDiff += Math.PI * 2;
+				
+				// Very fast rotation speed (100 radians per frame)
+				const rotationSpeed = 100.0;
+				if (Math.abs(normalizedDiff) < rotationSpeed) {
+					weapon.angle = targetAngle;
+				} else {
+					weapon.angle += Math.sign(normalizedDiff) * rotationSpeed;
+				}
+				
+				// Create projectile (use effective range)
+				const startX = player.x + Math.cos(weapon.angle) * player.radius;
+				const startY = player.y + Math.sin(weapon.angle) * player.radius;
+				const levelMult = 1 + ((weapon.level || 1) - 1) * 0.25; // Lv1=1x, Lv2=1.25x, Lv3=1.5x, Lv4=1.75x, Lv5=2x
+				const damage = weaponData.damage * levelMult;
+				
+				projectiles.push(new Projectile(
+					startX,
+					startY,
+					weapon.angle,
+					damage,
+					effectiveRange,
+					weaponData.color
+				));
+			}
+		}
+		
+		// Refresh shop items (3 upgrades: locked first, then random). Used when opening shop and when rerolling.
+		function refreshShopItems() {
+			const shopItems = document.getElementById('shopItems');
+			shopItems.innerHTML = '';
+			document.getElementById('shopMoneyDisplay').textContent = money;
+			
+			const selected = [];
+			lockedShopItems.forEach(entry => {
+				selected.push({ upgrade: entry.upgrade, price: entry.price, locked: true });
+			});
+			const available = shopUpgrades.filter(u => !selected.some(s => s.upgrade === u));
+			while (selected.length < 3 && available.length > 0) {
+				const idx = Math.floor(Math.random() * available.length);
+				const upgrade = available.splice(idx, 1)[0];
+				selected.push({ upgrade, price: getPriceForTier(upgrade.tier), locked: false });
+			}
+			
+			selected.forEach(entry => {
+				const { upgrade, price, locked } = entry;
+				const item = document.createElement('div');
+				item.className = 'shop-item';
+				item.innerHTML = `
+					<div class="shop-item-content">
+						<h3>${upgrade.name}</h3>
+						<p>${upgrade.description}</p>
+					</div>
+					<span class="shop-item-price">$${price}</span>
+					<button type="button" class="shop-lock-btn ${locked ? 'locked' : ''}" title="${locked ? 'Click to unlock' : 'Click to lock (keeps this option on reroll)'}">${locked ? '&#128274;' : '&#128275;'}</button>
+				`;
+				item.onclick = (e) => {
+					if (e.target.classList.contains('shop-lock-btn')) return;
+					if (money < price) return;
+					money -= price;
+					upgrade.effect();
+					if (locked) {
+						lockedShopItems = lockedShopItems.filter(e => e.upgrade !== upgrade || e.price !== price);
+					}
+					document.getElementById('shopMoneyDisplay').textContent = money;
+					updateShopStats();
+					document.getElementById('shopRerollBtn').disabled = money < 10;
+					item.remove();
+					if (gameState === 'shop') updateInventoryDisplay();
+				};
+				const lockBtn = item.querySelector('.shop-lock-btn');
+				lockBtn.onclick = (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const idx = lockedShopItems.findIndex(x => x.upgrade === upgrade && x.price === price);
+					if (idx >= 0) {
+						lockedShopItems.splice(idx, 1);
+					} else {
+						lockedShopItems.push({ upgrade, price });
+					}
+					refreshShopItems();
+				};
+				shopItems.appendChild(item);
+			});
+			
+			document.getElementById('shopRerollBtn').disabled = money < 10;
+		}
+		
+		// Show shop (inventory is guns only and only visible during shop)
+		function showShop() {
+			gameState = 'shop';
+			document.getElementById('shop').style.display = 'block';
+			document.getElementById('inventory').style.display = 'block';
+			document.getElementById('inventoryPanel').style.display = 'block';
+			selectedWeaponIndex = null;
+			updateShopStats();
+			refreshShopItems();
+			updateInventoryDisplay();
+			
+			document.getElementById('shopReadyBtn').onclick = () => {
+				document.getElementById('shop').style.display = 'none';
+				document.getElementById('inventory').style.display = 'none';
+				gameState = 'playing';
+				nextWave();
+			};
+			
+			document.getElementById('shopRerollBtn').onclick = () => {
+				if (money < 10) return;
+				money -= 10;
+				refreshShopItems();
+			};
+		}
+		
+		// Next wave
+		function nextWave() {
+			if (waveCompleteTimer) {
+				clearTimeout(waveCompleteTimer);
+				waveCompleteTimer = null;
+			}
+			wave++;
+			health = maxHealth; // Auto full health at start of each wave
+			
+			// Check for new potato unlocks
+			if (wave > highestWaveReached) {
+				highestWaveReached = wave;
+				// Unlock potatoes for this wave
+				potatoCharacters.forEach((potato, index) => {
+					if (potato.unlockWave === wave - 1 && !unlockedPotatoes.includes(index) && index < MAX_POTATOES) {
+						unlockedPotatoes.push(index);
+					}
+				});
+			}
+			
+			enemies = [];
+			trees = [];
+			projectiles = [];
+			moneyDrops = []; // Uncollected money is lost when wave ends
+			weaponDrops = []; // Uncollected weapon drops lost when wave ends
+			waveTimer = waveDuration; // Always 30 seconds
+			enemySpawnTimer = 0;
+			spawnEnemies();
+		}
+		
+		// Show character select
+		function showCharacterSelect() {
+			gameState = 'characterSelect';
+			document.getElementById('characterSelect').style.display = 'block';
+			document.getElementById('gameOver').style.display = 'none';
+			selectedCharacter = null;
+			updateCharacterSelect();
+		}
+		
+		// Update character select display
+		function updateCharacterSelect() {
+			const grid = document.getElementById('characterGrid');
+			grid.innerHTML = '';
+			
+			potatoCharacters.forEach((potato, index) => {
+				const isUnlocked = unlockedPotatoes.includes(index);
+				const card = document.createElement('div');
+				card.className = `character-card ${!isUnlocked ? 'locked' : ''} ${selectedCharacter === index ? 'selected' : ''}`;
+				
+				if (!isUnlocked) {
+					card.innerHTML = `
+						<div class="character-emoji">${potato.name.charAt(0)}</div>
+						<div class="character-name">${potato.name}</div>
+						<div class="character-stats">Unlock at Wave ${potato.unlockWave + 1}</div>
+					`;
+				} else {
+					let statsText = '';
+					if (potato.bonus.damage) statsText += `+${potato.bonus.damage * 100}% Damage<br>`;
+					if (potato.bonus.speed) statsText += `+${potato.bonus.speed * 100}% Speed<br>`;
+					if (potato.bonus.health) statsText += `${potato.bonus.health > 0 ? '+' : ''}${potato.bonus.health} Health<br>`;
+					if (potato.bonus.critChance) statsText += `+${potato.bonus.critChance}% Crit<br>`;
+					if (potato.bonus.lifeSteal) statsText += `+${potato.bonus.lifeSteal}% Life Steal<br>`;
+					if (potato.bonus.dodge) statsText += `+${potato.bonus.dodge}% Dodge<br>`;
+					
+					card.innerHTML = `
+						<div class="character-emoji">${potato.name.charAt(0)}</div>
+						<div class="character-name">${potato.name}</div>
+						<div class="character-stats">${statsText || 'No bonuses'}</div>
+					`;
+					
+					card.onclick = () => {
+						selectedCharacter = index;
+						updateCharacterSelect();
+					};
+				}
+				
+				grid.appendChild(card);
+			});
+		}
+		
+		// Start game with selected character
+		function startGameWithCharacter() {
+			if (selectedCharacter === null) {
+				alert('Please select a character!');
+				return;
+			}
+			
+			const potato = potatoCharacters[selectedCharacter];
+			
+			// Reset stats
+			stats = {
+				damage: 1 + (potato.bonus.damage || 0),
+				attackSpeed: 1,
+				health: 0,
+				regen: 0,
+				speed: potato.bonus.speed || 0,
+				lifeSteal: potato.bonus.lifeSteal || 0,
+				critChance: potato.bonus.critChance || 0,
+				critDamage: 2,
+				dodge: potato.bonus.dodge || 0,
+				armor: 0,
+				range: 1
+			};
+			maxHealth = 100 + (potato.bonus.health || 0);
+			health = maxHealth;
+			player.speed = 3 + stats.speed;
+			
+			document.getElementById('characterSelect').style.display = 'none';
+			document.getElementById('inventory').style.display = 'none';
+			gameState = 'playing';
+			wave = 1;
+			waveTimer = waveDuration;
+			enemySpawnTimer = 0;
+			enemies = [];
+			trees = [];
+			projectiles = [];
+			moneyDrops = [];
+			weaponDrops = [];
+			money = 0;
+			xp = 0;
+			xpNeeded = 10;
+			level = 1;
+			player.weapons = [{
+				type: 'pistol',
+				level: 1,
+				lastFire: 0,
+				angle: 0,
+				baseAngle: 0
+			}];
+			player.x = canvas.width / 2;
+			player.y = canvas.height / 2;
+			mouse.x = canvas.width / 2;
+			mouse.y = canvas.height / 2;
+			spawnEnemies();
+		}
+		
+		// Restart game
+		function restartGame() {
+			if (waveCompleteTimer) {
+				clearTimeout(waveCompleteTimer);
+				waveCompleteTimer = null;
+			}
+			showCharacterSelect();
+		}
+		
+		// Game loop
+		function update() {
+			if (gameState !== 'playing') return;
+			
+			// Player movement
+			let moveX = 0;
+			let moveY = 0;
+			
+			if (keys['w'] || keys['arrowup']) moveY -= 1;
+			if (keys['s'] || keys['arrowdown']) moveY += 1;
+			if (keys['a'] || keys['arrowleft']) moveX -= 1;
+			if (keys['d'] || keys['arrowright']) moveX += 1;
+			
+			if (moveX !== 0 || moveY !== 0) {
+				const len = Math.sqrt(moveX * moveX + moveY * moveY);
+				player.x += (moveX / len) * player.speed;
+				player.y += (moveY / len) * player.speed;
+				
+				// Keep player on screen
+				player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+				player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+			}
+			
+			// Fire weapons
+			player.weapons.forEach((weapon, index) => {
+				fireWeapon(weapon, index);
+			});
+			
+			// Update enemies
+			enemies.forEach(enemy => enemy.update());
+			
+			// Update projectiles
+			for (let i = projectiles.length - 1; i >= 0; i--) {
+				if (projectiles[i].update()) {
+					projectiles.splice(i, 1);
+				}
+			}
+			
+			// Pick up money drops
+			for (let i = moneyDrops.length - 1; i >= 0; i--) {
+				const drop = moneyDrops[i];
+				const dist = Math.sqrt(
+					Math.pow(player.x - drop.x, 2) + Math.pow(player.y - drop.y, 2)
+				);
+				if (dist < player.radius + (drop.radius || 24)) {
+					money += drop.amount;
+					moneyDrops.splice(i, 1);
+				}
+			}
+			
+			// Pick up weapon drops (only if player has room)
+			for (let i = weaponDrops.length - 1; i >= 0; i--) {
+				const drop = weaponDrops[i];
+				const dist = Math.sqrt(
+					Math.pow(player.x - drop.x, 2) + Math.pow(player.y - drop.y, 2)
+				);
+				if (dist < player.radius + (drop.radius || 35)) {
+					if (player.weapons.length < 6) {
+						const angleStep = (Math.PI * 2) / (player.weapons.length + 1);
+						player.weapons.push({
+							type: drop.weaponType,
+							level: 1,
+							lastFire: 0,
+							angle: 0,
+							baseAngle: angleStep * player.weapons.length
+						});
+						weaponDrops.splice(i, 1);
+					} else if (tryAutoCombineWeapon(drop.weaponType, 1)) {
+						weaponDrops.splice(i, 1);
+					}
+				}
+			}
+			
+			// Health regen
+			if (stats.regen > 0) {
+				health = Math.min(maxHealth, health + stats.regen / 60);
+			}
+			
+			// Update wave timer
+			waveTimer -= 1/60; // Decrease by 1/60 second per frame (60 FPS)
+			if (waveTimer <= 0 && gameState === 'playing') {
+				waveTimer = 0;
+				// Wave time is up - end wave and show shop
+				enemies = []; // Clear remaining enemies
+				trees = []; // Clear remaining trees
+				projectiles = []; // Clear projectiles
+				moneyDrops = []; // Uncollected money is lost forever
+				weaponDrops = []; // Uncollected weapon drops lost
+				gameState = 'shop';
+				showShop();
+			}
+			
+			// Continuous enemy spawning
+			enemySpawnTimer += 1000/60; // Add milliseconds per frame
+			// Spawn more often each wave (interval shrinks with wave)
+			const effectiveInterval = Math.max(500, 2000 - wave * 120);
+			if (enemySpawnTimer >= effectiveInterval && gameState === 'playing' && waveTimer > 0) {
+				enemySpawnTimer = 0;
+				spawnSingleEnemy();
+			}
+			
+			// Check wave complete (old system - now based on timer)
+			// Removed automatic wave completion when enemies die
+			
+			// Update UI
+			document.getElementById('health').textContent = Math.ceil(health);
+			document.getElementById('maxHealth').textContent = maxHealth;
+			document.getElementById('level').textContent = level;
+			document.getElementById('xp').textContent = xp;
+			document.getElementById('xpNeeded').textContent = xpNeeded;
+			document.getElementById('wave').textContent = wave;
+			document.getElementById('enemiesLeft').textContent = enemies.length;
+			document.getElementById('weaponCount').textContent = player.weapons.length;
+			document.getElementById('waveTimer').textContent = Math.ceil(waveTimer);
+			document.getElementById('moneyDisplay').textContent = money;
+		}
+		
+		// Update shop stats display
+		function updateShopStats() {
+			const statsContent = document.getElementById('shopStatsContent');
+			statsContent.innerHTML = `
+				<div>Damage: +${((stats.damage - 1) * 100).toFixed(0)}%</div>
+				<div>Attack Speed: +${((stats.attackSpeed - 1) * 100).toFixed(0)}%</div>
+				<div>Max Health: ${maxHealth}</div>
+				<div>Health Regen: ${stats.regen.toFixed(1)} HP/sec</div>
+				<div>Speed: +${(stats.speed * 100).toFixed(0)}%</div>
+				<div>Life Steal: ${stats.lifeSteal.toFixed(0)}%</div>
+				<div>Crit Chance: ${stats.critChance.toFixed(0)}%</div>
+				<div>Dodge: ${stats.dodge.toFixed(0)}%</div>
+				<div>Armor: ${stats.armor.toFixed(0)}</div>
+				<div>Range: +${(((stats.range || 1) - 1) * 100).toFixed(0)}%</div>
+				<div>Money: $${money}</div>
+				<div>Weapons: ${player.weapons.length}/6</div>
+			`;
+		}
+		
+		function draw() {
+			// ULTRA HD GRAPHICS MODE - Super smooth and sharp
+			ctx.imageSmoothingEnabled = true; // Smooth anti-aliasing
+			ctx.imageSmoothingQuality = 'high'; // Highest quality
+			
+			// Scale context for Ultra HD
+			const scale = (window.devicePixelRatio || 2) * 2;
+			ctx.scale(scale, scale);
+			const scaledWidth = canvas.width / scale;
+			const scaledHeight = canvas.height / scale;
+			
+			// Clear canvas with black background
+			ctx.fillStyle = '#000000';
+			ctx.fillRect(0, 0, scaledWidth, scaledHeight);
+			
+			// No grid - just black background
+			
+			// Draw money drops
+			moneyDrops.forEach(drop => {
+				const coinRadius = (drop.radius || 24) / scale;
+				ctx.fillStyle = '#ffff00';
+				ctx.beginPath();
+				ctx.arc(drop.x / scale, drop.y / scale, coinRadius, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = '#ffaa00';
+				ctx.lineWidth = 2;
+				ctx.stroke();
+				ctx.fillStyle = '#000000';
+				ctx.font = '14px Bungee';
+				ctx.textAlign = 'center';
+				ctx.fillText('$' + drop.amount, drop.x / scale, (drop.y + 5) / scale);
+			});
+			
+			// Draw weapon drops (green coin, no price - pick up to get weapon)
+			weaponDrops.forEach(drop => {
+				const coinRadius = (drop.radius || 35) / scale;
+				ctx.fillStyle = '#00cc00';
+				ctx.beginPath();
+				ctx.arc(drop.x / scale, drop.y / scale, coinRadius, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = '#008800';
+				ctx.lineWidth = 2;
+				ctx.stroke();
+			});
+			
+			// Draw projectiles (smooth circles with glow)
+			projectiles.forEach(proj => {
+				// Glow effect
+				ctx.shadowBlur = 8;
+				ctx.shadowColor = proj.color;
+				ctx.fillStyle = proj.color;
+				ctx.beginPath();
+				ctx.arc(proj.x / scale, proj.y / scale, proj.radius, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.shadowBlur = 0;
+			});
+			
+			// Draw trees (squares - green, stationary)
+			trees.forEach(tree => {
+				const size = tree.radius;
+				ctx.fillStyle = tree.color;
+				ctx.fillRect((tree.x - size) / scale, (tree.y - size) / scale, (size * 2) / scale, (size * 2) / scale);
+				ctx.strokeStyle = '#0d5c0d';
+				ctx.lineWidth = 2;
+				ctx.strokeRect((tree.x - size) / scale, (tree.y - size) / scale, (size * 2) / scale, (size * 2) / scale);
+				// Tree health bar
+				const barWidth = tree.radius * 2;
+				const barHeight = 4;
+				const healthPercent = tree.health / tree.maxHealth;
+				ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+				ctx.fillRect((tree.x - barWidth / 2) / scale, (tree.y - tree.radius - 8) / scale, barWidth / scale, barHeight / scale);
+				ctx.fillStyle = '#00aa00';
+				ctx.fillRect((tree.x - barWidth / 2) / scale, (tree.y - tree.radius - 8) / scale, 
+					(barWidth * healthPercent) / scale, barHeight / scale);
+			});
+			
+			// Draw enemies (sprite or fallback square with eyes)
+			enemies.forEach(enemy => {
+				const size = enemy.radius;
+				const drawSize = size * 2;
+				const px = (enemy.x - size) / scale;
+				const py = (enemy.y - size) / scale;
+				const pw = drawSize / scale;
+				const ph = drawSize / scale;
+				if (enemyImage.complete && enemyImage.naturalWidth > 0) {
+					ctx.drawImage(enemyImage, px, py, pw, ph);
+				} else {
+					// Fallback: purple square with eyes
+					ctx.fillStyle = enemy.color;
+					ctx.fillRect(px, py, pw, ph);
+					const eyeRadius = size * 0.25 / scale;
+					const eyeOffsetX = size * 0.35;
+					const eyeOffsetY = size * 0.2;
+					const highlightRadius = size * 0.08 / scale;
+					const highlightOffset = size * 0.08 / scale;
+					ctx.fillStyle = '#000000';
+					ctx.beginPath();
+					ctx.arc((enemy.x - eyeOffsetX) / scale, (enemy.y - eyeOffsetY) / scale, eyeRadius, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.fillStyle = '#ffffff';
+					ctx.beginPath();
+					ctx.arc((enemy.x - eyeOffsetX - highlightOffset) / scale, (enemy.y - eyeOffsetY - highlightOffset) / scale, highlightRadius, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.fillStyle = '#000000';
+					ctx.beginPath();
+					ctx.arc((enemy.x + eyeOffsetX) / scale, (enemy.y - eyeOffsetY) / scale, eyeRadius, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.fillStyle = '#ffffff';
+					ctx.beginPath();
+					ctx.arc((enemy.x + eyeOffsetX - highlightOffset) / scale, (enemy.y - eyeOffsetY - highlightOffset) / scale, highlightRadius, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				
+				// Elite glow effect
+				if (enemy.isElite) {
+					ctx.shadowBlur = 20;
+					ctx.shadowColor = enemy.color;
+					ctx.fillRect((enemy.x - size) / scale, (enemy.y - size) / scale, (size * 2) / scale, (size * 2) / scale);
+					ctx.shadowBlur = 0;
+					
+					// Elite indicator (text instead of emoji)
+					ctx.fillStyle = '#ffff00';
+					ctx.font = 'bold 12px "Bungee", cursive';
+					ctx.textAlign = 'center';
+					ctx.fillText('ELITE', enemy.x / scale, (enemy.y - enemy.radius - 15) / scale);
+				}
+				
+				// Health bar (smooth)
+				if (enemy.isElite || enemy.health < enemy.maxHealth) {
+					const barWidth = enemy.radius * 2;
+					const barHeight = enemy.isElite ? 6 : 4;
+					const healthPercent = enemy.health / enemy.maxHealth;
+					
+					ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+					ctx.fillRect((enemy.x - barWidth / 2) / scale, (enemy.y - enemy.radius - 8) / scale, barWidth / scale, barHeight / scale);
+					
+					ctx.fillStyle = enemy.isElite ? '#ff00ff' : '#00ff00';
+					ctx.fillRect((enemy.x - barWidth / 2) / scale, (enemy.y - enemy.radius - 8) / scale, 
+						(barWidth * healthPercent) / scale, barHeight / scale);
+				}
+			});
+			
+			// Draw player (sprite image or fallback shape)
+			const size = player.radius;
+			const drawWidth = size * 4.2;
+			const drawHeight = size * 4.95;
+			const px = (player.x - drawWidth / 2) / scale;
+			const py = (player.y - drawHeight / 2) / scale;
+			const pw = drawWidth / scale;
+			const ph = drawHeight / scale;
+			if (playerImage.complete && playerImage.naturalWidth > 0) {
+				ctx.drawImage(playerImage, px, py, pw, ph);
+			} else {
+				// Fallback: brown rounded rectangle until image loads
+				const cornerRadius = 6 / scale;
+				ctx.fillStyle = '#8B4513';
+				ctx.beginPath();
+				if (ctx.roundRect) {
+					ctx.roundRect(px, py, pw, ph, cornerRadius);
+				} else {
+					ctx.rect(px, py, pw, ph);
+				}
+				ctx.fill();
+				ctx.strokeStyle = '#654321';
+				ctx.lineWidth = 2;
+				ctx.stroke();
+			}
+			
+			// Draw health bar (smooth)
+			const barWidth = drawWidth;
+			const barHeight = 6;
+			const healthPercent = health / maxHealth;
+			const playerBottom = drawHeight / 2;
+			
+			ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+			ctx.fillRect((player.x - barWidth / 2) / scale, (player.y + playerBottom + 5) / scale, barWidth / scale, barHeight / scale);
+			
+			const healthGradient = ctx.createLinearGradient(
+				(player.x - barWidth / 2) / scale, 0,
+				(player.x + barWidth / 2) / scale, 0
+			);
+			healthGradient.addColorStop(0, '#00ff00');
+			healthGradient.addColorStop(1, '#88ff88');
+			ctx.fillStyle = healthGradient;
+			ctx.fillRect((player.x - barWidth / 2) / scale, (player.y + playerBottom + 5) / scale, 
+				(barWidth * healthPercent) / scale, barHeight / scale);
+			
+			// Reset scale
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+		}
+		
+		// Start game
+		function gameLoop() {
+			update();
+			draw();
+			requestAnimationFrame(gameLoop);
+		}
+		
+		// Initial spawn
+		spawnEnemies();
+		
+		// Tiered price ranges: [min, max] for tiers 1-4
+		function getPriceForTier(tier) {
+			const tiers = [[5, 10], [10, 35], [35, 75], [75, 300]];
+			const [min, max] = tiers[Math.min(tier, 3)];
+			return min + Math.floor(Math.random() * (max - min + 1));
+		}
+		
+		function updateInventoryDisplay() {
+			const container = document.getElementById('inventoryItems');
+			container.innerHTML = '';
+			
+			if (player.weapons.length === 0) {
+				container.innerHTML = '<p style="color: #aaa;">No guns. Get weapons from the shop or from trees!</p>';
+				return;
+			}
+			
+			player.weapons.forEach((weapon, index) => {
+				const wd = weaponTypes[weapon.type];
+				const name = wd ? wd.name : weapon.type;
+				const level = weapon.level || 1;
+				const isSelected = selectedWeaponIndex === index;
+				const levelMult = 1 + (level - 1) * 0.25;
+				const multText = level === 1 ? '1x' : levelMult.toFixed(2) + 'x';
+				const levelColors = ['#00aa00', '#00cc00', '#ffff00', '#ff8800', '#ffdd00'];
+				const levelColor = levelColors[Math.min(level - 1, 4)];
+				
+				const itemDiv = document.createElement('div');
+				itemDiv.className = 'inventory-item' + (isSelected ? ' selected' : '');
+				itemDiv.style.borderColor = isSelected ? '#ffff00' : levelColor;
+				itemDiv.innerHTML = `
+					<div class="inventory-item-header">
+						<span class="inventory-item-name">${name} Lv${level}</span>
+					</div>
+					<div class="inventory-item-strength" style="color: ${levelColor}; font-size: 11px;">${multText} damage</div>
+				`;
+				itemDiv.onclick = () => {
+					if (selectedWeaponIndex === null) {
+						selectedWeaponIndex = index;
+						updateInventoryDisplay();
+						return;
+					}
+					if (selectedWeaponIndex === index) {
+						selectedWeaponIndex = null;
+						updateInventoryDisplay();
+						return;
+					}
+					const a = player.weapons[selectedWeaponIndex];
+					const b = player.weapons[index];
+					if (a.type === b.type && (a.level || 1) === (b.level || 1) && (a.level || 1) < 5) {
+						const newLevel = Math.min(5, (a.level || 1) + 1);
+						const newWeapon = {
+							type: a.type,
+							level: newLevel,
+							lastFire: 0,
+							angle: 0,
+							baseAngle: a.baseAngle
+						};
+						const lo = Math.min(selectedWeaponIndex, index);
+						const hi = Math.max(selectedWeaponIndex, index);
+						player.weapons[lo] = newWeapon;
+						player.weapons.splice(hi, 1);
+						selectedWeaponIndex = null;
+						updateInventoryDisplay();
+						return;
+					}
+					selectedWeaponIndex = index;
+					updateInventoryDisplay();
+				};
+				itemDiv.ondblclick = (e) => {
+					e.preventDefault();
+					const w = player.weapons[index];
+					if (!w) return;
+					const lvl = w.level || 1;
+					const worth = 15 + lvl * 5;
+					const sellPrice = worth - 5;
+					if (!confirm(`Sell ${name} Lv${lvl} for $${sellPrice}? (Worth $${worth}, you get $${sellPrice}.)`)) return;
+					player.weapons.splice(index, 1);
+					money += sellPrice;
+					selectedWeaponIndex = null;
+					document.getElementById('shopMoneyDisplay').textContent = money;
+					updateInventoryDisplay();
+				};
+				container.appendChild(itemDiv);
+			});
+		}
+		
+		// Show character select on start
+		showCharacterSelect();
+		
+		// Start loop
+		gameLoop();
+	</script>
+</body>
+</html>

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Progress Quest</title>
+	<style>
+		* {
+			transition: background 0.5s, color 0.5s, border-color 0.5s;
+		}
+		
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: 'Comic Sans MS', cursive;
+			color: #fff;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			overflow-x: hidden;
+		}
+		
+		.theme-selector {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 1000;
+		}
+		
+		.theme-button {
+			padding: 8px 16px;
+			margin: 5px;
+			border: 2px solid rgba(255, 255, 255, 0.5);
+			border-radius: 20px;
+			background: rgba(0, 0, 0, 0.3);
+			color: #fff;
+			cursor: pointer;
+			font-size: 12px;
+			backdrop-filter: blur(10px);
+			font-weight: bold;
+		}
+		
+		.theme-button:hover {
+			background: rgba(255, 255, 255, 0.2);
+			transform: scale(1.05);
+		}
+		
+		.theme-button.active {
+			border-color: #fff;
+			background: rgba(255, 255, 255, 0.3);
+		}
+		
+		.container {
+			text-align: center;
+			max-width: 900px;
+			padding: 60px;
+			border-radius: 30px;
+			margin-top: 60px;
+			position: relative;
+			z-index: 10;
+		}
+		
+		h1 {
+			font-family: 'Comic Sans MS', cursive;
+			font-size: 56px;
+			margin-bottom: 40px;
+			color: #fff;
+			text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+			letter-spacing: 2px;
+		}
+		
+		.level {
+			font-family: 'Comic Sans MS', cursive;
+			font-size: 140px;
+			font-weight: bold;
+			margin: 40px 0;
+			animation: pulse 2s ease-in-out infinite;
+		}
+		
+		@keyframes pulse {
+			0%, 100% { transform: scale(1); }
+			50% { transform: scale(1.05); }
+		}
+		@keyframes rainbow {
+			0% { background-position: 0% 50%; }
+			50% { background-position: 100% 50%; }
+			100% { background-position: 0% 50%; }
+		}
+		
+		.speed {
+			font-size: 36px;
+			margin: 30px 0;
+			font-weight: 300;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+		}
+		
+		.speed span {
+			font-weight: 700;
+			font-size: 42px;
+		}
+		
+		.info {
+			font-size: 20px;
+			margin-top: 50px;
+			line-height: 1.8;
+			font-weight: 300;
+		}
+		
+		.progress-bar {
+			width: 100%;
+			height: 50px;
+			border-radius: 25px;
+			overflow: hidden;
+			margin: 40px 0;
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+		}
+		
+		.progress-fill {
+			height: 100%;
+			width: 0%;
+			transition: width 0.1s linear;
+		}
+		
+		.sprites {
+			position: fixed;
+			width: 100%;
+			height: 100%;
+			top: 0;
+			left: 0;
+			pointer-events: none;
+			z-index: 1;
+		}
+		
+		.sprite {
+			position: absolute;
+			font-size: 60px;
+			opacity: 0.6;
+			animation: float 3s ease-in-out infinite;
+			display: none;
+		}
+		
+		@keyframes float {
+			0%, 100% { transform: translateY(0px) rotate(0deg); }
+			50% { transform: translateY(-20px) rotate(5deg); }
+		}
+		
+		/* Theme: Minimalist Clean */
+		body.theme-minimal {
+			background: #ffffff;
+		}
+		body.theme-minimal .container {
+			background: #ffffff;
+			border: 1px solid #e0e0e0;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		}
+		body.theme-minimal h1 {
+			color: #000;
+			text-shadow: none;
+		}
+		body.theme-minimal .level {
+			color: #000;
+			text-shadow: none;
+			-webkit-text-fill-color: #000;
+		}
+		body.theme-minimal .speed {
+			color: #000;
+		}
+		body.theme-minimal .speed span {
+			color: #000;
+		}
+		body.theme-minimal .info {
+			color: #000;
+		}
+		body.theme-minimal .progress-bar {
+			background: #f0f0f0;
+			border: 1px solid #000;
+		}
+		body.theme-minimal .progress-fill {
+			background: #000;
+			box-shadow: none;
+		}
+		body.theme-minimal .theme-button {
+			border-color: #000;
+			color: #000;
+			background: rgba(255, 255, 255, 0.9);
+		}
+		body.theme-minimal .theme-button.active {
+			background: #000;
+			color: #fff;
+		}
+		
+		/* Theme: Glitch Matrix */
+		body.theme-glitch {
+			background: #000;
+			position: relative;
+			overflow: hidden;
+		}
+		body.theme-glitch::before {
+			content: '';
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: repeating-linear-gradient(
+				0deg,
+				rgba(0, 255, 0, 0.03),
+				rgba(0, 255, 0, 0.03) 1px,
+				transparent 1px,
+				transparent 2px
+			);
+			animation: scanlines 0.1s linear infinite;
+			pointer-events: none;
+			z-index: 2;
+		}
+		@keyframes scanlines {
+			0% { transform: translateY(0); }
+			100% { transform: translateY(4px); }
+		}
+		body.theme-glitch .container {
+			background: rgba(0, 0, 0, 0.9);
+			border: 2px solid #00ff00;
+			box-shadow: 0 0 20px #00ff00, inset 0 0 20px rgba(0, 255, 0, 0.1);
+			position: relative;
+		}
+		body.theme-glitch .container::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: -2px;
+			width: calc(100% + 4px);
+			height: calc(100% + 4px);
+			background: linear-gradient(
+				90deg,
+				transparent,
+				rgba(0, 255, 0, 0.1) 50%,
+				transparent
+			);
+			animation: glitch 3s infinite;
+		}
+		@keyframes glitch {
+			0%, 100% { transform: translateX(0); opacity: 1; }
+			10% { transform: translateX(-2px); opacity: 0.8; }
+			20% { transform: translateX(2px); opacity: 0.9; }
+			30% { transform: translateX(-1px); opacity: 1; }
+			40% { transform: translateX(1px); opacity: 0.8; }
+			50% { transform: translateX(0); opacity: 1; }
+		}
+		body.theme-glitch h1 {
+			color: #00ff00;
+			text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+			animation: textGlitch 4s infinite;
+		}
+		@keyframes textGlitch {
+			0%, 100% { transform: translateX(0); }
+			25% { transform: translateX(-1px); }
+			50% { transform: translateX(1px); }
+			75% { transform: translateX(-1px); }
+		}
+		body.theme-glitch .level {
+			color: #00ff00;
+			text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+			-webkit-text-fill-color: #00ff00;
+			font-family: 'Courier New', monospace;
+		}
+		body.theme-glitch .speed {
+			color: #00ff00;
+		}
+		body.theme-glitch .speed span {
+			color: #00ff41;
+			text-shadow: 0 0 10px #00ff41;
+		}
+		body.theme-glitch .info {
+			color: #00cc00;
+		}
+		body.theme-glitch .progress-bar {
+			background: rgba(0, 255, 0, 0.1);
+			border: 2px solid #00ff00;
+			box-shadow: 0 0 10px #00ff00;
+		}
+		body.theme-glitch .progress-fill {
+			background: linear-gradient(90deg, #00ff00, #00ff41, #00ff00);
+			box-shadow: 0 0 20px #00ff00;
+		}
+		body.theme-glitch .sprite {
+			display: block;
+		}
+		body.theme-glitch .sprite:nth-child(1) { top: 15%; left: 8%; animation-delay: 0s; }
+		body.theme-glitch .sprite:nth-child(2) { bottom: 20%; right: 8%; animation-delay: 1s; }
+		body.theme-glitch .sprite:nth-child(3) { top: 65%; left: 10%; animation-delay: 2s; }
+		body.theme-glitch .sprite::before { content: ''; }
+		
+		.matrix-canvas {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			z-index: 1;
+			opacity: 0.3;
+		}
+		body.theme-glitch .matrix-canvas {
+			display: block;
+		}
+		body.theme-minimal .matrix-canvas {
+			display: none;
+		}
+		body.theme-colorful .matrix-canvas {
+			display: none;
+		}
+		body.theme-demon .matrix-canvas {
+			display: none;
+		}
+		
+		/* Theme: Colorful */
+		body.theme-colorful {
+			background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+			background-size: 400% 400%;
+			animation: rainbow 8s ease infinite;
+		}
+		body.theme-colorful .container {
+			background: rgba(255, 255, 255, 0.25);
+			border: 3px solid #fff;
+			backdrop-filter: blur(15px);
+			box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3);
+		}
+		body.theme-colorful h1 {
+			background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+			background-size: 400% 400%;
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			animation: rainbow 3s ease infinite;
+		}
+		body.theme-colorful .level {
+			background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+			background-size: 400% 400%;
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			animation: rainbow 2s ease infinite, pulse 2s ease-in-out infinite;
+		}
+		body.theme-colorful .speed {
+			color: #fff;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+		}
+		body.theme-colorful .speed span {
+			background: linear-gradient(45deg, #ffff00, #ff00ff);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			font-weight: 700;
+		}
+		body.theme-colorful .info {
+			color: rgba(255, 255, 255, 0.95);
+			text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+		}
+		body.theme-colorful .progress-bar {
+			background: rgba(255, 255, 255, 0.4);
+			border: 2px solid #fff;
+		}
+		body.theme-colorful .progress-fill {
+			background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+			background-size: 400% 100%;
+			animation: rainbow 2s linear infinite;
+			box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+		}
+		body.theme-colorful .sprite {
+			display: block;
+		}
+		body.theme-colorful .sprite:nth-child(1) { top: 20%; left: 5%; animation-delay: 0s; }
+		body.theme-colorful .sprite:nth-child(2) { bottom: 25%; right: 5%; animation-delay: 1.2s; }
+		body.theme-colorful .sprite:nth-child(3) { top: 60%; left: 95%; animation-delay: 0.6s; }
+		body.theme-colorful .sprite::before { content: ''; }
+		
+		/* Theme: Demon */
+		body.theme-demon {
+			background: linear-gradient(180deg, #000000 0%, #1a0000 30%, #330000 60%, #660000 100%);
+			position: relative;
+		}
+		body.theme-demon::before {
+			content: '';
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-image: 
+				radial-gradient(circle at 20% 30%, rgba(255, 0, 0, 0.1), transparent),
+				radial-gradient(circle at 80% 70%, rgba(139, 0, 0, 0.1), transparent);
+			pointer-events: none;
+			animation: flicker 3s infinite;
+		}
+		@keyframes flicker {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.8; }
+		}
+		body.theme-demon .container {
+			background: rgba(0, 0, 0, 0.7);
+			border: 3px solid #8b0000;
+			box-shadow: 0 0 40px #ff0000, inset 0 0 30px rgba(139, 0, 0, 0.3);
+		}
+		body.theme-demon h1 {
+			color: #ff3300;
+			text-shadow: 0 0 20px #ff0000, 0 0 40px #ff3300, 0 0 60px #8b0000;
+			animation: demonGlow 2s ease-in-out infinite;
+		}
+		@keyframes demonGlow {
+			0%, 100% { text-shadow: 0 0 20px #ff0000, 0 0 40px #ff3300, 0 0 60px #8b0000; }
+			50% { text-shadow: 0 0 30px #ff6600, 0 0 50px #ff3300, 0 0 70px #ff0000; }
+		}
+		body.theme-demon .level {
+			color: #ff6600;
+			text-shadow: 0 0 30px #ff3300, 0 0 50px #ff0000, 0 0 70px #8b0000;
+			-webkit-text-fill-color: #ff6600;
+			font-family: 'Comic Sans MS', cursive;
+		}
+		body.theme-demon .speed {
+			color: #ff3300;
+		}
+		body.theme-demon .speed span {
+			color: #ff9900;
+			text-shadow: 0 0 15px #ff3300, 0 0 25px #ff0000;
+		}
+		body.theme-demon .info {
+			color: #cc0000;
+		}
+		body.theme-demon .progress-bar {
+			background: rgba(139, 0, 0, 0.3);
+			border: 2px solid #ff3300;
+			box-shadow: 0 0 15px #ff0000;
+		}
+		body.theme-demon .progress-fill {
+			background: linear-gradient(90deg, #8b0000, #ff3300, #ff6600, #ff3300, #8b0000);
+			box-shadow: 0 0 30px #ff3300, 0 0 50px #ff0000;
+			animation: demonPulse 1.5s ease-in-out infinite;
+		}
+		@keyframes demonPulse {
+			0%, 100% { box-shadow: 0 0 30px #ff3300, 0 0 50px #ff0000; }
+			50% { box-shadow: 0 0 40px #ff6600, 0 0 60px #ff3300; }
+		}
+		body.theme-demon .sprite {
+			display: block;
+		}
+		body.theme-demon .sprite:nth-child(1) { top: 18%; left: 7%; animation-delay: 0s; }
+		body.theme-demon .sprite:nth-child(2) { bottom: 22%; right: 7%; animation-delay: 1.3s; }
+		body.theme-demon .sprite:nth-child(3) { top: 50%; left: 92%; animation-delay: 0.7s; }
+		body.theme-demon .sprite::before { content: ''; }
+	</style>
+</head>
+<body class="theme-minimal">
+	<canvas class="matrix-canvas" id="matrixCanvas"></canvas>
+	
+	<div class="sprites">
+		<div class="sprite"></div>
+		<div class="sprite"></div>
+		<div class="sprite"></div>
+	</div>
+	
+	<div class="theme-selector">
+		<button class="theme-button active" data-theme="minimal">Minimal</button>
+		<button class="theme-button" data-theme="glitch">Glitch</button>
+		<button class="theme-button" data-theme="colorful">Colorful</button>
+		<button class="theme-button" data-theme="demon">Demon</button>
+	</div>
+	
+	<div class="container">
+		<h1>PROGRESS QUEST</h1>
+		<div class="level" id="level">0</div>
+		<div class="speed">Speed: <span id="speed">1</span> per second</div>
+		<div class="progress-bar">
+			<div class="progress-fill" id="progress"></div>
+		</div>
+		<div class="info">
+			The higher you go, the FASTER you go!<br>
+			Just sit back and watch the numbers grow...
+		</div>
+	</div>
+
+	<script>
+		// Progress Quest - Speed increases with level
+		// Speed is 5% of current number (so at 100, speed is 5/sec)
+
+		let level = 0;
+		let lastUpdate = Date.now();
+		const levelElement = document.getElementById('level');
+		const speedElement = document.getElementById('speed');
+		const progressElement = document.getElementById('progress');
+		const body = document.body;
+
+		// Theme switching
+		const themeButtons = document.querySelectorAll('.theme-button');
+		const savedTheme = localStorage.getItem('progressQuestTheme') || 'minimal';
+		
+		function setTheme(theme) {
+			body.className = 'theme-' + theme;
+			localStorage.setItem('progressQuestTheme', theme);
+			themeButtons.forEach(btn => {
+				btn.classList.toggle('active', btn.dataset.theme === theme);
+			});
+		}
+		
+		themeButtons.forEach(btn => {
+			btn.addEventListener('click', () => {
+				setTheme(btn.dataset.theme);
+			});
+		});
+		
+		setTheme(savedTheme);
+
+		// Matrix Rain Effect
+		const matrixCanvas = document.getElementById('matrixCanvas');
+		const matrixCtx = matrixCanvas.getContext('2d');
+		
+		function resizeMatrix() {
+			matrixCanvas.width = window.innerWidth;
+			matrixCanvas.height = window.innerHeight;
+		}
+		resizeMatrix();
+		window.addEventListener('resize', resizeMatrix);
+		
+		const chars = '01';
+		const fontSize = 14;
+		const columns = matrixCanvas.width / fontSize;
+		const drops = [];
+		
+		for (let i = 0; i < columns; i++) {
+			drops[i] = Math.random() * -100;
+		}
+		
+		function drawMatrix() {
+			if (!body.classList.contains('theme-glitch')) {
+				return;
+			}
+			
+			matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+			matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+			
+			matrixCtx.fillStyle = '#00ff00';
+			matrixCtx.font = fontSize + 'px monospace';
+			
+			for (let i = 0; i < drops.length; i++) {
+				let text;
+				if (Math.random() < 0.0001) { // 0.01% chance
+					text = 'Bo';
+				} else {
+					text = chars[Math.floor(Math.random() * chars.length)];
+				}
+				const x = i * fontSize;
+				const y = drops[i] * fontSize;
+				
+				matrixCtx.fillStyle = '#00ff00';
+				matrixCtx.fillText(text, x, y);
+				
+				if (y > matrixCanvas.height && Math.random() > 0.975) {
+					drops[i] = 0;
+				}
+				drops[i]++;
+			}
+		}
+		
+		function matrixLoop() {
+			drawMatrix();
+			requestAnimationFrame(matrixLoop);
+		}
+		matrixLoop();
+
+		function getSpeed(currentLevel) {
+			return Math.max(1, currentLevel * 0.05);
+		}
+
+		function formatNumber(num) {
+			if (num >= 1e33) {
+				return (num / 1e33).toFixed(2) + 'Dc';
+			}
+			if (num >= 1e30) {
+				return (num / 1e30).toFixed(2) + 'No';
+			}
+			if (num >= 1e27) {
+				return (num / 1e27).toFixed(2) + 'Oc';
+			}
+			if (num >= 1e24) {
+				return (num / 1e24).toFixed(2) + 'Sp';
+			}
+			if (num >= 1e21) {
+				return (num / 1e21).toFixed(2) + 'Sx';
+			}
+			if (num >= 1e18) {
+				return (num / 1e18).toFixed(2) + 'Qi';
+			}
+			if (num >= 1e15) {
+				return (num / 1e15).toFixed(2) + 'Qa';
+			}
+			if (num >= 1e12) {
+				return (num / 1e12).toFixed(2) + 'T';
+			}
+			if (num >= 1e9) {
+				return (num / 1e9).toFixed(2) + 'B';
+			}
+			if (num >= 1e6) {
+				return (num / 1e6).toFixed(2) + 'M';
+			}
+			if (num >= 1e3) {
+				return (num / 1e3).toFixed(2) + 'K';
+			}
+			return num.toFixed(0);
+		}
+
+		function update() {
+			const now = Date.now();
+			const deltaTime = (now - lastUpdate) / 1000;
+			lastUpdate = now;
+
+			const speed = getSpeed(level);
+			const increment = speed * deltaTime;
+			
+			level += increment;
+
+			levelElement.textContent = formatNumber(level);
+			speedElement.textContent = formatNumber(speed);
+			
+			const progress = (level % 1000) / 1000 * 100;
+			progressElement.style.width = progress + '%';
+
+			requestAnimationFrame(update);
+		}
+
+		lastUpdate = Date.now();
+		update();
+	</script>
+</body>
+</html>

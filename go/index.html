@@ -1,0 +1,797 @@
+<!--
+Go game - Multiplayer: Player 1 is Black, Player 2 is White
+Basic rules: Place stones on the board to capture territory and surround opponent stones
+9x9 board size for easier gameplay
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Go Game - Multiplayer</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Arial', sans-serif;
+			background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			color: white;
+			padding: 20px;
+		}
+
+		.container {
+			text-align: center;
+			background: rgba(255, 255, 255, 0.1);
+			padding: 2rem;
+			border-radius: 20px;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+		}
+
+		h1 {
+			font-size: 2.5rem;
+			margin-bottom: 1rem;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+		}
+
+		.game-info {
+			display: flex;
+			justify-content: space-around;
+			margin-bottom: 1.5rem;
+			font-size: 1.1rem;
+		}
+
+		.player-info {
+			background: rgba(255, 255, 255, 0.1);
+			padding: 1rem;
+			border-radius: 10px;
+			min-width: 150px;
+		}
+
+		.player-info.active {
+			background: rgba(255, 215, 0, 0.3);
+			border: 2px solid #ffd700;
+		}
+
+		.player-info.black {
+			border-left: 4px solid #000;
+		}
+
+		.player-info.white {
+			border-left: 4px solid #fff;
+		}
+
+		.captures {
+			font-size: 0.9rem;
+			margin-top: 0.5rem;
+			opacity: 0.8;
+		}
+
+		.captured-stones {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 5px;
+			margin-top: 0.5rem;
+			min-height: 40px;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.captured-stone {
+			width: 24px;
+			height: 24px;
+			border-radius: 50%;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+		}
+
+		.captured-stone.black {
+			background: #1a1a1a;
+			border: 2px solid #000;
+		}
+
+		.captured-stone.white {
+			background: #f5f5f5;
+			border: 2px solid #ddd;
+		}
+
+		.board-container {
+			display: inline-block;
+			background: #deb887;
+			padding: 20px;
+			border-radius: 10px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+		}
+
+		.board {
+			display: grid;
+			grid-template-columns: repeat(30, 1fr);
+			gap: 0;
+			background: #deb887;
+			position: relative;
+			border: 3px solid #8b4513;
+		}
+
+		.intersection {
+			width: 20px;
+			height: 20px;
+			border: 1px solid rgba(139, 69, 19, 0.3);
+			position: relative;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.intersection:hover {
+			background: rgba(255, 255, 255, 0.2);
+		}
+
+		.intersection.has-stone {
+			cursor: default;
+		}
+
+		.intersection.has-stone:hover {
+			background: transparent;
+		}
+
+		.stone {
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			position: absolute;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+		}
+
+		.stone.black {
+			background: #1a1a1a;
+			border: 2px solid #000;
+		}
+
+		.stone.white {
+			background: #f5f5f5;
+			border: 2px solid #ddd;
+		}
+
+		.controls {
+			margin-top: 1.5rem;
+		}
+
+		button {
+			background: linear-gradient(45deg, #3498db, #2980b9);
+			color: white;
+			border: none;
+			padding: 12px 30px;
+			font-size: 1.1rem;
+			border-radius: 25px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+			margin: 0 10px;
+		}
+
+		button:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+		}
+
+		.status-message {
+			font-size: 1.2rem;
+			margin-top: 1rem;
+			font-weight: bold;
+			min-height: 30px;
+		}
+
+		.winner-message {
+			font-size: 1.5rem;
+			color: #ffd700;
+			text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+		}
+
+		.start-screen {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.8);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+		}
+
+		.start-content {
+			background: rgba(44, 62, 80, 0.95);
+			padding: 2rem;
+			border-radius: 20px;
+			max-width: 600px;
+			text-align: center;
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+		}
+
+		.start-content h2 {
+			font-size: 1.8rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.start-content p {
+			font-size: 1.2rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.start-buttons {
+			display: flex;
+			gap: 1rem;
+			justify-content: center;
+			margin-top: 1.5rem;
+		}
+
+		.instructions {
+			background: rgba(255, 255, 255, 0.1);
+			padding: 1.5rem;
+			border-radius: 10px;
+			margin-top: 1.5rem;
+			text-align: left;
+			max-height: 400px;
+			overflow-y: auto;
+		}
+
+		.instructions h3 {
+			margin-bottom: 1rem;
+			color: #ffd700;
+		}
+
+		.instructions ul {
+			margin-left: 1.5rem;
+			line-height: 1.8;
+		}
+
+		.instructions li {
+			margin-bottom: 0.5rem;
+		}
+
+		.hidden {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="start-screen" id="startScreen">
+		<div class="start-content">
+			<h2>Question for Black Player</h2>
+			<p>Have you played Go before?</p>
+			<div class="start-buttons">
+				<button onclick="startGame(true)">Yes</button>
+				<button onclick="startGame(false)">No</button>
+			</div>
+			<div class="instructions hidden" id="instructions">
+				<h3>📖 How to Play Go</h3>
+				<ul>
+					<li><strong>Goal:</strong> Control more territory on the board than your opponent</li>
+					<li><strong>Placing Stones:</strong> Click on an empty intersection to place your stone</li>
+					<li><strong>Capturing:</strong> Surround your opponent's stones completely (no empty spaces around them) to capture them</li>
+					<li><strong>Liberties:</strong> Empty spaces next to your stones are called "liberties" - you need at least one to stay alive</li>
+					<li><strong>Groups:</strong> Connected stones of the same color form a group and share liberties</li>
+					<li><strong>Handicap:</strong> Since you're new, you'll start with 9 extra black stones already on the board!</li>
+					<li><strong>Turn Order:</strong> Players take turns placing stones</li>
+					<li><strong>Winning:</strong> The player with more captured stones and controlled territory wins</li>
+				</ul>
+				<button onclick="closeInstructions()" style="margin-top: 1rem;">Got it! Start Game</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="container" id="gameContainer" style="display: none;">
+		<h1>⚫ Go Game ⚪</h1>
+		
+		<div class="game-info">
+			<div class="player-info black active" id="playerBlack">
+				<div><strong>Player 1 (Black)</strong></div>
+				<div class="captures">Captured: <span id="capturesBlack">0</span></div>
+				<div class="captured-stones" id="capturedStonesBlack"></div>
+			</div>
+			<div class="player-info white" id="playerWhite">
+				<div><strong>Player 2 (White)</strong></div>
+				<div class="captures">Captured: <span id="capturesWhite">0</span></div>
+				<div class="captured-stones" id="capturedStonesWhite"></div>
+			</div>
+		</div>
+
+		<div class="board-container">
+			<div class="board" id="board"></div>
+		</div>
+
+		<div class="status-message" id="status">Player 1's turn - Click to place a black stone</div>
+
+		<div class="controls">
+			<button onclick="passTurn()" id="passButton">Pass</button>
+			<button onclick="newGame()">New Game</button>
+		</div>
+	</div>
+
+	<script>
+		const BOARD_SIZE = 30;
+		let board = [];
+		let currentPlayer = 'black'; // Player 1 is black, Player 2 is white
+		let captures = { black: 0, white: 0 };
+		let capturedStones = { black: [], white: [] }; // Store captured stones to display
+		let gameActive = true;
+		let blackIsBeginner = false; // Track if black player is a beginner
+		let consecutivePasses = 0; // Track consecutive passes
+		let turnsRemaining = 1; // Track how many turns the current player has left (for pass bonus)
+
+		// Start game function
+		function startGame(hasPlayedBefore) {
+			if (hasPlayedBefore) {
+				// Experienced player - start game immediately
+				blackIsBeginner = false;
+				beginGame();
+			} else {
+				// Beginner - show instructions
+				blackIsBeginner = true;
+				document.getElementById('instructions').classList.remove('hidden');
+			}
+		}
+
+		// Close instructions and start game
+		function closeInstructions() {
+			document.getElementById('startScreen').style.display = 'none';
+			document.getElementById('gameContainer').style.display = 'block';
+			beginGame();
+		}
+
+		// Begin the actual game
+		function beginGame() {
+			document.getElementById('startScreen').style.display = 'none';
+			document.getElementById('gameContainer').style.display = 'block';
+			consecutivePasses = 0;
+			turnsRemaining = 1;
+			initBoard();
+			updateCaptures();
+			updateStatus();
+			document.getElementById('passButton').disabled = false;
+		}
+
+		// Initialize board
+		function initBoard() {
+			board = [];
+			for (let i = 0; i < BOARD_SIZE; i++) {
+				board[i] = [];
+				for (let j = 0; j < BOARD_SIZE; j++) {
+					board[i][j] = null;
+				}
+			}
+			
+			// Place handicap stones if black is a beginner
+			if (blackIsBeginner) {
+				placeHandicapStones();
+			}
+			
+			renderBoard();
+		}
+
+		// Place handicap stones for beginner black player
+		function placeHandicapStones() {
+			// Standard 9-stone handicap pattern (star points)
+			const handicapPositions = [
+				// Corner star points
+				{ row: 3, col: 3 },
+				{ row: 3, col: BOARD_SIZE - 4 },
+				{ row: BOARD_SIZE - 4, col: 3 },
+				{ row: BOARD_SIZE - 4, col: BOARD_SIZE - 4 },
+				// Side star points
+				{ row: 3, col: Math.floor(BOARD_SIZE / 2) },
+				{ row: BOARD_SIZE - 4, col: Math.floor(BOARD_SIZE / 2) },
+				{ row: Math.floor(BOARD_SIZE / 2), col: 3 },
+				{ row: Math.floor(BOARD_SIZE / 2), col: BOARD_SIZE - 4 },
+				// Center star point
+				{ row: Math.floor(BOARD_SIZE / 2), col: Math.floor(BOARD_SIZE / 2) }
+			];
+
+			handicapPositions.forEach(pos => {
+				if (pos.row >= 0 && pos.row < BOARD_SIZE && pos.col >= 0 && pos.col < BOARD_SIZE) {
+					board[pos.row][pos.col] = 'black';
+				}
+			});
+		}
+
+		// Render the board
+		function renderBoard() {
+			const boardElement = document.getElementById('board');
+			boardElement.innerHTML = '';
+			
+			for (let i = 0; i < BOARD_SIZE; i++) {
+				for (let j = 0; j < BOARD_SIZE; j++) {
+					const intersection = document.createElement('div');
+					intersection.className = 'intersection';
+					intersection.dataset.row = i;
+					intersection.dataset.col = j;
+					
+					if (board[i][j]) {
+						intersection.classList.add('has-stone');
+						const stone = document.createElement('div');
+						stone.className = `stone ${board[i][j]}`;
+						intersection.appendChild(stone);
+					} else {
+						intersection.addEventListener('click', () => handleMove(i, j));
+					}
+					
+					boardElement.appendChild(intersection);
+				}
+			}
+		}
+
+		// Handle player move
+		function handleMove(row, col) {
+			if (!gameActive || board[row][col] !== null) {
+				return;
+			}
+
+			// Check if move is valid (no suicide rule simplified)
+			if (isValidMove(row, col, currentPlayer)) {
+				placeStone(row, col, currentPlayer);
+				consecutivePasses = 0; // Reset pass counter when a move is made
+				turnsRemaining--;
+				
+				// If this player has no more turns, switch to other player
+				if (turnsRemaining <= 0) {
+					currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+					turnsRemaining = 1; // Reset to normal turn
+				}
+				updateStatus();
+			}
+		}
+
+		// Pass turn
+		function passTurn() {
+			if (!gameActive) return;
+			
+			consecutivePasses++;
+			
+			// Check if both players passed consecutively (game over)
+			if (consecutivePasses >= 2) {
+				endGame();
+				return;
+			}
+			
+			// Switch to other player and give them 2 turns (bonus for opponent passing)
+			currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+			turnsRemaining = 2; // Give 2 turns when opponent passes
+			
+			updateStatus();
+		}
+
+		// Check if move is valid (basic validation)
+		function isValidMove(row, col, color) {
+			if (board[row][col] !== null) return false;
+			
+			// Try the move
+			board[row][col] = color;
+			const opponentColor = color === 'black' ? 'white' : 'black';
+			const captured = checkCaptures(row, col, opponentColor);
+			
+			// Temporarily remove captured stones to check liberties
+			captured.forEach(pos => {
+				board[pos.row][pos.col] = null;
+			});
+			
+			// Check if this move captures stones OR creates a group with liberties
+			const hasLiberties = checkGroupLiberties(row, col, color);
+			
+			// Restore captured stones and remove our test stone
+			captured.forEach(pos => {
+				board[pos.row][pos.col] = opponentColor;
+			});
+			board[row][col] = null;
+			
+			return captured.length > 0 || hasLiberties;
+		}
+
+		// Place a stone
+		function placeStone(row, col, color) {
+			board[row][col] = color;
+			const opponentColor = color === 'black' ? 'white' : 'black';
+			const captured = checkCaptures(row, col, opponentColor);
+			
+			if (captured.length > 0) {
+				captured.forEach(pos => {
+					board[pos.row][pos.col] = null;
+					// Store captured stone color for display
+					capturedStones[color].push(opponentColor);
+				});
+				captures[color] += captured.length;
+				updateCaptures();
+			}
+			
+			renderBoard();
+		}
+
+		// Check for captures after a move
+		function checkCaptures(row, col, opponentColor) {
+			const captured = [];
+			const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+			const checked = new Set();
+
+			directions.forEach(([dr, dc]) => {
+				const newRow = row + dr;
+				const newCol = col + dc;
+				const key = `${newRow},${newCol}`;
+				
+				if (newRow >= 0 && newRow < BOARD_SIZE && 
+				    newCol >= 0 && newCol < BOARD_SIZE &&
+				    board[newRow][newCol] === opponentColor &&
+				    !checked.has(key)) {
+					
+					const group = getGroup(newRow, newCol, opponentColor);
+					if (group.liberties.length === 0) {
+						group.stones.forEach(stone => {
+							captured.push(stone);
+							checked.add(`${stone.row},${stone.col}`);
+						});
+					}
+				}
+			});
+
+			return captured;
+		}
+
+		// Get a group of connected stones
+		function getGroup(row, col, color) {
+			const stones = [];
+			const liberties = [];
+			const visited = new Set();
+			const stack = [{ row, col }];
+			const maxIterations = BOARD_SIZE * BOARD_SIZE; // Safety limit
+			let iterations = 0;
+
+			// Validate starting position
+			if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
+				return { stones, liberties };
+			}
+
+			while (stack.length > 0 && iterations < maxIterations) {
+				iterations++;
+				const { row: r, col: c } = stack.pop();
+				
+				// Check boundaries first
+				if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
+				
+				const key = `${r},${c}`;
+				if (visited.has(key)) continue;
+				visited.add(key);
+
+				if (board[r][c] === color) {
+					stones.push({ row: r, col: c });
+					
+					const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+					directions.forEach(([dr, dc]) => {
+						const newRow = r + dr;
+						const newCol = c + dc;
+						
+						// Check boundaries BEFORE creating key or checking visited
+						if (newRow >= 0 && newRow < BOARD_SIZE && 
+						    newCol >= 0 && newCol < BOARD_SIZE) {
+							const newKey = `${newRow},${newCol}`;
+							
+							if (board[newRow][newCol] === null) {
+								if (!liberties.some(lib => lib.row === newRow && lib.col === newCol)) {
+									liberties.push({ row: newRow, col: newCol });
+								}
+							} else if (board[newRow][newCol] === color && !visited.has(newKey)) {
+								stack.push({ row: newRow, col: newCol });
+							}
+						}
+					});
+				}
+			}
+
+			return { stones, liberties };
+		}
+
+		// Check if a group has liberties
+		function checkGroupLiberties(row, col, color) {
+			const group = getGroup(row, col, color);
+			return group.liberties.length > 0;
+		}
+
+		// Update status message
+		function updateStatus() {
+			const statusElement = document.getElementById('status');
+			document.getElementById('playerBlack').classList.toggle('active', currentPlayer === 'black');
+			document.getElementById('playerWhite').classList.toggle('active', currentPlayer === 'white');
+			
+			if (turnsRemaining > 1) {
+				if (currentPlayer === 'black') {
+					statusElement.textContent = `Player 1's turn (${turnsRemaining} turns left) - Click to place a black stone`;
+				} else {
+					statusElement.textContent = `Player 2's turn (${turnsRemaining} turns left) - Click to place a white stone`;
+				}
+			} else {
+				if (currentPlayer === 'black') {
+					statusElement.textContent = 'Player 1\'s turn - Click to place a black stone';
+				} else {
+					statusElement.textContent = 'Player 2\'s turn - Click to place a white stone';
+				}
+			}
+			
+			if (consecutivePasses > 0) {
+				statusElement.textContent += ` (${consecutivePasses} pass${consecutivePasses > 1 ? 'es' : ''})`;
+			}
+		}
+
+		// Update capture counts and display captured stones
+		function updateCaptures() {
+			document.getElementById('capturesBlack').textContent = captures.black;
+			document.getElementById('capturesWhite').textContent = captures.white;
+			renderCapturedStones();
+		}
+
+		// Render captured stones
+		function renderCapturedStones() {
+			const blackContainer = document.getElementById('capturedStonesBlack');
+			const whiteContainer = document.getElementById('capturedStonesWhite');
+			
+			blackContainer.innerHTML = '';
+			whiteContainer.innerHTML = '';
+			
+			// Show captured white stones (captured by black)
+			capturedStones.black.forEach(() => {
+				const stone = document.createElement('div');
+				stone.className = 'captured-stone white';
+				blackContainer.appendChild(stone);
+			});
+			
+			// Show captured black stones (captured by white)
+			capturedStones.white.forEach(() => {
+				const stone = document.createElement('div');
+				stone.className = 'captured-stone black';
+				whiteContainer.appendChild(stone);
+			});
+		}
+
+		// End game and calculate winner
+		function endGame() {
+			gameActive = false;
+			const scores = calculateScores();
+			const winner = scores.black > scores.white ? 'black' : scores.white > scores.black ? 'white' : 'tie';
+			
+			let message = '';
+			if (winner === 'tie') {
+				message = `Game Over! It's a tie! Black: ${scores.black.toFixed(1)}, White: ${scores.white.toFixed(1)}`;
+			} else if (winner === 'black') {
+				message = `Game Over! Player 1 (Black) wins! Black: ${scores.black.toFixed(1)}, White: ${scores.white.toFixed(1)}`;
+			} else {
+				message = `Game Over! Player 2 (White) wins! Black: ${scores.black.toFixed(1)}, White: ${scores.white.toFixed(1)}`;
+			}
+			
+			document.getElementById('status').className = 'status-message winner-message';
+			document.getElementById('status').textContent = message;
+			document.getElementById('passButton').disabled = true;
+		}
+
+		// Calculate final scores (territory + captures)
+		function calculateScores() {
+			const territory = { black: 0, white: 0 };
+			const visited = new Set();
+			
+			// Count territory (empty spaces controlled by each player)
+			for (let i = 0; i < BOARD_SIZE; i++) {
+				for (let j = 0; j < BOARD_SIZE; j++) {
+					const key = `${i},${j}`;
+					if (visited.has(key)) continue;
+					
+					if (board[i][j] === null) {
+						// Empty space - check what color controls it
+						const controlledBy = getTerritoryController(i, j, visited);
+						if (controlledBy === 'black') {
+							territory.black++;
+						} else if (controlledBy === 'white') {
+							territory.white++;
+						}
+					}
+				}
+			}
+			
+			// Count stones on board
+			let stonesOnBoard = { black: 0, white: 0 };
+			for (let i = 0; i < BOARD_SIZE; i++) {
+				for (let j = 0; j < BOARD_SIZE; j++) {
+					if (board[i][j] === 'black') stonesOnBoard.black++;
+					if (board[i][j] === 'white') stonesOnBoard.white++;
+				}
+			}
+			
+			// Final score = territory + stones on board + captured stones
+			return {
+				black: territory.black + stonesOnBoard.black + captures.black,
+				white: territory.white + stonesOnBoard.white + captures.white
+			};
+		}
+
+		// Determine which player controls a territory
+		function getTerritoryController(row, col, visited) {
+			const region = [];
+			const stack = [{ row, col }];
+			const borders = { black: false, white: false };
+			const maxIterations = BOARD_SIZE * BOARD_SIZE; // Safety limit
+			let iterations = 0;
+			
+			// Validate starting position
+			if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
+				return null;
+			}
+			
+			while (stack.length > 0 && iterations < maxIterations) {
+				iterations++;
+				const { row: r, col: c } = stack.pop();
+				
+				// Check boundaries FIRST
+				if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) continue;
+				
+				const key = `${r},${c}`;
+				if (visited.has(key)) continue;
+				visited.add(key);
+				
+				if (board[r][c] === null) {
+					region.push({ row: r, col: c });
+					
+					const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+					directions.forEach(([dr, dc]) => {
+						const newRow = r + dr;
+						const newCol = c + dc;
+						
+						// Check boundaries BEFORE creating key or accessing board
+						if (newRow >= 0 && newRow < BOARD_SIZE && 
+						    newCol >= 0 && newCol < BOARD_SIZE) {
+							const newKey = `${newRow},${newCol}`;
+							
+							if (!visited.has(newKey)) {
+								if (board[newRow][newCol] === 'black') {
+									borders.black = true;
+								} else if (board[newRow][newCol] === 'white') {
+									borders.white = true;
+								} else {
+									stack.push({ row: newRow, col: newCol });
+								}
+							}
+						}
+					});
+				}
+			}
+			
+			// If only one color borders the region, that color controls it
+			if (borders.black && !borders.white) return 'black';
+			if (borders.white && !borders.black) return 'white';
+			return null; // Neutral or contested
+		}
+
+		// New game
+		function newGame() {
+			board = [];
+			currentPlayer = 'black';
+			captures = { black: 0, white: 0 };
+			capturedStones = { black: [], white: [] };
+			gameActive = true;
+			consecutivePasses = 0;
+			turnsRemaining = 1;
+			initBoard();
+			updateCaptures();
+			updateStatus();
+			document.getElementById('status').className = 'status-message';
+			document.getElementById('passButton').disabled = false;
+		}
+
+		// Game will start when player answers the question
+	</script>
+</body>
+</html>

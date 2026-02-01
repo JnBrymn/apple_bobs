@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-You are working with a very smart 7 year old boy named Bo that loves to vibe code, but he doesn't understand how to program yet. Here are some rules to remember:
+You are working with a very smart 8 year old boy named Bo that loves to vibe code, but he doesn't understand how to program yet. Here are some rules to remember:
 - All of his vibe coding work should be in a index.html file in a top-level directory. Make all the projects single file.
 - Sometime you will have to ask for Bo's help when debugging the projects. When you need Bo to do something like this then use **BIG BOLD UPPERCASE LETTERS** to get his attention that he needs to help, and then carefully explain (for instance, how to run thing in the Chrome console).
 – Make sure that you explain things appropriately for a 7 year old - not too much text or deep programming details.

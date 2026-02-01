@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Being Poor Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: purple;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 { font-size: 3em; margin-bottom: 30px; }
+        .coins { font-size: 2em; margin: 20px; }
+        button {
+            background: blue;
+            color: white;
+            font-size: 1.5em;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .dice { font-size: 4em; margin: 20px; }
+        .numbers {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px auto;
+            max-width: 400px;
+        }
+        .box {
+            background: white;
+            color: black;
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Being Poor</h1>
+    <div class="coins">Coins: <span id="coins">10</span></div>
+    <div class="dice" id="dice">🎲</div>
+    <button onclick="rollDice()">Roll Dice</button>
+    <div class="numbers">
+        <div class="box" id="box1">1<br><span id="c1">0</span></div>
+        <div class="box" id="box2">2<br><span id="c2">0</span></div>
+        <div class="box" id="box3">3<br><span id="c3">0</span></div>
+        <div class="box" id="box4">4<br><span id="c4">0</span></div>
+        <div class="box" id="box5">5<br><span id="c5">0</span></div>
+        <div class="box" id="box6" style="background:red;color:white;">6<br><span id="c6">0</span></div>
+    </div>
+    <div id="msg"></div>
+    <script>
+        var coins = 10;
+        var counts = [0,0,0,0,0,0];
+        
+        function rollDice() {
+            if (coins <= 0) {
+                document.getElementById('msg').innerHTML = 'Game Over!';
+                return;
+            }
+            var roll = Math.floor(Math.random() * 6) + 1;
+            var dice = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+            document.getElementById('dice').textContent = dice[roll-1];
+            
+            if (roll == 6) {
+                coins--;
+                counts[5]++;
+                document.getElementById('msg').innerHTML = 'Rolled 6! Lost 1 coin forever!';
+            } else {
+                var idx = roll - 1;
+                if (counts[idx] > 0) {
+                    coins += counts[idx];
+                    document.getElementById('msg').innerHTML = 'Rolled ' + roll + '! Got ' + counts[idx] + ' coins back!';
+                    counts[idx] = 0;
+                } else {
+                    coins--;
+                    counts[idx]++;
+                    document.getElementById('msg').innerHTML = 'Rolled ' + roll + '! Placed 1 coin on ' + roll;
+                }
+            }
+            updateDisplay();
+            if (coins <= 0) {
+                document.getElementById('msg').innerHTML = 'GAME OVER - You are broke!';
+            }
+        }
+        
+        function updateDisplay() {
+            document.getElementById('coins').textContent = coins;
+            for (var i = 0; i < 6; i++) {
+                document.getElementById('c' + (i+1)).textContent = counts[i];
+            }
+        }
+        
+        updateDisplay();
+    </script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Superliminal</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			background: #000;
+			overflow: hidden;
+			font-family: Arial, sans-serif;
+		}
+
+		canvas {
+			display: block;
+		}
+
+		#ui {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			color: white;
+			background: rgba(0, 0, 0, 0.8);
+			padding: 15px;
+			border-radius: 5px;
+			font-size: 14px;
+			z-index: 100;
+			max-width: 300px;
+		}
+
+		#ui h2 {
+			margin-bottom: 10px;
+			font-size: 18px;
+			color: #4ecdc4;
+		}
+
+		#ui p {
+			margin: 5px 0;
+		}
+
+		#levelInfo {
+			color: #ffd700;
+			font-weight: bold;
+			margin-top: 10px;
+		}
+
+		#goal {
+			color: #98d8c8;
+			margin-top: 10px;
+			font-style: italic;
+		}
+
+		#startScreen {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.95);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+			color: white;
+			text-align: center;
+		}
+
+		#startScreen h1 {
+			font-size: 48px;
+			margin-bottom: 20px;
+			color: #4ecdc4;
+		}
+
+		#startScreen p {
+			font-size: 18px;
+			margin: 10px 0;
+			max-width: 600px;
+		}
+
+		#startButton {
+			margin-top: 30px;
+			padding: 15px 40px;
+			font-size: 20px;
+			background: #4ecdc4;
+			color: black;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: bold;
+		}
+
+		#startButton:hover {
+			background: #45b7d1;
+		}
+
+		#levelComplete {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: rgba(0, 0, 0, 0.95);
+			padding: 40px;
+			border-radius: 10px;
+			text-align: center;
+			z-index: 2000;
+			display: none;
+			color: white;
+		}
+
+		#levelComplete h2 {
+			font-size: 36px;
+			color: #4ecdc4;
+			margin-bottom: 20px;
+		}
+
+		#levelComplete button {
+			margin-top: 20px;
+			padding: 15px 40px;
+			font-size: 18px;
+			background: #4ecdc4;
+			color: black;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<div id="startScreen">
+		<h1>SUPERLIMINAL</h1>
+		<p>Use perspective to solve puzzles!</p>
+		<p>Pick up objects - they keep their size when you place them.</p>
+		<p>Reach the exit door to complete each level.</p>
+		<button id="startButton">START GAME</button>
+	</div>
+
+	<div id="ui">
+		<h2>Superliminal</h2>
+		<p>Mouse: Look around</p>
+		<p>WASD: Move</p>
+		<p>Click: Pick up / Place</p>
+		<p>E: Interact</p>
+		<div id="levelInfo">Level 1</div>
+		<div id="goal">Goal: Reach the exit door</div>
+	</div>
+
+	<div id="levelComplete">
+		<h2>Level Complete!</h2>
+		<p>Well done! Moving to next level...</p>
+		<button id="nextLevelBtn">Continue</button>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+	<script>
+		// Superliminal - Full Game
+		// Multiple levels with perspective puzzles
+
+		let currentLevel = 0;
+		let gameStarted = false;
+		let scene, camera, renderer;
+		let objects = [];
+		let buttons = [];
+		let exits = [];
+		let platforms = [];
+		let walls = [];
+		let floor = null;
+		let pickedObject = null;
+		let pickedObjectOriginalScale = 1;
+		let isPointerLocked = false;
+		let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+		const velocity = new THREE.Vector3();
+		const direction = new THREE.Vector3();
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+		let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+		const PI_2 = Math.PI / 2;
+
+		// Level definitions
+		const levels = [
+			{
+				name: "Tutorial",
+				goal: "Reach the exit door",
+				setup: (scene) => {
+					// Simple room with boxes and exit
+					const exit = createExit(0, 1, -8);
+					scene.add(exit);
+					exits.push(exit);
+
+					// Some boxes to play with
+					createBox(scene, -2, 1, -3, 0.5, 0xff6b6b);
+					createBox(scene, 2, 1, -3, 0.5, 0x4ecdc4);
+					createBox(scene, 0, 1, -5, 0.3, 0x45b7d1);
+				}
+			},
+			{
+				name: "The Gap",
+				goal: "Use a box as a bridge",
+				setup: (scene) => {
+					// Room with a gap
+					const exit = createExit(0, 1, -12);
+					scene.add(exit);
+					exits.push(exit);
+
+					// Gap in floor
+					const gap = new THREE.Mesh(
+						new THREE.PlaneGeometry(4, 0.1),
+						new THREE.MeshStandardMaterial({ color: 0x000000 })
+					);
+					gap.rotation.x = -Math.PI / 2;
+					gap.position.set(0, 0.05, -6);
+					scene.add(gap);
+
+					// Box to use as bridge
+					createBox(scene, -3, 1, -3, 0.4, 0xff6b6b);
+				}
+			},
+			{
+				name: "Button Press",
+				goal: "Press the button to open the door",
+				setup: (scene) => {
+					// Exit behind a door
+					const exit = createExit(0, 1, -10);
+					exit.userData.locked = true;
+					scene.add(exit);
+					exits.push(exit);
+
+					// Button to press
+					const button = createButton(scene, 3, 1, -5);
+					button.userData.targetExit = exit;
+					scene.add(button);
+					buttons.push(button);
+
+					// Box to reach button
+					createBox(scene, -2, 1, -3, 0.3, 0x4ecdc4);
+				}
+			},
+			{
+				name: "High Platform",
+				goal: "Reach the high platform",
+				setup: (scene) => {
+					// Exit on high platform
+					const platform = new THREE.Mesh(
+						new THREE.BoxGeometry(4, 0.5, 4),
+						new THREE.MeshStandardMaterial({ color: 0x3a3a4e })
+					);
+					platform.position.set(0, 4, -8);
+					platform.receiveShadow = true;
+					scene.add(platform);
+					platforms.push(platform);
+
+					const exit = createExit(0, 5, -8);
+					scene.add(exit);
+					exits.push(exit);
+
+					// Boxes to stack
+					createBox(scene, -3, 1, -3, 0.5, 0xff6b6b);
+					createBox(scene, 3, 1, -3, 0.5, 0x4ecdc4);
+					createBox(scene, 0, 1, -2, 0.4, 0x45b7d1);
+				}
+			},
+			{
+				name: "Perspective Trick",
+				goal: "Make a box big enough to reach the exit",
+				setup: (scene) => {
+					// Exit far away
+					const exit = createExit(0, 1, -20);
+					scene.add(exit);
+					exits.push(exit);
+
+					// Small box close - pick it up from far away to make it huge!
+					createBox(scene, 0, 1, -15, 0.2, 0xff6b6b);
+				}
+			},
+			{
+				name: "Multiple Buttons",
+				goal: "Press all 3 buttons",
+				setup: (scene) => {
+					const exit = createExit(0, 1, -10);
+					exit.userData.locked = true;
+					exit.userData.buttonsNeeded = 3;
+					scene.add(exit);
+					exits.push(exit);
+
+					// Three buttons
+					for (let i = 0; i < 3; i++) {
+						const button = createButton(scene, -4 + i * 4, 1, -5);
+						button.userData.targetExit = exit;
+						scene.add(button);
+						buttons.push(button);
+					}
+
+					// Boxes to help reach buttons
+					createBox(scene, -4, 1, -2, 0.4, 0xff6b6b);
+					createBox(scene, 0, 1, -2, 0.4, 0x4ecdc4);
+					createBox(scene, 4, 1, -2, 0.4, 0x45b7d1);
+				}
+			}
+		];
+
+		function init() {
+			// Scene setup
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x0a0a1a);
+			scene.fog = new THREE.Fog(0x0a0a1a, 10, 50);
+
+			camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+			camera.position.set(0, 2, 5);
+
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			document.body.appendChild(renderer.domElement);
+
+			// Lighting
+			const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+			scene.add(ambientLight);
+
+			const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+			directionalLight.position.set(5, 10, 5);
+			directionalLight.castShadow = true;
+			directionalLight.shadow.mapSize.width = 2048;
+			directionalLight.shadow.mapSize.height = 2048;
+			directionalLight.shadow.camera.near = 0.5;
+			directionalLight.shadow.camera.far = 50;
+			scene.add(directionalLight);
+
+			setupLevel(0);
+			setupControls();
+			animate();
+		}
+
+		function setupLevel(levelIndex) {
+			// Clear previous level
+			objects.forEach(obj => scene.remove(obj));
+			buttons.forEach(btn => scene.remove(btn));
+			exits.forEach(exit => scene.remove(exit));
+			platforms.forEach(plat => scene.remove(plat));
+			walls.forEach(wall => scene.remove(wall));
+			objects = [];
+			buttons = [];
+			exits = [];
+			platforms = [];
+			walls = [];
+			pickedObject = null;
+
+			// Reset camera
+			camera.position.set(0, 2, 5);
+			camera.rotation.set(0, 0, 0);
+			euler.set(0, 0, 0, 'YXZ');
+
+			// Create floor
+			if (floor) scene.remove(floor);
+			const floorGeometry = new THREE.PlaneGeometry(50, 50);
+			const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x1a1a2e });
+			floor = new THREE.Mesh(floorGeometry, floorMaterial);
+			floor.rotation.x = -Math.PI / 2;
+			floor.receiveShadow = true;
+			scene.add(floor);
+
+			// Create walls
+			const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2a3e });
+			const wallPositions = [
+				[0, 5, -15], [0, 5, 5], [-12, 5, -5], [12, 5, -5]
+			];
+			wallPositions.forEach((pos, i) => {
+				const wall = new THREE.Mesh(
+					new THREE.PlaneGeometry(24, 10),
+					wallMaterial
+				);
+				wall.position.set(...pos);
+				if (i < 2) {
+					wall.rotation.y = Math.PI / 2;
+				}
+				scene.add(wall);
+				walls.push(wall);
+			});
+
+			// Setup level
+			const level = levels[levelIndex];
+			level.setup(scene);
+
+			// Update UI
+			document.getElementById('levelInfo').textContent = `Level ${levelIndex + 1}: ${level.name}`;
+			document.getElementById('goal').textContent = `Goal: ${level.goal}`;
+		}
+
+		function createBox(scene, x, y, z, size, color) {
+			const geometry = new THREE.BoxGeometry(size, size, size);
+			const material = new THREE.MeshStandardMaterial({ color });
+			const cube = new THREE.Mesh(geometry, material);
+			cube.position.set(x, y, z);
+			cube.castShadow = true;
+			cube.receiveShadow = true;
+			cube.userData = {
+				originalSize: size,
+				pickedUp: false,
+				type: 'box'
+			};
+			scene.add(cube);
+			objects.push(cube);
+			return cube;
+		}
+
+		function createButton(scene, x, y, z) {
+			const geometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+			const material = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+			const button = new THREE.Mesh(geometry, material);
+			button.position.set(x, y, z);
+			button.rotation.x = Math.PI / 2;
+			button.castShadow = true;
+			button.receiveShadow = true;
+			button.userData = {
+				pressed: false,
+				type: 'button',
+				originalY: y
+			};
+			return button;
+		}
+
+		function createExit(scene, x, y, z) {
+			const frame = new THREE.Group();
+			
+			// Door frame
+			const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4a5e });
+			const top = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 0.3), frameMaterial);
+			top.position.set(0, 2.5, 0);
+			frame.add(top);
+			
+			const left = new THREE.Mesh(new THREE.BoxGeometry(0.3, 5, 0.3), frameMaterial);
+			left.position.set(-1.35, 0, 0);
+			frame.add(left);
+			
+			const right = new THREE.Mesh(new THREE.BoxGeometry(0.3, 5, 0.3), frameMaterial);
+			right.position.set(1.35, 0, 0);
+			frame.add(right);
+
+			// Door
+			const doorMaterial = new THREE.MeshStandardMaterial({ 
+				color: 0x4ecdc4,
+				emissive: 0x1a4a4a
+			});
+			const door = new THREE.Mesh(new THREE.BoxGeometry(2.7, 4.7, 0.2), doorMaterial);
+			door.position.set(0, 0.15, 0);
+			frame.add(door);
+
+			frame.position.set(x, y, z);
+			frame.userData = {
+				type: 'exit',
+				locked: false,
+				buttonsPressed: 0,
+				buttonsNeeded: 0
+			};
+			return frame;
+		}
+
+		function setupControls() {
+			// Pointer lock
+			renderer.domElement.addEventListener('click', () => {
+				if (!gameStarted) return;
+				if (!isPointerLocked) {
+					renderer.domElement.requestPointerLock();
+				}
+			});
+
+			document.addEventListener('pointerlockchange', () => {
+				isPointerLocked = document.pointerLockElement === renderer.domElement;
+			});
+
+			// Mouse movement
+			document.addEventListener('mousemove', (event) => {
+				if (!isPointerLocked || !gameStarted) return;
+
+				const movementX = event.movementX || 0;
+				const movementY = event.movementY || 0;
+
+				euler.setFromQuaternion(camera.quaternion);
+				euler.y -= movementX * 0.002;
+				euler.x -= movementY * 0.002;
+				euler.x = Math.max(-PI_2, Math.min(PI_2, euler.x));
+				camera.quaternion.setFromEuler(euler);
+			});
+
+			// Keyboard
+			document.addEventListener('keydown', (event) => {
+				if (!gameStarted) return;
+				if (event.code === 'KeyW') moveForward = true;
+				if (event.code === 'KeyS') moveBackward = true;
+				if (event.code === 'KeyA') moveLeft = true;
+				if (event.code === 'KeyD') moveRight = true;
+			});
+
+			document.addEventListener('keyup', (event) => {
+				if (event.code === 'KeyW') moveForward = false;
+				if (event.code === 'KeyS') moveBackward = false;
+				if (event.code === 'KeyA') moveLeft = false;
+				if (event.code === 'KeyD') moveRight = false;
+			});
+
+			// Click to pick up/place
+			renderer.domElement.addEventListener('click', (event) => {
+				if (!isPointerLocked || !gameStarted) return;
+
+				if (pickedObject) {
+					// Place object
+					const distance = 3;
+					direction.set(0, 0, -1);
+					direction.applyQuaternion(camera.quaternion);
+					
+					const newPosition = new THREE.Vector3();
+					newPosition.copy(camera.position);
+					newPosition.add(direction.multiplyScalar(distance));
+					
+					// Raycast to find ground
+					raycaster.set(camera.position, direction);
+					const floorIntersect = raycaster.intersectObject(floor);
+					if (floorIntersect.length > 0) {
+						newPosition.y = floorIntersect[0].point.y + pickedObject.userData.originalSize * pickedObject.scale.y / 2;
+					} else {
+						newPosition.y = 1;
+					}
+
+					pickedObject.position.copy(newPosition);
+					pickedObject.userData.pickedUp = false;
+					pickedObject = null;
+				} else {
+					// Try to pick up object or interact
+					mouse.x = 0;
+					mouse.y = 0;
+					raycaster.setFromCamera(mouse, camera);
+
+					// Check for buttons first
+					const buttonIntersects = raycaster.intersectObjects(buttons);
+					if (buttonIntersects.length > 0) {
+						const button = buttonIntersects[0].object;
+						if (!button.userData.pressed) {
+							button.userData.pressed = true;
+							button.position.y = button.userData.originalY - 0.1;
+							button.material.color.setHex(0x00ff00);
+							
+							// Check if exit should unlock
+							if (button.userData.targetExit) {
+								const exit = button.userData.targetExit;
+								exit.userData.buttonsPressed = (exit.userData.buttonsPressed || 0) + 1;
+								if (exit.userData.buttonsPressed >= (exit.userData.buttonsNeeded || 1)) {
+									exit.userData.locked = false;
+									exit.children.find(c => c.material && c.material.emissive).material.emissive.setHex(0x4ecdc4);
+								}
+							}
+						}
+						return;
+					}
+
+					// Check for objects
+					const objectIntersects = raycaster.intersectObjects(objects);
+					if (objectIntersects.length > 0) {
+						const object = objectIntersects[0].object;
+						
+						// Calculate apparent size
+						const distance = camera.position.distanceTo(object.position);
+						const apparentSize = object.userData.originalSize / distance;
+						
+						pickedObject = object;
+						pickedObjectOriginalScale = apparentSize;
+						pickedObject.userData.pickedUp = true;
+					}
+				}
+			});
+
+			// E key to interact
+			document.addEventListener('keydown', (event) => {
+				if (!isPointerLocked || !gameStarted || event.code !== 'KeyE') return;
+
+				mouse.x = 0;
+				mouse.y = 0;
+				raycaster.setFromCamera(mouse, camera);
+
+				// Check exit
+				const exitIntersects = raycaster.intersectObjects(exits);
+				if (exitIntersects.length > 0) {
+					const exit = exitIntersects[0].object.parent || exitIntersects[0].object;
+					if (exit.userData.type === 'exit' && !exit.userData.locked) {
+						completeLevel();
+					}
+				}
+			});
+
+			// Start button
+			document.getElementById('startButton').addEventListener('click', () => {
+				document.getElementById('startScreen').style.display = 'none';
+				gameStarted = true;
+				renderer.domElement.requestPointerLock();
+			});
+
+			// Next level button
+			document.getElementById('nextLevelBtn').addEventListener('click', () => {
+				document.getElementById('levelComplete').style.display = 'none';
+				currentLevel++;
+				if (currentLevel >= levels.length) {
+					currentLevel = 0; // Loop back
+				}
+				setupLevel(currentLevel);
+			});
+		}
+
+		function completeLevel() {
+			document.getElementById('levelComplete').style.display = 'block';
+			setTimeout(() => {
+				document.getElementById('levelComplete').style.display = 'none';
+				currentLevel++;
+				if (currentLevel >= levels.length) {
+					currentLevel = 0; // Loop back to start
+				}
+				setupLevel(currentLevel);
+			}, 2000);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			if (!gameStarted) {
+				renderer.render(scene, camera);
+				return;
+			}
+
+			const delta = 0.016; // ~60fps
+
+			// Movement
+			velocity.x -= velocity.x * 10.0 * delta;
+			velocity.z -= velocity.z * 10.0 * delta;
+
+			direction.z = Number(moveForward) - Number(moveBackward);
+			direction.x = Number(moveRight) - Number(moveLeft);
+			direction.normalize();
+
+			if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+			if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+			const moveVector = new THREE.Vector3(velocity.x * delta, 0, velocity.z * delta);
+			moveVector.applyQuaternion(camera.quaternion);
+			camera.position.add(moveVector);
+
+			// Keep camera above ground
+			if (camera.position.y < 1.5) {
+				camera.position.y = 1.5;
+			}
+
+			// Update picked object
+			if (pickedObject) {
+				const holdDistance = 2;
+				direction.set(0, 0, -1);
+				direction.applyQuaternion(camera.quaternion);
+				
+				const holdPosition = new THREE.Vector3();
+				holdPosition.copy(camera.position);
+				holdPosition.add(direction.multiplyScalar(holdDistance));
+				
+				pickedObject.position.copy(holdPosition);
+
+				// Maintain apparent size
+				const currentDistance = camera.position.distanceTo(pickedObject.position);
+				const scaleFactor = pickedObjectOriginalScale * currentDistance;
+				pickedObject.scale.setScalar(scaleFactor / pickedObject.userData.originalSize);
+			}
+
+			renderer.render(scene, camera);
+		}
+
+		// Handle window resize
+		window.addEventListener('resize', () => {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		});
+
+		init();
+	</script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!-- 
+BAKE A PANCAKE - A fun pancake simulation game!
+- Mix ingredients to make batter
+- Pour batter onto the griddle
+- Watch it cook and flip it at the right time
+- Make the perfect pancake!
+-->
+<!DOCTYPE html>
+<html>
+<head>
+	<title>🥞 Bake a Pancake 🥞</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+		
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		
+		body {
+			background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+			font-family: 'Comic Neue', cursive;
+			color: #333;
+			overflow: hidden;
+			height: 100vh;
+		}
+		
+		#gameContainer {
+			width: 100vw;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+		
+		#header {
+			background: rgba(255, 255, 255, 0.9);
+			padding: 15px 30px;
+			border-radius: 20px;
+			margin-bottom: 20px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+		}
+		
+		#title {
+			font-size: 2.5em;
+			font-weight: bold;
+			color: #8B4513;
+			text-align: center;
+		}
+		
+		#gameArea {
+			position: relative;
+			width: 800px;
+			height: 600px;
+			border-radius: 20px;
+			border: 5px solid #8B4513;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+			overflow: hidden;
+			background: #87CEEB;
+		}
+		
+		canvas {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+		
+		#controls {
+			background: rgba(255, 255, 255, 0.9);
+			padding: 20px;
+			border-radius: 20px;
+			margin-top: 20px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+			display: flex;
+			gap: 15px;
+			align-items: center;
+		}
+		
+		button {
+			background: #FF6B6B;
+			color: white;
+			border: none;
+			padding: 12px 24px;
+			border-radius: 15px;
+			font-size: 1.1em;
+			font-family: 'Comic Neue', cursive;
+			font-weight: bold;
+			cursor: pointer;
+			transition: all 0.3s;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		}
+		
+		button:hover {
+			background: #FF5252;
+			transform: translateY(-2px);
+			box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+		}
+		
+		button:active {
+			transform: translateY(0);
+		}
+		
+		button:disabled {
+			background: #ccc;
+			cursor: not-allowed;
+			transform: none;
+		}
+		
+		#info {
+			flex: 1;
+			text-align: center;
+			font-size: 1.2em;
+			color: #8B4513;
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<div id="gameContainer">
+		<div id="header">
+			<div id="title">🥞 Bake a Pancake 🥞</div>
+		</div>
+		
+		<div id="gameArea">
+			<canvas id="gameCanvas"></canvas>
+		</div>
+		
+		<div id="controls">
+			<button id="mixBtn">Mix Ingredients</button>
+			<button id="pourBtn" disabled>Pour Batter</button>
+			<button id="flipBtn" disabled>Flip Pancake</button>
+			<div id="info">Click "Mix Ingredients" to start!</div>
+		</div>
+	</div>
+	
+	<script>
+		// Game state
+		const gameState = {
+			stage: 'mixing', // mixing, pouring, cooking, flipping, done
+			mixProgress: 0,
+			batterReady: false,
+			pancakeOnGriddle: false,
+			cookProgress: 0,
+			flipProgress: 0,
+			isFlipped: false,
+			score: 0
+		};
+		
+		// Canvas setup
+		const canvas = document.getElementById('gameCanvas');
+		const ctx = canvas.getContext('2d');
+		
+		function resizeCanvas() {
+			canvas.width = canvas.offsetWidth;
+			canvas.height = canvas.offsetHeight;
+		}
+		
+		resizeCanvas();
+		window.addEventListener('resize', resizeCanvas);
+		
+		// Game objects
+		let mixingBowl = {
+			x: canvas.width / 2 - 80,
+			y: 100,
+			width: 160,
+			height: 120,
+			batterLevel: 0
+		};
+		
+		let griddle = {
+			x: canvas.width / 2 - 150,
+			y: canvas.height - 150,
+			width: 300,
+			height: 20
+		};
+		
+		let pancake = {
+			x: 0,
+			y: 0,
+			radius: 0,
+			cookLevel: 0, // 0-100
+			isVisible: false,
+			isFlipped: false
+		};
+		
+		let particles = [];
+		
+		// UI elements
+		const mixBtn = document.getElementById('mixBtn');
+		const pourBtn = document.getElementById('pourBtn');
+		const flipBtn = document.getElementById('flipBtn');
+		const infoDiv = document.getElementById('info');
+		
+		// Button handlers
+		mixBtn.addEventListener('click', startMixing);
+		pourBtn.addEventListener('click', pourBatter);
+		flipBtn.addEventListener('click', flipPancake);
+		
+		function startMixing() {
+			if (gameState.stage !== 'mixing') return;
+			
+			gameState.mixProgress = 0;
+			mixBtn.disabled = true;
+			infoDiv.textContent = 'Mixing... Keep clicking!';
+			
+			// Create mixing particles (bubbles)
+			for (let i = 0; i < 25; i++) {
+				particles.push({
+					x: mixingBowl.x + mixingBowl.width / 2 + (Math.random() - 0.5) * 50,
+					y: mixingBowl.y + mixingBowl.height / 2 + (Math.random() - 0.5) * 40,
+					vx: (Math.random() - 0.5) * 5,
+					vy: (Math.random() - 0.5) * 5,
+					life: 40,
+					maxLife: 40,
+					size: 3 + Math.random() * 6,
+					type: 'bubble'
+				});
+			}
+			
+			// Auto mix
+			const mixInterval = setInterval(() => {
+				gameState.mixProgress += 2;
+				mixingBowl.batterLevel = Math.min(gameState.mixProgress / 100, 1);
+				
+				if (gameState.mixProgress >= 100) {
+					clearInterval(mixInterval);
+					gameState.batterReady = true;
+					gameState.stage = 'pouring';
+					mixBtn.disabled = true;
+					pourBtn.disabled = false;
+					infoDiv.textContent = 'Batter is ready! Click "Pour Batter"';
+				}
+			}, 50);
+		}
+		
+		function pourBatter() {
+			if (gameState.stage !== 'pouring' || !gameState.batterReady) return;
+			
+			gameState.stage = 'cooking';
+			gameState.pancakeOnGriddle = true;
+			pourBtn.disabled = true;
+			flipBtn.disabled = false;
+			infoDiv.textContent = 'Watch it cook! Click "Flip Pancake" when ready!';
+			
+			// Place pancake on griddle
+			pancake.x = griddle.x + griddle.width / 2;
+			pancake.y = griddle.y - 30;
+			pancake.radius = 60;
+			pancake.isVisible = true;
+			pancake.cookLevel = 0;
+			
+			// Start cooking
+			const cookInterval = setInterval(() => {
+				if (gameState.stage === 'cooking' && pancake.isVisible) {
+					pancake.cookLevel += 0.5;
+					
+					// Create cooking bubbles
+					if (Math.random() > 0.75 && pancake.cookLevel < 80) {
+						particles.push({
+							x: pancake.x + (Math.random() - 0.5) * pancake.radius * 1.2,
+							y: pancake.y + (Math.random() - 0.5) * pancake.radius * 1.2,
+							vx: (Math.random() - 0.5) * 2,
+							vy: -Math.random() * 2.5,
+							life: 35,
+							maxLife: 35,
+							color: '#FFFFFF',
+							size: 2 + Math.random() * 4,
+							type: 'bubble'
+						});
+					}
+					
+					// Check if overcooked
+					if (pancake.cookLevel >= 100) {
+						clearInterval(cookInterval);
+						infoDiv.textContent = 'Oh no! Pancake is overcooked! Click "Mix Ingredients" to try again.';
+						setTimeout(() => {
+							resetGame();
+						}, 2000);
+					}
+				} else {
+					clearInterval(cookInterval);
+				}
+			}, 50);
+		}
+		
+		function flipPancake() {
+			if (gameState.stage !== 'cooking' || !pancake.isVisible) return;
+			
+			pancake.isFlipped = !pancake.isFlipped;
+			gameState.flipProgress = 0;
+			
+			// Calculate score based on cook level
+			if (pancake.isFlipped) {
+				const perfectCook = 50;
+				const diff = Math.abs(pancake.cookLevel - perfectCook);
+				gameState.score = Math.max(0, 100 - diff * 2);
+				
+				if (pancake.cookLevel >= 40 && pancake.cookLevel <= 60) {
+					infoDiv.textContent = 'Perfect flip! 🎉 Cooking the other side...';
+					
+					// Cook other side
+					const cookInterval = setInterval(() => {
+						if (gameState.stage === 'cooking') {
+							pancake.cookLevel += 0.5;
+							
+							if (pancake.cookLevel >= 100) {
+								clearInterval(cookInterval);
+								gameState.stage = 'done';
+								flipBtn.disabled = true;
+								const finalScore = gameState.score + Math.max(0, 100 - Math.abs(pancake.cookLevel - 100) * 2);
+								infoDiv.textContent = `Pancake done! Score: ${Math.round(finalScore)}/100! Click "Mix Ingredients" to make another!`;
+								setTimeout(() => {
+									resetGame();
+								}, 3000);
+							}
+						} else {
+							clearInterval(cookInterval);
+						}
+					}, 50);
+				} else {
+					infoDiv.textContent = 'Good flip! Keep cooking...';
+				}
+			}
+		}
+		
+		function resetGame() {
+			gameState.stage = 'mixing';
+			gameState.mixProgress = 0;
+			gameState.batterReady = false;
+			gameState.pancakeOnGriddle = false;
+			gameState.cookProgress = 0;
+			gameState.flipProgress = 0;
+			gameState.isFlipped = false;
+			gameState.score = 0;
+			
+			mixingBowl.batterLevel = 0;
+			pancake.isVisible = false;
+			pancake.isFlipped = false;
+			pancake.cookLevel = 0;
+			particles = [];
+			
+			mixBtn.disabled = false;
+			pourBtn.disabled = true;
+			flipBtn.disabled = true;
+			infoDiv.textContent = 'Click "Mix Ingredients" to start!';
+		}
+		
+		// Drawing functions
+		function drawBackground() {
+			// Sky gradient
+			const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height / 2);
+			skyGradient.addColorStop(0, '#87CEEB');
+			skyGradient.addColorStop(1, '#E0F6FF');
+			ctx.fillStyle = skyGradient;
+			ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+			
+			// Counter/table
+			const counterY = canvas.height / 2;
+			const counterGradient = ctx.createLinearGradient(0, counterY, 0, canvas.height);
+			counterGradient.addColorStop(0, '#8B6F47');
+			counterGradient.addColorStop(0.3, '#A0826D');
+			counterGradient.addColorStop(1, '#6B4E3D');
+			ctx.fillStyle = counterGradient;
+			ctx.fillRect(0, counterY, canvas.width, canvas.height - counterY);
+			
+			// Wood grain effect
+			ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+			ctx.lineWidth = 1;
+			for (let i = 0; i < canvas.width; i += 40) {
+				ctx.beginPath();
+				ctx.moveTo(i, counterY);
+				ctx.lineTo(i + 20, counterY + (canvas.height - counterY) / 2);
+				ctx.lineTo(i + 40, counterY);
+				ctx.stroke();
+			}
+		}
+		
+		function drawMixingBowl() {
+			const centerX = mixingBowl.x + mixingBowl.width / 2;
+			const centerY = mixingBowl.y + mixingBowl.height / 2;
+			const bowlRadius = mixingBowl.width / 2;
+			
+			// Bowl shadow
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+			ctx.beginPath();
+			ctx.ellipse(centerX + 3, centerY + 45, bowlRadius - 2, 25, 0, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Bowl outer edge (darker)
+			const bowlGradient = ctx.createRadialGradient(centerX - 20, centerY + 20, 0, centerX, centerY + 40, bowlRadius);
+			bowlGradient.addColorStop(0, '#D2691E');
+			bowlGradient.addColorStop(0.5, '#8B4513');
+			bowlGradient.addColorStop(1, '#654321');
+			ctx.fillStyle = bowlGradient;
+			ctx.beginPath();
+			ctx.ellipse(centerX, centerY + 40, bowlRadius, 32, 0, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Bowl inner rim highlight
+			ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+			ctx.lineWidth = 3;
+			ctx.beginPath();
+			ctx.ellipse(centerX, centerY + 30, bowlRadius - 5, 2, 0, 0, Math.PI * 2);
+			ctx.stroke();
+			
+			// Bowl inner (lighter)
+			const innerGradient = ctx.createRadialGradient(centerX - 15, centerY + 25, 0, centerX, centerY + 35, bowlRadius - 6);
+			innerGradient.addColorStop(0, '#DEB887');
+			innerGradient.addColorStop(0.7, '#CD853F');
+			innerGradient.addColorStop(1, '#8B4513');
+			ctx.fillStyle = innerGradient;
+			ctx.beginPath();
+			ctx.ellipse(centerX, centerY + 35, bowlRadius - 6, 28, 0, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Batter with gradient
+			if (mixingBowl.batterLevel > 0) {
+				const batterHeight = mixingBowl.batterLevel * 28;
+				const batterRadius = (bowlRadius - 10) * mixingBowl.batterLevel;
+				const batterY = centerY + 35 - batterHeight / 2;
+				
+				const batterGradient = ctx.createRadialGradient(centerX, batterY - 5, 0, centerX, batterY, batterRadius);
+				batterGradient.addColorStop(0, '#FFFACD');
+				batterGradient.addColorStop(0.5, '#FFF8DC');
+				batterGradient.addColorStop(1, '#F5DEB3');
+				ctx.fillStyle = batterGradient;
+				ctx.beginPath();
+				ctx.ellipse(centerX, batterY, batterRadius, batterHeight, 0, 0, Math.PI * 2);
+				ctx.fill();
+				
+				// Batter surface highlight
+				ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+				ctx.beginPath();
+				ctx.ellipse(centerX - 10, batterY - batterHeight / 2 - 2, batterRadius * 0.6, 8, 0, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		}
+		
+		function drawGriddle() {
+			// Griddle shadow
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+			ctx.fillRect(griddle.x + 2, griddle.y + griddle.height + 2, griddle.width, 8);
+			
+			// Griddle base (dark)
+			ctx.fillStyle = '#1C1C1C';
+			ctx.fillRect(griddle.x, griddle.y, griddle.width, griddle.height);
+			
+			// Griddle surface gradient (hot metal)
+			const griddleGradient = ctx.createLinearGradient(griddle.x, griddle.y, griddle.x, griddle.y + griddle.height);
+			griddleGradient.addColorStop(0, '#4A4A4A');
+			griddleGradient.addColorStop(0.5, '#2F2F2F');
+			griddleGradient.addColorStop(1, '#1C1C1C');
+			ctx.fillStyle = griddleGradient;
+			ctx.fillRect(griddle.x, griddle.y, griddle.width, griddle.height);
+			
+			// Heat lines (glowing)
+			for (let i = 0; i < 5; i++) {
+				const x = griddle.x + 30 + i * 60;
+				const heatGradient = ctx.createLinearGradient(x, griddle.y, x, griddle.y + griddle.height);
+				heatGradient.addColorStop(0, '#FF6B00');
+				heatGradient.addColorStop(0.5, '#FF4500');
+				heatGradient.addColorStop(1, '#CC3300');
+				
+				ctx.strokeStyle = heatGradient;
+				ctx.lineWidth = 3;
+				ctx.shadowBlur = 10;
+				ctx.shadowColor = '#FF4500';
+				ctx.beginPath();
+				ctx.moveTo(x, griddle.y);
+				ctx.lineTo(x, griddle.y + griddle.height);
+				ctx.stroke();
+				ctx.shadowBlur = 0;
+			}
+			
+			// Griddle edge highlight
+			ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+			ctx.lineWidth = 1;
+			ctx.strokeRect(griddle.x, griddle.y, griddle.width, griddle.height);
+		}
+		
+		function drawPancake() {
+			if (!pancake.isVisible) return;
+			
+			const cookRatio = pancake.cookLevel / 100;
+			let flipScale = 1;
+			
+			// Flip animation
+			if (gameState.flipProgress < 1 && pancake.isFlipped) {
+				gameState.flipProgress += 0.15;
+				flipScale = Math.abs(Math.sin(gameState.flipProgress * Math.PI));
+			}
+			
+			ctx.save();
+			ctx.translate(pancake.x, pancake.y);
+			ctx.scale(1, flipScale);
+			
+			// Pancake shadow
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+			ctx.beginPath();
+			ctx.ellipse(0, pancake.radius * 0.3, pancake.radius * 0.9, pancake.radius * 0.2, 0, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Pancake base color (cooks from pale yellow to golden brown)
+			const r = Math.max(180, 255 - Math.floor(cookRatio * 120));
+			const g = Math.max(150, 248 - Math.floor(cookRatio * 140));
+			const b = Math.max(100, 220 - Math.floor(cookRatio * 150));
+			
+			// Main pancake body with gradient
+			const pancakeGradient = ctx.createRadialGradient(-pancake.radius * 0.3, -pancake.radius * 0.3, 0, 0, 0, pancake.radius);
+			pancakeGradient.addColorStop(0, `rgb(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 30)})`);
+			pancakeGradient.addColorStop(0.5, `rgb(${r}, ${g}, ${b})`);
+			pancakeGradient.addColorStop(1, `rgb(${Math.max(100, r - 30)}, ${Math.max(80, g - 40)}, ${Math.max(50, b - 50)})`);
+			ctx.fillStyle = pancakeGradient;
+			ctx.beginPath();
+			ctx.arc(0, 0, pancake.radius, 0, Math.PI * 2);
+			ctx.fill();
+			
+			// Cooked spots (brown circles)
+			if (cookRatio > 0.2) {
+				ctx.fillStyle = `rgba(${r - 40}, ${g - 60}, ${b - 80}, ${cookRatio * 0.6})`;
+				for (let i = 0; i < 8; i++) {
+					const angle = (i / 8) * Math.PI * 2;
+					const dist = pancake.radius * (0.3 + Math.random() * 0.4);
+					const spotX = Math.cos(angle) * dist;
+					const spotY = Math.sin(angle) * dist;
+					const spotSize = 8 + Math.random() * 12;
+					ctx.beginPath();
+					ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+					ctx.fill();
+				}
+			}
+			
+			// Edge (crispy brown)
+			const edgeGradient = ctx.createLinearGradient(-pancake.radius, 0, pancake.radius, 0);
+			const edgeR = Math.max(100, r - 50);
+			const edgeG = Math.max(60, g - 70);
+			const edgeB = Math.max(30, b - 80);
+			edgeGradient.addColorStop(0, `rgb(${edgeR}, ${edgeG}, ${edgeB})`);
+			edgeGradient.addColorStop(0.5, `rgb(${edgeR + 20}, ${edgeG + 20}, ${edgeB + 20})`);
+			edgeGradient.addColorStop(1, `rgb(${edgeR}, ${edgeG}, ${edgeB})`);
+			ctx.strokeStyle = edgeGradient;
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.arc(0, 0, pancake.radius, 0, Math.PI * 2);
+			ctx.stroke();
+			
+			// Top highlight
+			ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+			ctx.beginPath();
+			ctx.ellipse(-pancake.radius * 0.4, -pancake.radius * 0.4, pancake.radius * 0.5, pancake.radius * 0.3, -0.5, 0, Math.PI * 2);
+			ctx.fill();
+			
+			ctx.restore();
+		}
+		
+		function drawParticles() {
+			for (let i = particles.length - 1; i >= 0; i--) {
+				const p = particles[i];
+				const alpha = p.life / (p.maxLife || 30);
+				
+				// Bubble particles (for mixing)
+				if (p.type === 'bubble') {
+					ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+					ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+					ctx.lineWidth = 2;
+					ctx.beginPath();
+					ctx.arc(p.x, p.y, p.size || 4, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.stroke();
+					
+					// Bubble highlight
+					ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+					ctx.beginPath();
+					ctx.arc(p.x - 2, p.y - 2, (p.size || 4) * 0.4, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				// Steam particles (for cooking)
+				else if (p.type === 'steam') {
+					const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size || 8);
+					gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.8})`);
+					gradient.addColorStop(1, `rgba(200, 200, 200, 0)`);
+					ctx.fillStyle = gradient;
+					ctx.beginPath();
+					ctx.arc(p.x, p.y, p.size || 8, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				// Regular particles
+				else {
+					ctx.fillStyle = p.color || `rgba(255, 248, 220, ${alpha})`;
+					ctx.beginPath();
+					ctx.arc(p.x, p.y, p.size || 4, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				
+				p.x += p.vx;
+				p.y += p.vy;
+				p.life--;
+				
+				if (p.life <= 0) {
+					particles.splice(i, 1);
+				}
+			}
+		}
+		
+		function drawSteam() {
+			if (!pancake.isVisible || pancake.cookLevel < 10) return;
+			
+			// Add steam particles occasionally
+			if (Math.random() > 0.85 && pancake.cookLevel < 90) {
+				for (let i = 0; i < 2; i++) {
+					particles.push({
+						x: pancake.x + (Math.random() - 0.5) * pancake.radius,
+						y: pancake.y - pancake.radius,
+						vx: (Math.random() - 0.5) * 0.5,
+						vy: -1 - Math.random() * 1.5,
+						life: 60,
+						maxLife: 60,
+						size: 10 + Math.random() * 15,
+						type: 'steam'
+					});
+				}
+			}
+		}
+		
+		function draw() {
+			// Clear canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			
+			// Redraw if canvas was resized
+			if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
+				resizeCanvas();
+				// Reposition objects
+				mixingBowl.x = canvas.width / 2 - 80;
+				griddle.x = canvas.width / 2 - 150;
+				griddle.y = canvas.height - 150;
+				if (pancake.isVisible) {
+					pancake.x = griddle.x + griddle.width / 2;
+					pancake.y = griddle.y - 30;
+				}
+			}
+			
+			// Draw background elements
+			drawBackground();
+			drawGriddle();
+			drawMixingBowl();
+			drawPancake();
+			drawSteam();
+			drawParticles();
+		}
+		
+		// Game loop
+		function gameLoop() {
+			draw();
+			requestAnimationFrame(gameLoop);
+		}
+		
+		gameLoop();
+	</script>
+</body>
+</html>
+

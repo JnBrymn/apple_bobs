@@ -45,8 +45,8 @@
         #resource {
             width: 140px;
             height: 140px;
-            background: #8B4513;
-            border: 4px solid #654321;
+            background: #FFFFFF;
+            border: 4px solid #CCCCCC;
             border-radius: 15px;
             transition: transform 0.1s;
             cursor: pointer;
@@ -140,7 +140,6 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        #wood { background: #8B4513; color: white; }
         #rock { background: #808080; color: white; }
         #iron { background: #A19D94; color: white; }
         #steel { background: #71797E; color: white; }
@@ -222,6 +221,41 @@
             display: block;
             color: white;
             overflow: hidden;
+        }
+
+        #gameOver {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameOver h1 {
+            font-size: 72px;
+            color: #FF0000;
+            margin: 0 0 30px 0;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        #gameOver p {
+            font-size: 24px;
+            margin: 10px 0;
+            color: #FFD700;
         }
 
         .shop-sidebar {
@@ -571,7 +605,6 @@
         .material-slot.glass { background: #87CEEB; color: black; }
         .material-slot.cardboard { background: #DEB887; color: black; }
         .material-slot.foam { background: #F0F8FF; color: black; }
-        .material-slot.wood { background: #8B4513; }
         .material-slot.rock { background: #808080; }
         .material-slot.clay { background: #CD7F32; }
         .material-slot.sand { background: #F4A460; }
@@ -748,11 +781,15 @@
         <div id="money">Money: $<span id="moneyCount">0</span></div>
         <div id="hammerPower">Hammer Power: <span id="powerCount">0.5</span>x</div>
         <div id="materialInventory">
-            <div class="current-material">Current: <span id="currentMaterialName">Wood</span></div>
-            <div>You have: <span id="currentMaterialCount">5</span></div>
+            <div class="current-material">Current: <span id="currentMaterialName">Paper</span></div>
+            <div>You have: <span id="currentMaterialCount">1</span></div>
         </div>
         <div id="materialSelection"></div>
         <div id="resources"></div>
+        <div id="gameOver">
+            <h1>Game Over</h1>
+            <p>Press any key to restart</p>
+        </div>
         <div id="shop">
             <div class="shop-sidebar left">
                 <div class="sidebar-title">Upgrades</div>
@@ -792,7 +829,6 @@
                 <button class="material-shop-item" id="buyGlass">Glass <span class="material-cost">$4</span></button>
                 <button class="material-shop-item" id="buyCardboard">Cardboard <span class="material-cost">$5</span></button>
                 <button class="material-shop-item" id="buyFoam">Foam <span class="material-cost">$5</span></button>
-                <button class="material-shop-item" id="buyWood">Wood <span class="material-cost">$10</span></button>
                 <button class="material-shop-item" id="buyRubber">Rubber <span class="material-cost">$2000</span></button>
                 
                 <h4 style="color: #2196F3; margin: 15px 0 10px 0; border-bottom: 2px solid #2196F3; padding-bottom: 5px;">TIER 2: Common Materials (15-50 hits)</h4>
@@ -1227,17 +1263,18 @@
         const powerDisplay = document.getElementById('powerCount');
         const shop = document.getElementById('shop');
         const upgradeButtons = document.querySelectorAll('.shop-item');
+        const gameOver = document.getElementById('gameOver');
 
         
-        let currentMaterial = 'wood';
+        let currentMaterial = 'paper';
         let money = 0;
         let hammerPower = 0.5;
         let progress = 0;
         let isHitting = false;
         let purchasedUpgrades = new Set();
-        let unlockedMaterials = new Set(['paper', 'wood']);
+        let unlockedMaterials = new Set(['paper']);
         let ownedMaterials = {
-            paper: 1, plastic: 0, glass: 0, cardboard: 0, foam: 0, wood: 5, rock: 0, clay: 0, sand: 0, copper: 0,
+            paper: 1, plastic: 0, glass: 0, cardboard: 0, foam: 0, rock: 0, clay: 0, sand: 0, copper: 0,
             bronze: 0, brass: 0, iron: 0, steel: 0, gold: 0, electrum: 0, silver: 0, platinum: 0, ruby: 0, garnet: 0,
             spinel: 0, amethyst: 0, tanzanite: 0, aquamarine: 0, peridot: 0, emerald: 0, sapphire: 0, topaz: 0, diamond: 0, moon: 0,
             rubber: 0, concrete: 0, obsidian: 0, titanium: 0, uranium: 0, netherite: 0, vibranium: 0, adamantium: 0, unobtainium: 0, quantum: 0,
@@ -1258,7 +1295,7 @@
         };
         
         const materialCosts = {
-            paper: 1, plastic: 2, glass: 3, cardboard: 4, foam: 4, wood: 5, rock: 10, clay: 12, sand: 14, copper: 16,
+            paper: 1, plastic: 2, glass: 3, cardboard: 4, foam: 4, rock: 10, clay: 12, sand: 14, copper: 16,
             bronze: 18, brass: 20, iron: 25, steel: 40, gold: 100, electrum: 125, silver: 150, platinum: 175, ruby: 200, garnet: 210,
             spinel: 215, amethyst: 220, tanzanite: 225, aquamarine: 230, peridot: 235, emerald: 240, sapphire: 250, topaz: 275, diamond: 300, moon: 1000,
             rubber: 1500, concrete: 2000, obsidian: 5000, titanium: 7500, uranium: 15000, netherite: 25000, vibranium: 50000, adamantium: 100000, unobtainium: 250000, quantum: 500000,
@@ -1284,7 +1321,6 @@
             glass: { color: '#87CEEB', hits: 3, value: 1, money: 4 },
             cardboard: { color: '#DEB887', hits: 4, value: 1, money: 5 },
             foam: { color: '#F0F8FF', hits: 4, value: 1, money: 5 },
-            wood: { color: '#8B4513', hits: 5, value: 1, money: 10 },
             rubber: { color: '#FF69B4', hits: 3, value: 1, money: 2000 },
             
             // TIER 2: Common Materials (15-50 hits)
@@ -1547,6 +1583,7 @@
                 updateMoneyDisplay();
                 updatePowerDisplay();
                 updateShopButtons();
+                checkBankruptcy();
                 
                 // Special effects for premium and legendary upgrades
                 if (upgradeId === 'upgrade5' || upgradeId === 'upgrade6') {
@@ -1730,6 +1767,7 @@
             
             // Always update inventory after hitting
             updateMaterialInventory();
+            checkBankruptcy();
         }
 
         function buyMaterial(material) {
@@ -1749,9 +1787,11 @@
                 updateMoneyDisplay();
                 updateMaterialButtons();
                 updateMaterialSelection();
+                checkBankruptcy();
             } else {
                 // Play error sound when can't afford material
                 playErrorSound();
+                checkBankruptcy();
             }
         }
 
@@ -1760,8 +1800,10 @@
             hammerPower = 0.5;
             purchasedUpgrades.clear();
             currentMaterial = 'paper';
+            progress = 0;
+            isHitting = false;
             ownedMaterials = {
-                paper: 0, plastic: 0, glass: 0, cardboard: 0, foam: 0, wood: 0, rock: 0, clay: 0, sand: 0, copper: 0,
+                paper: 1, plastic: 0, glass: 0, cardboard: 0, foam: 0, rock: 0, clay: 0, sand: 0, copper: 0,
                 bronze: 0, brass: 0, iron: 0, steel: 0, gold: 0, electrum: 0, silver: 0, platinum: 0, ruby: 0, garnet: 0,
                 spinel: 0, amethyst: 0, tanzanite: 0, aquamarine: 0, peridot: 0, emerald: 0, sapphire: 0, topaz: 0, diamond: 0, moon: 0,
                 rubber: 0, concrete: 0, obsidian: 0, titanium: 0, uranium: 0, netherite: 0, vibranium: 0, adamantium: 0, unobtainium: 0, quantum: 0,
@@ -1781,10 +1823,13 @@
             };
             unlockedMaterials = new Set(['paper']);
             resource.style.background = materialProperties[currentMaterial].color;
+            progressBar.style.width = '0%';
+            hitButton.disabled = false;
             updateMoneyDisplay();
             updatePowerDisplay();
             updateShopButtons();
             updateMaterialSelection();
+            updateMaterialInventory();
             
             // Start the background music!
             setTimeout(() => {
@@ -1834,6 +1879,13 @@
 
 
         document.addEventListener('keydown', (e) => {
+            // If game over screen is showing, restart on any key
+            if (gameOver.style.display === 'flex') {
+                hideGameOver();
+                initGame();
+                return;
+            }
+            
             if (e.code === 'Space') {
                 hit();
             }

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Adventures of the Toad - Platformer Builder</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Courier New', monospace;
+			background: #2d2d2d;
+			color: #fff;
+			overflow: hidden;
+		}
+
+		#gameContainer {
+			width: 100vw;
+			height: 100vh;
+			position: relative;
+		}
+
+		#toolbar {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			background: rgba(0, 0, 0, 0.8);
+			padding: 15px;
+			border-radius: 10px;
+			z-index: 1000;
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+			max-width: 500px;
+		}
+
+		.tool-btn {
+			padding: 10px 15px;
+			background: #444;
+			border: 2px solid #666;
+			color: #fff;
+			cursor: pointer;
+			border-radius: 5px;
+			font-size: 14px;
+			font-family: 'Courier New', monospace;
+		}
+
+		.tool-btn:hover {
+			background: #555;
+			border-color: #888;
+		}
+
+		.tool-btn.active {
+			background: #00ff00;
+			border-color: #00ff00;
+			color: #000;
+			font-weight: bold;
+		}
+
+		#modeBtn {
+			background: #ff6600;
+			border-color: #ff6600;
+		}
+
+		#canvas {
+			display: block;
+			background: #87ceeb;
+			cursor: crosshair;
+		}
+
+		#info {
+			position: absolute;
+			bottom: 10px;
+			left: 10px;
+			background: rgba(0, 0, 0, 0.8);
+			padding: 10px;
+			border-radius: 5px;
+			font-size: 12px;
+			max-width: 300px;
+		}
+
+		.controls {
+			position: absolute;
+			bottom: 10px;
+			right: 10px;
+			background: rgba(0, 0, 0, 0.8);
+			padding: 10px;
+			border-radius: 5px;
+			font-size: 12px;
+		}
+	</style>
+</head>
+<body>
+	<div id="gameContainer">
+		<div id="toolbar">
+			<button id="modeBtn" class="tool-btn">BUILD MODE</button>
+			<button class="tool-btn active" data-tool="platform">Platform</button>
+			<button class="tool-btn" data-tool="block">Pushable Block</button>
+			<button class="tool-btn" data-tool="button">Button</button>
+			<button class="tool-btn" data-tool="key">Key</button>
+			<button class="tool-btn" data-tool="padlock">Padlock</button>
+			<button class="tool-btn" data-tool="delete">Delete</button>
+			<button class="tool-btn" data-tool="player">Player Start</button>
+		</div>
+		<canvas id="canvas"></canvas>
+		<div id="info">
+			<div id="infoText">Click to place objects. Use arrow keys in PLAY mode.</div>
+		</div>
+		<div class="controls">
+			<div>BUILD: Click to place</div>
+			<div>PLAY: Arrow keys to move</div>
+		</div>
+	</div>
+
+	<script>
+		/*
+		 * Adventures of the Toad - Platformer Game Builder
+		 * 
+		 * Bo wants: A game where you can build platformer games
+		 * Features:
+		 * - Green character (the toad with hat)
+		 * - Platforms
+		 * - Pushable blocks
+		 * - Buttons to put blocks on
+		 * - Keys
+		 * - Padlocks (locks that need keys)
+		 * - Arrow keys for control
+		 */
+
+		const canvas = document.getElementById('canvas');
+		const ctx = canvas.getContext('2d');
+		
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		let isBuildMode = true;
+		let currentTool = 'platform';
+		let cameraX = 0;
+		let cameraY = 0;
+		
+		const TILE_SIZE = 40;
+		const GRAVITY = 0.8;
+		const JUMP_STRENGTH = -15;
+		const MOVE_SPEED = 5;
+
+		// Game objects
+		let platforms = [];
+		let blocks = [];
+		let buttons = [];
+		let keys = [];
+		let padlocks = [];
+		let player = { x: 200, y: 100, vx: 0, vy: 0, onGround: false, width: 32, height: 32, hasKey: false, keyId: null };
+		let keysCollected = new Set();
+
+		// Input
+		let keysPressed = {};
+
+		// Initialize
+		document.querySelectorAll('[data-tool]').forEach(btn => {
+			btn.addEventListener('click', () => {
+				document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+				btn.classList.add('active');
+				currentTool = btn.dataset.tool;
+			});
+		});
+
+		document.getElementById('modeBtn').addEventListener('click', () => {
+			isBuildMode = !isBuildMode;
+			document.getElementById('modeBtn').textContent = isBuildMode ? 'BUILD MODE' : 'PLAY MODE';
+			document.getElementById('infoText').textContent = isBuildMode 
+				? 'Click to place objects. Use arrow keys in PLAY mode.' 
+				: 'Use arrow keys to move! Press SPACE to jump!';
+			
+			// Reset player state when switching modes
+			player.vx = 0;
+			player.vy = 0;
+		});
+
+		canvas.addEventListener('click', (e) => {
+			if (!isBuildMode) return;
+			
+			const rect = canvas.getBoundingClientRect();
+			const x = e.clientX - rect.left + cameraX;
+			const y = e.clientY - rect.top + cameraY;
+			
+			const snapX = Math.floor(x / TILE_SIZE) * TILE_SIZE;
+			const snapY = Math.floor(y / TILE_SIZE) * TILE_SIZE;
+
+			if (currentTool === 'delete') {
+				// Delete objects at this position
+				platforms = platforms.filter(p => !(p.x === snapX && p.y === snapY && p.width === TILE_SIZE && p.height === TILE_SIZE));
+				blocks = blocks.filter(b => !(b.x === snapX && b.y === snapY));
+				buttons = buttons.filter(b => !(b.x === snapX && b.y === snapY));
+				keys = keys.filter(k => !(k.x === snapX && k.y === snapY));
+				padlocks = padlocks.filter(p => !(p.x === snapX && p.y === snapY));
+			} else if (currentTool === 'platform') {
+				// Check if platform already exists
+				const exists = platforms.some(p => p.x === snapX && p.y === snapY && p.width === TILE_SIZE && p.height === TILE_SIZE);
+				if (!exists) {
+					platforms.push({ x: snapX, y: snapY, width: TILE_SIZE, height: TILE_SIZE });
+				}
+			} else if (currentTool === 'block') {
+				const exists = blocks.some(b => b.x === snapX && b.y === snapY);
+				if (!exists) {
+					blocks.push({ x: snapX, y: snapY, width: TILE_SIZE, height: TILE_SIZE, vx: 0, vy: 0 });
+				}
+			} else if (currentTool === 'button') {
+				const exists = buttons.some(b => b.x === snapX && b.y === snapY);
+				if (!exists) {
+					buttons.push({ x: snapX, y: snapY, width: TILE_SIZE, height: TILE_SIZE, pressed: false, keyId: buttons.length });
+				}
+			} else if (currentTool === 'key') {
+				const exists = keys.some(k => k.x === snapX && k.y === snapY);
+				if (!exists) {
+					keys.push({ x: snapX, y: snapY, width: TILE_SIZE, height: TILE_SIZE, id: keys.length, collected: false });
+				}
+			} else if (currentTool === 'padlock') {
+				const exists = padlocks.some(p => p.x === snapX && p.y === snapY);
+				if (!exists) {
+					padlocks.push({ x: snapX, y: snapY, width: TILE_SIZE, height: TILE_SIZE, keyId: padlocks.length, unlocked: false });
+				}
+			} else if (currentTool === 'player') {
+				player.x = snapX;
+				player.y = snapY;
+			}
+		});
+
+		// Keyboard input
+		window.addEventListener('keydown', (e) => {
+			keysPressed[e.code] = true;
+		});
+
+		window.addEventListener('keyup', (e) => {
+			keysPressed[e.code] = false;
+		});
+
+		// Draw green character (the toad)
+		function drawToad(x, y, width, height) {
+			const scaleX = width / 32;
+			const scaleY = height / 32;
+			
+			// Head (light green)
+			ctx.fillStyle = '#90EE90';
+			ctx.fillRect(x + 8 * scaleX, y + 2 * scaleY, 16 * scaleX, 16 * scaleY);
+			
+			// Hat (black)
+			ctx.fillStyle = '#000';
+			// Hat brim
+			ctx.fillRect(x + 6 * scaleX, y, 20 * scaleX, 4 * scaleY);
+			// Hat crown
+			ctx.fillRect(x + 10 * scaleX, y - 2 * scaleY, 12 * scaleX, 4 * scaleY);
+			
+			// Eyes (black squares)
+			ctx.fillRect(x + 10 * scaleX, y + 6 * scaleY, 3 * scaleX, 3 * scaleY);
+			ctx.fillRect(x + 19 * scaleX, y + 6 * scaleY, 3 * scaleX, 3 * scaleY);
+			
+			// Mouth/moustache (black rectangle)
+			ctx.fillRect(x + 11 * scaleX, y + 12 * scaleY, 10 * scaleX, 3 * scaleY);
+			
+			// Torso (black)
+			ctx.fillRect(x + 10 * scaleX, y + 18 * scaleY, 12 * scaleX, 12 * scaleY);
+			
+			// Arms (black)
+			ctx.fillRect(x + 4 * scaleX, y + 20 * scaleY, 4 * scaleX, 10 * scaleY);
+			ctx.fillRect(x + 24 * scaleX, y + 20 * scaleY, 4 * scaleX, 10 * scaleY);
+			
+			// Legs (black)
+			ctx.fillRect(x + 10 * scaleX, y + 30 * scaleY, 4 * scaleX, 10 * scaleY);
+			ctx.fillRect(x + 18 * scaleX, y + 30 * scaleY, 4 * scaleX, 10 * scaleY);
+			
+			// Feet (black)
+			ctx.fillRect(x + 8 * scaleX, y + 40 * scaleY, 6 * scaleX, 2 * scaleY);
+			ctx.fillRect(x + 18 * scaleX, y + 40 * scaleY, 6 * scaleX, 2 * scaleY);
+		}
+
+		// Collision detection
+		function checkCollision(rect1, rect2) {
+			return rect1.x < rect2.x + rect2.width &&
+				rect1.x + rect1.width > rect2.x &&
+				rect1.y < rect2.y + rect2.height &&
+				rect1.y + rect1.height > rect2.y;
+		}
+
+		function checkPlatformCollision(obj) {
+			for (let platform of platforms) {
+				if (checkCollision(obj, platform)) {
+					return platform;
+				}
+			}
+			return null;
+		}
+
+		// Update game
+		function update() {
+			if (!isBuildMode) {
+				// Player movement
+				if (keysPressed['ArrowLeft']) {
+					player.vx = -MOVE_SPEED;
+				} else if (keysPressed['ArrowRight']) {
+					player.vx = MOVE_SPEED;
+				} else {
+					player.vx *= 0.8; // Friction
+				}
+
+				if (keysPressed['Space'] && player.onGround) {
+					player.vy = JUMP_STRENGTH;
+					player.onGround = false;
+				}
+
+				// Apply gravity
+				player.vy += GRAVITY;
+
+				// Update player position
+				player.x += player.vx;
+				player.y += player.vy;
+
+				// Check platform collisions
+				player.onGround = false;
+				const platformCollision = checkPlatformCollision(player);
+				if (platformCollision) {
+					if (player.vy > 0 && player.y < platformCollision.y) {
+						// Landing on top
+						player.y = platformCollision.y - player.height;
+						player.vy = 0;
+						player.onGround = true;
+					} else if (player.vy < 0 && player.y > platformCollision.y) {
+						// Hitting bottom
+						player.y = platformCollision.y + platformCollision.height;
+						player.vy = 0;
+					} else if (player.vx > 0) {
+						// Hitting left side
+						player.x = platformCollision.x - player.width;
+						player.vx = 0;
+					} else if (player.vx < 0) {
+						// Hitting right side
+						player.x = platformCollision.x + platformCollision.width;
+						player.vx = 0;
+					}
+				}
+
+				// Check key collection
+				for (let key of keys) {
+					if (!key.collected && checkCollision(player, key)) {
+						key.collected = true;
+						keysCollected.add(key.id);
+						player.hasKey = true;
+						player.keyId = key.id;
+					}
+				}
+
+				// Check padlock collision (block if locked)
+				for (let padlock of padlocks) {
+					if (!padlock.unlocked && checkCollision(player, padlock)) {
+						// Check if player has the right key
+						if (keysCollected.has(padlock.keyId)) {
+							padlock.unlocked = true;
+						} else {
+							// Push player back
+							if (player.vx > 0) {
+								player.x = padlock.x - player.width;
+							} else if (player.vx < 0) {
+								player.x = padlock.x + padlock.width;
+							}
+							if (player.vy > 0) {
+								player.y = padlock.y - player.height;
+								player.onGround = true;
+							}
+						}
+					}
+				}
+
+				// Check button presses (blocks on buttons)
+				for (let button of buttons) {
+					button.pressed = false;
+					for (let block of blocks) {
+						if (checkCollision(button, block)) {
+							button.pressed = true;
+							break;
+						}
+					}
+				}
+
+				// Update pushable blocks
+				for (let block of blocks) {
+					// Gravity for blocks
+					block.vy += GRAVITY * 0.5;
+					block.y += block.vy;
+
+					// Check platform collision
+					const blockPlatformCollision = checkPlatformCollision(block);
+					if (blockPlatformCollision) {
+						if (block.vy > 0) {
+							block.y = blockPlatformCollision.y - block.height;
+							block.vy = 0;
+						}
+					}
+
+					// Check player pushing blocks
+					if (checkCollision(player, block)) {
+						if (player.vx > 0 && player.x < block.x) {
+							// Pushing right
+							block.x = player.x + player.width;
+							player.x = block.x - player.width;
+						} else if (player.vx < 0 && player.x > block.x) {
+							// Pushing left
+							block.x = player.x - block.width;
+							player.x = block.x + block.width;
+						}
+					}
+
+					// Friction
+					block.vx *= 0.9;
+					block.x += block.vx;
+				}
+
+				// Camera follow player
+				cameraX = player.x - canvas.width / 2;
+				cameraY = player.y - canvas.height / 2;
+			} else {
+				// Camera panning in build mode
+				if (keysPressed['ArrowLeft']) cameraX -= 10;
+				if (keysPressed['ArrowRight']) cameraX += 10;
+				if (keysPressed['ArrowUp']) cameraY -= 10;
+				if (keysPressed['ArrowDown']) cameraY += 10;
+			}
+		}
+
+		// Draw game
+		function draw() {
+			// Clear
+			ctx.fillStyle = '#87ceeb';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			// Draw grid in build mode
+			if (isBuildMode) {
+				ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+				ctx.lineWidth = 1;
+				for (let x = 0; x < canvas.width + TILE_SIZE; x += TILE_SIZE) {
+					ctx.beginPath();
+					ctx.moveTo(x - (cameraX % TILE_SIZE), 0);
+					ctx.lineTo(x - (cameraX % TILE_SIZE), canvas.height);
+					ctx.stroke();
+				}
+				for (let y = 0; y < canvas.height + TILE_SIZE; y += TILE_SIZE) {
+					ctx.beginPath();
+					ctx.moveTo(0, y - (cameraY % TILE_SIZE));
+					ctx.lineTo(canvas.width, y - (cameraY % TILE_SIZE));
+					ctx.stroke();
+				}
+			}
+
+			// Draw platforms
+			ctx.fillStyle = '#8B4513';
+			for (let platform of platforms) {
+				ctx.fillRect(platform.x - cameraX, platform.y - cameraY, platform.width, platform.height);
+				ctx.strokeStyle = '#654321';
+				ctx.lineWidth = 2;
+				ctx.strokeRect(platform.x - cameraX, platform.y - cameraY, platform.width, platform.height);
+			}
+
+			// Draw buttons
+			for (let button of buttons) {
+				ctx.fillStyle = button.pressed ? '#00ff00' : '#ff0000';
+				ctx.fillRect(button.x - cameraX, button.y - cameraY, button.width, button.height);
+				ctx.strokeStyle = '#000';
+				ctx.lineWidth = 2;
+				ctx.strokeRect(button.x - cameraX, button.y - cameraY, button.width, button.height);
+				// Label
+				ctx.fillStyle = '#fff';
+				ctx.font = '10px Courier New';
+				ctx.fillText('B', button.x - cameraX + 15, button.y - cameraY + 25);
+			}
+
+			// Draw keys
+			for (let key of keys) {
+				if (!key.collected) {
+					ctx.fillStyle = '#FFD700';
+					ctx.fillRect(key.x - cameraX, key.y - cameraY, key.width, key.height);
+					ctx.strokeStyle = '#000';
+					ctx.lineWidth = 2;
+					ctx.strokeRect(key.x - cameraX, key.y - cameraY, key.width, key.height);
+					// Label
+					ctx.fillStyle = '#000';
+					ctx.font = 'bold 14px Courier New';
+					ctx.fillText('K' + key.id, key.x - cameraX + 8, key.y - cameraY + 26);
+				}
+			}
+
+			// Draw padlocks
+			for (let padlock of padlocks) {
+				if (!padlock.unlocked) {
+					ctx.fillStyle = '#888';
+					ctx.fillRect(padlock.x - cameraX, padlock.y - cameraY, padlock.width, padlock.height);
+					ctx.strokeStyle = '#000';
+					ctx.lineWidth = 2;
+					ctx.strokeRect(padlock.x - cameraX, padlock.y - cameraY, padlock.width, padlock.height);
+					// Lock symbol
+					ctx.fillStyle = '#000';
+					ctx.font = 'bold 20px Courier New';
+					ctx.fillText('🔒', padlock.x - cameraX + 8, padlock.y - cameraY + 28);
+				} else {
+					// Open lock (transparent)
+					ctx.strokeStyle = '#00ff00';
+					ctx.lineWidth = 3;
+					ctx.setLineDash([5, 5]);
+					ctx.strokeRect(padlock.x - cameraX, padlock.y - cameraY, padlock.width, padlock.height);
+					ctx.setLineDash([]);
+				}
+			}
+
+			// Draw pushable blocks
+			ctx.fillStyle = '#808080';
+			for (let block of blocks) {
+				ctx.fillRect(block.x - cameraX, block.y - cameraY, block.width, block.height);
+				ctx.strokeStyle = '#000';
+				ctx.lineWidth = 2;
+				ctx.strokeRect(block.x - cameraX, block.y - cameraY, block.width, block.height);
+				// Label
+				ctx.fillStyle = '#fff';
+				ctx.font = '12px Courier New';
+				ctx.fillText('BLOCK', block.x - cameraX + 5, block.y - cameraY + 25);
+			}
+
+			// Draw player
+			drawToad(player.x - cameraX, player.y - cameraY, player.width, player.height);
+
+			// Draw player key indicator
+			if (player.hasKey && !isBuildMode) {
+				ctx.fillStyle = '#FFD700';
+				ctx.fillRect(player.x - cameraX - 10, player.y - cameraY - 15, 15, 15);
+				ctx.strokeStyle = '#000';
+				ctx.lineWidth = 1;
+				ctx.strokeRect(player.x - cameraX - 10, player.y - cameraY - 15, 15, 15);
+			}
+		}
+
+		// Game loop
+		function gameLoop() {
+			update();
+			draw();
+			requestAnimationFrame(gameLoop);
+		}
+
+		// Handle window resize
+		window.addEventListener('resize', () => {
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+		});
+
+		// Start game
+		gameLoop();
+	</script>
+</body>
+</html>
+
