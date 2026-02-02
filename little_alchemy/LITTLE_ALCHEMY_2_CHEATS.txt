@@ -1,0 +1,769 @@
+==========================================
+   LITTLE ALCHEMY 2 - HOW TO MAKE EVERYTHING
+   (Copy this file to use while playing!)
+==========================================
+
+START WITH: Air, Earth, Fire, Water
+
+--- A ---
+ACID RAIN: city+rain, cloud+sickness, cloud+smog, rain+smoke
+AIR: fire+mist
+AIRPLANE: bird+metal, bird+steel, bird+machine, etc.
+ALARM CLOCK: bell+clock, clock+sound, dawn+watch
+ALCHEMIST: gold+human, gold+philosophy
+ALCOHOL: fruit+sun, fruit+wheat, juice+time
+ALGAE: grass+water, plant+water
+ALIEN: life+space, life+mars, life+galaxy
+ALLERGY: dust+human, human+pollen
+ALLIGATOR: lizard+swamp, lizard+river
+ALPACA: mountain+sheep
+AMBULANCE: car+doctor, car+hospital
+ANGEL: bird+human, human+light
+ANGLER: fishing rod+human
+ANIMAL: life+land, life+forest, life+beach
+ANT: animal+grass, grass+spider
+ANT FARM: ant+glass, ant+jar
+ANTARCTICA: continent+ice, continent+snow
+ANTHILL: ant+earth, ant+container
+APRON: baker+fabric, cook+fabric
+AQUARIUM: fish+glass, container+fish
+ARCHEOLOGIST: human+ruins
+ARCHIPELAGO: island+island, island+ocean
+ARCTIC: cold+ocean, cold+sea
+ARMADILLO: animal+armor, armor+dog
+ARMOR: fabric+metal, fabric+steel
+ARROW: bow+wood
+ASH: fire+tree, fire+plant, campfire+rain
+ASTRONAUT: human+rocket, human+space
+ASTRONOMER: human+telescope
+ATMOSPHERE: air+planet, air+sky
+ATOMIC BOMB: big+explosion, energy+explosion
+AURORA: electricity+sky
+AVALANCHE: earthquake+snow, glacier+sound
+AVIARY: big+birdcage
+AXE: blade+wood, stone+wood
+BACON: fire+pig, campfire+pig
+BACTERIA: life+mud, life+primordial soup
+BAKER: human+bread, human+dough
+BAKERY: baker+house, bread+house
+BANANA: fruit+monkey
+BANANA BREAD: banana+bread, banana+dough
+BANDAGE: fabric+blade, fabric+blood
+BANK: city+gold, city+money
+BARN: container+cow, house+livestock
+BARREL: wine+wood, container+wine
+BAT: bird+mouse, air+mouse
+BATTER: flour+milk
+BATTERY: container+electricity, electricity+ore
+BAYONET: blade+gun
+BBQ: campfire+meat, campfire+metal
+BEACH: sand+water, ocean+sand
+BEAVER: animal+dam, animal+wood
+BEE: animal+flower, animal+garden
+BEEHIVE: bee+tree, bee+house
+BEEKEEPER: bee+human, beehive+human
+BEER: alcohol+wheat
+BELL: metal+sound, hammer+metal
+BICYCLE: wheel+wheel, chain+wheel
+BIG: philosophy+galaxy, philosophy+sun
+BINOCULARS: glasses+glasses, telescope+telescope
+BIRD: air+egg, animal+sky, dinosaur+time
+BIRDCAGE: bird+container
+BIRDHOUSE: bird+house
+BLACK HOLE: darkness+star, pressure+sun
+BLADE: metal+rock, metal+stone
+BLENDER: blade+electricity, blade+glass
+BLIZZARD: snow+storm, snow+wind
+BLOOD: blade+human
+BLOOD BAG: blood+container
+BOAT: water+wood, ocean+wood
+BOILER: metal+steam, container+pressure
+BONE: corpse+time, meat+wolf
+BONSAI TREE: tree+scissors, tree+pottery
+BOOK: paper+paper, legend+paper
+BOTTLE: container+water, container+wine
+BOULDER: rock+rock, big+rock
+BOW: rope+wood
+BOX: container+cookie, container+pizza
+BREAD: dough+fire, dough+energy
+BRICK: clay+fire, mud+sun
+BRIDGE: river+wood, river+metal
+BROOM: hay+wood
+BUCKET: container+water
+BULLET: gunpowder+metal
+BULLETPROOF VEST: armor+bullet
+BUS: car+car, big+car
+BUTCHER: human+meat
+BUTTER: milk+pressure, milk+tool
+BUTTERFLY: animal+flower, animal+rainbow
+BUTTERFLY NET: butterfly+net
+
+--- C ---
+CABLE CAR: car+mountain, rope+mountain
+CACTUS: desert+plant, sand+tree
+CAGE: metal+wolf, hamster+house
+CAKE: bread+sugar, dough+candle
+CAMPFIRE: fire+wood
+CANDLE: fire+wax, light+wax
+CANDY CANE: christmas tree+sugar, santa+sugar
+CANNON: gun+castle, gunpowder+castle
+CANVAS: fabric+paint
+CAR: wheel+metal, bicycle+bicycle
+CARAMEL: heat+sugar
+CARBON DIOXIDE: human+oxygen, grass+night
+CARROT: garden+vegetable, snowman+vegetable
+CART: wheel+wood
+CASHMERE: mountain goat+scissors
+CASTLE: house+warrior, stone+warrior
+CAT: animal+milk, animal+night
+CATNIP: cat+flower
+CAULDRON: metal+pottery, metal+witch
+CAVE: wolf+house, bat+house
+CAVIAR: roe+salt, cook+roe
+CENTAUR: horse+human
+CEREAL: milk+wheat
+CHAIN: metal+rope, metal+wire
+CHAINSAW: axe+electricity
+CHAMELEON: lizard+rainbow
+CHARCOAL: fire+wood, fire+tree
+CHEESE: milk+time, cook+milk
+CHEESEBURGER: cheese+hamburger
+CHICKEN: bird+livestock, egg+farm
+CHICKEN COOP: chicken+house
+CHICKEN SOUP: chicken+water
+CHICKEN WING: bone+chicken
+CHILL: air+cold
+CHIMNEY: fireplace+house, brick+smoke
+CHOCOLATE: milk+sugar, oil+sugar
+CHOCOLATE MILK: chocolate+milk
+CHRISTMAS STOCKING: fireplace+wool
+CHRISTMAS TREE: tree+light, tree+candle
+CIGARETTE: paper+tobacco
+CIRCUS: animal+tent
+CITY: village+village, skyscraper+village
+CLAY: mud+sand, liquid+stone
+CLOCK: time+wheel, sundial+electricity
+CLOSET: container+broom
+CLOUD: sky+water, atmosphere+water
+COAL: peat+pressure, earth+peat
+COCONUT: beach+fruit, palm+fruit
+COCONUT MILK: coconut+tool, coconut+milk
+COFFIN: corpse+wood
+COLD: human+rain, space+thermometer
+COMBUSTION ENGINE: explosion+machine, petroleum+steam engine
+COMPUTER: electricity+hacker
+COMPUTER MOUSE: computer+mouse
+CONFETTI: blade+paper
+CONSTELLATION: star+star
+CONTAINER: philosophy+box
+CONTINENT: land+land, earth+land
+COOK: human+vegetable, campfire+human
+COOKBOOK: book+cook
+COOKIE: dough+sugar, cookie dough+fire
+COOKIE CUTTER: blade+dough
+COOKIE DOUGH: dough+chocolate, dough+sugar
+CORAL: bone+ocean, tree+ocean
+CORPSE: human+death, blade+human
+COTTON: plant+sheep, cloud+plant
+COTTON CANDY: sugar+air, sugar+cloud
+COW: livestock+grass, livestock+barn
+CRAYON: pencil+rainbow, paint+wax
+CROW: bird+scarecrow
+CRYSTAL BALL: glass+witch
+CUCKOO: bird+clock
+CUP: container+tea
+
+--- D ---
+DAM: beaver+river, wall+river
+DARKNESS: night+sky
+DAWN: day+night, night+time
+DAY: night+sun, sky+sun
+DEATH: life+time, corpse+philosophy
+DESERT: sand+sand, land+sand
+DEW: dawn+grass, fog+grass
+DIAMOND: coal+pressure
+DINOSAUR: lizard+time, big+lizard
+DIVER: human+scuba tank
+DOCTOR: human+hospital
+DOG: wolf+farmer, wolf+bone
+DOGE: dog+computer
+DOGHOUSE: dog+house
+DOMESTICATION: animal+human
+DON QUIXOTE: knight+windmill
+DONUT: dough+oil, dough+wheel
+DOUBLE RAINBOW: rainbow+rainbow
+DOUGH: flour+water
+DRAGON: fire+lizard, air+lizard
+DRONE: airplane+robot
+DRUM: leather+wood
+DRUNK: alcohol+human
+DRY ICE: carbon dioxide+cold
+DUCK: bird+water, bird+lake
+DUCKLING: duck+egg
+DUNE: sand+wind, desert+wind
+DUST: air+earth
+DYNAMITE: gunpowder+wire
+
+--- E ---
+EAGLE: bird+mountain
+EARTH: (starter)
+EARTHQUAKE: earth+energy
+ECLIPSE: moon+sun
+EGG: bird+bird, lizard+lizard
+EGG TIMER: egg+clock
+ELECTRIC CAR: car+electricity
+ELECTRIC EEL: electricity+fish
+ELECTRICIAN: human+electricity
+ELECTRICITY: lightning+metal, storm+wind turbine
+EMAIL: computer+letter
+ENERGY: fire+fire, heat+science
+ENGINEER: human+machine
+ERUPTION: lava+pressure
+EXCALIBUR: sword+stone, sword+legend
+EXCAVATOR: car+shovel
+EXPLOSION: fire+gunpowder
+
+--- F ---
+FABRIC: thread+tool, thread+wheel
+FACTORY: house+tool
+FAIRY TALE: dragon+story, castle+story
+FAMILY: human+human
+FAMILY TREE: family+tree
+FARM: farmer+house, barn+house
+FARMER: human+field, human+plant
+FAUN: goat+human
+FENCE: wall+wood
+FIELD: earth+plow, land+tool
+FIRE: (starter)
+FIRE EXTINGUISHER: carbon dioxide+metal
+FIREFIGHTER: fire+human
+FIREPLACE: campfire+house
+FIRESTATION: firefighter+house
+FIRETRUCK: car+firefighter
+FIREWALL: fire+wall
+FIREWORKS: explosion+sky
+FISH: animal+water
+FISHING ROD: fish+wood, fish+thread
+FLAMETHROWER: gun+fire
+FLASHLIGHT: lamp+tool
+FLOOD: rain+rain, rain+river
+FLOUR: wheat+stone
+FLOWER: plant+rainbow, garden+seed
+FLUTE: air+wood
+FLYING FISH: bird+fish
+FLYING SQUIRREL: squirrel+bird
+FOG: cloud+earth
+FORCE KNIGHT: knight+light sword
+FOREST: tree+tree
+FORK: pitchfork+small
+FORTUNE COOKIE: cookie+paper
+FOSSIL: dinosaur+time, bone+earth
+FOUNTAIN: statue+water
+FOX: chicken+wolf
+FRANKENSTEIN'S MONSTER: corpse+electricity
+FRENCH FRIES: potato+oil
+FRIDGE: cold+metal
+FROG: animal+pond
+FROZEN YOGURT: ice+yogurt
+FRUIT: flower+tree
+FRUIT TREE: fruit+tree
+
+--- G ---
+GALAXY: star+star, solar system+solar system
+GALAXY CLUSTER: galaxy+galaxy
+GARAGE: car+house
+GARDEN: flower+house
+GARDENER: human+garden
+GAS: air+science, energy+liquid
+GEYSER: steam+earth
+GHOST: graveyard+night
+GIFT: santa+wrapping paper
+GINGERBREAD HOUSE: house+cookie
+GINGERBREAD MAN: dough+story
+GLACIER: ice+mountain
+GLASS: fire+sand
+GLASSES: glass+glass
+GNOME: garden+statue
+GOAT: cow+mountain
+GOLD: metal+rainbow, metal+sand
+GOLEM: clay+life, statue+life
+GRANITE: lava+pressure
+GRASS: earth+plant
+GRAVE: corpse+earth
+GRAVESTONE: death+stone
+GRAVEYARD: grave+grave
+GREENHOUSE: glass+plant
+GRENADE: explosion+metal
+GRILLED CHEESE: cheese+toast
+GRIM REAPER: death+scythe
+GUN: bullet+metal, bow+metal
+GUNPOWDER: dust+fire, charcoal+mineral
+GUST: wind+small
+
+--- H ---
+HACKER: computer+human
+HAIL: ice+rain
+HAM: pig+smoke
+HAMBURGER: bread+meat
+HAMMER: stone+tool
+HAMSTER: mouse+wheel
+HANGAR: airplane+house
+HARP: angel+wire
+HAY: grass+sun, grass+farmer
+HAY BALE: hay+hay
+HEAT: fire+science, air+energy
+HEDGE: fence+garden
+HEDGEHOG: mouse+needle
+HELICOPTER: airplane+blade
+HERO: human+legend
+HILL: earth+boulder
+HIPPO: cow+river
+HONEY: bee+flower, bee+time
+HORIZON: earth+sky
+HORSE: animal+land, livestock+hay
+HORSESHOE: horse+metal
+HOSPITAL: doctor+house
+HOT CHOCOLATE: chocolate+heat
+HOURGLASS: sand+time
+HOUSE: wall+wall
+HUMAN: clay+life, monkey+time
+HUMMINGBIRD: bird+flower
+HURRICANE: ocean+storm
+HUSKY: dog+snow
+ICE: cold+water
+ICE CREAM: cold+milk
+ICE CREAM TRUCK: car+ice cream
+ICE SCULPTURE: ice+statue
+ICEBERG: ice+ocean
+ICED TEA: ice+tea
+IDEA: human+philosophy
+IGLOO: house+ice
+INTERNET: computer+computer
+ISLAND: ocean+volcano
+IVY: plant+wall
+
+--- J ---
+JACK-O-LANTERN: pumpkin+fire
+JAM: fruit+juice
+JAR: container+jam
+JERKY: meat+heat
+JUICE: fruit+water
+JUPITER: planet+storm
+KAIJU: dinosaur+city
+KATANA: blade+ninja
+KITE: paper+wind
+KNIFE: blade+cook
+KNIGHT: armor+human
+
+--- L ---
+LAKE: water+pond, pond+pond
+LAMP: light bulb+metal
+LAND: earth+earth
+LAPTOP: computer+small
+LASSO: rope+cow
+LAVA: earth+fire
+LAVA LAMP: lamp+lava
+LAWN: grass+house
+LAWN MOWER: grass+machine
+LEAF: tree+wind
+LEATHER: cow+tool
+LEGEND: story+story
+LENS: glass+tool
+LETTER: paper+pencil
+LIBRARIAN: human+library
+LIBRARY: book+house
+LIFE: lightning+primordial soup, electricity+primordial soup
+LIGHT: electricity+light bulb
+LIGHT BULB: electricity+glass
+LIGHT SWORD: electricity+sword
+LIGHTHOUSE: light+ocean
+LIGHTNING: cloud+electricity
+LION: cat+monarch
+LIQUID: water+science
+LITTLE ALCHEMY: alchemist+small
+LIVESTOCK: animal+farmer
+LIZARD: animal+rock
+LOG CABIN: house+wood
+LOVE: human+human
+LUMBERJACK: human+axe
+
+--- M ---
+MAC AND CHEESE: cheese+pasta
+MACHINE: tool+tool
+MAGIC: rainbow+life
+MAGMA: lava+science
+MAIL TRUCK: car+letter
+MAILBOX: letter+metal
+MAILMAN: human+letter
+MANATEE: cow+fish
+MAP: paper+land
+MAPLE SYRUP: sap+sugar
+MARS: planet+rust
+MARSHMALLOWS: campfire+sugar
+MAYONNAISE: egg+oil
+MEAT: animal+tool
+MEDUSA: human+snake
+MERCURY: planet+heat
+MERMAID: fish+human
+METAL: fire+stone
+METEOR: meteoroid+sky
+METEOROID: rock+space
+MICROSCOPE: lens+tool
+MILK: cow+farmer
+MILK SHAKE: milk+ice cream
+MINERAL: earth+organic matter
+MINOTAUR: cow+human
+MIRROR: glass+metal
+MIST: air+water
+MOLD: bread+time
+MONARCH: castle+human
+MONEY: gold+paper
+MONKEY: animal+tree
+MOON: cheese+sky, night+sky
+MOON ROVER: car+moon
+MOSS: algae+rock
+MOTH: butterfly+light
+MOTION: wind+science
+MOTORCYCLE: bicycle+combustion engine
+MOUNTAIN: hill+hill
+MOUNTAIN GOAT: goat+mountain
+MOUNTAIN RANGE: mountain+mountain
+MOUSE: cheese+house
+MOUSETRAP: cheese+metal
+MUD: earth+water
+MUMMY: corpse+pyramid
+MUSIC: musician+flute
+MUSICIAN: human+music
+
+--- N ---
+NARWHAL: fish+unicorn
+NEEDLE: metal+thread
+NESSIE: lake+legend
+NEST: bird+tree
+NET: rope+fish
+NEWSPAPER: paper+paper
+NIGHT: day+time
+NINJA: human+shuriken
+NINJA TURTLE: ninja+turtle
+NUTS: tree+farmer
+
+--- O ---
+OASIS: desert+water
+OBSIDIAN: lava+water
+OCEAN: sea+sea
+OIL: sunflower+pressure
+OMELETTE: egg+fire
+OPTICAL FIBER: light+wire
+ORCHARD: fruit tree+fruit tree
+ORE: earth+hammer
+ORGANIC MATTER: life+death
+ORIGAMI: paper+bird
+OSTRICH: bird+earth
+OWL: bird+night
+OXYGEN: plant+sun
+OZONE: electricity+oxygen
+
+--- P ---
+PAINT: rainbow+water
+PAINTER: human+paint
+PAINTING: canvas+paint
+PALEONTOLOGIST: dinosaur+human
+PALM: beach+tree
+PAN FLUTE: flute+flute
+PAPER: wood+pressure
+PAPER AIRPLANE: paper+airplane
+PAPER CUP: cup+paper
+PARACHUTE: fabric+pilot
+PARAGLIDER: big+kite
+PARK: city+forest
+PARROT: bird+pirate
+PASTA: egg+flour
+PEACOCK: bird+rainbow
+PEANUT BUTTER: nuts+pressure
+PEAT: swamp+time
+PEBBLE: rock+small
+PEGASUS: horse+bird
+PENCIL: charcoal+wood
+PENCIL SHARPENER: blade+pencil
+PENGUIN: bird+ice
+PENICILLIN: mold+science
+PERFUME: flower+alcohol
+PETROLEUM: fossil+pressure
+PHILOSOPHY: human+idea
+PHOENIX: bird+fire
+PICNIC: sandwich+grass
+PIE: dough+fruit
+PIG: animal+mud
+PIGEON: bird+city
+PIGGY BANK: pig+money
+PILOT: human+airplane
+PINOCCHIO: wood+life
+PIPE: tobacco+wood
+PIRANHA: fish+blood
+PIRATE: sailor+sword
+PIRATE SHIP: boat+pirate
+PITCHFORK: hay+metal
+PIZZA: bread+cheese
+PLANET: continent+continent
+PLANKTON: bacteria+ocean
+PLANT: life+soil
+PLASMA: heat+heat
+PLATYPUS: beaver+duck
+PLOW: earth+metal
+POLAR BEAR: animal+ice
+POLLEN: flower+wind
+POND: water+puddle
+POPSICLE: juice+ice
+POST OFFICE: house+letter
+POTATO: earth+vegetable
+POTTER: human+clay
+POTTERY: clay+wheel
+PRESSURE: air+air
+PRIMORDIAL SOUP: earth+sea
+PRINTER: computer+paper
+PRISM: glass+rainbow
+PTERODACTYL: dinosaur+air
+PUDDLE: water+water
+PUMPKIN: vegetable+farmer
+PYRAMID: desert+stone
+
+--- Q ---
+QUICKSAND: sand+swamp
+QUICKSILVER: metal+liquid
+
+--- R ---
+RABBIT: animal+carrot
+RAIN: cloud+water
+RAINBOW: light+rain
+RAINFOREST: forest+rain
+RAT: mouse+city
+RECIPE: cook+paper
+REED: grass+pond
+REINDEER: livestock+santa
+RESTAURANT: cook+house
+RING: diamond+love
+RIVER: rain+mountain
+RIVULET: small+stream
+ROBOT: life+metal
+ROBOT VACUUM: robot+vacuum cleaner
+ROCK: pebble+pebble
+ROCKET: atmosphere+metal
+ROE: egg+fish
+ROLLER COASTER: car+park
+ROPE: thread+thread
+ROSE: flower+love
+RUINS: house+time
+RULER: wood+pencil
+RUST: metal+oxygen
+RV: bus+house
+
+--- S ---
+SACK: container+flour
+SADDLE: horse+leather
+SAFE: gold+container
+SAFETY GLASSES: engineer+glasses
+SAILBOAT: boat+wind
+SAILOR: human+boat
+SALT: ocean+sun
+SAMURAI: human+katana
+SAND: stone+wind
+SAND CASTLE: sand+castle
+SANDPAPER: sand+paper
+SANDSTONE: sand+stone
+SANDSTORM: sand+wind
+SANDWICH: bread+meat
+SANTA: christmas tree+human
+SAP: tree+blade
+SATURN: planet+ring
+SCALPEL: blade+doctor
+SCARECROW: hay+human
+SCIENCE: human+telescope
+SCISSORS: blade+blade
+SCORPION: spider+desert
+SCUBA TANK: container+oxygen
+SCYTHE: blade+grass
+SEA: lake+lake
+SEAGULL: bird+ocean
+SEAHORSE: horse+fish
+SEAL: dog+ocean
+SEAPLANE: airplane+water
+SEASICKNESS: human+boat
+SEAWEED: plant+ocean
+SEED: flower+time
+SEWING MACHINE: machine+needle
+SHARK: fish+blood
+SHEEP: livestock+cloud
+SHEET MUSIC: music+paper
+SHOVEL: gardener+tool
+SHURIKEN: blade+ninja
+SICKNESS: bacteria+human
+SILO: barn+wheat
+SKATEBOARD: wheel+surfer
+SKELETON: bone+bone
+SKI GOGGLES: glasses+skier
+SKIER: human+mountain
+SKY: sun+cloud
+SKYSCRAPER: house+cloud
+SLEIGH: wagon+snow
+SLOTH: animal+time
+SMALL: philosophy+ant
+SMARTPHONE: tablet+small
+SMOG: fog+city
+SMOKE: fire+wood
+SMOKE SIGNAL: smoke+fabric
+SMOOTHIE: blender+fruit
+SNAKE: animal+rope
+SNOW: cold+rain
+SNOW GLOBE: glass+snow
+SNOWBALL: human+snow
+SNOWBOARD: surfer+snow
+SNOWBOARDER: human+snowboard
+SNOWMAN: human+snow
+SNOWMOBILE: car+snow
+SOAP: ash+oil
+SODA: water+carbon dioxide
+SOIL: earth+life
+SOLAR CELL: sun+tool
+SOLAR SYSTEM: sun+planet
+SOLID: earth+science
+SOUND: wave+human
+SPACE: sun+star
+SPACE STATION: astronaut+house
+SPACESHIP: rocket+astronaut
+SPAGHETTI: pasta+rope
+SPHINX: lion+statue
+SPIDER: animal+thread
+SPOON: shovel+small
+SPOTLIGHT: light+machine
+SPRINKLES: sugar+confetti
+SQUIRREL: animal+nuts
+STAR: night+sky
+STARFISH: fish+star
+STATUE: hammer+stone
+STEAK: fire+meat
+STEAM: fire+water
+STEAM ENGINE: steam+wheel
+STEAMBOAT: boat+steam engine
+STEEL: metal+coal
+STEEL WOOL: wool+steel
+STETHOSCOPE: doctor+sound
+STONE: air+lava
+STORM: cloud+cloud
+STORY: campfire+human
+STREAM: river+small
+STRING PHONE: cup+wire
+STUN GUN: gun+electricity
+SUGAR: fruit+energy
+SUN: fire+sky
+SUNDIAL: sun+tool
+SUNFLOWER: flower+sun
+SUNGLASSES: glasses+sun
+SUPERNOVA: explosion+star
+SURFER: human+wave
+SUSHI: fish+seaweed
+SWAMP: mud+grass
+SWEATER: wool+human
+SWIM GOGGLES: glasses+water
+SWIMMER: human+water
+SWIMMING POOL: water+house
+SWORD: blade+metal
+SWORDFISH: fish+sword
+SYRINGE: needle+doctor
+
+--- T ---
+TABLET: laptop+small
+TAILOR: human+needle
+TANK: car+gun
+TEA: leaf+water
+TELESCOPE: glass+sky
+TENT: fabric+house
+THE ONE RING: ring+magic
+THERMOMETER: glass+quicksilver
+THREAD: cotton+tool
+TIDE: moon+ocean
+TIME: (starter)
+TITANIC: boat+iceberg
+TOAST: bread+fire
+TOBACCO: fire+plant
+TOOL: human+metal
+TOOLBOX: tool+container
+TORNADO: wind+wind
+TOUCAN: bird+palm
+TRACTOR: car+farmer
+TRAIN: steam engine+wagon
+TRAINYARD: train+house
+TREASURE: pirate+treasure map
+TREASURE MAP: map+pirate
+TREE: plant+time
+TREEHOUSE: tree+house
+TROJAN HORSE: horse+wood
+TSUNAMI: earthquake+ocean
+TUNNEL: mountain+train
+TURTLE: animal+beach
+TWILIGHT: day+night
+TYRANNOSAURUS REX: dinosaur+meat
+
+--- U ---
+UFO: alien+airplane
+UMBRELLA: rain+fabric
+UNICORN: horse+rainbow
+UNIVERSE: galaxy cluster+galaxy cluster
+
+--- V ---
+VACUUM CLEANER: broom+electricity
+VAMPIRE: human+blood
+VASE: pottery+flower
+VAULT: big+safe
+VEGETABLE: plant+farmer
+VENUS: planet+volcano
+VILLAGE: house+house
+VINE: plant+rope
+VINEGAR: wine+time
+VOLCANO: lava+earth
+VULTURE: bird+corpse
+
+--- W ---
+WAGON: cart+horse
+WALL: brick+brick
+WAND: wizard+wood
+WARMTH: heat+human
+WARRIOR: human+sword
+WATCH: clock+small
+WATER: (starter)
+WATER GUN: gun+water
+WATER LILY: flower+pond
+WATER PIPE: pipe+water
+WATERFALL: river+mountain
+WAVE: ocean+wind
+WAX: bee+beehive
+WEB: spider+thread
+WEREWOLF: human+wolf
+WHEAT: grass+farmer
+WHEEL: motion+tool
+WILD BOAR: pig+forest
+WIND: air+pressure
+WIND TURBINE: electricity+wind
+WINDMILL: wind+house
+WINDSURFER: surfer+wind
+WINE: fruit+time
+WIRE: metal+rope
+WITCH: wizard+broom
+WIZARD: human+magic
+WOLF: dog+forest
+WOOD: tree+tool
+WOODPECKER: bird+wood
+WOOL: sheep+scissors
+WRAPPING PAPER: gift+paper
+WRITER: human+story
+
+--- Y ---
+YETI: human+mountain
+YOGURT: milk+bacteria
+
+--- Z ---
+ZOMBIE: corpse+life
+ZOO: animal+container
+
+==========================================
+For more: littlealchemy2cheats.com
+==========================================
