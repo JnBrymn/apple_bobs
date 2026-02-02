@@ -1478,12 +1478,13 @@
 			// Draw enemies (sprite or fallback square with eyes)
 			enemies.forEach(enemy => {
 				const size = enemy.radius;
-				const drawSize = size * 2;
-				const px = (enemy.x - size) / scale;
-				const py = (enemy.y - size) / scale;
+				const drawSize = size * 8;  // Big sprites
+				const px = (enemy.x - drawSize / 2) / scale;
+				const py = (enemy.y - drawSize / 2) / scale;
 				const pw = drawSize / scale;
 				const ph = drawSize / scale;
 				if (enemyImage.complete && enemyImage.naturalWidth > 0) {
+					// Draw at full size - scale image to fill the draw area
 					ctx.drawImage(enemyImage, px, py, pw, ph);
 				} else {
 					// Fallback: purple square with eyes
