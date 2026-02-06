@@ -505,7 +505,7 @@
 		let enemySpawnInterval = 2000; // Spawn enemy every 2 seconds (milliseconds)
 		let selectedCharacter = null;
 		let highestWaveReached = 0;
-		let unlockedPotatoes = [0]; // Start with first potato unlocked
+		let unlockedPotatoes = Array.from({ length: 100 }, (_, i) => i); // All potatoes unlocked (for testing)
 		const MAX_POTATOES = 100;
 		
 		// Potato characters
