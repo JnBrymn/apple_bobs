@@ -1,0 +1,532 @@
+<!--
+Bo's garden game - buying & selling.
+- You grow a garden with fruits and veggies.
+- You can buy seeds, plant them, grow them, and sell the harvest for coins.
+- There is no winning or losing, you just keep growing your garden.
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bo's Garden Market</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(#c7f0ff, #f3ffe0);
+        color: #123;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .page {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      h1 {
+        margin-top: 0;
+        text-align: center;
+        font-size: 2.4rem;
+        letter-spacing: 0.05em;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      }
+
+      .stat {
+        font-size: 1.1rem;
+      }
+
+      .stat strong {
+        font-size: 1.2rem;
+      }
+
+      button {
+        cursor: pointer;
+        border-radius: 999px;
+        border: none;
+        padding: 8px 14px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: #2f9e44;
+        color: white;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        transition: transform 0.08s ease, box-shadow 0.08s ease,
+          background 0.08s ease;
+      }
+
+      button:disabled {
+        background: #adb5bd;
+        cursor: default;
+        box-shadow: none;
+        transform: none;
+      }
+
+      button:hover:not(:disabled) {
+        background: #37b24d;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 2fr 1.4fr;
+        gap: 16px;
+      }
+
+      @media (max-width: 750px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 14px 16px 16px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      }
+
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 1.3rem;
+      }
+
+      .garden-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .plot {
+        aspect-ratio: 1 / 1;
+        border-radius: 12px;
+        border: 2px solid #8b5a2b;
+        background: linear-gradient(#f2e0c4, #e0b27a);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .plot-empty-label {
+        font-size: 0.75rem;
+        color: rgba(0, 0, 0, 0.55);
+      }
+
+      .plot-ready {
+        border-color: #2f9e44;
+        box-shadow: 0 0 0 3px rgba(47, 158, 68, 0.4);
+      }
+
+      .plot-growing {
+        border-style: dashed;
+      }
+
+      .plot-info {
+        position: absolute;
+        bottom: 2px;
+        left: 4px;
+        right: 4px;
+        font-size: 0.7rem;
+        text-align: center;
+        color: #343a40;
+        background: rgba(255, 255, 255, 0.65);
+        border-radius: 8px;
+        padding: 1px 3px;
+      }
+
+      .shop-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 6px;
+      }
+
+      .shop-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 10px;
+        background: #f8f9fa;
+      }
+
+      .shop-row-main {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .emoji {
+        font-size: 1.4rem;
+      }
+
+      .shop-label {
+        font-size: 0.92rem;
+      }
+
+      .small {
+        font-size: 0.8rem;
+        color: #555;
+      }
+
+      .inventory-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px;
+        border-radius: 8px;
+      }
+
+      .inventory-row:nth-child(odd) {
+        background: #f8f9fa;
+      }
+
+      .log {
+        margin-top: 8px;
+        font-size: 0.85rem;
+        min-height: 1.4em;
+        color: #495057;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <h1>Bo's Garden Market</h1>
+
+      <div class="top-bar">
+        <div class="stat">
+          Day: <strong id="day">1</strong>
+        </div>
+        <div class="stat">
+          Coins: <strong id="coins">50</strong>
+        </div>
+        <button id="nextDayBtn">Go To Next Day 🌤️</button>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <h2>Your Garden 🌱</h2>
+          <div class="small">
+            Buy seeds, plant them into soil, let them grow, then harvest!
+          </div>
+          <div class="garden-grid" id="garden"></div>
+          <button id="harvestBtn" style="margin-top: 10px; width: 100%">
+            Harvest All Ready Plants 🧺
+          </button>
+        </div>
+
+        <div class="card">
+          <h2>Shop & Bag 🧺</h2>
+          <div class="small">
+            - Buy seeds with coins. <br />
+            - Use "Plant" to put a seed into an empty soil spot.
+          </div>
+
+          <div class="shop-list" id="shop"></div>
+
+          <h3 style="margin: 10px 0 4px">Your Bag</h3>
+          <div id="bag"></div>
+
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // --- Game data ---
+      const crops = {
+        carrot: {
+          id: "carrot",
+          name: "Carrot",
+          emoji: "🥕",
+          seedCost: 4,
+          sellPrice: 7,
+          growDays: 2,
+        },
+        tomato: {
+          id: "tomato",
+          name: "Tomato",
+          emoji: "🍅",
+          seedCost: 5,
+          sellPrice: 9,
+          growDays: 2,
+        },
+        strawberry: {
+          id: "strawberry",
+          name: "Strawberry",
+          emoji: "🍓",
+          seedCost: 6,
+          sellPrice: 11,
+          growDays: 3,
+        },
+        pumpkin: {
+          id: "pumpkin",
+          name: "Pumpkin",
+          emoji: "🎃",
+          seedCost: 8,
+          sellPrice: 16,
+          growDays: 4,
+        },
+      };
+
+      let coins = 50;
+      let day = 1;
+
+      // How many seeds of each crop you have in your bag
+      const bag = {
+        carrot: 0,
+        tomato: 0,
+        strawberry: 0,
+        pumpkin: 0,
+      };
+
+      // 9 soil plots in the garden
+      const plots = Array.from({ length: 9 }, () => ({
+        cropId: null,
+        daysPlanted: 0,
+        ready: false,
+      }));
+
+      // --- DOM helpers ---
+      const daySpan = document.getElementById("day");
+      const coinsSpan = document.getElementById("coins");
+      const gardenEl = document.getElementById("garden");
+      const shopEl = document.getElementById("shop");
+      const bagEl = document.getElementById("bag");
+      const logEl = document.getElementById("log");
+      const nextDayBtn = document.getElementById("nextDayBtn");
+      const harvestBtn = document.getElementById("harvestBtn");
+
+      function setLog(message) {
+        logEl.textContent = message;
+      }
+
+      // --- Game actions ---
+      function buySeed(cropId) {
+        const crop = crops[cropId];
+        if (coins < crop.seedCost) {
+          setLog("Not enough coins for " + crop.name + " seeds.");
+          return;
+        }
+        coins -= crop.seedCost;
+        bag[cropId]++;
+        setLog("You bought 1 " + crop.name + " seed.");
+        render();
+      }
+
+      function plantSeed(cropId) {
+        const crop = crops[cropId];
+        if (bag[cropId] <= 0) {
+          setLog("You have no " + crop.name + " seeds to plant.");
+          return;
+        }
+
+        const emptyIndex = plots.findIndex((p) => p.cropId === null);
+        if (emptyIndex === -1) {
+          setLog("All soil spots are full. Harvest something first.");
+          return;
+        }
+
+        bag[cropId]--;
+        plots[emptyIndex] = {
+          cropId,
+          daysPlanted: 0,
+          ready: false,
+        };
+        setLog("You planted a " + crop.name + " seed.");
+        render();
+      }
+
+      function goToNextDay() {
+        day++;
+        plots.forEach((plot) => {
+          if (plot.cropId) {
+            plot.daysPlanted++;
+            const crop = crops[plot.cropId];
+            if (plot.daysPlanted >= crop.growDays) {
+              plot.ready = true;
+            }
+          }
+        });
+        setLog("A new day in your garden!");
+        render();
+      }
+
+      function harvestAll() {
+        let totalEarned = 0;
+        let harvestedCount = 0;
+
+        plots.forEach((plot, index) => {
+          if (plot.cropId && plot.ready) {
+            const crop = crops[plot.cropId];
+            coins += crop.sellPrice;
+            totalEarned += crop.sellPrice;
+            harvestedCount++;
+            plots[index] = {
+              cropId: null,
+              daysPlanted: 0,
+              ready: false,
+            };
+          }
+        });
+
+        if (harvestedCount === 0) {
+          setLog("Nothing is ready yet. Let the plants grow more.");
+        } else {
+          setLog(
+            "You harvested " +
+              harvestedCount +
+              " plant(s) and earned " +
+              totalEarned +
+              " coins."
+          );
+        }
+        render();
+      }
+
+      // --- Rendering ---
+      function renderGarden() {
+        gardenEl.innerHTML = "";
+        plots.forEach((plot) => {
+          const div = document.createElement("div");
+          div.className = "plot";
+
+          if (!plot.cropId) {
+            const label = document.createElement("div");
+            label.className = "plot-empty-label";
+            label.textContent = "Empty soil";
+            div.appendChild(label);
+          } else {
+            const crop = crops[plot.cropId];
+            const main = document.createElement("div");
+            main.textContent = crop.emoji;
+            div.appendChild(main);
+
+            const info = document.createElement("div");
+            info.className = "plot-info";
+            if (plot.ready) {
+              info.textContent = crop.name + " ready!";
+              div.classList.add("plot-ready");
+            } else {
+              div.classList.add("plot-growing");
+              const left =
+                crop.growDays - plot.daysPlanted > 0
+                  ? crop.growDays - plot.daysPlanted
+                  : 0;
+              info.textContent = "Growing (" + left + " day(s) left)";
+            }
+            div.appendChild(info);
+          }
+
+          gardenEl.appendChild(div);
+        });
+      }
+
+      function renderShop() {
+        shopEl.innerHTML = "";
+        Object.values(crops).forEach((crop) => {
+          const row = document.createElement("div");
+          row.className = "shop-row";
+
+          const main = document.createElement("div");
+          main.className = "shop-row-main";
+
+          const emojiSpan = document.createElement("span");
+          emojiSpan.className = "emoji";
+          emojiSpan.textContent = crop.emoji;
+
+          const label = document.createElement("div");
+          label.className = "shop-label";
+          label.innerHTML =
+            "<strong>" +
+            crop.name +
+            "</strong><br><span class='small'>Seed: " +
+            crop.seedCost +
+            " coins · Sell: " +
+            crop.sellPrice +
+            " coins · Grows in " +
+            crop.growDays +
+            " day(s)</span>";
+
+          main.appendChild(emojiSpan);
+          main.appendChild(label);
+
+          const buyBtn = document.createElement("button");
+          buyBtn.textContent = "Buy seed";
+          buyBtn.onclick = () => buySeed(crop.id);
+
+          row.appendChild(main);
+          row.appendChild(buyBtn);
+          shopEl.appendChild(row);
+        });
+      }
+
+      function renderBag() {
+        bagEl.innerHTML = "";
+        Object.values(crops).forEach((crop) => {
+          const row = document.createElement("div");
+          row.className = "inventory-row";
+
+          const left = document.createElement("div");
+          left.innerHTML =
+            "<span class='emoji'>" +
+            crop.emoji +
+            "</span> " +
+            crop.name +
+            " seeds: <strong>" +
+            bag[crop.id] +
+            "</strong>";
+
+          const plantBtn = document.createElement("button");
+          plantBtn.textContent = "Plant";
+          plantBtn.disabled = bag[crop.id] === 0;
+          plantBtn.onclick = () => plantSeed(crop.id);
+
+          row.appendChild(left);
+          row.appendChild(plantBtn);
+          bagEl.appendChild(row);
+        });
+      }
+
+      function render() {
+        daySpan.textContent = day;
+        coinsSpan.textContent = coins;
+        renderGarden();
+        renderShop();
+        renderBag();
+      }
+
+      // --- Wire up buttons ---
+      nextDayBtn.addEventListener("click", goToNextDay);
+      harvestBtn.addEventListener("click", harvestAll);
+
+      // First paint
+      render();
+      setLog("Welcome to your garden! Buy seeds and start planting.");
+    </script>
+  </body>
+</html>

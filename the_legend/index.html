@@ -1,0 +1,416 @@
+<!--
+  The Legend – wolf pack adventure. Hero: Alpha, Beta, Epsilon, Delta, Iota, Omicron, or Upsilon.
+  Goal: save the pack (defeat the villains). No Triforce.
+  Alpha: claws, tsunami. Beta: flower knock back, flower flames. Epsilon: vines.
+  Delta: regeneration (self), regeneration (other wolves). Iota: everlasting flames, claws.
+  Omicron: mind read (see next attack), claws. Upsilon: claws, bite.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Legend</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #0d1b0d;
+      color: #c8e6c8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; color: #8fbc8f; }
+    .screen { display: none; text-align: center; }
+    .screen.active { display: block; }
+    #game-canvas {
+      display: block;
+      background: #1a2f1a;
+      border: 4px solid #4a7c4a;
+      border-radius: 8px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .hero-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 16px 0; }
+    .hero-btn {
+      padding: 12px 16px;
+      font-size: 1rem;
+      background: #1e3d1e;
+      color: #b8e0b8;
+      border: 2px solid #5a9a5a;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .hero-btn:hover { background: #2d5a2d; border-color: #8fbc8f; }
+    .hud { margin-top: 8px; font-size: 0.9rem; }
+    .hud span { margin: 0 8px; }
+    p { margin-bottom: 8px; }
+    .choice-btn { padding: 10px 20px; margin: 8px; font-size: 1rem; background: #2d4a2d; color: #c8e6c8; border: 2px solid #5a9a5a; border-radius: 8px; cursor: pointer; }
+    .choice-btn:hover { background: #3d5a3d; }
+  </style>
+</head>
+<body>
+  <h1>🐺 The Legend</h1>
+
+  <div id="screen-pick" class="screen active">
+    <p>Choose your wolf:</p>
+    <div class="hero-choices">
+      <button class="hero-btn" data-hero="Alpha">Alpha</button>
+      <button class="hero-btn" data-hero="Beta">Beta</button>
+      <button class="hero-btn" data-hero="Epsilon">Epsilon</button>
+      <button class="hero-btn" data-hero="Delta">Delta</button>
+      <button class="hero-btn" data-hero="Iota">Iota</button>
+      <button class="hero-btn" data-hero="Omicron">Omicron</button>
+      <button class="hero-btn" data-hero="Upsilon">Upsilon</button>
+    </div>
+    <p style="margin-top:8px;font-size:0.85rem;color:#8a9a8a;" id="pick-powers">Pick a wolf to see their powers.</p>
+    <p style="margin-top:8px;font-size:0.9rem;color:#8fbc8f;">Save the pack! Defeat the villains.</p>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <canvas id="game-canvas" width="320" height="240"></canvas>
+    <div class="hud">
+      <span id="hud-name"></span>
+      <span>❤️ <span id="hud-hp">3</span>/3</span>
+      <span id="hud-power"></span>
+      <span id="hud-goal">Save the pack!</span>
+    </div>
+    <div id="hud-mindread" style="margin-top:4px;color:#ffcc00;font-size:0.85rem;min-height:1.2em;"></div>
+  </div>
+
+  <div id="screen-win" class="screen">
+    <h2>Pack saved!</h2>
+    <p id="win-text"></p>
+    <button class="choice-btn" id="btn-again">Play again</button>
+  </div>
+
+  <script>
+    const TILE = 16;
+    const W = 20;
+    const H = 15;
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const WOLF_POWERS = {
+      Alpha:   { main: 'claws', special: 'tsunami',     specialKey: 'e', desc: 'Claws (Space), Tsunami (E)' },
+      Beta:    { main: 'flowerKnockback', special: 'flowerFlames', specialKey: 'e', desc: 'Flower knock back (Space), Flower flames (E)' },
+      Epsilon: { main: 'vines', special: null,         specialKey: null, desc: 'Vines (Space)' },
+      Delta:   { main: 'claws', special: 'regenSelf',  specialKey: 'e', regenOthers: true, desc: 'Claws (Space), Regen self/others (E)' },
+      Iota:    { main: 'claws', special: 'everlastingFlames', specialKey: 'e', desc: 'Claws (Space), Everlasting flames (E)' },
+      Omicron: { main: 'claws', special: 'mindRead',   specialKey: 'e', desc: 'Claws (Space), Mind read (E)' },
+      Upsilon: { main: 'bite', special: null,          specialKey: null, desc: 'Claws + Bite (Space)' }
+    };
+
+    const VILLAINS = [
+      { name: 'Trapper', x: 8, y: 4, hp: 2, maxHp: 2, nextAttack: 'net' },
+      { name: 'Fang', x: 12, y: 5, hp: 2, maxHp: 2, nextAttack: 'bite' },
+      { name: 'Howler', x: 9, y: 12, hp: 3, maxHp: 3, nextAttack: 'howl', isBoss: true }
+    ];
+    const NEXT_ATTACKS = ['net', 'bite', 'howl', 'charge'];
+
+    let heroName = '';
+    let heroKey = '';
+    let hero = { x: 2, y: 2, dir: 'down', hp: 3, maxHp: 3, attackTimer: 0, specialTimer: 0 };
+    let keys = {};
+    let villains = [];
+    let pack = [
+      { x: 4, y: 6, hp: 1, maxHp: 1 },
+      { x: 15, y: 8, hp: 1, maxHp: 1 }
+    ];
+    let mindReadText = '';
+    let mindReadUntil = 0;
+    let flameTicks = {}; // enemy id -> ticks left for Iota's everlasting flames
+    let gameOver = false;
+
+    const map = [
+      [2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2],
+      [2,0,0,0,0,0,0,0,2,2,2,0,0,0,0,0,0,0,0,2],
+      [0,0,0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2]
+    ];
+
+    document.querySelectorAll('.hero-btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        document.getElementById('pick-powers').textContent = WOLF_POWERS[btn.dataset.hero].desc;
+      });
+      btn.addEventListener('mouseleave', () => {
+        document.getElementById('pick-powers').textContent = 'Pick a wolf to see their powers.';
+      });
+      btn.addEventListener('click', () => {
+        heroName = btn.dataset.hero;
+        heroKey = heroName;
+        document.getElementById('screen-pick').classList.remove('active');
+        document.getElementById('screen-game').classList.add('active');
+        document.getElementById('hud-name').textContent = heroName;
+        document.getElementById('hud-power').textContent = WOLF_POWERS[heroName].desc;
+        resetGame();
+        gameLoop();
+      });
+    });
+
+    document.getElementById('btn-again').addEventListener('click', () => {
+      document.getElementById('screen-win').classList.remove('active');
+      document.getElementById('screen-game').classList.add('active');
+      resetGame();
+      gameLoop();
+    });
+
+    function resetGame() {
+      hero = { x: 2, y: 2, dir: 'down', hp: 3, maxHp: 3, attackTimer: 0, specialTimer: 0 };
+      villains = VILLAINS.map((v, i) => ({ ...v, id: i, hurtTimer: 0 }));
+      pack = [
+        { x: 4, y: 6, hp: 1, maxHp: 1 },
+        { x: 15, y: 8, hp: 1, maxHp: 1 }
+      ];
+      mindReadText = '';
+      mindReadUntil = 0;
+      flameTicks = {};
+      gameOver = false;
+      document.getElementById('hud-hp').textContent = hero.hp;
+      document.getElementById('hud-goal').textContent = 'Save the pack! Defeat the villains.';
+      document.getElementById('hud-mindread').textContent = '';
+    }
+
+    function solid(tx, ty) {
+      if (tx < 0 || tx >= W || ty < 0 || ty >= H) return true;
+      if (map[ty][tx] === 1 || map[ty][tx] === 2) return true;
+      if (villains.some(v => v.hp > 0 && v.x === tx && v.y === ty)) return true;
+      return pack.some(p => p.x === tx && p.y === ty);
+    }
+
+    function getDirOffsets() {
+      const dx = hero.dir === 'left' ? -1 : hero.dir === 'right' ? 1 : 0;
+      const dy = hero.dir === 'up' ? -1 : hero.dir === 'down' ? 1 : 0;
+      return { dx, dy };
+    }
+
+    function hitVillainAt(tx, ty, damage) {
+      const v = villains.find(z => z.hp > 0 && z.x === tx && z.y === ty);
+      if (v) {
+        v.hp = Math.max(0, v.hp - damage);
+        v.hurtTimer = 10;
+        return v;
+      }
+      return null;
+    }
+
+    function pushVillain(v, oneTileAway) {
+      const { dx, dy } = getDirOffsets();
+      let nx = v.x + dx, ny = v.y + dy;
+      if (nx < 0 || nx >= W || ny < 0 || ny >= H) return;
+      if (map[ny][nx] === 1 || map[ny][nx] === 2) return;
+      if (hero.x === nx && hero.y === ny) return;
+      if (villains.some(o => o.hp > 0 && o !== v && o.x === nx && o.y === ny)) return;
+      if (pack.some(p => p.x === nx && p.y === ny)) return;
+      v.x = nx;
+      v.y = ny;
+    }
+
+    function doMainAttack() {
+      if (hero.attackTimer > 0 || gameOver) return;
+      const pow = WOLF_POWERS[heroName];
+      const { dx, dy } = getDirOffsets();
+      const tx = hero.x + dx, ty = hero.y + dy;
+
+      let damage = 1;
+      if (heroKey === 'Upsilon') damage = 2;
+
+      if (pow.main === 'flowerKnockback') {
+        const v = hitVillainAt(tx, ty, 1);
+        if (v) pushVillain(v, true);
+        hero.attackTimer = 14;
+      } else if (pow.main === 'vines' || pow.main === 'claws' || pow.main === 'bite') {
+        hitVillainAt(tx, ty, damage);
+        hero.attackTimer = 12;
+      }
+
+      if (villains.every(v => v.hp <= 0)) {
+        gameOver = true;
+        document.getElementById('screen-game').classList.remove('active');
+        document.getElementById('screen-win').classList.add('active');
+        document.getElementById('win-text').textContent = heroName + ' saved the pack!';
+      }
+    }
+
+    function doSpecial() {
+      if (hero.specialTimer > 0 || gameOver) return;
+      const pow = WOLF_POWERS[heroName];
+      if (!pow.special) return;
+      const { dx, dy } = getDirOffsets();
+
+      if (pow.special === 'tsunami') {
+        for (let i = 1; i <= 3; i++) {
+          const tx = hero.x + dx * i, ty = hero.y + dy * i;
+          if (tx < 0 || tx >= W || ty < 0 || ty >= H) break;
+          hitVillainAt(tx, ty, 1);
+        }
+        hero.specialTimer = 40;
+      } else if (pow.special === 'flowerFlames') {
+        for (let ox = -1; ox <= 1; ox++)
+          for (let oy = -1; oy <= 1; oy++)
+            hitVillainAt(hero.x + ox + dx, hero.y + oy + dy, 2);
+        hero.specialTimer = 35;
+      } else if (pow.special === 'regenSelf') {
+        hero.hp = Math.min(hero.maxHp, hero.hp + 1);
+        pack.forEach(p => {
+          const dist = Math.abs(p.x - hero.x) + Math.abs(p.y - hero.y);
+          if (dist <= 1) p.hp = Math.min(p.maxHp, p.hp + 1);
+        });
+        hero.specialTimer = 50;
+      } else if (pow.special === 'everlastingFlames') {
+        const tx = hero.x + dx, ty = hero.y + dy;
+        const v = villains.find(z => z.hp > 0 && z.x === tx && z.y === ty);
+        if (v) {
+          hitVillainAt(tx, ty, 1);
+          flameTicks[v.id] = (flameTicks[v.id] || 0) + 60;
+        }
+        hero.specialTimer = 45;
+      } else if (pow.special === 'mindRead') {
+        let nearest = null, best = 999;
+        villains.forEach(v => {
+          if (v.hp <= 0) return;
+          const d = Math.abs(v.x - hero.x) + Math.abs(v.y - hero.y);
+          if (d < best) { best = d; nearest = v; }
+        });
+        if (nearest) {
+          mindReadText = nearest.name + ' next: ' + nearest.nextAttack;
+          mindReadUntil = Date.now() + 3000;
+        }
+        hero.specialTimer = 90;
+      }
+
+      document.getElementById('hud-hp').textContent = hero.hp;
+    }
+
+    function moveHero(dx, dy) {
+      if (hero.attackTimer > 0 || gameOver) return;
+      const nx = hero.x + dx, ny = hero.y + dy;
+      if (!solid(nx, ny)) {
+        hero.x = nx;
+        hero.y = ny;
+        if (dx !== 0) hero.dir = dx > 0 ? 'right' : 'left';
+        if (dy !== 0) hero.dir = dy > 0 ? 'down' : 'up';
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a2f1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let ty = 0; ty < H; ty++) {
+        for (let tx = 0; tx < W; tx++) {
+          const x = tx * TILE, y = ty * TILE;
+          if (map[ty][tx] === 0) {
+            ctx.fillStyle = '#3d6a3d';
+            ctx.fillRect(x, y, TILE, TILE);
+            ctx.strokeStyle = '#2d5a2d';
+            ctx.strokeRect(x, y, TILE, TILE);
+          } else if (map[ty][tx] === 1) {
+            ctx.fillStyle = '#2a4a6a';
+            ctx.fillRect(x, y, TILE, TILE);
+          } else if (map[ty][tx] === 2) {
+            ctx.fillStyle = '#1a3d1a';
+            ctx.fillRect(x, y, TILE, TILE);
+            ctx.fillStyle = '#2a5a2a';
+            ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+          }
+        }
+      }
+      pack.forEach(p => {
+        ctx.fillStyle = '#6a8a6a';
+        ctx.fillRect(p.x * TILE + 3, p.y * TILE + 3, TILE - 6, TILE - 6);
+        ctx.strokeStyle = '#4a6a4a';
+        ctx.strokeRect(p.x * TILE + 3, p.y * TILE + 3, TILE - 6, TILE - 6);
+      });
+      villains.forEach(v => {
+        if (v.hp <= 0) return;
+        const vx = v.x * TILE, vy = v.y * TILE;
+        ctx.fillStyle = v.hurtTimer > 0 ? '#8b2222' : (v.isBoss ? '#5a1515' : '#6b3a1a');
+        ctx.fillRect(vx + 2, vy + 2, TILE - 4, TILE - 4);
+        ctx.strokeStyle = '#4a1515';
+        ctx.strokeRect(vx + 2, vy + 2, TILE - 4, TILE - 4);
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px Georgia';
+        ctx.fillText(v.name, vx + 2, vy + 11);
+      });
+      const hx = hero.x * TILE, hy = hero.y * TILE;
+      ctx.fillStyle = '#4a9a4a';
+      ctx.fillRect(hx + 2, hy + 2, TILE - 4, TILE - 4);
+      ctx.strokeStyle = '#2d6a2d';
+      ctx.strokeRect(hx + 2, hy + 2, TILE - 4, TILE - 4);
+      if (hero.attackTimer > 0) {
+        let ax = hx, ay = hy;
+        if (hero.dir === 'right') ax += TILE;
+        if (hero.dir === 'left') ax -= TILE;
+        if (hero.dir === 'down') ay += TILE;
+        if (hero.dir === 'up') ay -= TILE;
+        ctx.fillStyle = heroKey === 'Epsilon' ? '#2d5a2d' : heroKey === 'Beta' ? '#ffb6c1' : '#c0c0c0';
+        ctx.fillRect(ax + 4, ay + 4, TILE - 8, TILE - 8);
+      }
+      document.getElementById('hud-hp').textContent = hero.hp;
+      if (Date.now() < mindReadUntil)
+        document.getElementById('hud-mindread').textContent = '🔮 ' + mindReadText;
+      else
+        document.getElementById('hud-mindread').textContent = '';
+    }
+
+    function gameLoop() {
+      if (hero.attackTimer > 0) hero.attackTimer--;
+      if (hero.specialTimer > 0) hero.specialTimer--;
+      villains.forEach(v => { if (v.hurtTimer > 0) v.hurtTimer--; });
+      Object.keys(flameTicks).forEach(id => {
+        flameTicks[id]--;
+        if (flameTicks[id] <= 0) delete flameTicks[id];
+        else if (flameTicks[id] % 30 === 0) {
+          const v = villains.find(z => z.id === parseInt(id, 10));
+          if (v && v.hp > 0) { v.hp--; v.hurtTimer = 5; }
+        }
+      });
+      if (keys['ArrowLeft']) moveHero(-1, 0);
+      if (keys['ArrowRight']) moveHero(1, 0);
+      if (keys['ArrowUp']) moveHero(0, -1);
+      if (keys['ArrowDown']) moveHero(0, 1);
+      villains.forEach(v => {
+        if (v.hp <= 0) return;
+        if (v.hurtTimer === 0 && hero.x === v.x && hero.y === v.y) {
+          hero.hp--;
+          if (hero.hp <= 0) {
+            gameOver = true;
+            setTimeout(() => { hero.hp = hero.maxHp; resetGame(); }, 1500);
+          }
+        }
+      });
+      const allDead = villains.every(v => v.hp <= 0);
+      if (allDead) {
+        gameOver = true;
+        document.getElementById('screen-game').classList.remove('active');
+        document.getElementById('screen-win').classList.add('active');
+        document.getElementById('win-text').textContent = heroName + ' saved the pack!';
+      }
+      draw();
+      if (!gameOver || hero.hp > 0) requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === ' ') { e.preventDefault(); doMainAttack(); }
+      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); doSpecial(); }
+    });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+  </script>
+</body>
+</html>

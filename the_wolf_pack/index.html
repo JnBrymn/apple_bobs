@@ -1,0 +1,378 @@
+<!--
+  The Wolf Pack - Undertale-style game
+  - Based on the book "The Wolf Pack: The Pride of the Alpha"
+  - Player chooses character from the pack: Alpha, Luna, Shadow, Ember
+  - Bosses (villains): The Trapper, Fang, The Howler
+  - Combat: Fight / Act / Mercy, dodge in the box
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wolf Pack</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #1a0a0a;
+      color: #e8d4b8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #c9a227; }
+    h2 { font-size: 1.2rem; color: #a08040; margin-bottom: 0.5rem; }
+    .screen { display: none; text-align: center; max-width: 500px; }
+    .screen.active { display: block; }
+    p { margin-bottom: 0.8rem; }
+    .choice-btn, .battle-btn {
+      padding: 12px 24px;
+      margin: 8px;
+      font-size: 1rem;
+      background: #2d1f0f;
+      color: #e8d4b8;
+      border: 2px solid #c9a227;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .choice-btn:hover, .battle-btn:hover { background: #4a3520; }
+    .char-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 1rem 0; }
+    .char-card {
+      padding: 16px;
+      border: 2px solid #4a3520;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 110px;
+    }
+    .char-card:hover { border-color: #c9a227; background: #2d1f0f; }
+    .char-card .name { font-weight: bold; color: #c9a227; }
+    .char-card .trait { font-size: 0.85rem; color: #a09070; }
+    #battle-box {
+      width: 300px;
+      height: 200px;
+      margin: 16px auto;
+      border: 4px solid #c9a227;
+      border-radius: 8px;
+      background: #0d0805;
+      position: relative;
+      overflow: hidden;
+    }
+    #soul {
+      width: 20px;
+      height: 20px;
+      background: #e63946;
+      border: 2px solid #fff;
+      border-radius: 2px;
+      position: absolute;
+      left: 140px;
+      top: 90px;
+      transition: left 0.05s, top 0.05s;
+    }
+    .bullet {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #c9a227;
+      border-radius: 50%;
+    }
+    .battle-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+    .battle-btn { margin: 4px; }
+    #battle-text { min-height: 60px; margin: 12px 0; padding: 8px; background: #0d0805; border-radius: 8px; }
+    #player-hp, #enemy-hp { font-size: 0.9rem; margin: 4px 0; }
+    .mercy-name { color: #c9a227; }
+    .act-choices { margin: 8px 0; }
+    .act-choices button { margin: 4px; }
+  </style>
+</head>
+<body>
+  <h1>🐺 The Wolf Pack</h1>
+
+  <div id="screen-char" class="screen active">
+    <h2>Choose your wolf</h2>
+    <p>The pack needs a hero. Who are you?</p>
+    <div class="char-grid">
+      <div class="char-card" data-char="alpha">
+        <div class="name">Alpha</div>
+        <div class="trait">Leader · brave</div>
+      </div>
+      <div class="char-card" data-char="luna">
+        <div class="name">Luna</div>
+        <div class="trait">Swift · clever</div>
+      </div>
+      <div class="char-card" data-char="shadow">
+        <div class="name">Shadow</div>
+        <div class="trait">Stealth · calm</div>
+      </div>
+      <div class="char-card" data-char="ember">
+        <div class="name">Ember</div>
+        <div class="trait">Fierce · loyal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-intro" class="screen">
+    <p id="intro-text"></p>
+    <button class="choice-btn" id="btn-start-battle">Face the villains</button>
+  </div>
+
+  <div id="screen-battle" class="screen">
+    <h2 id="enemy-title"></h2>
+    <div id="player-hp">HP: 20 / 20</div>
+    <div id="enemy-hp"></div>
+    <div id="battle-box">
+      <div id="soul"></div>
+    </div>
+    <div id="battle-text">Your turn.</div>
+    <div class="battle-buttons">
+      <button class="battle-btn" data-cmd="fight">Fight</button>
+      <button class="battle-btn" data-cmd="act">Act</button>
+      <button class="battle-btn" data-cmd="mercy" id="btn-mercy" disabled>Mercy</button>
+    </div>
+    <div id="act-panel" class="act-choices" style="display:none;">
+      <button class="battle-btn" data-act="check">Check</button>
+      <button class="battle-btn" data-act="growl">Growl</button>
+    </div>
+  </div>
+
+  <div id="screen-victory" class="screen">
+    <h2>You won!</h2>
+    <p id="victory-text"></p>
+    <button class="choice-btn" id="btn-play-again">Play again</button>
+  </div>
+
+  <script>
+    const PACK = {
+      alpha: { name: 'Alpha', trait: 'Leader of the pack.' },
+      luna: { name: 'Luna', trait: 'Swift and clever.' },
+      shadow: { name: 'Shadow', trait: 'Stealth and calm.' },
+      ember: { name: 'Ember', trait: 'Fierce and loyal.' }
+    };
+    const VILLAINS = [
+      { name: 'The Trapper', hp: 15, spareable: false, desc: 'A human who sets traps for wolves.', attack: 'Throws a net!' },
+      { name: 'Fang', hp: 20, spareable: true, desc: 'Rival alpha. Wants to take over.', attack: 'Fang bites!' },
+      { name: 'The Howler', hp: 25, spareable: true, desc: 'A wolf who lost his way. Uses dark howls.', attack: 'Sound waves!' }
+    ];
+
+    let player = { name: '', key: '', hp: 20, maxHp: 20 };
+    let battle = { villainIndex: 0, villainHp: 0, turn: 0, canMercy: false, phase: 'choose' };
+    let soul = { x: 140, y: 90 };
+    let bullets = [];
+    let animId = null;
+    const BOX_W = 300;
+    const BOX_H = 200;
+    const SOUL_SIZE = 20;
+
+    const soulEl = document.getElementById('soul');
+    const boxEl = document.getElementById('battle-box');
+    const battleText = document.getElementById('battle-text');
+    const btnMercy = document.getElementById('btn-mercy');
+    const actPanel = document.getElementById('act-panel');
+    const enemyHpEl = document.getElementById('enemy-hp');
+    const playerHpEl = document.getElementById('player-hp');
+
+    document.querySelectorAll('.char-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const key = card.dataset.char;
+        player.key = key;
+        player.name = PACK[key].name;
+        player.hp = 20;
+        player.maxHp = 20;
+        document.getElementById('screen-char').classList.remove('active');
+        document.getElementById('screen-intro').classList.add('active');
+        document.getElementById('intro-text').textContent = `You are ${player.name}. ${PACK[key].trait} The pack is counting on you. Three villains threaten the forest: The Trapper, Fang, and The Howler. Ready?`;
+      });
+    });
+
+    document.getElementById('btn-start-battle').addEventListener('click', startBattle);
+    document.getElementById('btn-play-again').addEventListener('click', () => {
+      document.getElementById('screen-victory').classList.remove('active');
+      document.getElementById('screen-char').classList.add('active');
+    });
+
+    function startBattle() {
+      document.getElementById('screen-intro').classList.remove('active');
+      document.getElementById('screen-battle').classList.add('active');
+      battle.villainIndex = 0;
+      battle.turn = 0;
+      battle.canMercy = false;
+      battle.phase = 'choose';
+      actPanel.style.display = 'none';
+      loadVillain();
+    }
+
+    function loadVillain() {
+      const v = VILLAINS[battle.villainIndex];
+      battle.villainHp = v.hp;
+      battle.canMercy = false;
+      btnMercy.disabled = true;
+      document.getElementById('enemy-title').textContent = v.name;
+      document.getElementById('enemy-title').className = '';
+      enemyHpEl.textContent = `${v.name}: ${battle.villainHp} HP`;
+      playerHpEl.textContent = `HP: ${player.hp} / ${player.maxHp}`;
+      battleText.textContent = v.name + ' appears. Your turn.';
+      resetSoul();
+      clearBullets();
+    }
+
+    function resetSoul() {
+      soul.x = (BOX_W - SOUL_SIZE) / 2;
+      soul.y = (BOX_H - SOUL_SIZE) / 2;
+      soulEl.style.left = soul.x + 'px';
+      soulEl.style.top = soul.y + 'px';
+    }
+
+    function clearBullets() {
+      bullets = [];
+      document.querySelectorAll('.bullet').forEach(b => b.remove());
+      if (animId) cancelAnimationFrame(animId);
+    }
+
+    document.querySelectorAll('.battle-btn[data-cmd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (battle.phase !== 'choose') return;
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'fight') doFight();
+        else if (cmd === 'act') { actPanel.style.display = 'block'; }
+        else if (cmd === 'mercy') doMercy();
+      });
+    });
+
+    document.querySelectorAll('.battle-btn[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.act;
+        actPanel.style.display = 'none';
+        const v = VILLAINS[battle.villainIndex];
+        if (act === 'check') {
+          battleText.textContent = v.name + ' - ' + v.desc + ' HP: ' + battle.villainHp + '/' + v.hp;
+        } else {
+          battleText.textContent = 'You growl. ' + v.name + ' hesitates...';
+          if (v.spareable) {
+            battle.canMercy = true;
+            btnMercy.disabled = false;
+            document.getElementById('enemy-title').classList.add('mercy-name');
+          }
+        }
+      });
+    });
+
+    function doFight() {
+      const damage = 4 + Math.floor(Math.random() * 3);
+      battle.villainHp = Math.max(0, battle.villainHp - damage);
+      const v = VILLAINS[battle.villainIndex];
+      enemyHpEl.textContent = v.name + ': ' + battle.villainHp + ' HP';
+      battleText.textContent = 'You attack! ' + damage + ' damage.';
+      if (battle.villainHp <= 0) {
+        setTimeout(() => villainDefeated(), 800);
+      } else {
+        setTimeout(() => enemyTurn(), 1000);
+      }
+    }
+
+    function doMercy() {
+      const v = VILLAINS[battle.villainIndex];
+      battleText.textContent = 'You spare ' + v.name + '. They back off.';
+      setTimeout(() => villainDefeated(), 1200);
+    }
+
+    function villainDefeated() {
+      battle.villainIndex++;
+      if (battle.villainIndex >= VILLAINS.length) {
+        document.getElementById('screen-battle').classList.remove('active');
+        document.getElementById('screen-victory').classList.add('active');
+        document.getElementById('victory-text').textContent = 'The pack is safe. ' + player.name + ' saved the day!';
+        return;
+      }
+      battle.canMercy = false;
+      btnMercy.disabled = true;
+      loadVillain();
+    }
+
+    function enemyTurn() {
+      battle.phase = 'enemy';
+      const v = VILLAINS[battle.villainIndex];
+      battleText.textContent = v.attack + ' Dodge!';
+      resetSoul();
+      clearBullets();
+      addBullets();
+      requestAnimationFrame(moveBullets);
+    }
+
+    function addBullets() {
+      const count = 3 + battle.villainIndex;
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const b = document.createElement('div');
+          b.className = 'bullet';
+          const side = Math.floor(Math.random() * 4);
+          let x, y;
+          if (side === 0) { x = Math.random() * BOX_W; y = -20; }
+          else if (side === 1) { x = BOX_W + 10; y = Math.random() * BOX_H; }
+          else if (side === 2) { x = Math.random() * BOX_W; y = BOX_H + 20; }
+          else { x = -20; y = Math.random() * BOX_H; }
+          b.style.left = x + 'px';
+          b.style.top = y + 'px';
+          boxEl.appendChild(b);
+          bullets.push({ el: b, x, y, vx: (soul.x + SOUL_SIZE/2 - x) * 0.02, vy: (soul.y + SOUL_SIZE/2 - y) * 0.02 });
+        }, i * 400);
+      }
+      setTimeout(() => {
+        if (bullets.length === 0) endDodge();
+        else setTimeout(endDodge, 3000);
+      }, count * 400 + 2500);
+    }
+
+    function moveBullets() {
+      const boxRect = boxEl.getBoundingClientRect();
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.el.style.left = b.x + 'px';
+        b.el.style.top = b.y + 'px';
+        if (b.x < -30 || b.x > BOX_W + 30 || b.y < -30 || b.y > BOX_H + 30) {
+          b.el.remove();
+          bullets.splice(i, 1);
+        } else {
+          const sx = soul.x + SOUL_SIZE/2;
+          const sy = soul.y + SOUL_SIZE/2;
+          if (Math.abs(b.x + 8 - sx) < 24 && Math.abs(b.y + 8 - sy) < 24) {
+            player.hp--;
+            playerHpEl.textContent = 'HP: ' + player.hp + ' / ' + player.maxHp;
+            b.el.remove();
+            bullets.splice(i, 1);
+            if (player.hp <= 0) {
+              clearBullets();
+              battleText.textContent = 'You fell... The pack needs you!';
+              setTimeout(() => { player.hp = player.maxHp; startBattle(); }, 2000);
+              return;
+            }
+          }
+        }
+      }
+      if (bullets.length > 0) animId = requestAnimationFrame(moveBullets);
+    }
+
+    function endDodge() {
+      clearBullets();
+      battle.phase = 'choose';
+      battleText.textContent = 'Your turn.';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (battle.phase !== 'enemy') return;
+      const step = 12;
+      if (e.key === 'ArrowLeft') soul.x = Math.max(0, soul.x - step);
+      if (e.key === 'ArrowRight') soul.x = Math.min(BOX_W - SOUL_SIZE, soul.x + step);
+      if (e.key === 'ArrowUp') soul.y = Math.max(0, soul.y - step);
+      if (e.key === 'ArrowDown') soul.y = Math.min(BOX_H - SOUL_SIZE, soul.y + step);
+      soulEl.style.left = soul.x + 'px';
+      soulEl.style.top = soul.y + 'px';
+      e.preventDefault();
+    });
+  </script>
+</body>
+</html>

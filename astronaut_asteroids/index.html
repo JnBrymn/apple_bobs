@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astronaut Asteroids - Multiplication Game</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0a0a1a linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    h1 {
+      color: #7dd3fc;
+      text-shadow: 0 0 20px rgba(125, 211, 252, 0.5);
+      margin-bottom: 8px;
+    }
+    .sub { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
+    #menu {
+      text-align: center;
+      max-width: 400px;
+    }
+    .mode-btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      border: 2px solid #7dd3fc;
+      border-radius: 12px;
+      background: rgba(30, 58, 138, 0.4);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn:hover {
+      background: rgba(125, 211, 252, 0.2);
+      transform: scale(1.02);
+    }
+    .mode-btn small { display: block; margin-top: 4px; opacity: 0.9; }
+    #game {
+      display: none;
+      width: 100%;
+      max-width: 600px;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hearts {
+      font-size: 2rem;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+      color: #f87171;
+    }
+    .game-area {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: radial-gradient(ellipse at center, rgba(30, 58, 138, 0.3) 0%, transparent 70%);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .astronaut {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3rem;
+      z-index: 10;
+      filter: drop-shadow(0 0 10px rgba(125, 211, 252, 0.6));
+    }
+    .asteroid {
+      position: absolute;
+      font-size: 1.4rem;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #475569 0%, #334155 100%);
+      border: 2px solid #64748b;
+      border-radius: 12px;
+      color: #fef08a;
+      font-weight: bold;
+      box-shadow: 0 0 15px rgba(253, 224, 71, 0.3);
+      z-index: 5;
+      transition: left 0.05s linear, top 0.05s linear;
+    }
+    .problem-prompt {
+      margin: 20px 0 8px;
+      font-size: 1.2rem;
+      color: #94a3b8;
+    }
+    .answer-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    #answerInput {
+      font-size: 1.4rem;
+      padding: 12px 20px;
+      width: 120px;
+      text-align: center;
+      border: 2px solid #7dd3fc;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.9);
+      color: #e2e8f0;
+    }
+    #answerInput:focus { outline: none; box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.4); }
+    .btn {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      background: #0ea5e9;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn:hover { background: #0284c7; }
+    #message {
+      min-height: 24px;
+      margin-top: 12px;
+      font-size: 1.1rem;
+      color: #fef08a;
+    }
+    .wrong { color: #f87171 !important; }
+    .game-over {
+      text-align: center;
+      padding: 30px;
+    }
+    .game-over h2 { color: #f87171; margin-bottom: 16px; }
+    .game-over .btn { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>🪐 Astronaut Asteroids</h1>
+    <p class="sub">Destroy asteroids by solving multiplication!</p>
+    <button class="mode-btn" data-mode="baby">Baby mode<br><small>10 hearts · 2× or 3× (single digit)</small></button>
+    <button class="mode-btn" data-mode="easy">Easy mode<br><small>7 hearts · 3× or 4× (single digit)</small></button>
+    <button class="mode-btn" data-mode="mild">Mild mode<br><small>5 hearts · 4× or 5× (single digit)</small></button>
+    <button class="mode-btn" data-mode="hard">Hard mode<br><small>3 hearts · 5× up to 9× (single digit)</small></button>
+  </div>
+
+  <div id="game">
+    <div class="hearts" id="hearts"></div>
+    <div class="game-area" id="gameArea">
+      <div class="astronaut" id="astronaut">👨‍🚀</div>
+      <div id="asteroids"></div>
+    </div>
+    <p class="problem-prompt">Solve to destroy the asteroid:</p>
+    <div class="answer-row">
+      <input type="number" id="answerInput" placeholder="?" min="0" max="99" autocomplete="off">
+      <button class="btn" id="submitBtn">Fire!</button>
+    </div>
+    <p id="message"></p>
+  </div>
+
+  <div id="gameOver" class="game-over" style="display:none;">
+    <h2>Game Over</h2>
+    <p id="finalScore"></p>
+    <button class="btn" id="playAgain">Play again</button>
+  </div>
+
+  <script>
+    // Astronaut Asteroids: multiplication game. Modes: Baby (10 hearts, 2× or 3× single digit),
+    // Easy (7 hearts, 3× or 4×), Mild (5 hearts, 4× or 5×), Hard (3 hearts, 5×–9× single digit).
+    // Destroy asteroids by typing the correct product.
+
+    const MODES = {
+      baby: { hearts: 10, firstNumbers: [2, 3] },
+      easy:  { hearts: 7,  firstNumbers: [3, 4] },
+      mild:  { hearts: 5,  firstNumbers: [4, 5] },
+      hard:  { hearts: 3,  firstNumbers: [5, 6, 7, 8, 9] }
+    };
+
+    let state = {
+      mode: null,
+      hearts: 0,
+      score: 0,
+      currentProblem: null,
+      asteroidEl: null,
+      asteroidInterval: null,
+      hitCheckInterval: null,
+      gameArea: null,
+      astronaut: null
+    };
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateProblem() {
+      const cfg = MODES[state.mode];
+      const a = cfg.firstNumbers[getRandomInt(0, cfg.firstNumbers.length - 1)];
+      const b = getRandomInt(0, 9);
+      return { a, b, answer: a * b };
+    }
+
+    function startGame(mode) {
+      state.mode = mode;
+      state.hearts = MODES[mode].hearts;
+      state.score = 0;
+      state.currentProblem = null;
+      state.asteroidEl = null;
+      if (state.asteroidInterval) clearInterval(state.asteroidInterval);
+      if (state.hitCheckInterval) clearInterval(state.hitCheckInterval);
+
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('game').style.display = 'flex';
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').focus();
+      document.getElementById('message').textContent = '';
+      document.getElementById('message').className = '';
+
+      state.gameArea = document.getElementById('gameArea');
+      state.astronaut = document.getElementById('astronaut');
+      document.getElementById('asteroids').innerHTML = '';
+
+      updateHearts();
+      spawnAsteroid();
+
+      state.hitCheckInterval = setInterval(checkHit, 100);
+    }
+
+    function updateHearts() {
+      document.getElementById('hearts').textContent = '❤️'.repeat(state.hearts);
+    }
+
+    function spawnAsteroid() {
+      if (state.asteroidEl) return;
+      state.currentProblem = generateProblem();
+      const { a, b } = state.currentProblem;
+      const el = document.createElement('div');
+      el.className = 'asteroid';
+      el.textContent = a + ' × ' + b + ' = ?';
+      el.dataset.answer = state.currentProblem.answer;
+      state.gameArea.appendChild(el);
+      state.asteroidEl = el;
+
+      const areaRect = state.gameArea.getBoundingClientRect();
+      const startX = getRandomInt(40, Math.max(40, areaRect.width - 100));
+      const startY = -40;
+      el.style.left = startX + 'px';
+      el.style.top = startY + 'px';
+
+      const centerX = areaRect.width / 2 - 35;
+      let y = startY;
+      let x = startX;
+      const speed = state.mode === 'baby' ? 1.2 : state.mode === 'easy' ? 1.6 : state.mode === 'mild' ? 2 : 2.5;
+      const drift = (centerX - startX) / (areaRect.height / speed) * 0.8;
+      const move = () => {
+        if (!el.parentNode) return;
+        y += speed;
+        x += drift;
+        el.style.top = y + 'px';
+        el.style.left = x + 'px';
+        if (y > areaRect.height) {
+          el.remove();
+          state.asteroidEl = null;
+          loseHeart();
+          nextAsteroid();
+        }
+      };
+      state.asteroidInterval = setInterval(move, 30);
+    }
+
+    function checkHit() {
+      if (!state.asteroidEl || !state.astronaut) return;
+      const y = parseFloat(state.asteroidEl.style.top || 0);
+      const x = parseFloat(state.asteroidEl.style.left || 0);
+      const asteroidBottom = y + state.asteroidEl.offsetHeight;
+      const astroTop = state.astronaut.offsetTop;
+      const astroCenter = state.gameArea.offsetWidth / 2;
+      const asteroidCenterX = x + state.asteroidEl.offsetWidth / 2;
+      if (asteroidBottom >= astroTop - 5 && asteroidBottom <= astroTop + 70) {
+        if (Math.abs(asteroidCenterX - astroCenter) < 55) {
+          state.asteroidEl.remove();
+          state.asteroidEl = null;
+          if (state.asteroidInterval) clearInterval(state.asteroidInterval);
+          state.asteroidInterval = null;
+          loseHeart();
+          nextAsteroid();
+        }
+      }
+    }
+
+    function loseHeart() {
+      state.hearts--;
+      updateHearts();
+      const msg = document.getElementById('message');
+      msg.textContent = 'Asteroid hit! -1 heart';
+      msg.className = 'wrong';
+      if (state.hearts <= 0) endGame();
+    }
+
+    function nextAsteroid() {
+      setTimeout(spawnAsteroid, state.mode === 'hard' ? 400 : 600);
+    }
+
+    function submitAnswer() {
+      const input = document.getElementById('answerInput');
+      const val = parseInt(input.value, 10);
+      if (isNaN(val) || !state.currentProblem || !state.asteroidEl) return;
+
+      if (val === state.currentProblem.answer) {
+        state.score++;
+        state.asteroidEl.remove();
+        state.asteroidEl = null;
+        if (state.asteroidInterval) clearInterval(state.asteroidInterval);
+        state.asteroidInterval = null;
+        document.getElementById('message').textContent = '💥 Destroyed! +1';
+        document.getElementById('message').className = '';
+        input.value = '';
+        input.focus();
+        nextAsteroid();
+      } else {
+        document.getElementById('message').textContent = 'Wrong! Try again.';
+        document.getElementById('message').className = 'wrong';
+      }
+    }
+
+    function endGame() {
+      if (state.asteroidInterval) clearInterval(state.asteroidInterval);
+      if (state.hitCheckInterval) clearInterval(state.hitCheckInterval);
+      state.asteroidInterval = null;
+      state.hitCheckInterval = null;
+      document.getElementById('game').style.display = 'none';
+      document.getElementById('gameOver').style.display = 'block';
+      document.getElementById('finalScore').textContent = 'You destroyed ' + state.score + ' asteroid(s)!';
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => startGame(btn.dataset.mode));
+    });
+    document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+    document.getElementById('answerInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitAnswer();
+    });
+    document.getElementById('playAgain').addEventListener('click', () => {
+      document.getElementById('gameOver').style.display = 'none';
+      document.getElementById('menu').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

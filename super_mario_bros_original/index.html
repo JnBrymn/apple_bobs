@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Mario Bros Original</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #5c94fc; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; }
+    #game { position: relative; width: 800px; height: 448px; background: #5c94fc; overflow: hidden; image-rendering: pixelated; image-rendering: crisp-edges; }
+    canvas { display: block; width: 100%; height: 100%; background: #5c94fc; }
+    #start { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #e52521; color: white; border: 4px solid #000; padding: 20px 40px; font-size: 24px; cursor: pointer; font-weight: bold; z-index: 10; }
+    #start:hover { background: #ff6b00; }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <canvas id="c" width="800" height="448"></canvas>
+    <button id="start">START GAME</button>
+  </div>
+
+  <script>
+    // Super Mario Bros Original - Bo's vibe coding
+    // (We'll add your ideas here after you answer a few questions!)
+
+    const c = document.getElementById('c');
+    const ctx = c.getContext('2d');
+    const startBtn = document.getElementById('start');
+
+    let gameStarted = false;
+    let mario = { x: 80, y: 300, w: 32, h: 32, vx: 0, vy: 0, onGround: false };
+    const GRAVITY = 0.6;
+    const JUMP = -12;
+    const SPEED = 5;
+    const groundY = 368;
+
+    const blocks = [];
+    const blockSize = 32;
+    for (let row = 0; row < 14; row++) {
+      for (let col = 0; col < 25; col++) {
+        if (row === 11 || (row >= 10 && col % 4 === 0)) {
+          blocks.push({ x: col * blockSize, y: row * blockSize, w: blockSize, h: blockSize, type: row === 11 ? 'ground' : 'brick' });
+        }
+      }
+    }
+
+    function drawMario() {
+      ctx.fillStyle = '#e52521';
+      ctx.fillRect(mario.x, mario.y, mario.w, mario.h);
+      ctx.fillStyle = '#fbd671';
+      ctx.fillRect(mario.x + 6, mario.y + 4, 8, 8);
+      ctx.fillRect(mario.x + 18, mario.y + 4, 8, 8);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(mario.x + 8, mario.y + 12, 6, 4);
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(mario.x + 4, mario.y + 24, 10, 6);
+      ctx.fillRect(mario.x + 18, mario.y + 24, 10, 6);
+    }
+
+    function drawBlocks() {
+      blocks.forEach(b => {
+        if (b.type === 'ground') {
+          ctx.fillStyle = '#8b4513';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = '#a0522d';
+          ctx.fillRect(b.x, b.y, b.w, 4);
+        } else {
+          ctx.fillStyle = '#c04000';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.fillStyle = '#8b0000';
+          ctx.fillRect(b.x, b.y, b.w, 4);
+          ctx.strokeStyle = '#000';
+          ctx.strokeRect(b.x, b.y, b.w, b.h);
+        }
+      });
+    }
+
+    function run() {
+      if (!gameStarted) return;
+      ctx.clearRect(0, 0, c.width, c.height);
+      mario.vy += GRAVITY;
+      mario.x += mario.vx;
+      mario.y += mario.vy;
+      mario.vx *= 0.85;
+
+      mario.onGround = false;
+      if (mario.y >= groundY - mario.h) {
+        mario.y = groundY - mario.h;
+        mario.vy = 0;
+        mario.onGround = true;
+      }
+
+      blocks.forEach(b => {
+        if (mario.x + mario.w > b.x && mario.x < b.x + b.w && mario.y + mario.h > b.y && mario.y < b.y + b.h) {
+          if (mario.vy > 0 && mario.y + mario.h - mario.vy <= b.y) {
+            mario.y = b.y - mario.h;
+            mario.vy = 0;
+            mario.onGround = true;
+          } else if (mario.vy < 0 && mario.y - mario.vy >= b.y + b.h) {
+            mario.y = b.y + b.h;
+            mario.vy = 0;
+          } else if (mario.vx > 0) {
+            mario.x = b.x - mario.w;
+            mario.vx = 0;
+          } else if (mario.vx < 0) {
+            mario.x = b.x + b.w;
+            mario.vx = 0;
+          }
+        }
+      });
+
+      mario.x = Math.max(0, Math.min(c.width - mario.w, mario.x));
+
+      drawBlocks();
+      drawMario();
+      requestAnimationFrame(run);
+    }
+
+    startBtn.onclick = () => {
+      gameStarted = true;
+      startBtn.style.display = 'none';
+      run();
+    };
+
+    document.addEventListener('keydown', e => {
+      if (!gameStarted) return;
+      if (e.code === 'ArrowLeft') mario.vx = -SPEED;
+      if (e.code === 'ArrowRight') mario.vx = SPEED;
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+        if (mario.onGround) mario.vy = JUMP;
+        e.preventDefault();
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') mario.vx = 0;
+    });
+
+    drawBlocks();
+    drawMario();
+  </script>
+</body>
+</html>

@@ -139,6 +139,8 @@
 			opacity: 0.6;
 			animation: float 3s ease-in-out infinite;
 			display: none;
+			pointer-events: auto;
+			cursor: pointer;
 		}
 		
 		@keyframes float {
@@ -449,6 +451,125 @@
 		body.theme-demon .sprite:nth-child(2) { bottom: 22%; right: 7%; animation-delay: 1.3s; }
 		body.theme-demon .sprite:nth-child(3) { top: 50%; left: 92%; animation-delay: 0.7s; }
 		body.theme-demon .sprite::before { content: ''; }
+
+		/* Achievements */
+		.achievements-btn {
+			position: fixed;
+			top: 20px;
+			left: 20px;
+			z-index: 1000;
+			padding: 10px 18px;
+			border: 2px solid rgba(255, 255, 255, 0.5);
+			border-radius: 20px;
+			background: rgba(0, 0, 0, 0.3);
+			color: #fff;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: bold;
+			backdrop-filter: blur(10px);
+		}
+		.achievements-btn:hover {
+			background: rgba(255, 255, 255, 0.2);
+			transform: scale(1.05);
+		}
+		.achievements-panel {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 90%;
+			max-width: 420px;
+			max-height: 80vh;
+			background: rgba(0, 0, 0, 0.9);
+			border: 3px solid rgba(255, 255, 255, 0.5);
+			border-radius: 20px;
+			padding: 20px;
+			z-index: 2000;
+			overflow: hidden;
+			box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+		}
+		.achievements-panel.open {
+			display: flex;
+			flex-direction: column;
+		}
+		.achievements-panel h2 {
+			margin: 0 0 12px 0;
+			font-size: 24px;
+			color: #fff;
+			text-align: center;
+		}
+		.achievements-list {
+			overflow-y: auto;
+			flex: 1;
+			padding-right: 8px;
+		}
+		.achievement-item {
+			padding: 8px 12px;
+			margin: 6px 0;
+			border-radius: 10px;
+			font-size: 13px;
+			opacity: 0.5;
+			border: 1px solid rgba(255,255,255,0.2);
+		}
+		.achievement-item.unlocked {
+			opacity: 1;
+			background: rgba(255, 255, 255, 0.1);
+			border-color: rgba(255, 215, 0, 0.5);
+			box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+		}
+		.achievement-item .name { font-weight: bold; color: #fff; }
+		.achievement-item .desc { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+		.achievement-item:not(.unlocked) .desc { color: rgba(255,255,255,0.4); }
+		.achievements-close {
+			margin-top: 12px;
+			padding: 10px;
+			border: 2px solid rgba(255,255,255,0.5);
+			border-radius: 12px;
+			background: rgba(255,255,255,0.1);
+			color: #fff;
+			cursor: pointer;
+			font-weight: bold;
+		}
+		.achievements-close:hover { background: rgba(255,255,255,0.2); }
+		.achievements-reset {
+			margin-top: 8px;
+			padding: 6px 12px;
+			border: 1px solid rgba(255,100,100,0.6);
+			border-radius: 8px;
+			background: rgba(255,80,80,0.15);
+			color: rgba(255,200,200,0.9);
+			cursor: pointer;
+			font-size: 12px;
+		}
+		.achievements-reset:hover { background: rgba(255,80,80,0.25); }
+		.achievements-backdrop {
+			display: none;
+			position: fixed;
+			inset: 0;
+			background: rgba(0,0,0,0.5);
+			z-index: 1999;
+		}
+		.achievements-backdrop.open { display: block; }
+
+		/* Secret button - tiny, almost invisible */
+		.secret-btn {
+			position: fixed;
+			bottom: 12px;
+			left: 12px;
+			width: 8px;
+			height: 8px;
+			padding: 0;
+			border: none;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.08);
+			cursor: pointer;
+			z-index: 999;
+		}
+		.secret-btn:hover {
+			background: rgba(255, 255, 255, 0.2);
+			transform: scale(1.5);
+		}
 	</style>
 </head>
 <body class="theme-minimal">
@@ -460,6 +581,16 @@
 		<div class="sprite"></div>
 	</div>
 	
+	<button class="secret-btn" id="secretBtn" title=""></button>
+	<button class="achievements-btn" id="achievementsBtn">🏆 Achievements</button>
+	<div class="achievements-backdrop" id="achievementsBackdrop"></div>
+	<div class="achievements-panel" id="achievementsPanel">
+		<h2>🏆 Achievements</h2>
+		<div class="achievements-list" id="achievementsList"></div>
+		<button class="achievements-close" id="achievementsClose">Close</button>
+		<button class="achievements-reset" id="achievementsReset">Reset progress</button>
+	</div>
+
 	<div class="theme-selector">
 		<button class="theme-button active" data-theme="minimal">Minimal</button>
 		<button class="theme-button" data-theme="glitch">Glitch</button>
@@ -475,21 +606,154 @@
 			<div class="progress-fill" id="progress"></div>
 		</div>
 		<div class="info">
-			The higher you go, the FASTER you go!<br>
+			The higher you go, the <span id="fasterWord">FASTER</span> you go!<br>
 			Just sit back and watch the numbers grow...
 		</div>
 	</div>
 
 	<script>
-		// Progress Quest - Speed increases with level
-		// Speed is 5% of current number (so at 100, speed is 5/sec)
+		// Progress Quest - Speed increases with level. 50 achievements: milestones + easter eggs.
 
 		let level = 0;
 		let lastUpdate = Date.now();
+		let totalTimeSeconds = parseFloat(localStorage.getItem('progressQuestTime') || '0');
+		let lastTimeSave = 0;
+		let unlockedAchievements = JSON.parse(localStorage.getItem('progressQuestAchievements') || '[]');
 		const levelElement = document.getElementById('level');
 		const speedElement = document.getElementById('speed');
 		const progressElement = document.getElementById('progress');
 		const body = document.body;
+
+		const secrets = {
+			foundSecretButton: false,
+			titleClicks: 0,
+			progressBarClicks: 0,
+			cornerClicks: 0,
+			rightClicks: 0,
+			konami: false,
+			typedBo: false,
+			typedSecret: false,
+			levelClicks: 0,
+			speedClicks: 0,
+			themeChanges: 0,
+			achievementsOpened: 0,
+			achievementsClosed: 0,
+			spriteClicks: 0,
+			progressFillClicks: 0,
+			fasterWordClicks: 0,
+			resizeCount: 0,
+			spacePresses: 0,
+			escapePresses: 0,
+			achievementsBtnClicks: 0,
+			doubleClickLevel: false,
+			doubleClickProgress: false,
+			rightClickTitle: false,
+			konamiSequence: [],
+		};
+		const KONAMI = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+
+		const ACHIEVEMENTS = [
+			// Easter eggs
+			{ id: 'secret_button', name: 'Find the Secret Button', desc: 'There\'s a tiny secret button somewhere...', check: () => secrets.foundSecretButton },
+			{ id: 'title_tapper', name: 'Title Tapper', desc: 'Click the title 10 times', check: () => secrets.titleClicks >= 10 },
+			{ id: 'progress_bar_pro', name: 'Progress Bar Pro', desc: 'Click the progress bar 5 times', check: () => secrets.progressBarClicks >= 5 },
+			{ id: 'konami_code', name: 'Konami Code', desc: '↑↑↓↓←→←→BA', check: () => secrets.konami },
+			{ id: 'corner_explorer', name: 'Corner Explorer', desc: 'Click the bottom-right corner 3 times', check: () => secrets.cornerClicks >= 3 },
+			{ id: 'right_click_master', name: 'Right-Click Master', desc: 'Right-click 7 times', check: () => secrets.rightClicks >= 7 },
+			{ id: 'bo_knows', name: 'Bo Knows', desc: 'Type "bo"', check: () => secrets.typedBo },
+			{ id: 'secret_typist', name: 'Secret Typist', desc: 'Type "secret"', check: () => secrets.typedSecret },
+			{ id: 'level_lover', name: 'Level Lover', desc: 'Double-click the level number', check: () => secrets.doubleClickLevel },
+			{ id: 'speed_reader', name: 'Speed Reader', desc: 'Click the speed text 3 times', check: () => secrets.speedClicks >= 3 },
+			{ id: 'theme_explorer', name: 'Theme Explorer', desc: 'Try all 4 themes', check: () => secrets.themeChanges >= 4 },
+			{ id: 'achievement_menu_fan', name: 'Achievement Menu Fan', desc: 'Open achievements 3 times', check: () => secrets.achievementsOpened >= 3 },
+			{ id: 'sprite_clicker', name: 'Sprite Clicker', desc: 'Click on a floating sprite', check: () => secrets.spriteClicks >= 1 },
+			{ id: 'spammer', name: 'Spammer', desc: 'Click the title 50 times', check: () => secrets.titleClicks >= 50 },
+			{ id: 'double_progress', name: 'Double Progress', desc: 'Double-click the progress bar', check: () => secrets.doubleClickProgress },
+			{ id: 'reader', name: 'Reader', desc: 'Click the word FASTER', check: () => secrets.fasterWordClicks >= 1 },
+			{ id: 'window_resizer', name: 'Window Resizer', desc: 'Resize the window 3 times', check: () => secrets.resizeCount >= 3 },
+			{ id: 'closer', name: 'Closer', desc: 'Close the achievements panel 5 times', check: () => secrets.achievementsClosed >= 5 },
+			{ id: 'space_bar', name: 'Space Bar', desc: 'Press space 20 times', check: () => secrets.spacePresses >= 20 },
+			{ id: 'escape_artist', name: 'Escape Artist', desc: 'Press Escape 5 times', check: () => secrets.escapePresses >= 5 },
+			{ id: 'button_masher', name: 'Button Masher', desc: 'Click the Achievements button 10 times', check: () => secrets.achievementsBtnClicks >= 10 },
+			{ id: 'lucky_seven', name: 'Lucky Seven', desc: 'Click the level number 7 times', check: () => secrets.levelClicks >= 7 },
+			{ id: 'fill_clicker', name: 'Fill Clicker', desc: 'Click the moving progress fill', check: () => secrets.progressFillClicks >= 1 },
+			{ id: 'right_title', name: 'Right Title', desc: 'Right-click the title', check: () => secrets.rightClickTitle },
+			{ id: 'theme_collector', name: 'Theme Collector', desc: 'Change theme 10 times', check: () => secrets.themeChanges >= 10 },
+			{ id: 'sneaky', name: 'Sneaky', desc: 'You found something that wasn\'t obvious', check: () => secrets.foundSecretButton },
+			{ id: 'curious', name: 'Curious', desc: 'Click on something that floats', check: () => secrets.spriteClicks >= 1 },
+			{ id: 'keyboard_wizard', name: 'Keyboard Wizard', desc: 'You know the code', check: () => secrets.konami },
+			// Milestones (level / speed / time)
+			{ id: 'first_step', name: 'First Step', desc: 'Reach level 1', check: (l, s, t) => l >= 1 },
+			{ id: 'double_digits', name: 'Double Digits', desc: 'Reach level 10', check: (l, s, t) => l >= 10 },
+			{ id: 'century', name: 'Century', desc: 'Reach level 100', check: (l, s, t) => l >= 100 },
+			{ id: 'one_thousand', name: 'One Thousand', desc: 'Reach level 1,000', check: (l, s, t) => l >= 1000 },
+			{ id: 'ten_thousand', name: 'Ten Thousand', desc: 'Reach level 10,000', check: (l, s, t) => l >= 10000 },
+			{ id: 'hundred_thousand', name: 'Hundred Thousand', desc: 'Reach level 100,000', check: (l, s, t) => l >= 100000 },
+			{ id: 'million', name: 'Million', desc: 'Reach level 1,000,000', check: (l, s, t) => l >= 1e6 },
+			{ id: 'billion', name: 'Billion', desc: 'Reach level 1 billion', check: (l, s, t) => l >= 1e9 },
+			{ id: 'speed_demon', name: 'Speed Demon', desc: 'Reach speed 10/sec', check: (l, s, t) => s >= 10 },
+			{ id: 'speedster', name: 'Speedster', desc: 'Reach speed 100/sec', check: (l, s, t) => s >= 100 },
+			{ id: 'warp_speed', name: 'Warp Speed', desc: 'Reach speed 10,000/sec', check: (l, s, t) => s >= 10000 },
+			{ id: 'one_minute', name: 'One Minute', desc: 'Play for 1 minute', check: (l, s, t) => t >= 60 },
+			{ id: 'ten_minutes', name: 'Ten Minutes', desc: 'Play for 10 minutes', check: (l, s, t) => t >= 600 },
+			{ id: 'one_hour', name: 'One Hour', desc: 'Play for 1 hour', check: (l, s, t) => t >= 3600 },
+			{ id: 'the_numbers_go_up', name: 'The Numbers Go Up', desc: 'You get it.', check: (l, s, t) => l >= 2 },
+			{ id: 'still_watching', name: 'Still Watching?', desc: '2 minutes in', check: (l, s, t) => t >= 120 },
+			{ id: 'go_outside', name: 'No Really, Go Outside', desc: '10 minutes in', check: (l, s, t) => t >= 600 },
+			{ id: 'void_stares', name: 'The Void Stares Back', desc: '1 hour played and level 10,000', check: (l, s, t) => t >= 3600 && l >= 10000 },
+			{ id: 'quick_tapper', name: 'Quick Tapper', desc: 'Click the title 3 times', check: () => secrets.titleClicks >= 3 },
+			{ id: 'five_minutes', name: 'Five Minutes', desc: 'Play for 5 minutes', check: (l, s, t) => t >= 300 },
+			{ id: 'half_hour', name: 'Half Hour', desc: 'Play for 30 minutes', check: (l, s, t) => t >= 1800 },
+			{ id: 'achievement_fanatic', name: 'Achievement Fanatic', desc: 'Open the achievements panel 5 times', check: () => secrets.achievementsOpened >= 5 },
+		];
+
+		function checkAchievements() {
+			const speed = getSpeed(level);
+			let changed = false;
+			ACHIEVEMENTS.forEach(a => {
+				if (unlockedAchievements.includes(a.id)) return;
+				if (a.check(level, speed, totalTimeSeconds)) {
+					unlockedAchievements.push(a.id);
+					changed = true;
+				}
+			});
+			if (changed) {
+				localStorage.setItem('progressQuestAchievements', JSON.stringify(unlockedAchievements));
+				renderAchievementsList();
+			}
+		}
+		function renderAchievementsList() {
+			const list = document.getElementById('achievementsList');
+			list.innerHTML = ACHIEVEMENTS.map(a => {
+				const un = unlockedAchievements.includes(a.id);
+				return '<div class="achievement-item' + (un ? ' unlocked' : '') + '"><div class="name">' + (un ? '✓ ' : '??? ') + a.name + '</div><div class="desc">' + a.desc + '</div></div>';
+			}).join('');
+		}
+		document.getElementById('achievementsBtn').addEventListener('click', () => {
+			document.getElementById('achievementsPanel').classList.add('open');
+			document.getElementById('achievementsBackdrop').classList.add('open');
+		});
+		document.getElementById('achievementsClose').addEventListener('click', closeAchievements);
+		document.getElementById('achievementsBackdrop').addEventListener('click', closeAchievements);
+		document.getElementById('achievementsReset').addEventListener('click', () => {
+			if (!confirm('Reset everything? Level, time, and achievements will go back to zero.')) return;
+			level = 0;
+			totalTimeSeconds = 0;
+			lastTimeSave = 0;
+			unlockedAchievements = [];
+			localStorage.removeItem('progressQuestTime');
+			localStorage.removeItem('progressQuestAchievements');
+			levelElement.textContent = '0';
+			speedElement.textContent = '1';
+			progressElement.style.width = '0%';
+			renderAchievementsList();
+			closeAchievements();
+		});
+		function closeAchievements() {
+			document.getElementById('achievementsPanel').classList.remove('open');
+			document.getElementById('achievementsBackdrop').classList.remove('open');
+		}
+		renderAchievementsList();
 
 		// Theme switching
 		const themeButtons = document.querySelectorAll('.theme-button');
@@ -510,6 +774,53 @@
 		});
 		
 		setTheme(savedTheme);
+
+		// Easter egg: track theme changes
+		const origSetTheme = setTheme;
+		setTheme = function(theme) {
+			secrets.themeChanges++;
+			origSetTheme(theme);
+		};
+		// (theme changes counted inside setTheme override) Just count button clicks - remove the setTheme override and count in the click handler only. Actually we already have forEach that adds to themeChanges on click - and we also override setTheme which gets called from the click. So themeChanges will get +2 per click. Let me remove the override and only count in the button listener. Actually the flow is: user clicks -> theme button click -> setTheme(theme) is called. So we only need to increment in one place. Increment in the button addEventListener that already exists - we need to add the increment there. Let me re-read. We have themeButtons.forEach(btn => btn.addEventListener('click', () => setTheme(btn.dataset.theme))). So we need to increment when setTheme is called. So the override is right but we're also adding another forEach that adds on click - that would double count. Remove the extra forEach and keep only the setTheme override.
+		// Easter egg event listeners
+		document.getElementById('secretBtn').addEventListener('click', () => { secrets.foundSecretButton = true; });
+		document.querySelector('h1').addEventListener('click', () => { secrets.titleClicks++; });
+		document.querySelector('.progress-bar').addEventListener('click', (e) => {
+			if (e.target.classList.contains('progress-fill')) {
+				secrets.progressFillClicks++;
+			} else {
+				secrets.progressBarClicks++;
+			}
+		});
+		document.querySelector('.progress-bar').addEventListener('dblclick', () => { secrets.doubleClickProgress = true; });
+		levelElement.addEventListener('click', () => { secrets.levelClicks++; });
+		levelElement.addEventListener('dblclick', () => { secrets.doubleClickLevel = true; });
+		speedElement.addEventListener('click', () => { secrets.speedClicks++; });
+		document.getElementById('fasterWord').addEventListener('click', () => { secrets.fasterWordClicks++; });
+		document.querySelector('h1').addEventListener('contextmenu', (e) => { e.preventDefault(); secrets.rightClickTitle = true; });
+		document.getElementById('achievementsBtn').addEventListener('click', () => {
+			secrets.achievementsOpened++;
+			secrets.achievementsBtnClicks++;
+		});
+		document.getElementById('achievementsClose').addEventListener('click', () => { secrets.achievementsClosed++; });
+		document.querySelectorAll('.sprite').forEach(el => el.addEventListener('click', () => { secrets.spriteClicks++; }));
+		document.addEventListener('contextmenu', () => { secrets.rightClicks++; });
+		document.addEventListener('click', (e) => {
+			if (e.clientX >= window.innerWidth - 40 && e.clientY >= window.innerHeight - 40) secrets.cornerClicks++;
+		});
+		document.addEventListener('keydown', (e) => {
+			if (e.code === 'Space') { e.preventDefault(); secrets.spacePresses++; }
+			if (e.key === 'Escape') secrets.escapePresses++;
+			secrets.konamiSequence.push(e.keyCode);
+			if (secrets.konamiSequence.length > KONAMI.length) secrets.konamiSequence.shift();
+			if (secrets.konamiSequence.length === KONAMI.length && secrets.konamiSequence.every((k, i) => k === KONAMI[i])) secrets.konami = true;
+			const key = (e.key || '').toLowerCase();
+			const str = (document.body.dataset.keyBuffer || '') + key;
+			document.body.dataset.keyBuffer = str.slice(-10);
+			if (document.body.dataset.keyBuffer.includes('bo')) secrets.typedBo = true;
+			if (document.body.dataset.keyBuffer.includes('secret')) secrets.typedSecret = true;
+		});
+		window.addEventListener('resize', () => { secrets.resizeCount++; });
 
 		// Matrix Rain Effect
 		const matrixCanvas = document.getElementById('matrixCanvas');
@@ -614,10 +925,18 @@
 			const deltaTime = (now - lastUpdate) / 1000;
 			lastUpdate = now;
 
+			totalTimeSeconds += deltaTime;
+			if (totalTimeSeconds - lastTimeSave >= 2) {
+				lastTimeSave = totalTimeSeconds;
+				localStorage.setItem('progressQuestTime', String(totalTimeSeconds));
+			}
+
 			const speed = getSpeed(level);
 			const increment = speed * deltaTime;
 			
 			level += increment;
+
+			checkAchievements();
 
 			levelElement.textContent = formatNumber(level);
 			speedElement.textContent = formatNumber(speed);

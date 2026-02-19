@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wolf Pack</title>
+  <style>
+    /* Bo's game: Undertale-style, choose your character, bosses = villains from The Wolf Pack: The Pride of the Alpha (tell me the real villain names from the book and we'll add them!) */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 { color: #e8b86d; margin-bottom: 10px; text-shadow: 0 0 10px #e8b86d; }
+    .screen { display: none; text-align: center; max-width: 600px; }
+    .screen.active { display: block; }
+    .character-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin: 24px 0; }
+    .character-btn {
+      padding: 20px 24px;
+      font-size: 18px;
+      background: #2d2d44;
+      border: 3px solid #e8b86d;
+      color: #e8b86d;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .character-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px #e8b86d; }
+    .battle-box {
+      width: 320px;
+      height: 200px;
+      margin: 20px auto;
+      border: 4px solid #e8b86d;
+      border-radius: 8px;
+      background: #0f0f1a;
+      position: relative;
+      overflow: hidden;
+    }
+    .soul {
+      width: 16px;
+      height: 16px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.05s, top 0.05s;
+    }
+    .bullet {
+      position: absolute;
+      background: #e8b86d;
+      border-radius: 4px;
+    }
+    .menu { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 16px 0; }
+    .menu-btn {
+      padding: 12px 20px;
+      font-size: 16px;
+      background: #2d2d44;
+      border: 2px solid #888;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .menu-btn:hover { border-color: #e8b86d; color: #e8b86d; }
+    .battle-text { min-height: 60px; margin: 12px 0; font-size: 14px; }
+    .boss-name { color: #c44; font-size: 20px; margin-bottom: 8px; }
+    .hp-bar { height: 12px; background: #333; border-radius: 6px; overflow: hidden; margin: 8px 0; }
+    .hp-fill { height: 100%; background: #4a4; transition: width 0.3s; }
+    .act-options { margin: 12px 0; }
+    .act-options button { margin: 4px; padding: 8px 16px; cursor: pointer; }
+    .back-btn { margin-top: 16px; padding: 8px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="title" class="screen active">
+    <h1>🐺 THE WOLF PACK 🐺</h1>
+    <p style="margin: 16px 0;">Choose your character. Then face the villains from the pack.</p>
+    <div class="character-grid">
+      <button class="character-btn" data-char="Luna">Luna</button>
+      <button class="character-btn" data-char="Kai">Kai</button>
+      <button class="character-btn" data-char="Shadow">Shadow</button>
+      <button class="character-btn" data-char="Ember">Ember</button>
+    </div>
+    <p style="font-size: 12px; color: #888; margin-top: 20px;">(Tell me the real villain names from the book and we'll put them in!)</p>
+  </div>
+
+  <div id="battle" class="screen">
+    <p class="boss-name" id="bossName">Villain</p>
+    <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width: 100%;"></div></div>
+    <div class="battle-text" id="battleText">* The villain appears. What will you do?</div>
+    <div class="battle-box" id="battleBox">
+      <div class="soul" id="soul"></div>
+    </div>
+    <div class="menu" id="mainMenu">
+      <button class="menu-btn" data-action="fight">FIGHT</button>
+      <button class="menu-btn" data-action="act">ACT</button>
+      <button class="menu-btn" data-action="item">ITEM</button>
+      <button class="menu-btn" data-action="mercy">MERCY</button>
+    </div>
+    <div class="act-options" id="actOptions" style="display: none;"></div>
+  </div>
+
+  <div id="win" class="screen">
+    <h1>You won!</h1>
+    <p id="winText">The villain was spared (or defeated).</p>
+    <button class="back-btn" id="nextBoss">Next villain</button>
+    <button class="back-btn" id="toTitle">Back to title</button>
+  </div>
+
+  <script>
+    // Villains = bad guys from The Wolf Pack: The Pride of the Alpha (placeholders until Bo tells us the real names)
+    const VILLAINS = [
+      { name: 'The Rival Alpha', hp: 80, attacks: ['* Snarls at you!', '* Teeth snap!', '* Howls!'] },
+      { name: 'The Traitor', hp: 100, acts: ['Check', 'Talk', 'Bark'], actsText: { 'Check': '* Traitor. Was once part of the pack.', 'Talk': '* They look away.', 'Bark': '* They flinch.' } },
+      { name: 'The Hunter', hp: 120, acts: ['Check', 'Plead', 'Growl'], actsText: { 'Check': '* Hunter. Enemy of the pack.', 'Plead': '* No mercy in their eyes.', 'Growl': '* They step back.' } }
+    ];
+
+    let chosenCharacter = '';
+    let currentBossIndex = 0;
+    let bossHP = 100;
+    let maxBossHP = 100;
+    let bullets = [];
+    let bulletTimer = 0;
+    let animId = null;
+    let soulX = 160;
+    let soulY = 100;
+    const SOUL_SIZE = 16;
+    const battleBox = document.getElementById('battleBox');
+    const soul = document.getElementById('soul');
+    const boxRect = () => battleBox.getBoundingClientRect();
+
+    document.querySelectorAll('.character-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        chosenCharacter = btn.dataset.char;
+        document.getElementById('title').classList.remove('active');
+        document.getElementById('battle').classList.add('active');
+        startBoss(currentBossIndex);
+      });
+    });
+
+    function startBoss(index) {
+      const v = VILLAINS[index];
+      if (!v) {
+        document.getElementById('win').querySelector('h1').textContent = 'You beat them all!';
+        document.getElementById('winText').textContent = chosenCharacter + ' saved the pack!';
+        document.getElementById('nextBoss').style.display = 'none';
+        showScreen('win');
+        return;
+      }
+      currentBossIndex = index;
+      bossHP = v.hp;
+      maxBossHP = v.hp;
+      document.getElementById('bossName').textContent = v.name;
+      document.getElementById('hpFill').style.width = '100%';
+      document.getElementById('battleText').textContent = '* ' + v.name + ' blocks your path.';
+      document.getElementById('mainMenu').style.display = 'flex';
+      document.getElementById('actOptions').style.display = 'none';
+      document.getElementById('actOptions').innerHTML = '';
+      soulX = 160;
+      soulY = 100;
+      soul.style.left = (soulX - SOUL_SIZE / 2) + 'px';
+      soul.style.top = (soulY - SOUL_SIZE / 2) + 'px';
+      soul.style.transform = 'none';
+      bullets = [];
+      if (animId) cancelAnimationFrame(animId);
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    document.getElementById('mainMenu').addEventListener('click', e => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+      const v = VILLAINS[currentBossIndex];
+      if (action === 'fight') {
+        const dmg = 15 + Math.floor(Math.random() * 10);
+        bossHP = Math.max(0, bossHP - dmg);
+        document.getElementById('hpFill').style.width = (100 * bossHP / maxBossHP) + '%';
+        document.getElementById('battleText').textContent = '* You attack! ' + dmg + ' damage.';
+        if (bossHP <= 0) { victory(); return; }
+        setTimeout(() => enemyTurn(v), 800);
+      } else if (action === 'act') {
+        document.getElementById('mainMenu').style.display = 'none';
+        const opts = document.getElementById('actOptions');
+        opts.style.display = 'block';
+        opts.innerHTML = (v.acts || ['Check']).map(a => '<button class="menu-btn" data-act="' + a + '">' + a + '</button>').join('');
+        opts.querySelectorAll('button').forEach(b => {
+          b.addEventListener('click', () => {
+            const actName = b.dataset.act;
+            const text = (v.actsText && v.actsText[actName]) || ('* ' + actName + '.');
+            document.getElementById('battleText').textContent = text;
+            opts.style.display = 'none';
+            document.getElementById('mainMenu').style.display = 'flex';
+            setTimeout(() => enemyTurn(v), 600);
+          });
+        });
+      } else if (action === 'mercy') {
+        document.getElementById('battleText').textContent = '* You show mercy. ' + v.name + ' leaves.';
+        setTimeout(victory, 1200);
+      } else if (action === 'item') {
+        document.getElementById('battleText').textContent = '* You have no items. (Maybe add items later!)';
+        setTimeout(() => enemyTurn(v), 1000);
+      }
+    });
+
+    function enemyTurn(v) {
+      const msg = v.attacks && v.attacks[Math.floor(Math.random() * v.attacks.length)] || '* Attack!';
+      document.getElementById('battleText').textContent = msg;
+      spawnBullets();
+    }
+
+    function spawnBullets() {
+      const rect = boxRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + bulletTimer * 0.1;
+        bullets.push({
+          x: cx + Math.cos(angle) * 140,
+          y: cy + Math.sin(angle) * 80,
+          vx: -Math.cos(angle) * 1.2,
+          vy: -Math.sin(angle) * 1.2,
+          w: 12,
+          h: 12
+        });
+      }
+      bulletTimer++;
+    }
+
+    function gameLoop() {
+      const boxW = 320;
+      const boxH = 200;
+      if (soul.vx) soulX = Math.max(SOUL_SIZE/2, Math.min(boxW - SOUL_SIZE/2, soulX + soul.vx));
+      if (soul.vy) soulY = Math.max(SOUL_SIZE/2, Math.min(boxH - SOUL_SIZE/2, soulY + soul.vy));
+      soul.style.left = (soulX - SOUL_SIZE / 2) + 'px';
+      soul.style.top = (soulY - SOUL_SIZE / 2) + 'px';
+
+      bullets.forEach(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+        if (b.el) {
+          b.el.style.left = (b.x - b.w / 2) + 'px';
+          b.el.style.top = (b.y - b.h / 2) + 'px';
+        }
+        if (!b.dead && Math.abs(b.x - soulX) < 18 && Math.abs(b.y - soulY) < 18) {
+          document.getElementById('battleText').textContent = '* You got hit!';
+          b.dead = true;
+        }
+        if (b.x < -30 || b.x > boxW + 30 || b.y < -30 || b.y > boxH + 30) b.dead = true;
+      });
+      bullets = bullets.filter(b => !b.dead);
+      bullets.forEach(b => { if (b.el && b.dead) b.el.remove(); });
+      animId = requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('battle').classList.contains('active')) return;
+      soul.vx = soul.vx || 0;
+      soul.vy = soul.vy || 0;
+      const sp = 5;
+      if (e.key === 'ArrowLeft') { soul.vx = -sp; e.preventDefault(); }
+      if (e.key === 'ArrowRight') { soul.vx = sp; e.preventDefault(); }
+      if (e.key === 'ArrowUp') { soul.vy = -sp; e.preventDefault(); }
+      if (e.key === 'ArrowDown') { soul.vy = sp; e.preventDefault(); }
+    });
+    document.addEventListener('keyup', e => {
+      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+        soul.vx = 0;
+        soul.vy = 0;
+      }
+    });
+
+    function victory() {
+      if (animId) cancelAnimationFrame(animId);
+      bullets.forEach(b => { if (b.el) b.el.remove(); });
+      bullets = [];
+      document.getElementById('winText').textContent = chosenCharacter + ' defeated ' + VILLAINS[currentBossIndex].name + '!';
+      document.getElementById('nextBoss').style.display = 'inline-block';
+      document.getElementById('nextBoss').textContent = currentBossIndex + 1 < VILLAINS.length ? 'Next villain' : 'See ending';
+      showScreen('win');
+    }
+
+    document.getElementById('nextBoss').addEventListener('click', () => {
+      currentBossIndex++;
+      showScreen('battle');
+      startBoss(currentBossIndex);
+    });
+    document.getElementById('toTitle').addEventListener('click', () => {
+      currentBossIndex = 0;
+      showScreen('title');
+    });
+
+    function runBulletPhase() {
+      bullets.forEach(b => {
+        const el = document.createElement('div');
+        el.className = 'bullet';
+        el.style.width = b.w + 'px';
+        el.style.height = b.h + 'px';
+        el.style.left = (b.x - b.w / 2) + 'px';
+        el.style.top = (b.y - b.h / 2) + 'px';
+        battleBox.appendChild(el);
+        b.el = el;
+      });
+      if (!animId) animId = requestAnimationFrame(gameLoop);
+    }
+
+    const origSpawn = spawnBullets;
+    spawnBullets = function() {
+      origSpawn();
+      runBulletPhase();
+    };
+  </script>
+</body>
+</html>
