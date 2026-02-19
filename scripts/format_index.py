@@ -150,7 +150,7 @@ def generate_index_html(menu_html):
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def main():
     """Main function to generate the Apple Bobs game menu and QR codes."""
-    print("🍎 Generating Apple Bobs game menu...")
+    print("Generating Apple Bobs game menu...")
     
     # Find all game pages
     pages = find_game_pages()
