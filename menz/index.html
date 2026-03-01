@@ -1,0 +1,335 @@
+<!-- MENZ: a game by Bo. Press Continue -> black 3 sec -> ALL CHAOS (bouncing + glitch + Matrix rain + vortex). -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MENZ</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      transition: background 0.1s;
+    }
+    #intro { text-align: center; }
+    h1 { margin-bottom: 1rem; font-size: 2.5rem; }
+    #gameCanvas {
+      background: #16213e;
+      border: 3px solid #0f3460;
+      border-radius: 8px;
+      display: none;
+    }
+    #gameCanvas.chaos {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      border: none;
+      border-radius: 0;
+    }
+    p { margin-top: 1rem; color: #888; }
+    .btn {
+      margin-top: 1.5rem;
+      padding: 12px 32px;
+      font-size: 1.2rem;
+      background: #0077ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .btn:hover { background: #ff6b6b; }
+    body.chaos #intro { display: none; }
+    #screen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #000;
+      z-index: 999;
+    }
+    #screen.show { display: block; }
+    #screen canvas { width: 100%; height: 100%; display: block; }
+  </style>
+</head>
+<body>
+  <div id="intro">
+    <h1>MENZ</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <p>this will hurt your eyes breh</p>
+    <button class="btn" id="continueBtn">Continue</button>
+  </div>
+  <div id="screen">
+    <canvas id="chaosCanvas"></canvas>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const screen = document.getElementById('screen');
+    const chaosCanvas = document.getElementById('chaosCanvas');
+    const chaosCtx = chaosCanvas.getContext('2d');
+    const btn = document.getElementById('continueBtn');
+    const intro = document.getElementById('intro');
+
+    function rand(min, max) {
+      return min + Math.random() * (max - min);
+    }
+    function randColor() {
+      return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+    }
+
+    function drawIntro() {
+      ctx.fillStyle = '#16213e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#e94560';
+      ctx.font = '24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('MENZ', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.font = '18px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.fillText('this will hurt your eyes breh', canvas.width / 2, canvas.height / 2 + 30);
+    }
+    drawIntro();
+
+    const chars = 'MENZBREH01?!@#$%&*ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    function randomChar() { return chars[Math.floor(Math.random() * chars.length)]; }
+
+    const words = ['MENZ', 'BREH', '???', '!!!', 'OW', 'NOPE', 'WHY', 'AAAA', '💀', '🔥', '👀', 'ERROR', 'SYSTEM', 'NULL'];
+    const things = [];
+    for (let i = 0; i < 30; i++) {
+      things.push({
+        x: 0, y: 0,
+        vx: rand(-14, 14), vy: rand(-14, 14),
+        size: rand(12, 45), rot: rand(0, 360), rotSpeed: rand(-0.6, 0.6),
+        type: Math.random() < 0.5 ? 'rect' : Math.random() < 0.7 ? 'circle' : 'text',
+        word: words[Math.floor(Math.random() * words.length)]
+      });
+    }
+
+    let chaosStarted = false;
+    function runChaos() {
+      document.body.classList.add('chaos');
+      chaosCanvas.width = window.innerWidth;
+      chaosCanvas.height = window.innerHeight;
+      const W = chaosCanvas.width, H = chaosCanvas.height;
+      things.forEach(function(t) { t.x = rand(0, W); t.y = rand(0, H); });
+
+      const colW = 28;
+      const cols = [];
+      for (let x = 0; x < W + colW; x += colW) {
+        cols.push({ x: x, y: rand(-H, 0), speed: rand(16, 38), len: Math.floor(rand(6, 16)), chars: [] });
+        for (let i = 0; i < 22; i++) cols[cols.length - 1].chars.push(randomChar());
+      }
+      const cx = W/2, cy = H/2;
+      const vortex = [];
+      for (let i = 0; i < 40; i++) {
+        vortex.push({
+          angle: rand(0, Math.PI * 2),
+          radius: rand(20, Math.min(W, H) * 0.45),
+          spin: rand(0.06, 0.18) * (Math.random() > 0.5 ? 1 : -1),
+          drift: rand(-0.8, 0.8),
+          size: rand(2, 10)
+        });
+      }
+      chaosStarted = true;
+
+      function frame() {
+        if (!chaosStarted) return;
+
+        document.body.style.background = randColor();
+        chaosCtx.fillStyle = 'rgba(0,0,0,0.1)';
+        chaosCtx.fillRect(0, 0, W, H);
+
+        // 1) Matrix rain
+        chaosCtx.font = '16px monospace';
+        chaosCtx.textAlign = 'left';
+        for (const col of cols) {
+          col.y += col.speed;
+          if (col.y > H + col.len * 18) {
+            col.y = -col.len * 18;
+            col.chars = []; for (let i = 0; i < 22; i++) col.chars.push(randomChar());
+          }
+          for (let i = 0; i < col.len; i++) {
+            const y = col.y - i * 18;
+            if (y < -20 || y > H + 20) continue;
+            const alpha = 0.7 - (i / col.len) * 0.6;
+            if (i === 0) chaosCtx.fillStyle = 'rgba(255,255,255,' + alpha + ')';
+            else chaosCtx.fillStyle = 'rgba(0,255,160,' + alpha + ')';
+            chaosCtx.fillText(col.chars[i] || randomChar(), col.x, y);
+          }
+        }
+
+        // 2) Bouncing shapes
+        for (const t of things) {
+          t.x += t.vx; t.y += t.vy; t.rot += t.rotSpeed;
+          if (t.x < -40 || t.x > W + 40) t.vx *= -1;
+          if (t.y < -40 || t.y > H + 40) t.vy *= -1;
+          chaosCtx.save();
+          chaosCtx.translate(t.x, t.y);
+          chaosCtx.rotate(t.rot);
+          chaosCtx.fillStyle = randColor();
+          chaosCtx.strokeStyle = randColor();
+          chaosCtx.lineWidth = 2;
+          if (t.type === 'rect') {
+            chaosCtx.fillRect(-t.size/2, -t.size/2, t.size, t.size);
+            chaosCtx.strokeRect(-t.size/2, -t.size/2, t.size, t.size);
+          } else if (t.type === 'circle') {
+            chaosCtx.beginPath();
+            chaosCtx.arc(0, 0, t.size/2, 0, Math.PI * 2);
+            chaosCtx.fill(); chaosCtx.stroke();
+          } else {
+            chaosCtx.font = (t.size * 0.75) + 'px sans-serif';
+            chaosCtx.textAlign = 'center';
+            chaosCtx.textBaseline = 'middle';
+            chaosCtx.fillText(t.word, 0, 0);
+            chaosCtx.strokeText(t.word, 0, 0);
+          }
+          chaosCtx.restore();
+        }
+
+        // 3) Vortex (spiral particles)
+        for (const v of vortex) {
+          v.angle += v.spin;
+          v.radius += v.drift;
+          if (v.radius < 10 || v.radius > Math.min(W, H) * 0.5) v.drift *= -1;
+          const px = cx + Math.cos(v.angle) * v.radius;
+          const py = cy + Math.sin(v.angle) * v.radius;
+          chaosCtx.fillStyle = randColor();
+          chaosCtx.beginPath();
+          chaosCtx.arc(px, py, v.size, 0, Math.PI * 2);
+          chaosCtx.fill();
+        }
+
+        // 4) Glitch bars (no getImageData - keeps slow PCs smooth)
+        for (let i = 0; i < 4; i++) {
+          const y = rand(0, H - 15);
+          const h = rand(2, 14);
+          const r = Math.random();
+          if (r < 0.33) chaosCtx.fillStyle = 'rgba(255,0,80,0.85)';
+          else if (r < 0.66) chaosCtx.fillStyle = 'rgba(0,255,200,0.85)';
+          else chaosCtx.fillStyle = 'rgba(255,255,0,0.85)';
+          chaosCtx.fillRect(0, y, W, h);
+        }
+
+        // 5) Flash text
+        for (let i = 0; i < 8; i++) {
+          chaosCtx.fillStyle = randColor();
+          chaosCtx.font = (rand(12, 36)) + 'px monospace';
+          chaosCtx.textAlign = 'left';
+          chaosCtx.textBaseline = 'top';
+          chaosCtx.fillText(words[Math.floor(Math.random() * words.length)], rand(0, W - 60), rand(0, H - 30));
+        }
+
+        // 6) Big MENZ (chromatic glitch)
+        const cx = W/2 + rand(-6, 6), cy = H/2 + rand(-6, 6);
+        chaosCtx.font = 'bold 72px sans-serif';
+        chaosCtx.textAlign = 'center';
+        chaosCtx.textBaseline = 'middle';
+        chaosCtx.fillStyle = 'rgba(255,0,0,0.85)';
+        chaosCtx.fillText('MENZ', cx - 3, cy);
+        chaosCtx.fillStyle = 'rgba(0,255,255,0.85)';
+        chaosCtx.fillText('MENZ', cx + 3, cy);
+        chaosCtx.fillStyle = 'rgba(0,255,80,0.7)';
+        chaosCtx.fillText('MENZ', cx, cy + 2);
+        chaosCtx.fillStyle = '#fff';
+        chaosCtx.fillText('MENZ', cx, cy);
+
+        // 6) Scanlines
+        chaosCtx.fillStyle = 'rgba(0,0,0,0.12)';
+        for (let sy = 0; sy < H; sy += 4) chaosCtx.fillRect(0, sy, W, 2);
+
+        // 8) Static blocks
+        for (let i = 0; i < 3; i++) {
+          chaosCtx.fillStyle = Math.random() > 0.5 ? '#fff' : randColor();
+          chaosCtx.globalAlpha = rand(0.25, 0.75);
+          chaosCtx.fillRect(rand(0, W), rand(0, H), rand(4, 30), rand(4, 30));
+          chaosCtx.globalAlpha = 1;
+        }
+
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function showPetyaScreen() {
+      const W = chaosCanvas.width, H = chaosCanvas.height;
+      chaosCtx.fillStyle = '#000';
+      chaosCtx.fillRect(0, 0, W, H);
+      chaosCtx.font = '18px monospace';
+      chaosCtx.textAlign = 'left';
+      const lines = [
+        '',
+        'DISK BOOT FAILURE. INSERT SYSTEM DISK AND PRESS ENTER.',
+        '',
+        'SECTOR 0x7A: CORRUPTED',
+        'MASTER BOOT RECORD (MBR) ENCRYPTED.',
+        '',
+        '>>> YOUR FILES HAVE BEEN ENCRYPTED <<<',
+        '',
+        'To recover your data send 0.5 BTC to:',
+        '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2',
+        '',
+        'After payment you will receive the decryption key.',
+        'Do not attempt to repair the disk - data will be lost.',
+        '',
+        'PETYA RANSOMWARE v2.0',
+        ''
+      ];
+      let y = 80;
+      lines.forEach(function(line) {
+        chaosCtx.fillStyle = line.indexOf('>>>') >= 0 || line.indexOf('ENCRYPTED') >= 0 ? '#ff0000' : '#c0c0c0';
+        chaosCtx.fillText(line, 60, y);
+        y += 28;
+      });
+      let blink = 0;
+      function petyaFrame() {
+        chaosCtx.fillStyle = '#000';
+        chaosCtx.fillRect(0, 0, W, H);
+        chaosCtx.font = '18px monospace';
+        chaosCtx.textAlign = 'left';
+        let yy = 80;
+        lines.forEach(function(line) {
+          chaosCtx.fillStyle = line.indexOf('>>>') >= 0 || line.indexOf('ENCRYPTED') >= 0 ? '#ff0000' : '#c0c0c0';
+          chaosCtx.fillText(line, 60, yy);
+          yy += 28;
+        });
+        blink++;
+        if (blink % 30 < 20) {
+          chaosCtx.fillStyle = '#ff0000';
+          chaosCtx.fillText('_', 60, yy + 10);
+        }
+        chaosCtx.fillStyle = '#606060';
+        chaosCtx.font = '14px monospace';
+        chaosCtx.fillText('(Fake - MENZ game. No real virus!)', 60, H - 40);
+      }
+      petyaFrame();
+      const petyaInterval = setInterval(petyaFrame, 150);
+      setTimeout(function() {
+        clearInterval(petyaInterval);
+        runChaos();
+      }, 4500);
+    }
+
+    btn.addEventListener('click', function() {
+      btn.disabled = true;
+      screen.classList.add('show');
+      screen.style.background = '#000';
+      chaosCanvas.width = window.innerWidth;
+      chaosCanvas.height = window.innerHeight;
+      chaosCtx.fillStyle = '#000';
+      chaosCtx.fillRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+
+      setTimeout(function() {
+        showPetyaScreen();
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

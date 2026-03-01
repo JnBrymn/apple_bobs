@@ -1,0 +1,188 @@
+<!--
+Catch Game - Bo wanted "any game"
+You move a basket left/right and catch falling apples (or other items). Score points for each catch. Try to get a high score!
+-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Catch Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            color: #eee;
+        }
+        h1 { font-size: 2rem; margin-bottom: 8px; color: #e94560; }
+        .score-bar { font-size: 1.2rem; margin-bottom: 12px; }
+        .game-area {
+            width: 400px;
+            height: 500px;
+            background: rgba(0,0,0,0.3);
+            border: 3px solid #e94560;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .basket {
+            position: absolute;
+            bottom: 20px;
+            width: 80px;
+            height: 50px;
+            background: #4ecca3;
+            border-radius: 8px 8px 0 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 -4px 0 #3da88a;
+        }
+        .falling {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            font-size: 28px;
+            text-align: center;
+            line-height: 36px;
+        }
+        .start-screen, .game-over-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+        }
+        .game-over-screen { display: none; }
+        .start-screen h2, .game-over-screen h2 { margin-bottom: 16px; color: #4ecca3; }
+        button {
+            font-size: 1.2rem;
+            padding: 12px 28px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover { background: #ff6b6b; }
+        .hint { margin-top: 20px; font-size: 0.9rem; color: #888; }
+    </style>
+</head>
+<body>
+    <h1>🍎 Catch Game</h1>
+    <div class="score-bar">Score: <span id="score">0</span></div>
+    <div class="game-area" id="gameArea">
+        <div class="start-screen" id="startScreen">
+            <h2>Catch the apples!</h2>
+            <p style="margin-bottom: 16px;">Use ← → arrow keys or move the mouse</p>
+            <button id="startBtn">Start</button>
+        </div>
+        <div class="game-over-screen" id="gameOverScreen">
+            <h2>Game Over</h2>
+            <p>Score: <span id="finalScore">0</span></p>
+            <button id="againBtn">Play Again</button>
+        </div>
+        <div class="basket" id="basket"></div>
+    </div>
+    <p class="hint">Catch as many as you can. Don't miss too many!</p>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const basket = document.getElementById('basket');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('finalScore');
+
+        let score = 0;
+        let missed = 0;
+        let basketX = 160;
+        let gameLoop;
+        let spawnLoop;
+        let playing = false;
+        const MAX_MISSED = 5;
+        const ITEMS = ['🍎', '🍊', '⭐', '🍋'];
+
+        function spawnItem() {
+            if (!playing) return;
+            const el = document.createElement('div');
+            el.className = 'falling';
+            el.textContent = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            el.style.left = Math.random() * (400 - 36) + 'px';
+            el.style.top = '-40px';
+            gameArea.appendChild(el);
+            let y = -40;
+            const speed = 2 + Math.random() * 2;
+            function fall() {
+                if (!playing) return;
+                y += speed;
+                el.style.top = y + 'px';
+                if (y > 500) {
+                    el.remove();
+                    missed++;
+                    if (missed >= MAX_MISSED) endGame();
+                    return;
+                }
+                const bx = basketX + 40;
+                const by = 500 - 20 - 50;
+                if (y + 36 >= by && y <= by + 50 && parseInt(el.style.left) + 18 >= basketX && parseInt(el.style.left) <= basketX + 80) {
+                    score++;
+                    scoreEl.textContent = score;
+                    el.remove();
+                    return;
+                }
+                requestAnimationFrame(fall);
+            }
+            requestAnimationFrame(fall);
+        }
+
+        function runGame() {
+            if (!playing) return;
+            spawnLoop = setInterval(spawnItem, 800);
+        }
+
+        function endGame() {
+            playing = false;
+            clearInterval(spawnLoop);
+            finalScoreEl.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function startGame() {
+            score = 0;
+            missed = 0;
+            scoreEl.textContent = '0';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            document.querySelectorAll('.falling').forEach(e => e.remove());
+            playing = true;
+            runGame();
+        }
+
+        document.getElementById('startBtn').onclick = startGame;
+        document.getElementById('againBtn').onclick = startGame;
+
+        document.addEventListener('keydown', (e) => {
+            if (!playing) return;
+            if (e.key === 'ArrowLeft') basketX = Math.max(0, basketX - 25);
+            if (e.key === 'ArrowRight') basketX = Math.min(320, basketX + 25);
+            basket.style.left = basketX + 'px';
+        });
+
+        gameArea.addEventListener('mousemove', (e) => {
+            if (!playing) return;
+            const rect = gameArea.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            basketX = Math.max(0, Math.min(320, x - 40));
+            basket.style.left = basketX + 'px';
+        });
+
+        basket.style.left = basketX + 'px';
+    </script>
+</body>
+</html>

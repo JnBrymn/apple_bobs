@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<!-- Arch Enemies from Prodigy Game Island — battle the bosses with Attack / Defend / Spell. No math, just fighting! -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arch Enemies — Prodigy Island</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 50%, #1a3a4a 100%);
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(200,150,255,0.6);
+    }
+    .sub { font-size: 14px; opacity: 0.9; margin-bottom: 24px; }
+    .screen { max-width: 480px; margin: 0 auto; }
+    .pick-title { font-size: 18px; margin-bottom: 16px; }
+    .enemies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .enemy-card {
+      width: 130px;
+      padding: 14px;
+      background: rgba(80,40,120,0.5);
+      border: 2px solid #a070ff;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .enemy-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(160,100,255,0.5);
+    }
+    .enemy-card .icon { font-size: 48px; margin-bottom: 6px; }
+    .enemy-card .name { font-size: 14px; font-weight: bold; }
+    .enemy-card .element { font-size: 11px; opacity: 0.85; }
+    .battle { display: none; }
+    .battle.show { display: block; }
+    .pick.hide { display: none; }
+    .arena {
+      background: rgba(0,0,0,0.35);
+      border-radius: 16px;
+      padding: 24px;
+      border: 2px solid #6a4a9a;
+      margin-bottom: 20px;
+    }
+    .hp-bar {
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 8px 0 16px;
+    }
+    .hp-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s;
+    }
+    .you .hp-fill { background: linear-gradient(90deg, #2a8a2a, #4aca4a); }
+    .foe .hp-fill { background: linear-gradient(90deg, #8a2a2a, #ca4a4a); }
+    .row { display: flex; justify-content: space-around; align-items: center; margin: 12px 0; }
+    .you .name, .foe .name { font-size: 16px; font-weight: bold; }
+    .foe .icon { font-size: 64px; margin: 8px 0; }
+    .you .icon { font-size: 56px; }
+    .log {
+      min-height: 80px;
+      background: rgba(0,0,0,0.4);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 16px 0;
+      font-size: 14px;
+      text-align: left;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .btn {
+      padding: 14px 22px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-attack { background: #c04040; color: #fff; box-shadow: 0 4px 0 #802020; }
+    .btn-defend { background: #4080c0; color: #fff; box-shadow: 0 4px 0 #204080; }
+    .btn-spell { background: #a040c0; color: #fff; box-shadow: 0 4px 0 #602080; }
+    .btn-again { background: #40a040; color: #fff; margin-top: 16px; }
+    .result { font-size: 22px; font-weight: bold; margin: 16px 0; padding: 16px; border-radius: 12px; }
+    .result.win { background: rgba(40,160,40,0.4); color: #8f8; }
+    .result.lose { background: rgba(160,40,40,0.4); color: #f88; }
+  </style>
+</head>
+<body>
+  <div class="screen pick" id="pick">
+    <h1>Arch Enemies</h1>
+    <p class="sub">Prodigy Island — No math, just battle!</p>
+    <p class="pick-title">Choose your enemy:</p>
+    <div class="enemies" id="enemyList"></div>
+  </div>
+
+  <div class="screen battle" id="battle">
+    <div class="arena">
+      <div class="foe">
+        <div class="name" id="foeName">???</div>
+        <div class="icon" id="foeIcon">👹</div>
+        <div class="hp-bar"><div class="hp-fill" id="foeHp" style="width:100%"></div></div>
+      </div>
+      <div class="log" id="log">Battle start!</div>
+      <div class="you">
+        <div class="name">You</div>
+        <div class="icon">🧙</div>
+        <div class="hp-bar"><div class="hp-fill" id="youHp" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div class="actions" id="actions">
+      <button class="btn btn-attack" data-action="attack">Attack</button>
+      <button class="btn btn-defend" data-action="defend">Defend</button>
+      <button class="btn btn-spell" data-action="spell">Spell</button>
+    </div>
+    <div id="resultArea"></div>
+  </div>
+
+  <script>
+    var enemies = [
+      { name: 'Puppet Master', icon: '🪆', element: 'Shadow', hp: 80, atk: 12, spell: 18 },
+      { name: 'Titan', icon: '🪨', element: 'Earth', hp: 100, atk: 14, spell: 10 },
+      { name: 'Shadow Dragon', icon: '🐉', element: 'Shadow', hp: 90, atk: 16, spell: 14 },
+      { name: 'Mira Shade', icon: '👻', element: 'Shadow', hp: 70, atk: 10, spell: 20 },
+      { name: 'The Ancient', icon: '🏛️', element: 'Mystic', hp: 110, atk: 13, spell: 15 }
+    ];
+
+    var state = { foe: null, yourHp: 100, foeHp: 100, defending: false, foeDefending: false, over: false };
+
+    function renderPick() {
+      var list = document.getElementById('enemyList');
+      list.innerHTML = enemies.map(function(e) {
+        return '<div class="enemy-card" data-id="' + e.name + '">' +
+          '<div class="icon">' + e.icon + '</div>' +
+          '<div class="name">' + e.name + '</div>' +
+          '<div class="element">' + e.element + '</div></div>';
+      }).join('');
+      list.querySelectorAll('.enemy-card').forEach(function(el) {
+        el.onclick = function() { startBattle(el.getAttribute('data-id')); };
+      });
+    }
+
+    function startBattle(name) {
+      state.foe = enemies.find(function(e) { return e.name === name; });
+      state.yourHp = 100;
+      state.foeHp = state.foe.hp;
+      state.over = false;
+      state.defending = false;
+      state.foeDefending = false;
+      document.getElementById('pick').classList.add('hide');
+      document.getElementById('battle').classList.add('show');
+      document.getElementById('foeName').textContent = state.foe.name;
+      document.getElementById('foeIcon').textContent = state.foe.icon;
+      document.getElementById('resultArea').innerHTML = '';
+      document.querySelectorAll('.btn').forEach(function(b) { b.disabled = false; });
+      log('You face ' + state.foe.name + '!');
+      updateHp();
+    }
+
+    function updateHp() {
+      var y = Math.max(0, state.yourHp);
+      var f = Math.max(0, state.foeHp);
+      document.getElementById('youHp').style.width = y + '%';
+      document.getElementById('foeHp').style.width = (state.foe ? (f / state.foe.hp * 100) : 100) + '%';
+    }
+
+    function log(msg) {
+      var el = document.getElementById('log');
+      el.innerHTML = msg + '<br>' + (el.innerHTML.length < 500 ? el.innerHTML : el.innerHTML.slice(0, 400));
+    }
+
+    function foeTurn() {
+      if (state.over) return;
+      var actions = ['attack', 'attack', 'defend', 'spell'];
+      var choice = actions[Math.floor(Math.random() * actions.length)];
+      var dmg = 0;
+      if (choice === 'attack') {
+        dmg = state.foe.atk + Math.floor(Math.random() * 6);
+        if (state.defending) dmg = Math.floor(dmg * 0.5);
+        state.yourHp -= dmg;
+        log(state.foe.name + ' attacks! You take ' + dmg + ' damage.');
+      } else if (choice === 'spell') {
+        dmg = state.foe.spell + Math.floor(Math.random() * 8);
+        if (state.defending) dmg = Math.floor(dmg * 0.6);
+        state.yourHp -= dmg;
+        log(state.foe.name + ' casts a spell! You take ' + dmg + ' damage.');
+      } else {
+        state.foeDefending = true;
+        log(state.foe.name + ' is defending.');
+      }
+      state.defending = false;
+      updateHp();
+      if (state.yourHp <= 0) endBattle(false);
+    }
+
+    function doAction(action) {
+      if (state.over) return;
+      state.foeDefending = false;
+      var dmg = 0;
+      if (action === 'attack') {
+        dmg = 10 + Math.floor(Math.random() * 12);
+        if (state.foeDefending) dmg = Math.floor(dmg * 0.5);
+        state.foeHp -= dmg;
+        log('You attack! ' + state.foe.name + ' takes ' + dmg + ' damage.');
+      } else if (action === 'spell') {
+        dmg = 15 + Math.floor(Math.random() * 14);
+        if (state.foeDefending) dmg = Math.floor(dmg * 0.6);
+        state.foeHp -= dmg;
+        log('You cast a spell! ' + state.foe.name + ' takes ' + dmg + ' damage.');
+      } else {
+        state.defending = true;
+        log('You defend. Next hit will be reduced.');
+      }
+      updateHp();
+      if (state.foeHp <= 0) { endBattle(true); return; }
+      setTimeout(foeTurn, 600);
+    }
+
+    function endBattle(won) {
+      state.over = true;
+      document.querySelectorAll('.btn').forEach(function(b) { b.disabled = true; });
+      var area = document.getElementById('resultArea');
+      area.innerHTML = '<div class="result ' + (won ? 'win' : 'lose') + '">' +
+        (won ? 'You won!' : 'You were defeated...') + '</div>' +
+        '<button class="btn btn-again" onclick="backToPick()">Battle again</button>';
+    }
+
+    function backToPick() {
+      document.getElementById('battle').classList.remove('show');
+      document.getElementById('pick').classList.remove('hide');
+    }
+
+    document.getElementById('actions').addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (btn && !btn.disabled) doAction(btn.getAttribute('data-action'));
+    });
+
+    renderPick();
+  </script>
+</body>
+</html>

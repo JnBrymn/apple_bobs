@@ -176,12 +176,12 @@ def main():
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(index_content)
     
-    print(f"✅ Apple Bobs menu generated with {len(pages)} game(s)")
+    print(f"Apple Bobs menu generated with {len(pages)} game(s)")
     print("📝 Updated index.html with game links")
     
     # QR code status
     if qr_created:
-        print(f"🆕 Created {len(qr_created)} new QR code(s):")
+        print(f"Created {len(qr_created)} new QR code(s):")
         for game in qr_created:
             print(f"   - qr_codes/{game}.png")
     
@@ -192,8 +192,8 @@ def main():
     print("🎮 Found games:")
     for page in pages:
         clean_path = page.replace("/index.html", "")
-        qr_status = "🆕" if clean_path in qr_created else "✅"
-        print(f"   {qr_status} {clean_path}")
+        qr_status = "new" if clean_path in qr_created else "ok"
+        print(f"   [{qr_status}] {clean_path}")
 
 if __name__ == "__main__":
     main()
