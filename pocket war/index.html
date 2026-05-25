@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>World war 3</title>
+  <!--
+    WORLD WAR 3 (by Bo)
+    - You stand in the middle and defend yourself from waves of warriors.
+    - Every enemy you defeat drops "nookums" (this game's money).
+    - When you get enough nookums, you LEVEL UP.
+    - Level up = spin a rarity wheel: common, uncommon, rare, mythical, legendary, godly.
+    - The wheel chooses ONE rarity, then you see 3 random power-up options of that rarity.
+    - You pick ONE power-up to keep.
+    - The game is endless and every boss makes it harder.
+  -->
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: #ffffff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #0f172a;
+      overflow: hidden;
+    }
+    .shell {
+      width: 100vw;
+      height: 100vh;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-radius: 0;
+      background: #ffffff;
+      position: relative;
+      isolation: isolate;
+    }
+    .shell::before,
+    .shell::after {
+      content: none;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.6),
+        0 6px 18px rgba(15, 23, 42, 0.08);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 2;
+    }
+    .hud-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .hud-label {
+      opacity: 0.7;
+      margin-right: 4px;
+    }
+    .hud-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.5);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hud-pill.rare   { box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.8); color: #0f172a; }
+    .hud-pill.mythic { box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.9); color: #ede9fe; }
+    .hud-pill.legend { box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.95); color: #fef9c3; }
+    .hud-pill.godly  { box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 1); color: #fee2e2; }
+    .store-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.8),
+        0 6px 16px rgba(15, 23, 42, 0.08);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .store-btn span {
+      font-size: 12px;
+      color: #22d3ee;
+    }
+    .store-btn:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(56, 189, 248, 1),
+        0 10px 22px rgba(15, 23, 42, 1);
+    }
+    .store-btn:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.9),
+        0 4px 12px rgba(15, 23, 42, 1);
+    }
+    .arena-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 0;
+    }
+    .arena {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.8);
+      isolation: isolate;
+    }
+    .arena::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(90deg, rgba(229, 231, 235, 0.6) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(229, 231, 235, 0.6) 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: 0.6;
+      pointer-events: none;
+      z-index: 0;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated; /* retro chunky pixels */
+      z-index: 1;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .card {
+      pointer-events: auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 18px 22px;
+      box-shadow:
+        0 0 0 1px rgba(209, 213, 219, 1),
+        0 18px 40px rgba(15, 23, 42, 0.08);
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: center;
+    }
+    .card h1 {
+      font-size: 20px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: #020617;
+    }
+    .card p {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-bottom: 16px;
+    }
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow:
+        0 0 0 1px rgba(148, 163, 184, 0.9),
+        0 14px 30px rgba(15, 23, 42, 0.08);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      box-shadow:
+        0 0 0 1px rgba(34, 197, 94, 0.9),
+        0 20px 40px rgba(22, 163, 74, 1);
+    }
+    button:active {
+      transform: translateY(1px) scale(0.99);
+      box-shadow:
+        0 0 0 1px rgba(22, 163, 74, 0.9),
+        0 8px 20px rgba(22, 163, 74, 0.9);
+    }
+    .rarity-wheel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    .rarity-track {
+      position: relative;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e5e7eb;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.6);
+    }
+    .rarity-bar {
+      position: absolute;
+      inset: 0;
+      display: flex;
+    }
+    .rarity-seg {
+      min-width: 0;
+    }
+    /* wheel colors and widths to match your wheel: grey → lime → blue → purple → orange → red */
+    .rarity-seg.common   { flex: 22; background: #9ca3af; }
+    .rarity-seg.uncommon { flex: 26; background: #a3e635; }
+    .rarity-seg.rare     { flex: 17; background: #7dd3fc; }
+    .rarity-seg.mythical { flex: 9;  background: #a855f7; }
+    .rarity-seg.legendary{ flex: 6;  background: #fb923c; }
+    .rarity-seg.godly    { flex: 2;  background: #ef4444; }
+    .rarity-seg.unreal   { flex: 1;  background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899); }
+    .rarity-marker {
+      position: absolute;
+      top: -4px;
+      width: 0;
+      height: 18px;
+      border-left: 3px solid #0f172a;
+      box-shadow: 0 0 6px rgba(15, 23, 42, 0.4);
+    }
+    .rarity-label {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #0f172a;
+      opacity: 0.9;
+    }
+    .power-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .power-card {
+      border-radius: 12px;
+      padding: 10px 9px 11px;
+      background: #ffffff;
+      box-shadow:
+        0 0 0 1px rgba(209, 213, 219, 1),
+        0 10px 20px rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .power-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(59, 130, 246, 0.26), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      pointer-events: none;
+    }
+    .power-card:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(59, 130, 246, 0.9),
+        0 22px 40px rgba(15, 23, 42, 0.98);
+    }
+    .power-card:hover::before {
+      opacity: 1;
+    }
+    .power-title {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #020617;
+    }
+    .power-desc {
+      font-size: 12px;
+      opacity: 0.9;
+      color: #111827;
+    }
+    .power-tag {
+      font-size: 10px;
+      opacity: 0.75;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      color: #4b5563;
+    }
+    .power-card.common   { box-shadow: 0 0 0 1px rgba(75, 85, 99, 0.7); }
+    .power-card.uncommon { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.85); }
+    .power-card.rare     { box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.95); }
+    .power-card.mythical { box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.95); }
+    .power-card.legendary{ box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.98); }
+    .power-card.godly    { box-shadow: 0 0 0 1px rgba(248, 113, 113, 1); }
+    .power-card.godly .power-title { text-shadow: 0 0 10px rgba(248, 113, 113, 0.95); }
+    .power-card.unreal  { border: 2px solid transparent; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899) border-box; background-clip: padding-box, border-box; }
+    .power-card.unreal .power-title { background: linear-gradient(90deg, #ef4444, #8b5cf6); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; }
+    .help {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    @media (max-width: 700px) {
+      .shell { padding: 8px; }
+      .hud { font-size: 10px; padding: 4px 8px; }
+      button { font-size: 11px; padding: 7px 12px; }
+      .card { padding: 14px 16px; }
+      .power-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hud">
+      <div class="hud-group">
+        <div class="hud-pill">
+          <span class="hud-label">Wave</span>
+          <span id="waveValue">1</span>
+        </div>
+        <div class="hud-pill">
+          <span class="hud-label">Nookums</span>
+          <span id="nookumsValue">0</span>
+        </div>
+        <div class="hud-pill">
+          <span class="hud-label">Level</span>
+          <span id="levelValue">1</span>
+        </div>
+      </div>
+      <div class="hud-group">
+        <div class="hud-pill" id="hpPill">
+          <span class="hud-label">HP</span>
+          <span id="hpValue">100 / 100</span>
+        </div>
+        <div class="hud-pill" title="Damage multiplier">
+          <span class="hud-label">Dmg</span>
+          <span id="dmgValue">100%</span>
+        </div>
+        <div class="hud-pill" title="Speed (base 100%)">
+          <span class="hud-label">Spd</span>
+          <span id="spdValue">100%</span>
+        </div>
+        <div class="hud-pill" title="Damage reduction">
+          <span class="hud-label">Armor</span>
+          <span id="armorValue">0%</span>
+        </div>
+        <div class="hud-pill" title="HP regeneration per second">
+          <span class="hud-label">Regen</span>
+          <span id="regenValue">1/s</span>
+        </div>
+        <div class="hud-pill rare">
+          <span class="hud-label">Next Level</span>
+          <span id="xpValue">0 / 50</span>
+        </div>
+        <button class="store-btn" id="storeButton">
+          SHOP
+          <span>★</span>
+        </button>
+      </div>
+    </div>
+    <div class="arena-wrap">
+      <div class="arena">
+        <canvas id="game" width="800" height="450"></canvas>
+        <div class="overlay" id="overlay"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== BASIC GAME STATE =====
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const arenaElem = document.querySelector('.arena');
+    const waveValue = document.getElementById('waveValue');
+    const nookumsValue = document.getElementById('nookumsValue');
+    const levelValue = document.getElementById('levelValue');
+    const hpValue = document.getElementById('hpValue');
+    const xpValue = document.getElementById('xpValue');
+    const hpPill = document.getElementById('hpPill');
+    const dmgValue = document.getElementById('dmgValue');
+    const spdValue = document.getElementById('spdValue');
+    const armorValue = document.getElementById('armorValue');
+    const regenValue = document.getElementById('regenValue');
+    const storeButton = document.getElementById('storeButton');
+
+    const keys = {};
+    window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+    const state = {
+      running: false,
+      inLevelUp: false,
+      inStore: false,
+      lastTime: 0,
+      player: {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        r: 14,
+        speed: 220,
+        color: '#4ade80',
+        hp: 100,
+        maxHp: 100,
+        dashCooldown: 0,
+        dashReady: true,
+        dashMult: 2.4,
+        dashTime: 0,
+        dashDuration: 0.18,
+        aimAngle: 0
+      },
+      bullets: [],
+      enemies: [],
+      enemyBullets: [],
+      pickups: [],   // nookum drops on ground — player must walk over to collect
+      particles: [],
+      nookums: 0,
+      xp: 0,
+      xpToNext: 50,
+      level: 1,
+      wave: 1,
+      waveTimer: 0,
+      spawnTimer: 0,
+      difficulty: 1,
+      bossAlive: false,
+      rngSeed: Math.random() * 1e9
+    };
+
+    function resizeCanvas() {
+      const rect = arenaElem.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+    }
+
+    // ===== RNG (for repeatable feeling) =====
+    function rand() {
+      state.rngSeed = (state.rngSeed * 1664525 + 1013904223) >>> 0;
+      return state.rngSeed / 0xffffffff;
+    }
+    function randRange(a, b) {
+      return a + rand() * (b - a);
+    }
+
+    // ===== ENEMIES & BULLETS =====
+    // Enemy types: normal, tank, scout, rapid, sniper, swarm,
+    // orbiter, shielder, splitter, healer, bomber, spawner, reflector, lurker, magnet
+    function pickEnemyType() {
+      const w = state.wave;
+      const roll = rand();
+      if (w <= 2) return 'normal';
+      if (w <= 4) return roll < 0.25 ? 'scout' : 'normal';
+      if (w <= 6) {
+        if (roll < 0.15) return 'tank';
+        if (roll < 0.45) return 'scout';
+        return 'normal';
+      }
+      if (w <= 9) {
+        if (roll < 0.10) return 'rapid';
+        if (roll < 0.30) return 'tank';
+        if (roll < 0.55) return 'scout';
+        return 'normal';
+      }
+      // wave 10+: add sniper, swarm
+      if (w <= 12) {
+        if (roll < 0.12) return 'rapid';
+        if (roll < 0.28) return 'tank';
+        if (roll < 0.50) return 'scout';
+        if (roll < 0.72) return 'swarm';
+        if (roll < 0.92) return 'sniper';
+        return 'normal';
+      }
+      // wave 13+: add orbiter, shielder, splitter, healer, bomber, spawner, reflector, lurker, magnet
+      const roll2 = rand();
+      if (roll2 < 0.08) return 'rapid';
+      if (roll2 < 0.18) return 'tank';
+      if (roll2 < 0.32) return 'scout';
+      if (roll2 < 0.45) return 'swarm';
+      if (roll2 < 0.55) return 'sniper';
+      if (roll2 < 0.62) return 'orbiter';
+      if (roll2 < 0.69) return 'shielder';
+      if (roll2 < 0.76) return 'splitter';
+      if (roll2 < 0.82) return 'healer';
+      if (roll2 < 0.88) return 'bomber';
+      if (roll2 < 0.93) return 'spawner';
+      if (roll2 < 0.96) return 'reflector';
+      if (roll2 < 0.98) return 'lurker';
+      if (roll2 < 1.00) return 'magnet';
+      return 'normal';
+    }
+
+    function spawnEnemy(isBoss = false) {
+      const margin = 40;
+      const side = Math.floor(rand() * 4);
+      let x, y;
+      if (side === 0) { x = randRange(margin, canvas.width - margin); y = -margin; }
+      else if (side === 1) { x = canvas.width + margin; y = randRange(margin, canvas.height - margin); }
+      else if (side === 2) { x = randRange(margin, canvas.width - margin); y = canvas.height + margin; }
+      else { x = -margin; y = randRange(margin, canvas.height - margin); }
+
+      const baseSpeed = isBoss ? 80 * (1 + (state.difficulty - 1) * 0.22) : randRange(55, 105) * (1 + state.difficulty * 0.08);
+      const baseHp = isBoss ? (700 + state.wave * 360) * bossHpMult : 60 + state.wave * 12;
+      const damage = isBoss ? 28 + Math.floor((state.difficulty - 1) * 7) : 10;
+
+      if (isBoss) {
+        const bossBulletDmg = 18 + Math.floor((state.difficulty - 1) * 5);
+        const bossFireRate = Math.max(0.45, 0.85 - (state.wave - 1) * 0.03);
+        state.enemies.push({
+          x, y, r: 34, hp: baseHp, maxHp: baseHp, speed: baseSpeed, damage,
+          boss: true, wobble: rand() * Math.PI * 2,
+          shootCooldown: rand() * 0.6,
+          bulletSpeed: 320, bulletDamage: bossBulletDmg, fireRate: bossFireRate, type: 'boss'
+        });
+        state.bossAlive = true;
+        return;
+      }
+
+      const type = pickEnemyType();
+      let speed = baseSpeed, hpMult = 1, bulletSpeed = 260, bulletDamage = 8, fireRate = 1.6, r = 12;
+      if (type === 'tank') {
+        speed = baseSpeed * 0.22;   // very slow
+        hpMult = 1.9;
+        bulletSpeed = 90;            // slow bullets
+        bulletDamage = 26;           // very strong
+        fireRate = 2.3;
+        r = 14;
+      } else if (type === 'scout') {
+        speed = baseSpeed * 1.3;
+        hpMult = 0.75;
+        bulletSpeed = 430;           // fast bullets
+        bulletDamage = 3;            // weak
+        fireRate = 1.0;
+      } else if (type === 'rapid') {
+        speed = baseSpeed * 0.9;
+        bulletSpeed = 200;
+        bulletDamage = 5;
+        fireRate = 0.6;              // shoots often
+      } else if (type === 'sniper') {
+        speed = baseSpeed * 0.75;    // slow movement
+        hpMult = 1.0;
+        bulletSpeed = 520;           // very fast bullets
+        bulletDamage = 20;           // hard–hitting
+        fireRate = 2.4;              // shoots less often
+        r = 13;
+      } else if (type === 'swarm') {
+        speed = baseSpeed * 1.5;
+        hpMult = 0.6;
+        bulletSpeed = 220;
+        bulletDamage = 4;
+        fireRate = 1.0;
+        r = 10;
+      } else if (type === 'orbiter') {
+        speed = baseSpeed * 0.7;
+        hpMult = 1.0;
+        bulletSpeed = 240;
+        bulletDamage = 6;
+        fireRate = 1.4;
+        r = 12;
+      } else if (type === 'shielder') {
+        speed = baseSpeed * 0.5;
+        hpMult = 1.4;
+        bulletSpeed = 180;
+        bulletDamage = 4;
+        fireRate = 2.8;
+        r = 14;
+      } else if (type === 'splitter') {
+        speed = baseSpeed * 0.85;
+        hpMult = 1.0;
+        bulletSpeed = 220;
+        bulletDamage = 6;
+        fireRate = 1.8;
+        r = 12;
+      } else if (type === 'healer') {
+        speed = baseSpeed * 0.6;
+        hpMult = 0.9;
+        bulletSpeed = 200;
+        bulletDamage = 3;
+        fireRate = 2.2;
+        r = 11;
+      } else if (type === 'bomber') {
+        speed = baseSpeed * 1.1;
+        hpMult = 0.8;
+        bulletSpeed = 0;
+        bulletDamage = 0;
+        fireRate = 999;
+        r = 13;
+      } else if (type === 'spawner') {
+        speed = baseSpeed * 0.35;
+        hpMult = 1.6;
+        bulletSpeed = 160;
+        bulletDamage = 4;
+        fireRate = 3.0;
+        r = 15;
+      } else if (type === 'reflector') {
+        speed = baseSpeed * 0.7;
+        hpMult = 1.2;
+        bulletSpeed = 280;
+        bulletDamage = 8;
+        fireRate = 1.8;
+        r = 12;
+      } else if (type === 'lurker') {
+        speed = baseSpeed * 0.5;
+        hpMult = 1.1;
+        bulletSpeed = 400;
+        bulletDamage = 25;
+        fireRate = 4.0;
+        r = 12;
+      } else if (type === 'magnet') {
+        speed = baseSpeed * 0.6;
+        hpMult = 1.3;
+        bulletSpeed = 200;
+        bulletDamage = 5;
+        fireRate = 2.0;
+        r = 13;
+      }
+
+      const hp = Math.round(baseHp * hpMult);
+      const enemy = {
+        x, y, r, hp, maxHp: hp, speed, damage, boss: false,
+        wobble: rand() * Math.PI * 2,
+        shootCooldown: rand() * fireRate,
+        bulletSpeed, bulletDamage, fireRate, type
+      };
+      if (type === 'orbiter') { enemy.orbitAngle = rand() * Math.PI * 2; enemy.orbitDir = rand() < 0.5 ? 1 : -1; }
+      if (type === 'healer') enemy.healCooldown = 0;
+      if (type === 'bomber') enemy.explodeRadius = 70;
+      if (type === 'spawner') enemy.spawnCooldown = 0;
+      if (type === 'lurker') { enemy.stillTime = 0; enemy.lastX = x; enemy.lastY = y; }
+      state.enemies.push(enemy);
+    }
+
+    function spawnEnemyAt(ax, ay, forcedType) {
+      const baseSpeed = randRange(55, 105) * (1 + state.difficulty * 0.08);
+      const baseHp = 60 + state.wave * 12;
+      let speed = baseSpeed, hpMult = 1, bulletSpeed = 260, bulletDamage = 8, fireRate = 1.6, r = 12;
+      if (forcedType === 'minion') {
+        speed = baseSpeed * 0.9;
+        hpMult = 0.35;
+        bulletSpeed = 180;
+        bulletDamage = 2;
+        fireRate = 2.0;
+        r = 8;
+      } else if (forcedType === 'split_minion') {
+        speed = baseSpeed * 1.0;
+        hpMult = 0.4;
+        bulletSpeed = 200;
+        bulletDamage = 3;
+        fireRate = 2.2;
+        r = 8;
+      }
+      const hp = Math.round(baseHp * hpMult);
+      const enemy = {
+        x: ax, y: ay, r, hp, maxHp: hp, speed, damage: 8, boss: false,
+        wobble: rand() * Math.PI * 2,
+        shootCooldown: rand() * fireRate,
+        bulletSpeed, bulletDamage, fireRate, type: forcedType
+      };
+      state.enemies.push(enemy);
+    }
+
+    function shootBullet(angle) {
+      const speed = 390;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      state.bullets.push({
+        x: state.player.x + cos * (state.player.r + 4),
+        y: state.player.y + sin * (state.player.r + 4),
+        vx: cos * speed,
+        vy: sin * speed,
+        r: 4,
+        life: 0.8 * bulletLifeMult
+      });
+    }
+
+    function enemyShoot(enemy) {
+      const p = state.player;
+      const angle = Math.atan2(p.y - enemy.y, p.x - enemy.x);
+      const speed = enemy.bulletSpeed != null ? enemy.bulletSpeed : (enemy.boss ? 320 : 260);
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
+      if (dist < 1) return;
+      const bulletR = enemy.type === 'tank' ? 7 : (enemy.boss ? 6 : 4);
+      const dmg = enemy.bulletDamage != null ? enemy.bulletDamage : (enemy.boss ? 18 : 8);
+      state.enemyBullets.push({
+        x: enemy.x + cos * (enemy.r + 2),
+        y: enemy.y + sin * (enemy.r + 2),
+        vx: cos * speed,
+        vy: sin * speed,
+        r: bulletR,
+        damage: dmg
+      });
+    }
+
+    let shootCooldown = 0;
+    let fireRate = 0.17;
+    let bulletLifeMult = 1;
+
+    // ===== PARTICLES =====
+    function spawnBurst(x, y, color, count = 10) {
+      for (let i = 0; i < count; i++) {
+        const a = randRange(0, Math.PI * 2);
+        const s = randRange(30, 120);
+        state.particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s,
+          life: randRange(0.25, 0.65),
+          color
+        });
+      }
+    }
+
+    // ===== LEVEL UP & POWERS =====
+    const rarities = [
+      { id: 'common', label: 'Common',     weight: 22 },
+      { id: 'uncommon', label: 'Uncommon', weight: 26 },
+      { id: 'rare', label: 'Rare',         weight: 17 },
+      { id: 'mythical', label: 'Mythical', weight: 9 },
+      { id: 'legendary', label: 'Legendary', weight: 6 },
+      { id: 'godly', label: 'Godly',       weight: 2 },
+      { id: 'unreal', label: 'Unreal',      weight: 1 }
+    ];
+
+    const powerPool = [
+      // COMMON
+      { id: 'speed1', rarity: 'common',    name: 'Quick Shoes',      desc: '+10% move speed', apply: () => { state.player.speed *= 1.10; } },
+      { id: 'heart1', rarity: 'common',    name: 'Pocket Shield',    desc: '+15 max HP', apply: () => { state.player.maxHp += 15; state.player.hp += 15; } },
+      { id: 'gun1',   rarity: 'common',    name: 'Sharper Pebbles',  desc: '+15% bullet damage', apply: () => { damageBoost *= 1.15; } },
+      { id: 'coins1', rarity: 'common',    name: 'Loose Change',     desc: '+20% nookums gain', apply: () => { nookumsMult *= 1.2; } },
+      { id: 'tough1', rarity: 'common',    name: 'Thick Jacket',     desc: 'Take 10% less damage', apply: () => { damageTakenMult *= 0.9; } },
+      { id: 'regen1', rarity: 'common',    name: 'Bandage',          desc: '+0.5 HP regen per second', apply: () => { hpRegenPerSecond += 0.5; } },
+
+      // UNCOMMON
+      { id: 'speed2', rarity: 'uncommon',  name: 'Swift Dash',       desc: 'Dash is faster', apply: () => { state.player.dashMult *= 1.25; } },
+      { id: 'gun2',   rarity: 'uncommon',  name: 'Extra Pebble',     desc: 'Shoot 2 bullets', apply: () => { multiShot = Math.min(3, multiShot + 1); } },
+      { id: 'xp1',    rarity: 'uncommon',  name: 'Double Nookums',   desc: '+40% nookums gain', apply: () => { nookumsMult *= 1.4; } },
+      { id: 'heart3', rarity: 'uncommon',  name: 'Iron Heart',       desc: '+25 max HP', apply: () => { state.player.maxHp += 25; state.player.hp += 25; } },
+      { id: 'def3',   rarity: 'uncommon',  name: 'Sticky Tar',       desc: 'Enemies move 10% slower', apply: () => { enemySpeedMult *= 0.9; } },
+      { id: 'regen2', rarity: 'uncommon',  name: 'Tiny Medkit',      desc: '+1.0 HP regen per second', apply: () => { hpRegenPerSecond += 1.0; } },
+
+      // RARE
+      { id: 'heart2', rarity: 'rare',      name: 'Healing Pulse',    desc: 'Heal 40 HP now', apply: () => { state.player.hp = Math.min(state.player.maxHp, state.player.hp + 40); } },
+      { id: 'gun3',   rarity: 'rare',      name: 'Side Beams',       desc: 'Bullets slightly spread', apply: () => { spreadShot = true; } },
+      { id: 'def1',   rarity: 'rare',      name: 'Force Ring',       desc: 'Take 20% less damage', apply: () => { damageTakenMult *= 0.8; } },
+      { id: 'xp3',    rarity: 'rare',      name: 'Payday',           desc: 'Medium bonus nookums now', apply: () => { addNookums(120 + state.wave * 20); } },
+      { id: 'speed3', rarity: 'rare',      name: 'Rocket Boots',     desc: '+20% move speed', apply: () => { state.player.speed *= 1.2; } },
+      { id: 'regen3', rarity: 'rare',      name: 'Regen Shot',       desc: '+1.5 HP regen per second', apply: () => { hpRegenPerSecond += 1.5; } },
+      { id: 'lifesteal', rarity: 'rare',     name: 'Life Steal',      desc: 'Gain 5 HP when you kill an enemy', apply: () => { hpOnKill += 5; } },
+
+      // MYTHICAL
+      { id: 'def2',   rarity: 'mythical',  name: 'Time Bubble',      desc: 'Enemies move slower', apply: () => { enemySpeedMult *= 0.85; } },
+      { id: 'heart4', rarity: 'mythical',  name: 'Super Shield',     desc: '+40 max HP', apply: () => { state.player.maxHp += 40; state.player.hp += 40; } },
+      { id: 'gun4',   rarity: 'mythical',  name: 'Critical Pebbles', desc: '+30% bullet damage', apply: () => { damageBoost *= 1.3; } },
+      { id: 'myth1',  rarity: 'mythical',  name: 'Time Split',       desc: 'Bullets live longer', apply: () => { bulletLifeMult *= 1.5; } },
+      { id: 'myth2',  rarity: 'mythical',  name: 'Shadow Step',      desc: 'Dash lasts a bit longer', apply: () => { state.player.dashDuration *= 1.2; } },
+      { id: 'regen4', rarity: 'mythical',  name: 'Healing Aura',     desc: '+2.0 HP regen per second', apply: () => { hpRegenPerSecond += 2.0; } },
+
+      // LEGENDARY
+      { id: 'xp2',    rarity: 'legendary', name: 'Jackpot',          desc: 'Big bonus nookums now', apply: () => { addNookums(200 + state.wave * 15); } },
+      { id: 'boss1',  rarity: 'legendary', name: 'Boss Hunter',      desc: 'Boss HP -25%', apply: () => { bossHpMult *= 0.75; } },
+      { id: 'speed4', rarity: 'legendary', name: 'Adrenaline Rush',  desc: 'Big boost to speed & damage', apply: () => {
+          state.player.speed *= 1.35;
+          damageBoost *= 1.25;
+        } },
+      { id: 'morde',  rarity: 'legendary', name: 'MORDE',            desc: 'Slow but huge damage and range', apply: () => {
+          fireRate *= 1.8;          // shoots slower
+          damageBoost *= 2.0;       // but hits very hard
+          bulletLifeMult *= 1.6;    // bullets fly farther
+        } },
+      { id: 'leg1',   rarity: 'legendary', name: 'Storm Pebbles',    desc: 'More bullets with small slowdown', apply: () => {
+          multiShot = Math.min(4, multiShot + 1);
+          fireRate *= 1.15;
+        } },
+      { id: 'regen5', rarity: 'legendary', name: 'Phoenix Core',     desc: '+3.0 HP regen per second', apply: () => { hpRegenPerSecond += 3.0; } },
+
+      // GODLY
+      { id: 'god1',   rarity: 'godly',     name: 'POCKET GOD',       desc: 'Huge boost to ALL stats', apply: () => {
+          state.player.maxHp += 100; state.player.hp += 100;
+          state.player.speed *= 1.3; damageBoost *= 1.4;
+          enemySpeedMult *= 0.9; nookumsMult *= 1.5;
+        } },
+      { id: 'god2',   rarity: 'godly',     name: 'Pocket Angel',     desc: 'Full heal & heavy defense', apply: () => {
+          state.player.hp = state.player.maxHp;
+          damageTakenMult *= 0.7;
+        } },
+      { id: 'god3',   rarity: 'godly',     name: 'Time Freeze',      desc: 'Enemies slow way down', apply: () => { enemySpeedMult *= 0.7; } },
+      { id: 'god4',   rarity: 'godly',     name: 'Endless Wallet',   desc: 'Massive nookums bonus forever', apply: () => { nookumsMult *= 2; } },
+      { id: 'god5',   rarity: 'godly',     name: 'Immortal Jacket',  desc: 'Huge HP and defense', apply: () => {
+          state.player.maxHp += 120; state.player.hp += 120;
+          damageTakenMult *= 0.6;
+        } },
+      { id: 'god6',   rarity: 'godly',     name: 'Galaxy Pebbles',   desc: 'Insane bullet damage and range', apply: () => {
+          damageBoost *= 2.2;
+          bulletLifeMult *= 2.0;
+        } },
+      { id: 'god7',   rarity: 'godly',     name: 'Hyper Dash',       desc: 'Super fast and long dash', apply: () => {
+          state.player.dashMult *= 1.8;
+          state.player.dashDuration *= 1.5;
+        } },
+      { id: 'god8',   rarity: 'godly',     name: 'Pocket Army',      desc: 'Way more bullets at once', apply: () => {
+          multiShot = Math.min(6, multiShot + 2);
+          fireRate *= 1.25;
+        } },
+      { id: 'god9',   rarity: 'godly',     name: 'Empty Arena',      desc: 'No enemies for a while', apply: () => {
+          state.enemies = [];
+          state.bossAlive = false;
+          enemySpawnPause = Math.max(enemySpawnPause, 10);
+        } },
+
+      // UNREAL (rainbow) — only 9 power-ups; one is O.P (1 of everything)
+      { id: 'unr1',   rarity: 'unreal',    name: 'O.P',              desc: 'Get 1 of everything in the game', apply: () => {
+          state.player.maxHp += 80; state.player.hp += 80;
+          state.player.speed *= 1.25; state.player.dashMult *= 1.3; state.player.dashDuration *= 1.2;
+          damageBoost *= 1.5; multiShot = Math.min(6, multiShot + 2); spreadShot = true;
+          bulletLifeMult *= 1.5; fireRate *= 0.95;
+          nookumsMult *= 1.5; damageTakenMult *= 0.75; enemySpeedMult *= 0.85; bossHpMult *= 0.85;
+          state.player.hp = Math.min(state.player.maxHp, state.player.hp + 50);
+          addNookums(200 + state.wave * 25);
+        } },
+      { id: 'unr2',   rarity: 'unreal',    name: 'Rainbow Core',     desc: 'Huge HP and all-around boost', apply: () => {
+          state.player.maxHp += 150; state.player.hp += 150;
+          state.player.speed *= 1.2; damageBoost *= 1.4; damageTakenMult *= 0.65;
+        } },
+      { id: 'unr3',   rarity: 'unreal',    name: 'Prism Bullets',    desc: 'Massive damage and range', apply: () => {
+          damageBoost *= 2.5; bulletLifeMult *= 2.2;
+        } },
+      { id: 'unr4',   rarity: 'unreal',    name: 'Unreal Dash',      desc: 'Dash is insane', apply: () => {
+          state.player.dashMult *= 2.2; state.player.dashDuration *= 1.8;
+        } },
+      { id: 'unr5',   rarity: 'unreal',    name: 'Chaos Wallet',     desc: 'Triple nookums forever', apply: () => { nookumsMult *= 3; } },
+      { id: 'unr6',   rarity: 'unreal',    name: 'Time Stop',       desc: 'Enemies move at half speed', apply: () => { enemySpeedMult *= 0.5; } },
+      { id: 'unr7',   rarity: 'unreal',    name: 'Unreal Armor',    desc: 'Take 50% less damage', apply: () => { damageTakenMult *= 0.5; } },
+      { id: 'unr8',   rarity: 'unreal',    name: 'Barrage',         desc: 'Shoot 6 bullets, fire faster', apply: () => {
+          multiShot = Math.min(6, multiShot + 3); fireRate *= 0.85;
+        } },
+      { id: 'unr9',   rarity: 'unreal',    name: 'Second Chance',    desc: 'Full heal and clear arena', apply: () => {
+          state.player.hp = state.player.maxHp;
+          state.enemies = []; state.bossAlive = false; state.enemyBullets = [];
+          enemySpawnPause = Math.max(enemySpawnPause, 8);
+        } }
+    ];
+
+    let damageBoost = 1;
+    let multiShot = 1;
+    let spreadShot = false;
+    let nookumsMult = 1;
+    let damageTakenMult = 1;
+    let enemySpeedMult = 1;
+    let bossHpMult = 1;
+    let enemySpawnPause = 0;
+    let playerInvincible = false;
+    let hpRegenPerSecond = 1;
+    let hpOnKill = 0;
+
+    const rarityPrices = {
+      common: 40,
+      uncommon: 80,
+      rare: 150,
+      mythical: 260,
+      legendary: 380,
+      godly: 600,
+      unreal: 1000
+    };
+
+    function weightedPick(list) {
+      const total = list.reduce((s, r) => s + r.weight, 0);
+      let roll = rand() * total;
+      for (const r of list) {
+        if (roll < r.weight) return r;
+        roll -= r.weight;
+      }
+      return list[list.length - 1];
+    }
+
+    function spinRarityWheel() {
+      return weightedPick(rarities);
+    }
+
+    function getPowersForRarity(rarityId) {
+      const pool = powerPool.filter(p => p.rarity === rarityId);
+      const choices = [];
+      const temp = pool.slice();
+      for (let i = 0; i < 3 && temp.length > 0; i++) {
+        const idx = Math.floor(rand() * temp.length);
+        choices.push(temp.splice(idx, 1)[0]);
+      }
+      return choices;
+    }
+
+    function getRandomPowers(count) {
+      const temp = powerPool.slice();
+      const out = [];
+      while (out.length < count && temp.length > 0) {
+        const idx = Math.floor(rand() * temp.length);
+        out.push(temp.splice(idx, 1)[0]);
+      }
+      return out;
+    }
+
+    function showOverlay(node) {
+      overlay.innerHTML = '';
+      if (node) overlay.appendChild(node);
+    }
+
+    function hideOverlay() {
+      overlay.innerHTML = '';
+    }
+
+    function addNookums(amount) {
+      const gain = Math.round(amount * nookumsMult);
+      state.nookums += gain;
+      nookumsValue.textContent = state.nookums;
+      addXp(Math.round(gain * 0.5));
+    }
+
+    function addXp(amount) {
+      state.xp += amount;
+      while (state.xp >= state.xpToNext) {
+        state.xp -= state.xpToNext;
+        state.level++;
+        state.xpToNext = Math.round(state.xpToNext * 1.35);
+        startLevelUp();
+      }
+      xpValue.textContent = state.xp + ' / ' + state.xpToNext;
+      levelValue.textContent = state.level;
+    }
+
+    function startLevelUp() {
+      state.inLevelUp = true;
+      state.running = false;
+
+      const rarity = spinRarityWheel();
+      const options = getPowersForRarity(rarity.id);
+
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const title = document.createElement('h1');
+      title.textContent = 'LEVEL UP';
+      card.appendChild(title);
+
+      const p = document.createElement('p');
+      p.textContent = 'You earned enough nookums! Wheel landed on ' + rarity.label.toUpperCase() + '. Pick one power.';
+      card.appendChild(p);
+
+      const wheel = document.createElement('div');
+      wheel.className = 'rarity-wheel';
+
+      const track = document.createElement('div');
+      track.className = 'rarity-track';
+      const bar = document.createElement('div');
+      bar.className = 'rarity-bar';
+
+      const order = ['common', 'uncommon', 'rare', 'mythical', 'legendary', 'godly', 'unreal'];
+      // exact segment centers: flex 22,26,17,9,6,2,1 => total 82
+      const segmentCenter = {
+        common: 11 / 82,     uncommon: 35 / 82,     rare: 56.5 / 82,
+        mythical: 69.5 / 82, legendary: 77 / 82,   godly: 81 / 82,
+        unreal: 81.5 / 82
+      };
+      order.forEach(id => {
+        const seg = document.createElement('div');
+        seg.className = 'rarity-seg ' + id;
+        bar.appendChild(seg);
+      });
+      track.appendChild(bar);
+
+      const marker = document.createElement('div');
+      marker.className = 'rarity-marker';
+      track.appendChild(marker);
+
+      const rarityLabel = document.createElement('div');
+      rarityLabel.className = 'rarity-label';
+      rarityLabel.textContent = 'Spinning...';
+
+      wheel.appendChild(track);
+      wheel.appendChild(rarityLabel);
+      card.appendChild(wheel);
+
+      const grid = document.createElement('div');
+      grid.className = 'power-grid';
+      card.appendChild(grid);
+
+      const help = document.createElement('p');
+      help.className = 'help';
+      help.textContent = 'Click ONE power-up. Game keeps going forever and enemies get tougher after each boss.';
+      card.appendChild(help);
+
+      showOverlay(card);
+
+      // spin animation — when done, pin marker to the chosen segment's center (so it always matches)
+      let t = 0;
+      const spinTime = 1200;
+      const interval = setInterval(() => {
+        t += 50;
+        const progress = Math.min(1, t / spinTime);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const base = segmentCenter[rarity.id] != null ? segmentCenter[rarity.id] : 0.5;
+        const pos = (base + (1 - eased) * 0.7) % 1;
+        marker.style.left = (pos * 100) + '%';
+        rarityLabel.textContent = rarity.label.toUpperCase() + ' RARITY';
+
+        if (progress >= 1) {
+          clearInterval(interval);
+          // pin marker to the chosen segment's center (after layout is ready)
+          const idx = order.indexOf(rarity.id);
+          const pinMarker = () => {
+            const segs = bar.querySelectorAll('.rarity-seg');
+            if (segs[idx]) {
+              const trackRect = track.getBoundingClientRect();
+              const segRect = segs[idx].getBoundingClientRect();
+              const centerX = segRect.left - trackRect.left + segRect.width / 2;
+              marker.style.left = (centerX / trackRect.width * 100) + '%';
+            }
+          };
+          requestAnimationFrame(() => { requestAnimationFrame(pinMarker); });
+          // show choices
+          options.forEach(opt => {
+            const pc = document.createElement('div');
+            pc.className = 'power-card ' + opt.rarity;
+
+            const tag = document.createElement('div');
+            tag.className = 'power-tag';
+            tag.textContent = opt.rarity.toUpperCase();
+            pc.appendChild(tag);
+
+            const title = document.createElement('div');
+            title.className = 'power-title';
+            title.textContent = opt.name;
+            pc.appendChild(title);
+
+            const desc = document.createElement('div');
+            desc.className = 'power-desc';
+            desc.textContent = opt.desc;
+            pc.appendChild(desc);
+
+            pc.addEventListener('click', () => {
+              opt.apply();
+              hideOverlay();
+              state.inLevelUp = false;
+              state.running = true;
+            });
+
+            grid.appendChild(pc);
+          });
+        }
+      }, 50);
+    }
+
+    function openStore() {
+      if (state.inLevelUp || state.inStore) return;
+      state.inStore = true;
+      const wasRunning = state.running;
+      state.running = false;
+
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const h = document.createElement('h1');
+      h.textContent = 'NOOKUM SHOP';
+      card.appendChild(h);
+
+      const pTop = document.createElement('p');
+      pTop.textContent = 'Spend nookums to grab any power you really want, even if the wheel never gives it to you.';
+      card.appendChild(pTop);
+
+      const note = document.createElement('p');
+      note.className = 'help';
+      note.textContent = 'Your nookums: ' + state.nookums + '. Prices get higher for rarer powers.';
+      card.appendChild(note);
+
+      const grid = document.createElement('div');
+      grid.className = 'power-grid';
+      card.appendChild(grid);
+
+      // shop: you can buy ANY power in the game, if you have enough nookums
+      const rarityOrder = ['common', 'uncommon', 'rare', 'mythical', 'legendary', 'godly', 'unreal'];
+      const offers = powerPool.slice().sort((a, b) => {
+        return rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity);
+      });
+
+      offers.forEach(opt => {
+        const price = rarityPrices[opt.rarity] || 60;
+        const pc = document.createElement('div');
+        pc.className = 'power-card ' + opt.rarity;
+
+        const tag = document.createElement('div');
+        tag.className = 'power-tag';
+        tag.textContent = opt.rarity.toUpperCase() + ' · ' + price + ' NOK';
+        pc.appendChild(tag);
+
+        const title = document.createElement('div');
+        title.className = 'power-title';
+        title.textContent = opt.name;
+        pc.appendChild(title);
+
+        const desc = document.createElement('div');
+        desc.className = 'power-desc';
+        desc.textContent = opt.desc;
+        pc.appendChild(desc);
+
+        pc.addEventListener('click', () => {
+          if (state.nookums < price) {
+            return;
+          }
+          state.nookums -= price;
+          nookumsValue.textContent = state.nookums;
+          opt.apply();
+        });
+
+        grid.appendChild(pc);
+      });
+
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = 'CLOSE SHOP';
+      closeBtn.addEventListener('click', () => {
+        hideOverlay();
+        state.inStore = false;
+        if (wasRunning) {
+          state.running = true;
+        }
+      });
+      row.appendChild(closeBtn);
+      card.appendChild(row);
+
+      showOverlay(card);
+    }
+
+    // ===== GAME FLOW =====
+    function resetGame() {
+      resizeCanvas();
+      state.player.x = canvas.width / 2;
+      state.player.y = canvas.height / 2;
+      state.player.aimAngle = 0;
+      state.player.hp = state.player.maxHp = 100;
+      state.bullets = [];
+      state.enemies = [];
+      state.enemyBullets = [];
+      state.pickups = [];
+      state.particles = [];
+      state.nookums = 1000000000;
+      state.xp = 0;
+      state.xpToNext = 50;
+      state.level = 1;
+      state.wave = 1;
+      state.waveTimer = 0;
+      state.spawnTimer = 0;
+      state.difficulty = 1;
+      state.bossAlive = false;
+      state.inStore = false;
+
+      damageBoost = 1;
+      multiShot = 1;
+      spreadShot = false;
+      nookumsMult = 1;
+      damageTakenMult = 1;
+      enemySpeedMult = 1;
+      bossHpMult = 1;
+      fireRate = 0.17;
+      bulletLifeMult = 1;
+      enemySpawnPause = 0;
+      playerInvincible = false;
+      hpRegenPerSecond = 1;
+      hpOnKill = 0;
+
+      waveValue.textContent = state.wave;
+      nookumsValue.textContent = state.nookums;
+      levelValue.textContent = state.level;
+      hpValue.textContent = state.player.hp + ' / ' + state.player.maxHp;
+      xpValue.textContent = state.xp + ' / ' + state.xpToNext;
+      if (dmgValue) dmgValue.textContent = Math.round(damageBoost * 100) + '%';
+      if (spdValue) spdValue.textContent = Math.round(state.player.speed / 220 * 100) + '%';
+      if (armorValue) armorValue.textContent = Math.round((1 - damageTakenMult) * 100) + '%';
+      if (regenValue) regenValue.textContent = hpRegenPerSecond.toFixed(1) + '/s';
+      if (regenValue) regenValue.textContent = hpRegenPerSecond.toFixed(1) + '/s';
+      hpPill.style.boxShadow = '';
+    }
+
+    function startGame() {
+      resetGame();
+      state.running = true;
+      state.lastTime = performance.now();
+      hideOverlay();
+      requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+      state.running = false;
+      const card = document.createElement('div');
+      card.className = 'card';
+      const h = document.createElement('h1');
+      h.textContent = 'YOU FELL';
+      card.appendChild(h);
+      const p = document.createElement('p');
+      p.textContent = 'But World war 3 never ends. You reached Wave ' + state.wave + ' and collected ' + state.nookums + ' nookums.';
+      card.appendChild(p);
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      const btn = document.createElement('button');
+      btn.textContent = 'PLAY AGAIN';
+      btn.addEventListener('click', startGame);
+      row.appendChild(btn);
+      card.appendChild(row);
+      const help = document.createElement('p');
+      help.className = 'help';
+      help.textContent = 'Move with WASD or arrow keys. Your bullets auto-aim at the closest enemy. Press Space to dash.';
+      card.appendChild(help);
+      showOverlay(card);
+    }
+
+    function startScreen() {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const h = document.createElement('h1');
+      h.textContent = 'WORLD WAR 3';
+      card.appendChild(h);
+      const p = document.createElement('p');
+      p.textContent = 'Tiny arena. Infinite waves. Boss fights. Every enemy drops nookums so you can spin for crazy power-ups.';
+      card.appendChild(p);
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      const btn = document.createElement('button');
+      btn.textContent = 'START RUN';
+      btn.addEventListener('click', startGame);
+      row.appendChild(btn);
+      card.appendChild(row);
+      const help = document.createElement('p');
+      help.className = 'help';
+      help.textContent = 'Move with WASD or arrow keys. Your bullets auto-aim at the closest enemy. Press Space to dash.';
+      card.appendChild(help);
+      showOverlay(card);
+    }
+
+    // ===== INPUT: MOVEMENT & SHOOTING =====
+    const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    });
+    canvas.addEventListener('mousedown', () => { mouse.down = true; });
+    canvas.addEventListener('mouseup', () => { mouse.down = false; });
+
+    window.addEventListener('blur', () => { mouse.down = false; });
+
+    function handleInput(dt) {
+      const p = state.player;
+      let dx = 0, dy = 0;
+      if (keys['w'] || keys['arrowup']) dy -= 1;
+      if (keys['s'] || keys['arrowdown']) dy += 1;
+      if (keys['a'] || keys['arrowleft']) dx -= 1;
+      if (keys['d'] || keys['arrowright']) dx += 1;
+
+      let speed = p.speed;
+      if (p.dashTime > 0) speed *= p.dashMult;
+
+      const len = Math.hypot(dx, dy);
+      if (len > 0) {
+        dx /= len; dy /= len;
+        p.x += dx * speed * dt;
+        p.y += dy * speed * dt;
+      }
+
+      p.x = Math.max(p.r + 8, Math.min(canvas.width - p.r - 8, p.x));
+      p.y = Math.max(p.r + 8, Math.min(canvas.height - p.r - 8, p.y));
+
+      // dash
+      if (keys[' '] && p.dashCooldown <= 0 && (dx !== 0 || dy !== 0)) {
+        p.dashTime = p.dashDuration;
+        p.dashCooldown = 1.1;
+      }
+      if (p.dashTime > 0) p.dashTime -= dt;
+      if (p.dashCooldown > 0) p.dashCooldown -= dt;
+
+      // shooting (auto-fire at closest enemy)
+      let angle;
+      let targetDist = Infinity;
+      if (state.enemies.length > 0) {
+        let closest = null;
+        let bestDist = Infinity;
+        for (const e of state.enemies) {
+          const dx2 = e.x - p.x;
+          const dy2 = e.y - p.y;
+          const dist = Math.hypot(dx2, dy2);
+          if (dist < bestDist) {
+            bestDist = dist;
+            closest = e;
+          }
+        }
+        if (closest) {
+          angle = Math.atan2(closest.y - p.y, closest.x - p.x);
+          targetDist = bestDist;
+        }
+      }
+      // fallback: if somehow no enemy, just aim at mouse
+      if (angle === undefined) {
+        angle = Math.atan2(mouse.y - p.y, mouse.x - p.x);
+      }
+      p.aimAngle = angle;
+      if (shootCooldown > 0) shootCooldown -= dt;
+      if (shootCooldown <= 0) {
+        // estimate current bullet range (speed * life)
+        const maxRange = 390 * 0.8 * bulletLifeMult;
+        if (targetDist <= maxRange) {
+          shootCooldown = fireRate;
+          const shots = multiShot;
+          if (spreadShot && shots > 1) {
+            const spread = 0.18;
+            const start = -spread * (shots - 1) / 2;
+            for (let i = 0; i < shots; i++) {
+              shootBullet(angle + start + spread * i);
+            }
+          } else if (shots > 1) {
+            const offset = 0.1;
+            const mid = (shots - 1) / 2;
+            for (let i = 0; i < shots; i++) {
+              shootBullet(angle + (i - mid) * offset);
+            }
+          } else {
+            shootBullet(angle);
+          }
+        }
+      }
+    }
+
+    // ===== UPDATE =====
+    function update(dt) {
+      const p = state.player;
+
+      handleInput(dt);
+
+      // bullets
+      for (let i = state.bullets.length - 1; i >= 0; i--) {
+        const b = state.bullets[i];
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.life -= dt;
+        if (
+          b.life <= 0 ||
+          b.x < -20 || b.x > canvas.width + 20 ||
+          b.y < -20 || b.y > canvas.height + 20
+        ) {
+          state.bullets.splice(i, 1);
+        }
+      }
+
+      // enemies
+      if (enemySpawnPause > 0) {
+        enemySpawnPause -= dt;
+      } else {
+        state.spawnTimer += dt;
+        state.waveTimer += dt;
+
+        const targetCount = 4 + state.wave * 1.2;
+        if (!state.bossAlive && state.waveTimer > 16 + state.wave * 1.2) {
+          // spawn boss
+          spawnEnemy(true);
+          state.waveTimer = 0;
+        } else if (!state.bossAlive && state.enemies.length < targetCount && state.spawnTimer > 1.1) {
+          state.spawnTimer = 0;
+          spawnEnemy(false);
+        }
+      }
+
+      for (let i = state.enemies.length - 1; i >= 0; i--) {
+        const e = state.enemies[i];
+        const angle = Math.atan2(p.y - e.y, p.x - e.x);
+        const speed = e.speed * enemySpeedMult * (e.boss ? 1 : 1.03);
+        if (e.type === 'orbiter') {
+          const tangent = angle + (e.orbitDir || 1) * Math.PI / 2;
+          e.x += (Math.cos(tangent) * 0.85 + Math.cos(angle) * 0.15) * speed * dt;
+          e.y += (Math.sin(tangent) * 0.85 + Math.sin(angle) * 0.15) * speed * dt;
+        } else {
+          e.x += Math.cos(angle) * speed * dt;
+          e.y += Math.sin(angle) * speed * dt;
+        }
+        if (e.boss) {
+          e.wobble += dt * 3;
+          e.x += Math.cos(e.wobble) * 18 * dt;
+          e.y += Math.sin(e.wobble * 1.3) * 14 * dt;
+        }
+        // healer: heal nearby enemies
+        if (e.type === 'healer') {
+          e.healCooldown = (e.healCooldown || 0) - dt;
+          if (e.healCooldown <= 0) {
+            e.healCooldown = 3;
+            for (const other of state.enemies) {
+              if (other === e) continue;
+              const dist = Math.hypot(other.x - e.x, other.y - e.y);
+              if (dist < 60) other.hp = Math.min(other.maxHp, other.hp + 8);
+            }
+          }
+        }
+        // spawner: spawn minions
+        if (e.type === 'spawner') {
+          e.spawnCooldown = (e.spawnCooldown || 0) - dt;
+          if (e.spawnCooldown <= 0) {
+            e.spawnCooldown = 4;
+            spawnEnemyAt(e.x, e.y, 'minion');
+          }
+        }
+        // lurker: only shoot after standing still
+        if (e.type === 'lurker') {
+          const moved = Math.hypot(e.x - (e.lastX ?? e.x), e.y - (e.lastY ?? e.y));
+          e.lastX = e.x; e.lastY = e.y;
+          if (moved < 4) e.stillTime = (e.stillTime || 0) + dt; else e.stillTime = 0;
+          e.shootCooldown = (e.shootCooldown ?? e.fireRate) - dt;
+          if (e.stillTime > 1.5 && e.shootCooldown <= 0) {
+            enemyShoot(e);
+            e.shootCooldown = e.fireRate;
+            e.stillTime = 0;
+          }
+        } else {
+          e.shootCooldown = (e.shootCooldown || 0) - dt;
+          const rate = e.fireRate != null ? e.fireRate : (e.boss ? 0.85 : 1.6);
+          if (e.shootCooldown <= 0 && e.type !== 'bomber') {
+            enemyShoot(e);
+            e.shootCooldown = rate;
+          }
+        }
+        // bomber: explode if touching player
+        if (e.type === 'bomber') {
+          const distToPlayer = Math.hypot(p.x - e.x, p.y - e.y);
+          if (distToPlayer < 55) {
+            if (!playerInvincible) p.hp -= 35;
+            spawnBurst(e.x, e.y, '#f97316', 30);
+            state.enemies.splice(i, 1);
+          }
+        }
+        // magnet: pull player toward it
+        if (e.type === 'magnet') {
+          const d = Math.hypot(p.x - e.x, p.y - e.y);
+          if (d < 120 && d > 0) {
+            const pull = 45 * dt / d;
+            p.x += (e.x - p.x) * pull;
+            p.y += (e.y - p.y) * pull;
+          }
+        }
+      }
+      // clamp player after magnet pull
+      p.x = Math.max(p.r + 8, Math.min(canvas.width - p.r - 8, p.x));
+      p.y = Math.max(p.r + 8, Math.min(canvas.height - p.r - 8, p.y));
+
+      // enemy bullets: move and remove if off screen
+      for (let i = state.enemyBullets.length - 1; i >= 0; i--) {
+        const eb = state.enemyBullets[i];
+        eb.x += eb.vx * dt;
+        eb.y += eb.vy * dt;
+        if (
+          eb.x < -30 || eb.x > canvas.width + 30 ||
+          eb.y < -30 || eb.y > canvas.height + 30
+        ) {
+          state.enemyBullets.splice(i, 1);
+        }
+      }
+
+      // collisions: enemy bullets vs player
+      for (let i = state.enemyBullets.length - 1; i >= 0; i--) {
+        const eb = state.enemyBullets[i];
+        const dx = p.x - eb.x;
+        const dy = p.y - eb.y;
+        if (Math.hypot(dx, dy) < p.r + eb.r) {
+          if (!playerInvincible) {
+            p.hp -= Math.round(eb.damage * damageTakenMult);
+            spawnBurst(p.x, p.y, '#f97373', 4);
+          }
+          state.enemyBullets.splice(i, 1);
+        }
+      }
+
+      // collisions: bullets vs enemies
+      for (let i = state.enemies.length - 1; i >= 0; i--) {
+        const e = state.enemies[i];
+        for (let j = state.bullets.length - 1; j >= 0; j--) {
+          const b = state.bullets[j];
+          const dx = e.x - b.x;
+          const dy = e.y - b.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < e.r + b.r) {
+            // reflector: chance to reflect bullet at player instead of taking damage
+            if (e.type === 'reflector' && rand() < 0.4) {
+              state.bullets.splice(j, 1);
+              const ang = Math.atan2(p.y - b.y, p.x - b.x);
+              const sp = 400;
+              state.enemyBullets.push({
+                x: b.x, y: b.y,
+                vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+                r: 4, damage: 10
+              });
+              spawnBurst(b.x, b.y, '#a855f7', 4);
+              break;
+            }
+            let dmg = (e.boss ? 30 : 45) * damageBoost;
+            // shielder: nearby shielders reduce damage
+            let shieldMult = 1;
+            for (const s of state.enemies) {
+              if (s.type === 'shielder' && s.hp > 0) {
+                const sd = Math.hypot(s.x - e.x, s.y - e.y);
+                if (sd < 80) shieldMult *= 0.7;
+              }
+            }
+            dmg *= shieldMult;
+            e.hp -= dmg;
+            state.bullets.splice(j, 1);
+            spawnBurst(b.x, b.y, e.boss ? '#f97316' : '#38bdf8', 6);
+            if (e.hp <= 0) {
+              // bomber: explode on death
+              if (e.type === 'bomber') {
+                if (!playerInvincible) p.hp -= 25;
+                spawnBurst(e.x, e.y, '#f97316', 28);
+              }
+              // splitter: spawn 2 small enemies
+              if (e.type === 'splitter') {
+                spawnEnemyAt(e.x - 12, e.y, 'split_minion');
+                spawnEnemyAt(e.x + 12, e.y, 'split_minion');
+              }
+              const worth = e.boss ? 120 + state.wave * 25 : (e.type === 'minion' || e.type === 'split_minion' ? 5 : 14 + state.wave * 3);
+              state.pickups.push({ x: e.x, y: e.y, amount: worth });
+              if (e.boss) {
+                state.pickups.push({ x: e.x + 18, y: e.y, type: 'heart' });
+              }
+              if (hpOnKill > 0) {
+                state.player.hp = Math.min(state.player.maxHp, state.player.hp + hpOnKill);
+              }
+              spawnBurst(e.x, e.y, e.boss ? '#facc15' : '#0ea5e9', e.boss ? 40 : 16);
+              if (e.boss) {
+                state.bossAlive = false;
+                state.wave++;
+                state.difficulty += 1.4;
+                state.waveTimer = 0;
+                waveValue.textContent = state.wave;
+              }
+              state.enemies.splice(i, 1);
+              break;
+            }
+          }
+        }
+      }
+
+      // enemies vs player
+      for (const e of state.enemies) {
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < e.r + p.r) {
+          const knock = 90;
+          const nx = dx / (dist || 1);
+          const ny = dy / (dist || 1);
+          p.x -= nx * knock * dt;
+          p.y -= ny * knock * dt;
+          if (!playerInvincible) {
+            const raw = e.damage;
+            const dmg = Math.round(raw * damageTakenMult);
+            p.hp -= dmg * dt * 1.6;
+            spawnBurst(p.x, p.y, '#f97373', 2);
+          }
+        }
+      }
+
+      if (p.hp <= 0) {
+        p.hp = 0;
+        hpValue.textContent = '0 / ' + p.maxHp;
+        gameOver();
+        return;
+      }
+      if (p.hp > 0 && p.hp < p.maxHp) {
+        p.hp += hpRegenPerSecond * dt;
+        if (p.hp > p.maxHp) p.hp = p.maxHp;
+      }
+      hpValue.textContent = Math.round(p.hp) + ' / ' + p.maxHp;
+      if (dmgValue) dmgValue.textContent = Math.round(damageBoost * 100) + '%';
+      if (spdValue) spdValue.textContent = Math.round(p.speed / 220 * 100) + '%';
+      if (armorValue) armorValue.textContent = Math.round((1 - damageTakenMult) * 100) + '%';
+      if (regenValue) regenValue.textContent = hpRegenPerSecond.toFixed(1) + '/s';
+
+      // pick up nookums and hearts when you walk over them
+      const pickupRadius = 22;
+      for (let i = state.pickups.length - 1; i >= 0; i--) {
+        const drop = state.pickups[i];
+        const dist = Math.hypot(p.x - drop.x, p.y - drop.y);
+        if (dist < pickupRadius) {
+          if (drop.type === 'heart') {
+            state.player.maxHp += 10;
+            state.player.hp += 10;
+            state.pickups.splice(i, 1);
+          } else {
+            addNookums(drop.amount);
+            state.pickups.splice(i, 1);
+          }
+        }
+      }
+
+      // particles
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const part = state.particles[i];
+        part.x += part.vx * dt;
+        part.y += part.vy * dt;
+        part.vx *= 0.96;
+        part.vy *= 0.96;
+        part.life -= dt;
+        if (part.life <= 0) state.particles.splice(i, 1);
+      }
+    }
+
+    // ===== DRAW =====
+    function draw() {
+      const p = state.player;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // flat background for retro look (now white)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // player (high contrast: black square)
+      ctx.save();
+      const pr = p.r + 2;
+      const px = Math.round(p.x - pr);
+      const py = Math.round(p.y - pr);
+      const size = Math.round(pr * 2);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(px, py, size, size);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
+      ctx.restore();
+
+      // bullets (black squares) — no gun line, bullets still auto-aim
+      ctx.save();
+      ctx.fillStyle = '#000000';
+      for (const b of state.bullets) {
+        const bs = Math.max(3, b.r * 2);
+        const bx = Math.round(b.x - bs / 2);
+        const by = Math.round(b.y - bs / 2);
+        ctx.fillRect(bx, by, bs, bs);
+      }
+      ctx.restore();
+
+      // enemy bullets (grey squares so you can tell them apart)
+      ctx.save();
+      ctx.fillStyle = '#6b7280';
+      for (const eb of state.enemyBullets) {
+        const bs = Math.max(3, eb.r * 2);
+        const bx = Math.round(eb.x - bs / 2);
+        const by = Math.round(eb.y - bs / 2);
+        ctx.fillRect(bx, by, bs, bs);
+      }
+      ctx.restore();
+
+      // enemies — each type has its own color and shape so you can tell them apart
+      for (const e of state.enemies) {
+        ctx.save();
+        const er = e.r;
+        const size = Math.round(er * 2);
+        const ex = Math.round(e.x - size / 2);
+        const ey = Math.round(e.y - size / 2);
+        const t = e.type || 'normal';
+
+        // color and shape by type
+        let fill = '#374151';
+        let stroke = '#111827';
+        let shape = 'square'; // square, circle, diamond, triangle
+        if (e.boss) {
+          fill = '#1f2937';
+          stroke = '#000000';
+          shape = 'square';
+        } else if (t === 'tank')       { fill = '#78350f'; stroke = '#451a03'; shape = 'square'; }
+        else if (t === 'scout')        { fill = '#9ca3af'; stroke = '#4b5563'; shape = 'diamond'; }
+        else if (t === 'rapid')        { fill = '#dc2626'; stroke = '#991b1b'; shape = 'square'; }
+        else if (t === 'sniper')      { fill = '#7c3aed'; stroke = '#5b21b6'; shape = 'square'; }
+        else if (t === 'swarm')       { fill = '#eab308'; stroke = '#a16207'; shape = 'circle'; }
+        else if (t === 'orbiter')     { fill = '#0ea5e9'; stroke = '#0369a1'; shape = 'circle'; }
+        else if (t === 'shielder')    { fill = '#2563eb'; stroke = '#1d4ed8'; shape = 'square'; }
+        else if (t === 'splitter')    { fill = '#16a34a'; stroke = '#15803d'; shape = 'square'; }
+        else if (t === 'healer')      { fill = '#14b8a6'; stroke = '#0f766e'; shape = 'circle'; }
+        else if (t === 'bomber')      { fill = '#b91c1c'; stroke = '#7f1d1d'; shape = 'circle'; }
+        else if (t === 'spawner')     { fill = '#854d0e'; stroke = '#713f12'; shape = 'square'; }
+        else if (t === 'reflector')   { fill = '#64748b'; stroke = '#475569'; shape = 'square'; }
+        else if (t === 'lurker')      { fill = '#581c87'; stroke = '#3b0764'; shape = 'diamond'; }
+        else if (t === 'magnet')      { fill = '#be123c'; stroke = '#9f1239'; shape = 'circle'; }
+        else if (t === 'minion')      { fill = '#6b7280'; stroke = '#4b5563'; shape = 'circle'; }
+        else if (t === 'split_minion'){ fill = '#4ade80'; stroke = '#16a34a'; shape = 'circle'; }
+
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        if (shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, er, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (shape === 'diamond') {
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y - er);
+          ctx.lineTo(e.x + er, e.y);
+          ctx.lineTo(e.x, e.y + er);
+          ctx.lineTo(e.x - er, e.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(ex, ey, size, size);
+          ctx.strokeRect(ex + 0.5, ey + 0.5, size - 1, size - 1);
+        }
+
+        // eyes on non-minion (so you still see they're baddies)
+        if (t !== 'minion' && t !== 'split_minion') {
+          const eyeSize = e.boss ? 4 : (er > 10 ? 2 : 1);
+          const eyeOffset = e.boss ? 8 : er * 0.4;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(e.x - eyeOffset * 0.6, e.y - eyeOffset * 0.3, eyeSize * 0.5, 0, Math.PI * 2);
+          ctx.arc(e.x + eyeOffset * 0.6, e.y - eyeOffset * 0.3, eyeSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // boss hp bar
+        if (e.boss) {
+          const w = 70;
+          const h = 5;
+          const bx2 = Math.round(e.x - w / 2);
+          const by2 = Math.round(ey - 10);
+          const pct = Math.max(0, Math.min(1, e.hp / e.maxHp));
+          ctx.fillStyle = '#e5e7eb';
+          ctx.fillRect(bx2, by2, w, h);
+          ctx.fillStyle = '#1f2937';
+          ctx.fillRect(bx2, by2, w * pct, h);
+        }
+
+        ctx.restore();
+      }
+
+      // pickups: nookums (square + number) and hearts (+10 max HP, black heart shape)
+      ctx.save();
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#000000';
+      for (const drop of state.pickups) {
+        if (drop.type === 'heart') {
+          const hx = drop.x, hy = drop.y, s = 5;
+          ctx.beginPath();
+          ctx.moveTo(hx, hy + s * 0.4);
+          ctx.bezierCurveTo(hx, hy - s * 0.8, hx - s * 1.2, hy - s * 0.8, hx - s * 1.2, hy + s * 0.4);
+          ctx.bezierCurveTo(hx - s * 1.2, hy + s * 1.2, hx, hy + s * 1.6, hx, hy + s * 1.6);
+          ctx.bezierCurveTo(hx, hy + s * 1.6, hx + s * 1.2, hy + s * 1.2, hx + s * 1.2, hy + s * 0.4);
+          ctx.bezierCurveTo(hx + s * 1.2, hy - s * 0.8, hx, hy - s * 0.8, hx, hy + s * 0.4);
+          ctx.fill();
+        } else {
+          const sz = 6;
+          const dx = Math.round(drop.x - sz / 2);
+          const dy = Math.round(drop.y - sz / 2);
+          ctx.fillRect(dx, dy, sz, sz);
+          ctx.fillText(String(drop.amount), drop.x, drop.y + 16);
+        }
+      }
+      ctx.restore();
+
+      // particles (black sparks)
+      ctx.save();
+      for (const part of state.particles) {
+        ctx.globalAlpha = Math.max(0, part.life * 1.4);
+        const ps = 3;
+        const px2 = Math.round(part.x - ps / 2);
+        const py2 = Math.round(part.y - ps / 2);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(px2, py2, ps, ps);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    // ===== MAIN LOOP =====
+    function loop(timestamp) {
+      const dt = Math.min(0.04, (timestamp - state.lastTime) / 1000);
+      state.lastTime = timestamp;
+
+      if (state.running && !state.inLevelUp) {
+        update(dt);
+      }
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // start
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    if (storeButton) {
+      storeButton.addEventListener('click', openStore);
+    }
+    startScreen();
+    state.lastTime = performance.now();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
+

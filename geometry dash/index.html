@@ -1,0 +1,664 @@
+<!--
+Bo's Geometry Dash plan:
+- Make a new game called "geometry dash"
+- Player is a square that auto-runs right
+- Tap/click/space to jump
+- Include levels from the original game (using original level names)
+- Add portals (cube/ship/ball), practice checkpoints, and music beat pulses
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry Dash - Bo Edition</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #0c0c0c;
+      --panel2: #151515;
+      --text: #f3f6ff;
+      --accent: #00ff6a;
+      --danger: #ff5d73;
+      --good: #73ff79;
+      --gold: #ffd56a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: radial-gradient(circle at 20% 10%, #101010, #020202 65%);
+      color: var(--text);
+      font-family: "Trebuchet MS", "Arial", sans-serif;
+    }
+
+    header {
+      padding: 12px 16px;
+      background: linear-gradient(90deg, #111, #050505);
+      border-bottom: 2px solid #00ff6a66;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .title {
+      font-size: clamp(20px, 3vw, 30px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 0 #0008;
+    }
+
+    .hud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill, button, select {
+      border: 1px solid #00ff6a33;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: var(--panel2);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      transition: transform 0.05s ease, filter 0.15s ease;
+    }
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: translateY(1px); }
+
+    #playBtn { background: #065726; }
+    #resetBtn { background: #2d2d2d; }
+
+    main {
+      display: grid;
+      place-items: center;
+      padding: 12px;
+    }
+
+    #gameWrap {
+      width: min(1100px, 96vw);
+      display: grid;
+      gap: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border: 3px solid #00ff6a88;
+      border-radius: 4px;
+      background: #000;
+      box-shadow: 0 10px 30px #0008;
+      image-rendering: pixelated;
+    }
+
+    .help {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      font-weight: 700;
+      color: #baffd1;
+      opacity: 0.95;
+      padding: 2px 2px 10px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 6px 10px 14px;
+      color: #91f5b4;
+      opacity: 0.9;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">GEOMETRY DASH - BO EDITION</div>
+    <div class="hud">
+      <select id="levelSelect" aria-label="Choose level"></select>
+      <div class="pill" id="statusPill">Ready</div>
+      <div class="pill" id="modePill">Mode: Cube</div>
+      <div class="pill" id="progressPill">0%</div>
+      <button id="playBtn" type="button">Play</button>
+      <button id="practiceBtn" type="button">Practice: Off</button>
+      <button id="skipTutorialBtn" type="button">Skip Tutorial</button>
+      <button id="resetBtn" type="button">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="gameWrap">
+      <canvas id="game" width="1100" height="420"></canvas>
+      <div class="help">
+        <span>Tap / Click / Space / Arrow Up = Jump</span>
+        <span>Avoid spikes and blocks</span>
+        <span>Beat all official level names!</span>
+      </div>
+    </div>
+  </main>
+
+  <footer>Single-file vibe code game for Bo</footer>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const levelSelect = document.getElementById("levelSelect");
+    const statusPill = document.getElementById("statusPill");
+    const modePill = document.getElementById("modePill");
+    const progressPill = document.getElementById("progressPill");
+    const playBtn = document.getElementById("playBtn");
+    const practiceBtn = document.getElementById("practiceBtn");
+    const skipTutorialBtn = document.getElementById("skipTutorialBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const levelNames = [
+      "Stereo Madness", "Back On Track", "Polargeist", "Dry Out", "Base After Base",
+      "Cant Let Go", "Jumper", "Time Machine", "Cycles", "xStep",
+      "Clutterfunk", "Theory of Everything", "Electroman Adventures", "Clubstep",
+      "Electrodynamix", "Hexagon Force", "Blast Processing", "Theory of Everything 2",
+      "Geometrical Dominator", "Deadlocked", "Fingerdash"
+    ];
+
+    const difficulties = [
+      1, 1, 2, 2, 2,
+      3, 3, 4, 4, 4,
+      5, 5, 5, 6,
+      6, 6, 6, 7,
+      7, 8, 8
+    ];
+
+    const modeOrder = ["cube", "ship", "ball"];
+    const modeNames = { cube: "Cube", ship: "Ship", ball: "Ball" };
+    const modeColors = { cube: "#7dff9f", ship: "#70d4ff", ball: "#ff9be0" };
+    let game;
+    let inputHeld = false;
+    let audioCtx;
+    let nextBeatAt = 0;
+
+    function playBeat(mode, diff) {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const freq = mode === "ship" ? 440 : mode === "ball" ? 520 : 620;
+      osc.frequency.value = freq + diff * 7;
+      osc.type = mode === "cube" ? "square" : "triangle";
+      gain.gain.value = 0.0001;
+      gain.gain.exponentialRampToValueAtTime(0.05, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    }
+
+    function makeLevel(index) {
+      const worldW = 6600 + index * 180;
+      const floorY = canvas.height - 70;
+      const seed = 1337 + index * 97;
+      const diff = difficulties[index] || 5;
+      const obstacles = [];
+      const orbs = [];
+      const portals = [];
+
+      function rand(n) {
+        const x = Math.sin(seed + n * 12.9898) * 43758.5453;
+        return x - Math.floor(x);
+      }
+
+      let x = 520;
+      let i = 0;
+      while (x < worldW - 300) {
+        const gap = 115 + Math.floor(rand(i + 1) * (125 - diff * 4));
+        x += Math.max(82, gap);
+        const mode = Math.floor(rand(i + 3) * 5);
+
+        if (mode <= 1) {
+          const h = 24 + Math.floor(rand(i + 5) * (20 + diff * 4));
+          obstacles.push({ x, y: floorY - h, w: 34, h, type: "block" });
+          if (rand(i + 7) > 0.76) orbs.push({ x: x + 17, y: floorY - h - 22, r: 6 });
+        } else if (mode === 2 || mode === 3) {
+          const count = 1 + Math.floor(rand(i + 9) * Math.min(4, 1 + Math.floor(diff / 2)));
+          for (let s = 0; s < count; s++) {
+            obstacles.push({ x: x + s * 28, y: floorY - 28, w: 24, h: 28, type: "spike" });
+          }
+          if (rand(i + 11) > 0.83) orbs.push({ x: x + count * 14, y: floorY - 54, r: 6 });
+        } else {
+          const h = 40 + Math.floor(rand(i + 13) * (36 + diff * 4));
+          obstacles.push({ x, y: floorY - h, w: 52, h, type: "tower" });
+        }
+
+        if (i > 0 && i % 12 === 0) {
+          const kind = modeOrder[(Math.floor(i / 12) + index) % modeOrder.length];
+          portals.push({ x: x + 60, y: floorY - 74, w: 20, h: 64, kind, used: false });
+        }
+        i++;
+      }
+
+      return { name: levelNames[index], index, diff, worldW, floorY, obstacles, orbs, portals, bpm: 124 + diff * 5 };
+    }
+
+    function setStatus(text, color = "#1f2547") {
+      statusPill.textContent = text;
+      statusPill.style.background = color;
+    }
+
+    function setMode(mode) {
+      game.player.mode = mode;
+      modePill.textContent = "Mode: " + modeNames[mode];
+      modePill.style.background = mode === "cube" ? "#33564a" : mode === "ship" ? "#294f65" : "#5a2d53";
+    }
+
+    function reset(levelIdx = Number(levelSelect.value) || 0) {
+      const level = makeLevel(levelIdx);
+      game = {
+        level,
+        running: false,
+        won: false,
+        practice: false,
+        speed: 260 + level.diff * 18,
+        gravity: 1900,
+        jumpV: -630,
+        camX: 0,
+        score: 0,
+        pulse: 0,
+        tutorial: true,
+        checkpointX: 130,
+        checkpointY: level.floorY - 34,
+        player: { x: 130, y: level.floorY - 34, w: 34, h: 34, vy: 0, onGround: true, rot: 0, mode: "ship" },
+        sparks: []
+      };
+      nextBeatAt = 0;
+      progressPill.textContent = "0%";
+      setStatus("Ready", "#33437c");
+      setMode("ship");
+      playBtn.textContent = "Play";
+      practiceBtn.textContent = "Practice: Off";
+      practiceBtn.style.background = "#4b5a95";
+    }
+
+    function start() {
+      if (!game) reset();
+      game.running = true;
+      game.won = false;
+      setStatus("Running", "#206f56");
+      playBtn.textContent = "Pause";
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function pause() {
+      game.running = false;
+      setStatus("Paused", "#78612f");
+      playBtn.textContent = "Play";
+    }
+
+    function onPress() {
+      inputHeld = true;
+      if (!game || game.won) return;
+      if (game.tutorial) game.tutorial = false;
+      if (!game.running) start();
+      const p = game.player;
+      if (p.mode === "cube" && p.onGround) {
+        p.vy = game.jumpV;
+        p.onGround = false;
+      } else if (p.mode === "ball") {
+        p.vy = p.vy > 0 ? game.jumpV * 0.9 : Math.abs(game.jumpV) * 0.9;
+      }
+    }
+
+    function onRelease() {
+      inputHeld = false;
+    }
+
+    function hitObstacle(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function explode(count) {
+      for (let i = 0; i < count; i++) {
+        game.sparks.push({
+          x: game.player.x + game.player.w / 2,
+          y: game.player.y + game.player.h / 2,
+          vx: (Math.random() - 0.5) * 420,
+          vy: (Math.random() - 0.8) * 320,
+          life: 0.7 + Math.random() * 0.9
+        });
+      }
+    }
+
+    function fail() {
+      if (game.practice) {
+        game.player.x = game.checkpointX;
+        game.player.y = game.checkpointY;
+        game.player.vy = 0;
+        game.camX = Math.max(0, game.player.x - 220);
+        setStatus("Practice Respawn!", "#8c5a28");
+        explode(10);
+        return;
+      }
+      game.running = false;
+      setStatus("Crashed! Tap reset.", "#9d2d46");
+      playBtn.textContent = "Play";
+      explode(24);
+    }
+
+    function win() {
+      game.running = false;
+      game.won = true;
+      setStatus("Level Complete!", "#2f8741");
+      playBtn.textContent = "Play";
+      progressPill.textContent = "100%";
+      explode(34);
+    }
+
+    function update(dt) {
+      if (!game) return;
+      const { level, player } = game;
+
+      if (game.running) {
+        const beatEvery = 60 / level.bpm;
+        if (nextBeatAt <= 0) nextBeatAt = beatEvery;
+        nextBeatAt -= dt;
+        if (nextBeatAt <= 0) {
+          nextBeatAt += beatEvery;
+          game.pulse = 1;
+          playBeat(player.mode, level.diff);
+        }
+        game.pulse = Math.max(0, game.pulse - dt * 3.3);
+
+        if (player.mode === "ship") {
+          const thrust = inputHeld ? -2600 : 1300;
+          player.vy += thrust * dt;
+          player.rot = Math.max(-0.7, Math.min(0.7, player.vy / 900));
+        } else {
+          player.vy += game.gravity * dt;
+          if (!player.onGround) player.rot += dt * 9;
+          else if (player.mode === "cube") player.rot = 0;
+        }
+
+        player.y += player.vy * dt;
+
+        if (player.y + player.h >= level.floorY) {
+          player.y = level.floorY - player.h;
+          player.vy = 0;
+          player.onGround = true;
+        } else {
+          player.onGround = false;
+        }
+        if (player.y < 5) {
+          player.y = 5;
+          player.vy = 120;
+        }
+
+        player.x += game.speed * dt;
+        game.camX = Math.max(0, player.x - 220);
+        if (game.practice && player.x > game.checkpointX + 720) {
+          game.checkpointX = player.x;
+          game.checkpointY = player.y;
+          setStatus("Checkpoint!", "#41642e");
+        }
+
+        const progress = Math.min(1, player.x / (level.worldW - 160));
+        progressPill.textContent = Math.floor(progress * 100) + "%";
+
+        const playerBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+        for (const o of level.obstacles) {
+          if (hitObstacle(playerBox, o)) {
+            fail();
+            break;
+          }
+        }
+
+        for (const orb of level.orbs) {
+          const dx = player.x + player.w / 2 - orb.x;
+          const dy = player.y + player.h / 2 - orb.y;
+          if (Math.hypot(dx, dy) < orb.r + 11 && !orb.hit) {
+            orb.hit = true;
+            game.score += 1;
+          }
+        }
+
+        for (const portal of level.portals) {
+          if (portal.used) continue;
+          const portalBox = { x: portal.x, y: portal.y, w: portal.w, h: portal.h };
+          if (hitObstacle(playerBox, portalBox)) {
+            setMode(portal.kind);
+            portal.used = true;
+            explode(10);
+          }
+        }
+
+        if (player.y > canvas.height + 40) fail();
+        if (player.x >= level.worldW - 130) win();
+      }
+
+      for (const s of game.sparks) {
+        s.vy += 980 * dt;
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.life -= dt;
+      }
+      game.sparks = game.sparks.filter((s) => s.life > 0);
+    }
+
+    function drawBackground(camX) {
+      const pulse = game ? game.pulse : 0;
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, pulse > 0 ? "#0f2a18" : "#090909");
+      g.addColorStop(1, pulse > 0 ? "#07170d" : "#020202");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const stars = 30;
+      for (let i = 0; i < stars; i++) {
+        const px = ((i * 251 + Math.floor(camX * 0.2)) % (canvas.width + 240)) - 120;
+        const py = 25 + ((i * 83) % 170);
+        ctx.fillStyle = i % 3 ? "#30ff7a33" : "#e6ffe955";
+        ctx.fillRect(px, py, 2, 2);
+      }
+    }
+
+    function drawPlayer(player) {
+      ctx.save();
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+      ctx.rotate(player.rot);
+      ctx.fillStyle = modeColors[player.mode];
+      if (player.mode === "ship") {
+        ctx.beginPath();
+        ctx.moveTo(-16, 12);
+        ctx.lineTo(18, 0);
+        ctx.lineTo(-16, -12);
+        ctx.closePath();
+        ctx.fill();
+      } else if (player.mode === "ball") {
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+      }
+      ctx.strokeStyle = "#e8f6ff";
+      ctx.lineWidth = 3;
+      if (player.mode === "ball") {
+        ctx.beginPath();
+        ctx.arc(0, 0, 13, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(-player.w / 2 + 2, -player.h / 2 + 2, player.w - 4, player.h - 4);
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      if (!game) return;
+      const { level, player, camX } = game;
+      drawBackground(camX);
+
+      ctx.fillStyle = "#0e0e0e";
+      ctx.fillRect(0, level.floorY, canvas.width, canvas.height - level.floorY);
+      ctx.fillStyle = "#00ff6a";
+      ctx.fillRect(0, level.floorY, canvas.width, 2);
+
+      ctx.save();
+      ctx.translate(-camX, 0);
+
+      for (const o of level.obstacles) {
+        if (o.x + o.w < camX - 80 || o.x > camX + canvas.width + 80) continue;
+        if (o.type === "spike") {
+          ctx.fillStyle = "#00ff6a";
+          ctx.beginPath();
+          ctx.moveTo(o.x, o.y + o.h);
+          ctx.lineTo(o.x + o.w / 2, o.y);
+          ctx.lineTo(o.x + o.w, o.y + o.h);
+          ctx.closePath();
+          ctx.fill();
+        } else if (o.type === "tower") {
+          ctx.fillStyle = "#1c1c1c";
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = "#00ff6a99";
+          ctx.fillRect(o.x + 4, o.y + 4, o.w - 8, 7);
+        } else {
+          ctx.fillStyle = "#121212";
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+          ctx.fillStyle = "#00ff6a99";
+          ctx.fillRect(o.x + 4, o.y + 4, o.w - 8, 6);
+        }
+      }
+
+      for (const portal of level.portals) {
+        if (portal.x < camX - 80 || portal.x > camX + canvas.width + 80) continue;
+        ctx.fillStyle = portal.kind === "ship" ? "#69d8ff88" : portal.kind === "ball" ? "#f78de688" : "#8cff9f88";
+        ctx.fillRect(portal.x, portal.y, portal.w, portal.h);
+        ctx.strokeStyle = portal.kind === "ship" ? "#70d4ff" : portal.kind === "ball" ? "#ff9be0" : "#7dff9f";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(portal.x, portal.y, portal.w, portal.h);
+      }
+
+      for (const orb of level.orbs) {
+        if (orb.x < camX - 50 || orb.x > camX + canvas.width + 50) continue;
+        ctx.beginPath();
+        ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
+        ctx.fillStyle = orb.hit ? "#6d6d89" : "#ffe187";
+        ctx.fill();
+      }
+
+      drawPlayer(player);
+
+      for (const s of game.sparks) {
+        ctx.fillStyle = s.vx > 0 ? "#ffd56a" : "#ff7c8f";
+        ctx.fillRect(s.x - 2, s.y - 2, 4, 4);
+      }
+
+      ctx.restore();
+
+      ctx.fillStyle = "#d5ffd8";
+      ctx.font = "bold 18px Trebuchet MS";
+      ctx.fillText(level.name, 18, 30);
+      ctx.fillStyle = "#8dffb0";
+      ctx.fillText("Difficulty " + level.diff, 18, 54);
+      ctx.fillStyle = "#ffee88";
+      ctx.fillText("Orbs " + game.score, 18, 78);
+      if (game.practice) {
+        ctx.fillStyle = "#b4ff8e";
+        ctx.fillText("Practice Mode", 18, 102);
+      }
+
+      if (game.tutorial) {
+        const centerY = Math.floor(canvas.height * 0.55);
+        ctx.fillStyle = "#000000d8";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#00ff6a";
+        ctx.fillRect(0, 82, canvas.width, 2);
+        ctx.fillRect(0, centerY, canvas.width, 2);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 36px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText("TUTORIAL", canvas.width / 2, 48);
+
+        ctx.font = "bold 28px Trebuchet MS";
+        ctx.fillStyle = "#00ff6a";
+        ctx.fillText("Tap or hold to fly up/slide on the ceiling", canvas.width / 2, 132);
+
+        ctx.font = "bold 42px Trebuchet MS";
+        ctx.fillStyle = "#ffdf4d";
+        ctx.fillText("TAP anywhere to CONTINUE", canvas.width / 2, centerY + 72);
+        ctx.textAlign = "start";
+      }
+    }
+
+    let last = performance.now();
+    function loop(t) {
+      const dt = Math.min(0.033, (t - last) / 1000);
+      last = t;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function setupLevelMenu() {
+      levelSelect.innerHTML = "";
+      levelNames.forEach((name, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = (i + 1) + ". " + name;
+        levelSelect.appendChild(opt);
+      });
+      levelSelect.value = "0";
+    }
+
+    playBtn.addEventListener("click", () => {
+      if (!game) reset();
+      if (game.running) pause();
+      else start();
+    });
+
+    practiceBtn.addEventListener("click", () => {
+      if (!game) return;
+      game.practice = !game.practice;
+      practiceBtn.textContent = "Practice: " + (game.practice ? "On" : "Off");
+      practiceBtn.style.background = game.practice ? "#2f8741" : "#4b5a95";
+      if (game.practice) setStatus("Practice On", "#41642e");
+      else setStatus("Practice Off", "#33437c");
+    });
+
+    skipTutorialBtn.addEventListener("click", () => {
+      if (!game) return;
+      game.tutorial = false;
+      setStatus("Tutorial skipped", "#41642e");
+    });
+
+    resetBtn.addEventListener("click", () => reset(Number(levelSelect.value)));
+    levelSelect.addEventListener("change", () => reset(Number(levelSelect.value)));
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") {
+        e.preventDefault();
+        onPress();
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyW") onRelease();
+    });
+
+    canvas.addEventListener("pointerdown", onPress);
+    window.addEventListener("pointerup", onRelease);
+
+    setupLevelMenu();
+    reset(0);
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

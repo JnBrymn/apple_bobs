@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SECURE NODE // PAYMENT</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap");
+
+    :root {
+      --bg: #050608;
+      --green: #00ff9d;
+      --cyan: #00e5ff;
+      --magenta: #ff2ea6;
+      --yellow: #ffe600;
+      --white: #e8eef2;
+      --dim: rgba(232, 238, 242, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--white);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      overflow-x: hidden;
+    }
+
+    /* Strong scanlines + grid (no blend mode — works everywhere) */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.55) 0px,
+          rgba(0, 0, 0, 0.55) 1px,
+          transparent 1px,
+          transparent 2px
+        ),
+        linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.06) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px, 28px 28px;
+      z-index: 4;
+      opacity: 0.85;
+    }
+
+    #glitchCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.9;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.22;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.75'/%3E%3C/svg%3E");
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 5;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* RGB-split “broken signal” title */
+    .glitch-head {
+      margin: 0;
+      position: relative;
+      display: inline-block;
+      font-size: clamp(1.35rem, 3.8vw, 1.95rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green);
+      text-shadow: 0 0 18px rgba(0, 255, 157, 0.35);
+      animation: jitter 2.2s steps(2, end) infinite, flicker 4s steps(3) infinite;
+    }
+
+    .glitch-head::before,
+    .glitch-head::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .glitch-head::before {
+      left: 2px;
+      color: var(--magenta);
+      opacity: 0.85;
+      clip-path: inset(0 0 58% 0);
+      animation: glitch1 2.6s infinite linear alternate-reverse;
+    }
+
+    .glitch-head::after {
+      left: -3px;
+      color: var(--cyan);
+      opacity: 0.85;
+      clip-path: inset(38% 0 0 0);
+      animation: glitch2 3.1s infinite linear alternate;
+    }
+
+    @keyframes glitch1 {
+      0% { transform: translate(0, 0); clip-path: inset(0 0 55% 0); }
+      20% { transform: translate(-2px, 1px); }
+      40% { transform: translate(3px, -1px); clip-path: inset(12% 0 40% 0); }
+      60% { transform: translate(-1px, 2px); }
+      80% { transform: translate(2px, 0); clip-path: inset(60% 0 5% 0); }
+      100% { transform: translate(0, 0); clip-path: inset(0 0 55% 0); }
+    }
+
+    @keyframes glitch2 {
+      0% { transform: translate(0, 0); clip-path: inset(40% 0 0 0); }
+      25% { transform: translate(2px, -1px); clip-path: inset(70% 0 0 0); }
+      50% { transform: translate(-3px, 1px); }
+      75% { transform: translate(1px, 2px); clip-path: inset(10% 0 55% 0); }
+      100% { transform: translate(0, 0); clip-path: inset(40% 0 0 0); }
+    }
+
+    @keyframes jitter {
+      0%, 88%, 100% { transform: translate(0, 0); }
+      90% { transform: translate(-2px, 2px) skewX(-0.8deg); }
+      92% { transform: translate(3px, -1px) skewX(0.6deg); }
+      94% { transform: translate(-3px, 0); }
+      96% { transform: translate(1px, 1px); }
+    }
+
+    @keyframes flicker {
+      0%, 96%, 100% { opacity: 1; }
+      97% { opacity: 0.82; }
+      98% { opacity: 1; }
+      99% { opacity: 0.55; }
+    }
+
+    .sub {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--dim);
+      letter-spacing: 0.12em;
+    }
+
+    .cloud {
+      position: relative;
+      margin: 2rem 0 1.5rem;
+      min-height: 140px;
+      font-size: 0.62rem;
+      line-height: 1.4;
+      color: rgba(232, 238, 242, 0.38);
+      user-select: none;
+      filter: blur(0.2px);
+    }
+
+    .cloud span {
+      position: absolute;
+      white-space: nowrap;
+    }
+
+    .panel {
+      border: 1px solid rgba(0, 255, 157, 0.35);
+      background: rgba(0, 12, 14, 0.82);
+      box-shadow:
+        0 0 50px rgba(0, 255, 157, 0.12),
+        inset 0 0 80px rgba(0, 0, 0, 0.55);
+      padding: 1.25rem 1rem;
+      animation: panelGlitch 7s steps(2, end) infinite;
+    }
+
+    @keyframes panelGlitch {
+      0%, 94%, 100% { transform: none; filter: none; }
+      95% { transform: translate(1px, 0) skewX(-0.3deg); filter: hue-rotate(-8deg); }
+      96% { transform: translate(-2px, 1px); filter: hue-rotate(12deg); }
+      97% { transform: translate(0, -1px); }
+    }
+
+    .panel h2 {
+      margin: 0 0 1rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      align-items: baseline;
+      margin-bottom: 0.85rem;
+      font-size: 0.8rem;
+    }
+
+    .label {
+      color: var(--dim);
+      min-width: 7rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .value {
+      color: var(--yellow);
+      word-break: break-all;
+    }
+
+    .btc-amt {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0, 255, 157, 0.35);
+    }
+
+    .addr-box {
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px dashed rgba(0, 229, 255, 0.35);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      color: var(--white);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.65rem 1rem;
+      border: 1px solid var(--green);
+      background: rgba(0, 255, 157, 0.08);
+      color: var(--green);
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    button:hover {
+      background: rgba(0, 255, 157, 0.18);
+      box-shadow: 0 0 20px rgba(0, 255, 157, 0.25);
+    }
+
+    button.secondary {
+      border-color: rgba(255, 46, 166, 0.6);
+      color: var(--magenta);
+      background: rgba(255, 46, 166, 0.06);
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-size: 0.68rem;
+      min-height: 1.4em;
+      color: var(--cyan);
+    }
+
+    .status.err {
+      color: var(--magenta);
+    }
+
+    .trace {
+      margin-top: 2rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(232, 238, 242, 0.12);
+      font-size: 0.55rem;
+      color: rgba(232, 238, 242, 0.25);
+      word-break: break-all;
+      line-height: 1.35;
+    }
+
+    .hex-err {
+      position: absolute;
+      font-size: 0.55rem;
+      color: rgba(255, 46, 166, 0.35);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Bo: glitchy screen that looks like you must pay in Bitcoin (for jokes / vibes). No "fake" label on the page. -->
+  <div class="noise" aria-hidden="true"></div>
+  <canvas id="glitchCanvas" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <h1 class="glitch-head" data-text="PAYMENT GATE // LOCKED">PAYMENT GATE // LOCKED</h1>
+    <div class="sub">NEL_NODE // checksum failed on your reflection</div>
+
+    <div class="cloud" id="wordCloud" aria-hidden="true"></div>
+
+    <div class="panel" role="region" aria-label="Bitcoin payment">
+      <h2>OUTBOUND SETTLEMENT</h2>
+      <div class="row">
+        <span class="label">Amount</span>
+        <span class="value btc-amt" id="amt">0.00487210 BTC</span>
+      </div>
+      <div class="row">
+        <span class="label">Network</span>
+        <span class="value">BITCOIN MAINNET</span>
+      </div>
+      <div class="row">
+        <span class="label">Invoice</span>
+        <span class="value" id="invId">INV-9F2C-77A1-E4B0</span>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom: 0.35rem">Deposit address</div>
+        <div class="addr-box" id="addr">bc1q7k9m2x…loading</div>
+      </div>
+      <div class="actions">
+        <button type="button" id="copyBtn">Copy address</button>
+        <button type="button" class="secondary" id="refreshBtn">Regenerate address</button>
+      </div>
+      <div class="status" id="status">Awaiting broadcast…</div>
+    </div>
+
+    <div class="trace" id="trace"></div>
+  </div>
+
+  <script>
+    (function () {
+      /* Full-screen glitch paint: tear lines + blocks + flicker */
+      const c = document.getElementById("glitchCanvas");
+      const ctx = c.getContext("2d");
+      let w = 0;
+      let h = 0;
+      function resize() {
+        w = c.width = Math.floor(window.innerWidth * window.devicePixelRatio);
+        h = c.height = Math.floor(window.innerHeight * window.devicePixelRatio);
+        ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      const colors = [
+        "rgba(0,255,157,0.12)",
+        "rgba(0,229,255,0.1)",
+        "rgba(255,46,166,0.09)",
+        "rgba(255,230,0,0.06)"
+      ];
+
+      function frame() {
+        ctx.fillStyle = "rgba(5,6,8,0.35)";
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        for (let i = 0; i < 14; i++) {
+          const y = Math.random() * window.innerHeight;
+          const hh = 1 + Math.random() * 4;
+          ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+          ctx.fillRect(0, y, window.innerWidth, hh);
+        }
+
+        if (Math.random() < 0.45) {
+          const bx = Math.random() * (window.innerWidth - 40);
+          const bw = 20 + Math.random() * 120;
+          const bh = 8 + Math.random() * 40;
+          const by = Math.random() * (window.innerHeight - bh);
+          ctx.fillStyle = "rgba(0,255,157,0.15)";
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.fillStyle = "rgba(255,46,166,0.12)";
+          ctx.fillRect(bx + 3, by - 2, bw * 0.7, bh);
+        }
+
+        if (Math.random() < 0.08) {
+          ctx.fillStyle = "rgba(232,238,242,0.04)";
+          ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        }
+
+        requestAnimationFrame(frame);
+      }
+      frame();
+
+      const words = [
+        "NO SIGNAL", "VOID", "SEGMENT FAULT", "OVERWRITE", "ABORT", "DELETE",
+        "THREAD CUT", "KERNEL DREAM", "DAEMON", "STACK", "NULL", "BREACH",
+        "BEHIND YOU", "TOO LATE", "DO NOT LOOK", "FAILED", "RETURN TO SENDER",
+        "LOCKED", "SHIPPED", "REFUND", "ROOTKIT", "CHECKSUM", "MEM LEAK"
+      ];
+
+      const cloud = document.getElementById("wordCloud");
+      const W = () => cloud.offsetWidth || 400;
+      const H = () => cloud.offsetHeight || 120;
+
+      function fillCloud() {
+        cloud.innerHTML = "";
+        const n = 38;
+        for (let i = 0; i < n; i++) {
+          const s = document.createElement("span");
+          s.textContent = words[Math.floor(Math.random() * words.length)];
+          const x = Math.random() * (W() - 80);
+          const y = Math.random() * (H() - 12);
+          const rot = (Math.random() - 0.5) * 14;
+          const hue = Math.random();
+          const col =
+            hue < 0.33
+              ? "rgba(0,255,157,0.42)"
+              : hue < 0.66
+                ? "rgba(0,229,255,0.38)"
+                : "rgba(255,46,166,0.4)";
+          s.style.left = x + "px";
+          s.style.top = y + "px";
+          s.style.transform = "rotate(" + rot + "deg)";
+          s.style.color = col;
+          s.style.fontSize = 0.55 + Math.random() * 0.35 + "rem";
+          cloud.appendChild(s);
+        }
+      }
+
+      fillCloud();
+      window.addEventListener("resize", fillCloud);
+
+      const b58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+      function randomBtcAddress() {
+        let s = "bc1q";
+        for (let i = 0; i < 38; i++) s += b58[Math.floor(Math.random() * b58.length)];
+        return s;
+      }
+
+      const addrEl = document.getElementById("addr");
+      function showAddr() {
+        addrEl.textContent = randomBtcAddress();
+      }
+      showAddr();
+
+      document.getElementById("copyBtn").addEventListener("click", async function () {
+        const t = addrEl.textContent;
+        const st = document.getElementById("status");
+        try {
+          await navigator.clipboard.writeText(t);
+          st.classList.remove("err");
+          st.textContent = "Copied to clipboard.";
+        } catch {
+          st.classList.add("err");
+          st.textContent = "Clipboard blocked — select and copy manually.";
+        }
+      });
+
+      document.getElementById("refreshBtn").addEventListener("click", function () {
+        showAddr();
+        const st = document.getElementById("status");
+        st.classList.remove("err");
+        st.textContent = "New deposit route generated.";
+      });
+
+      const trace = document.getElementById("trace");
+      function hex(n) {
+        let o = "";
+        for (let i = 0; i < n; i++) o += "0123456789abcdef"[Math.floor(Math.random() * 16)];
+        return o;
+      }
+      function tickTrace() {
+        trace.textContent =
+          "NEL_TRACE // " + hex(96) + " … " + "0x" + hex(4).toUpperCase() + " ERR";
+      }
+      tickTrace();
+      setInterval(tickTrace, 4200);
+
+      const errs = ["0x63d7 ERR", "0x58e1 ERR", "0x299e ERR"];
+      setInterval(function () {
+        const e = document.createElement("div");
+        e.className = "hex-err";
+        e.textContent = errs[Math.floor(Math.random() * errs.length)];
+        e.style.left = Math.random() * (window.innerWidth - 80) + "px";
+        e.style.top = Math.random() * (window.innerHeight - 40) + "px";
+        document.body.appendChild(e);
+        setTimeout(function () {
+          e.remove();
+        }, 2800);
+      }, 1100);
+    })();
+  </script>
+</body>
+</html>

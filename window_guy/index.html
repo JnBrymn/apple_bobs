@@ -1,0 +1,250 @@
+<!--
+  Bo's request:
+  A window with a guy that says,
+  "if you quit or close this window i will die. thats just how it works"
+  Folder: window_guy
+  - One single HTML file.
+  - Window-shaped card with title bar.
+  - Simple drawn guy (SVG/CSS, no images).
+  - When you try to close/refresh the tab, the browser shows a generic
+    "leave site?" prompt (browsers don't let pages write custom text).
+  - Click the X on the fake window for the in-page joke.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>window guy</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      font-family: system-ui, "Segoe UI", sans-serif;
+      background: linear-gradient(145deg, #1a1f2e 0%, #2d1f3d 50%, #1a2f2a 100%);
+      color: #e8e6f0;
+    }
+
+    /* fake window */
+    .window {
+      width: min(420px, 100%);
+      background: #2b2d38;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #3d4150, #32353f);
+      border-bottom: 1px solid rgba(0,0,0,.35);
+      font-size: 13px;
+      font-weight: 600;
+      color: #c8c4d8;
+      user-select: none;
+    }
+    .dots { display: flex; gap: 6px; margin-right: 4px; }
+    .dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      box-shadow: inset 0 -1px 2px rgba(0,0,0,.25);
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+    .dot.close { background: #ff5f57; }
+    .dot.min   { background: #febc2e; }
+    .dot.max   { background: #28c840; }
+    .title-text { flex: 1; text-align: center; }
+
+    .body {
+      padding: 1.5rem 1.25rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* speech bubble */
+    .bubble {
+      position: relative;
+      background: #f4f1ff;
+      color: #1a1a22;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.4;
+      max-width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    }
+    .bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 10px solid transparent;
+      border-top-color: #f4f1ff;
+      border-bottom: 0;
+    }
+
+    /* the guy (pure CSS) */
+    .guy {
+      width: 140px;
+      height: 170px;
+      position: relative;
+      margin-top: 0.5rem;
+    }
+    .head {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(160deg, #f4c09a, #d89a72);
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 6px 14px rgba(0,0,0,.3);
+    }
+    .eye {
+      position: absolute;
+      top: 32px;
+      width: 12px; height: 16px;
+      background: #1a1a22;
+      border-radius: 50%;
+      animation: blink 4s infinite;
+    }
+    .eye.left  { left: 22px; }
+    .eye.right { right: 22px; }
+    .mouth {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 26px; height: 12px;
+      border: 3px solid #5a3a2a;
+      border-top: none;
+      border-radius: 0 0 36px 36px;
+    }
+    .body-shape {
+      width: 110px;
+      height: 70px;
+      background: linear-gradient(180deg, #4a7cba, #355a94);
+      border-radius: 12px 12px 6px 6px;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    @keyframes blink {
+      0%, 92%, 100% { transform: scaleY(1); }
+      96% { transform: scaleY(0.1); }
+    }
+
+    .worried .head { animation: tremble 0.4s infinite; }
+    @keyframes tremble {
+      0%, 100% { transform: translateX(-50%); }
+      50% { transform: translateX(-50%) translateY(-2px) rotate(-2deg); }
+    }
+
+    /* dead state when X is clicked */
+    .gone .head { filter: grayscale(1) brightness(0.7); transform: translateX(-50%) rotate(-10deg); }
+    .gone .eye {
+      animation: none;
+      height: 3px;
+      top: 38px;
+      border-radius: 2px;
+    }
+    .gone .mouth {
+      width: 22px;
+      height: 8px;
+      border: none;
+      border-top: 3px solid #5a3a2a;
+      border-radius: 36px 36px 0 0;
+      bottom: 18px;
+    }
+    .gone .body-shape { filter: grayscale(0.6) brightness(0.7); }
+
+    .hint {
+      font-size: 11px;
+      color: #6a7088;
+      text-align: center;
+      padding: 0 1rem 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="window" id="window">
+    <div class="titlebar">
+      <div class="dots">
+        <button class="dot close" id="closeBtn" aria-label="Close" title="Close"></button>
+        <button class="dot min"   aria-label="Minimize" title="Minimize"></button>
+        <button class="dot max"   aria-label="Maximize" title="Maximize"></button>
+      </div>
+      <span class="title-text" id="titleText">guy.exe</span>
+    </div>
+
+    <div class="body">
+      <p class="bubble" id="bubble">
+        if you quit or close this window i will die. thats just how it works
+      </p>
+
+      <div class="guy" id="guy" aria-hidden="true">
+        <div class="head">
+          <div class="eye left"></div>
+          <div class="eye right"></div>
+          <div class="mouth"></div>
+        </div>
+        <div class="body-shape"></div>
+      </div>
+    </div>
+
+    <p class="hint">Try closing or refreshing this tab. Watch what the browser says.</p>
+  </div>
+
+  <script>
+    const guy = document.getElementById("guy");
+    const bubble = document.getElementById("bubble");
+    const closeBtn = document.getElementById("closeBtn");
+    const titleText = document.getElementById("titleText");
+
+    let dead = false;
+
+    // browser-level "are you sure you want to leave?" gag
+    window.addEventListener("beforeunload", (e) => {
+      if (dead) return;
+      e.preventDefault();
+      e.returnValue = "";
+    });
+
+    // small "worried" tremble when the tab is hidden
+    document.addEventListener("visibilitychange", () => {
+      if (dead) return;
+      if (document.hidden) guy.classList.add("worried");
+      else guy.classList.remove("worried");
+    });
+
+    // clicking the fake X on the title bar = in-page joke (he "dies")
+    closeBtn.addEventListener("click", () => {
+      if (dead) {
+        bubble.textContent = "told you. i'm dead now.";
+        return;
+      }
+      dead = true;
+      guy.classList.add("gone");
+      guy.classList.remove("worried");
+      bubble.textContent = "you clicked the X. i died. thats just how it works.";
+      titleText.textContent = "guy.exe (gone)";
+      document.title = "window guy (gone)";
+    });
+  </script>
+</body>
+</html>

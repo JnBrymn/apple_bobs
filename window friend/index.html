@@ -1,0 +1,634 @@
+<!--
+  Bo's idea: A little guy lives in a real popup browser window.
+  He says: "if you quit or close this window i will die. that's just how it works."
+  - Closing the popup any way (X button or Quit button) = he dies.
+  - Reload inside the popup is safe (he stays alive).
+  - Closing the launcher tab / quitting the browser = fresh life next visit.
+  Both alive and dead views have Quit, Feed, and Quest buttons.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Window friend</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      font-family: system-ui, "Segoe UI", sans-serif;
+      background: linear-gradient(145deg, #1a1f2e 0%, #2d1f3d 50%, #1a2f2a 100%);
+      color: #e8e6f0;
+    }
+
+    /* ===== Launcher ===== */
+    .launcher {
+      max-width: 440px;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    }
+    .launcher h1 {
+      font-size: 22px;
+      margin: 0 0 0.4rem;
+      letter-spacing: 0.02em;
+    }
+    .launcher .status {
+      font-size: 14px;
+      margin: 0 0 1.25rem;
+      color: #b6b2cc;
+    }
+    .launcher .status.dead { color: #ff9aa0; }
+    .launcher .status.alive { color: #9bd9b3; }
+    .open-btn {
+      font: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 22px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(180deg, #6b7fd7, #4a5bb5);
+      box-shadow: 0 8px 18px rgba(74,91,181,.35);
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+    .open-btn:active { transform: scale(0.97); }
+    .open-btn.urgent {
+      font-size: 22px;
+      padding: 22px 28px;
+      background: linear-gradient(180deg, #c94b5a, #8b1f2e);
+      box-shadow: 0 0 0 0 rgba(201,75,90,.7);
+      animation: pulse 1.1s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(201,75,90,.7); }
+      70%  { box-shadow: 0 0 0 22px rgba(201,75,90,0); }
+      100% { box-shadow: 0 0 0 0 rgba(201,75,90,0); }
+    }
+    .launcher .small {
+      font-size: 12px;
+      color: #8a8aa6;
+      margin-top: 1rem;
+      line-height: 1.5;
+    }
+
+    /* ===== Popup ===== */
+    /* No fake titlebar -- the real OS window already has one. */
+    .popup-body {
+      background: #252830;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.08);
+    }
+    body.in-popup { padding: 0; align-items: stretch; }
+    body.in-popup .popup-body { max-width: none; min-height: 100vh; box-shadow: none; }
+
+    .window-body { padding: 1.25rem 1.25rem 1rem; }
+    .guy-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      min-height: 200px;
+      justify-content: center;
+    }
+    .guy {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(160deg, #f4c09a, #d89a72);
+      position: relative;
+      box-shadow: 0 8px 0 #8b6045, 0 12px 24px rgba(0,0,0,.35);
+      transition: filter 0.4s ease, transform 0.3s ease;
+      cursor: pointer;
+    }
+    .guy.dead {
+      filter: grayscale(1) brightness(0.75);
+      transform: rotate(-8deg);
+      box-shadow: 0 4px 0 #555, 0 8px 16px rgba(0,0,0,.4);
+    }
+    .guy::after {
+      content: "";
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 36px;
+      background: linear-gradient(180deg, #4a7cba, #355a94);
+      border-radius: 8px 8px 4px 4px;
+    }
+    .face { position: absolute; inset: 0; border-radius: 50%; }
+    .eye {
+      position: absolute;
+      top: 42px;
+      width: 14px;
+      height: 18px;
+      background: #1a1a22;
+      border-radius: 50%;
+      animation: blink 4s infinite;
+    }
+    .eye.left { left: 28px; }
+    .eye.right { right: 28px; }
+    .guy.dead .eye {
+      animation: none;
+      height: 3px;
+      top: 48px;
+      border-radius: 2px;
+    }
+    .mouth {
+      position: absolute;
+      bottom: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 14px;
+      border: 3px solid #5a3a2a;
+      border-top: none;
+      border-radius: 0 0 40px 40px;
+    }
+    .guy.dead .mouth {
+      width: 22px;
+      height: 10px;
+      border-radius: 40px 40px 0 0;
+      border-bottom: none;
+      border-top: 3px solid #5a3a2a;
+      bottom: 40px;
+    }
+    @keyframes blink {
+      0%, 92%, 100% { transform: scaleY(1); }
+      96% { transform: scaleY(0.1); }
+    }
+    .speech {
+      text-align: center;
+      font-size: 15px;
+      line-height: 1.45;
+      padding: 0.75rem 0.5rem;
+      color: #dcd8ec;
+    }
+    .speech em { font-style: normal; color: #ffb4a8; }
+    .log {
+      margin-top: 0.5rem;
+      min-height: 2.5em;
+      font-size: 13px;
+      color: #9aa0b8;
+      text-align: center;
+      font-style: italic;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding: 0.75rem 1rem 1rem;
+      background: #1e2129;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    button.action {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      transition: transform 0.08s, filter 0.15s;
+    }
+    button.action:active { transform: scale(0.97); }
+    .btn-quit  { background: linear-gradient(180deg, #c94b5a, #a32d3c); }
+    .btn-feed  { background: linear-gradient(180deg, #4caf7a, #2e8b57); }
+    .btn-quest { background: linear-gradient(180deg, #6b7fd7, #4a5bb5); }
+    .btn-pet   { background: linear-gradient(180deg, #e98ad3, #b455a0); }
+    .btn-joke  { background: linear-gradient(180deg, #ecc94b, #b88a1a); color: #2a1f00; }
+    .btn-sing  { background: linear-gradient(180deg, #57c5d6, #2f8aa0); }
+    .btn-dance { background: linear-gradient(180deg, #f08a4b, #c8602a); }
+    .btn-poke  { background: linear-gradient(180deg, #888, #555); }
+    .btn-name  { background: linear-gradient(180deg, #b794f4, #7b53c8); }
+
+    /* fun guy animations */
+    .guy.dancing { animation: dance 0.6s ease-in-out 4; }
+    .guy.poked   { animation: shake 0.4s ease-in-out 1; }
+    .guy.petted  { animation: bounce 0.5s ease 1; }
+    .guy.singing .mouth {
+      animation: sing 0.4s ease-in-out 6;
+    }
+    .guy.sleeping .eye {
+      animation: none;
+      height: 3px;
+      top: 48px;
+      border-radius: 2px;
+    }
+    .guy.sleeping {
+      transform: rotate(-4deg);
+    }
+    @keyframes dance {
+      0%, 100% { transform: rotate(-6deg) translateY(0); }
+      25%      { transform: rotate(6deg) translateY(-8px); }
+      50%      { transform: rotate(-6deg) translateY(0); }
+      75%      { transform: rotate(6deg) translateY(-8px); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%      { transform: translateX(-10px) rotate(-3deg); }
+      50%      { transform: translateX(10px) rotate(3deg); }
+      75%      { transform: translateX(-6px); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      40%      { transform: translateY(-14px) scale(1.05); }
+    }
+    @keyframes sing {
+      0%, 100% { transform: translateX(-50%) scaleY(1); }
+      50%      { transform: translateX(-50%) scaleY(1.6); }
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #6a7088;
+      text-align: center;
+      padding: 0 1rem 0.75rem;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Launcher view (main tab) ===== -->
+  <div id="launcher" class="launcher hidden">
+    <h1>Window friend</h1>
+    <p class="status" id="launcherStatus">Opening his window...</p>
+    <button id="openBtn" class="open-btn">Open friend</button>
+    <p class="small" id="launcherHint">
+      A little guy lives in his own window.<br>
+      Keep this tab open. Closing this tab will reset everything next time.
+    </p>
+  </div>
+
+  <!-- ===== Popup view (the friend's window) ===== -->
+  <div id="popup" class="popup-body hidden" role="application" aria-label="Little window friend">
+    <div class="window-body">
+      <div class="guy-wrap">
+        <div class="guy" id="guy" aria-hidden="true">
+          <div class="face">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="mouth"></div>
+          </div>
+        </div>
+        <p class="speech" id="speech"></p>
+      </div>
+      <p class="log" id="log"></p>
+    </div>
+    <div class="buttons">
+      <button type="button" class="action btn-quit"  id="btnQuit">Quit</button>
+      <button type="button" class="action btn-feed"  id="btnFeed">Feed</button>
+      <button type="button" class="action btn-quest" id="btnQuest">Quest</button>
+      <button type="button" class="action btn-pet"   id="btnPet">Pet</button>
+      <button type="button" class="action btn-joke"  id="btnJoke">Joke</button>
+      <button type="button" class="action btn-sing"  id="btnSing">Sing</button>
+      <button type="button" class="action btn-dance" id="btnDance">Dance</button>
+      <button type="button" class="action btn-poke"  id="btnPoke">Poke</button>
+      <button type="button" class="action btn-name"  id="btnName">Name</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </div>
+
+  <script>
+  (function () {
+    const isPopup =
+      new URLSearchParams(location.search).get("popup") === "1" ||
+      !!window.opener;
+
+    if (isPopup) runPopup();
+    else runLauncher();
+
+    /* =============== LAUNCHER =============== */
+    function runLauncher() {
+      const launcher = document.getElementById("launcher");
+      const statusEl = document.getElementById("launcherStatus");
+      const openBtn = document.getElementById("openBtn");
+      launcher.classList.remove("hidden");
+
+      // Dead state lives ONLY here in memory. Closing this tab = fresh life.
+      let dead = false;
+      let popupRef = null;
+      let pollTimer = null;
+
+      // The popup talks to us through these:
+      window.isDead = () => dead;
+      window.markDead = () => {
+        if (!dead) {
+          dead = true;
+          updateStatus();
+        }
+      };
+      window.markAlive = () => {
+        dead = false;
+        updateStatus();
+      };
+      window.openFriend = () => openFriend();
+
+      function updateStatus() {
+        statusEl.classList.remove("alive", "dead");
+        openBtn.classList.remove("urgent");
+        if (!popupRef || popupRef.closed) {
+          if (dead) {
+            statusEl.textContent = "He died. Click to see him.";
+            statusEl.classList.add("dead");
+            openBtn.textContent = "Open his ghost window";
+            openBtn.classList.add("urgent");
+          } else {
+            statusEl.textContent = "His window is closed.";
+            openBtn.textContent = "Open friend";
+          }
+        } else {
+          if (dead) {
+            statusEl.textContent = "He is dead in his window.";
+            statusEl.classList.add("dead");
+          } else {
+            statusEl.textContent = "He is alive in his window.";
+            statusEl.classList.add("alive");
+          }
+          openBtn.textContent = "Bring his window forward";
+        }
+      }
+
+      function openFriend() {
+        if (popupRef && !popupRef.closed) {
+          popupRef.focus();
+          return;
+        }
+        const w = 420, h = 600;
+        const left = Math.max(0, (screen.availWidth - w) / 2);
+        const top = Math.max(0, (screen.availHeight - h) / 2);
+        popupRef = window.open(
+          "index.html?popup=1",
+          "windowFriend",
+          `popup=yes,width=${w},height=${h},left=${left},top=${top}`
+        );
+        if (!popupRef) {
+          statusEl.textContent =
+            "Your browser blocked the popup. Click the button below to open it.";
+          statusEl.classList.add("dead");
+          return;
+        }
+        startPolling();
+        updateStatus();
+      }
+
+      function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(() => {
+          if (!popupRef) return;
+          if (popupRef.closed) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+            const wasAlive = !dead;
+            // Closing the popup ANY way kills him.
+            if (wasAlive) dead = true;
+            updateStatus();
+            // If closing him just killed him, auto-reopen the window with the
+            // dead guy inside. (Bo's rule: closing the window opens the window.)
+            if (wasAlive) {
+              setTimeout(() => openFriend(), 250);
+            }
+          }
+        }, 400);
+      }
+
+      openBtn.addEventListener("click", openFriend);
+
+      // Try to auto-open. Most browsers allow popups from same-origin file/page
+      // on user gesture only, but many will allow it on initial load too.
+      // If blocked, the button is right there.
+      setTimeout(() => {
+        try { openFriend(); } catch (_) { /* fall back to button */ }
+      }, 50);
+
+      updateStatus();
+    }
+
+    /* =============== POPUP =============== */
+    function runPopup() {
+      const popup = document.getElementById("popup");
+      const guyEl = document.getElementById("guy");
+      const speechEl = document.getElementById("speech");
+      const logEl = document.getElementById("log");
+      const hintEl = document.getElementById("hint");
+      const btnQuit = document.getElementById("btnQuit");
+      const btnFeed = document.getElementById("btnFeed");
+      const btnQuest = document.getElementById("btnQuest");
+      const btnPet = document.getElementById("btnPet");
+      const btnJoke = document.getElementById("btnJoke");
+      const btnSing = document.getElementById("btnSing");
+      const btnDance = document.getElementById("btnDance");
+      const btnPoke = document.getElementById("btnPoke");
+      const btnName = document.getElementById("btnName");
+      popup.classList.remove("hidden");
+      document.body.classList.add("in-popup");
+
+      const ALIVE_LINE =
+        "If you quit or close this window I will die. <em>That's just how it works.</em>";
+      const DEAD_LINE =
+        "You did it. I'm dead now. <em>That's just how it worked.</em>";
+
+      const QUESTS_ALIVE = [
+        "Bring me 3 imaginary snacks.",
+        "Click Feed before I get cranky.",
+        "Don't press Quit. That's the whole quest.",
+        "Stare at the screen for 10 seconds. Done? Legend.",
+        "Find the green button and be brave.",
+      ];
+      const QUESTS_DEAD = [
+        "Too late for quests.",
+        "The quest was: stay open. Failed.",
+        "Ghost quest: remember I existed.",
+      ];
+
+      const JOKES_ALIVE = [
+        "Why did the pixel cross the screen? To get to the other div.",
+        "I told my computer I needed a break. It froze.",
+        "Why don't programmers like nature? Too many bugs.",
+        "I would tell you a UDP joke, but you might not get it.",
+        "What's a window's favorite snack? Microchips.",
+      ];
+      const JOKES_DEAD = [
+        "I don't get it. I'm dead.",
+        "Knock knock. ... Nobody home.",
+        "My funeral was a real CSS: cold, sad, and silent.",
+      ];
+
+      const SONGS_ALIVE = [
+        "La la la la la~ I'm in a window~",
+        "Doo doo doo, please don't quit~",
+        "Bee bop boop, click feed click feed~",
+        "OOoo OoOoo, I'm just a guy~",
+      ];
+      const SONGS_DEAD = [
+        "Ghost noises... wooooooo...",
+        "Silent funeral hum...",
+      ];
+
+      const PET_LINES = [
+        "He purrs like a tiny cat.",
+        "He giggles. Pet again?",
+        "He is happy. 10/10 pet.",
+        "His head is warm. Soft pixel.",
+      ];
+      const POKE_LINES = [
+        "Hey! Stop that!",
+        "Ouch. Rude.",
+        "Poke me one more time, I dare you.",
+        "He looks offended.",
+      ];
+      const NAMES = [
+        "Greg", "Sir Pixelton", "Bob Jr.", "Mr. Window",
+        "Doot", "Larry", "Cheese", "Captain Smol", "Beans", "Phil",
+      ];
+
+      let currentName = "Greg";
+      let petCount = 0;
+      let pokeCount = 0;
+
+      function isDead() {
+        try { return !!(window.opener && window.opener.isDead && window.opener.isDead()); }
+        catch (_) { return false; }
+      }
+      function markDead() {
+        try { window.opener && window.opener.markDead && window.opener.markDead(); }
+        catch (_) {}
+      }
+      function markAlive() {
+        try { window.opener && window.opener.markAlive && window.opener.markAlive(); }
+        catch (_) {}
+      }
+
+      function render() {
+        const dead = isDead();
+        guyEl.classList.toggle("dead", dead);
+        speechEl.innerHTML = dead ? DEAD_LINE : ALIVE_LINE;
+        document.title = dead ? `${currentName} (gone)` : currentName;
+        logEl.textContent = "";
+        hintEl.textContent = dead
+          ? "You can still press the buttons. Nothing brings him back."
+          : "Closing this window or pressing Quit ends him. Reload is safe.";
+      }
+
+      function log(msg) { logEl.textContent = msg; }
+      function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function flash(cls, ms) {
+        guyEl.classList.remove(cls);
+        // force reflow so animation can replay
+        void guyEl.offsetWidth;
+        guyEl.classList.add(cls);
+        setTimeout(() => guyEl.classList.remove(cls), ms);
+      }
+
+      btnFeed.addEventListener("click", () => {
+        if (isDead()) { log("He's not hungry anymore."); return; }
+        log("Yum! He eats your pixels. He looks happier for a second.");
+      });
+
+      btnQuest.addEventListener("click", () => {
+        log(pick(isDead() ? QUESTS_DEAD : QUESTS_ALIVE));
+      });
+
+      btnPet.addEventListener("click", () => {
+        if (isDead()) { log("Petting a ghost is just air."); return; }
+        petCount++;
+        flash("petted", 600);
+        if (petCount >= 10) {
+          log("MAX HAPPINESS. He is your best friend now.");
+        } else {
+          log(pick(PET_LINES) + ` (pets: ${petCount})`);
+        }
+      });
+
+      btnJoke.addEventListener("click", () => {
+        log(pick(isDead() ? JOKES_DEAD : JOKES_ALIVE));
+      });
+
+      btnSing.addEventListener("click", () => {
+        if (isDead()) { log(pick(SONGS_DEAD)); return; }
+        flash("singing", 2400);
+        log(pick(SONGS_ALIVE));
+      });
+
+      btnDance.addEventListener("click", () => {
+        if (isDead()) { log("Dead guys can't dance. Sorry."); return; }
+        flash("dancing", 2400);
+        log("He's grooving. Look at him go!");
+      });
+
+      btnPoke.addEventListener("click", () => {
+        if (isDead()) { log("You poke a corpse. You feel weird."); return; }
+        pokeCount++;
+        flash("poked", 400);
+        if (pokeCount >= 5) {
+          log("He is FURIOUS. Maybe try Pet instead.");
+        } else {
+          log(pick(POKE_LINES));
+        }
+      });
+
+      btnName.addEventListener("click", () => {
+        let next = currentName;
+        while (next === currentName) next = pick(NAMES);
+        currentName = next;
+        render();
+        log(`From now on, call him ${currentName}.`);
+      });
+
+      btnQuit.addEventListener("click", () => {
+        if (isDead()) {
+          log("He's already gone. Quit just closes your hope.");
+          return;
+        }
+        const ok = window.confirm(
+          "Really quit? He said he will die. That's the rule."
+        );
+        if (!ok) { log("Okay. He breathes again. For now."); return; }
+        markDead();
+        // Open the dead window from THIS click (which has a user gesture so
+        // browsers won't block it), then close ourselves.
+        try {
+          if (window.opener && window.opener.openFriend) {
+            window.opener.openFriend();
+          }
+        } catch (_) {}
+        window.close();
+      });
+
+      // Secret reset: 5 fast clicks on the GUY = alive again.
+      let resetPress = 0;
+      let resetPressTimer = null;
+      guyEl.addEventListener("click", () => {
+        resetPress++;
+        clearTimeout(resetPressTimer);
+        resetPressTimer = setTimeout(() => { resetPress = 0; }, 1200);
+        if (resetPress >= 5) {
+          resetPress = 0;
+          markAlive();
+          render();
+          log("Reset! He's alive again. (You clicked the guy 5 times.)");
+        }
+      });
+
+      render();
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chaturanga</title>
+  <!--
+    CHATURANGA (by Bo)
+    - Ancient Indian game that became chess. 8×8 board, two players.
+    - Win by capturing the enemy Raja (King).
+    - Pieces: Raja (K), Mantri (M), Ratha (R), Gaja (E), Ashva (N), Padati (P).
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #1e293b;
+      font-family: system-ui, sans-serif;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      color: #fbbf24;
+    }
+    .sub {
+      font-size: 0.75rem;
+      opacity: 0.8;
+      margin-bottom: 16px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: min(80vmin, 400px);
+      height: min(80vmin, 400px);
+      border: 3px solid #475569;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .sq {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(18px, 4vmin, 28px);
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .sq.light { background: #fef3c7; color: #92400e; }
+    .sq.dark  { background: #78716c; color: #fef3c7; }
+    .sq.selected { background: #fbbf24; color: #1e293b; box-shadow: inset 0 0 0 3px #1e293b; }
+    .sq.highlight { background: rgba(251, 191, 36, 0.6); color: #1e293b; }
+    .sq.last-move { box-shadow: inset 0 0 0 2px #22c55e; }
+    .piece-white { text-shadow: 0 0 2px #fef3c7; }
+    .piece-black { text-shadow: 0 0 2px #1e293b; }
+    .status {
+      margin-top: 16px;
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 1.5em;
+    }
+    .status.win { color: #4ade80; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Chaturanga</h1>
+  <p class="sub">Capture the enemy Raja to win. Click piece, then square to move.</p>
+  <div class="board" id="board"></div>
+  <p class="status" id="status">White to move</p>
+  <button type="button" id="newGame" style="margin-top:12px;padding:8px 16px;cursor:pointer;border-radius:8px;border:none;background:#fbbf24;color:#1e293b;font-weight:bold;">New game</button>
+
+  <script>
+    const BOARD = 8;
+    const P = { EMPTY: 0, W: 1, B: 2 };
+    const T = { RAJA: 'K', MANTRI: 'M', RATHA: 'R', GAJA: 'E', ASHVA: 'N', PADATI: 'P' };
+
+    const labels = {
+      K: 'Raja', M: 'Mantri', R: 'Ratha', E: 'Gaja', N: 'Ashva', P: 'Padati'
+    };
+
+    let board = [];
+    let turn = P.W;
+    let selected = null;
+    let highlights = [];
+    let lastMove = null;
+    let gameOver = false;
+
+    function initBoard() {
+      board = [];
+      for (let r = 0; r < BOARD; r++) {
+        board[r] = [];
+        for (let c = 0; c < BOARD; c++) board[r][c] = null;
+      }
+      const back = (side, row) => {
+        const s = side === P.W ? 'W' : 'B';
+        board[row][0] = { t: T.RATHA,  s }; board[row][1] = { t: T.ASHVA,  s }; board[row][2] = { t: T.GAJA,   s };
+        board[row][3] = { t: T.MANTRI, s }; board[row][4] = { t: T.RAJA,   s }; board[row][5] = { t: T.GAJA,   s };
+        board[row][6] = { t: T.ASHVA,  s }; board[row][7] = { t: T.RATHA,  s };
+      };
+      back(P.B, 0);
+      for (let c = 0; c < BOARD; c++) board[1][c] = { t: T.PADATI, s: 'B' };
+      for (let c = 0; c < BOARD; c++) board[6][c] = { t: T.PADATI, s: 'W' };
+      back(P.W, 7);
+    }
+
+    function side(piece) { return piece && (piece.s === 'W' ? P.W : P.B); }
+    function isEnemy(piece) { return piece && side(piece) !== turn; }
+    function isFriend(piece) { return piece && side(piece) === turn; }
+    function inBounds(r, c) { return r >= 0 && r < BOARD && c >= 0 && c < BOARD; }
+
+    function getMoves(r, c) {
+      const piece = board[r][c];
+      if (!piece || side(piece) !== turn) return [];
+      const moves = [];
+      const add = (nr, nc) => {
+        if (!inBounds(nr, nc)) return;
+        const target = board[nr][nc];
+        if (!target || isEnemy(target)) moves.push([nr, nc]);
+      };
+      const slide = (dr, dc, steps) => {
+        for (let i = 1; i <= (steps || BOARD); i++) {
+          const nr = r + dr * i, nc = c + dc * i;
+          if (!inBounds(nr, nc)) break;
+          if (board[nr][nc]) { if (isEnemy(board[nr][nc])) moves.push([nr, nc]); break; }
+          moves.push([nr, nc]);
+        }
+      };
+
+      switch (piece.t) {
+        case T.RAJA:
+          for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]])
+            add(r + dr, c + dc);
+          break;
+        case T.MANTRI:
+          for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) add(r + dr, c + dc);
+          break;
+        case T.RATHA:
+          slide(-1, 0); slide(1, 0); slide(0, -1); slide(0, 1);
+          break;
+        case T.GAJA:
+          for (const [dr, dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) add(r + dr, c + dc);
+          break;
+        case T.ASHVA:
+          for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])
+            add(r + dr, c + dc);
+          break;
+        case T.PADATI: {
+          const dir = piece.s === 'W' ? -1 : 1;
+          if (inBounds(r + dir, c) && !board[r + dir][c]) {
+            moves.push([r + dir, c]);
+          }
+          for (const dc of [-1, 1]) {
+            const nr = r + dir, nc = c + dc;
+            if (inBounds(nr, nc) && isEnemy(board[nr][nc])) moves.push([nr, nc]);
+          }
+          break;
+        }
+      }
+      return moves;
+    }
+
+    function move(fromR, fromC, toR, toC) {
+      const piece = board[fromR][fromC];
+      const captured = board[toR][toC];
+      board[toR][toC] = piece;
+      board[fromR][fromC] = null;
+      lastMove = { from: [fromR, fromC], to: [toR, toC] };
+      if (captured && captured.t === T.RAJA) gameOver = true;
+      turn = turn === P.W ? P.B : P.W;
+    }
+
+    function render() {
+      const el = document.getElementById('board');
+      const statusEl = document.getElementById('status');
+      el.innerHTML = '';
+      el.classList.remove('last-move');
+      for (let r = 0; r < BOARD; r++) {
+        for (let c = 0; c < BOARD; c++) {
+          const sq = document.createElement('div');
+          sq.className = 'sq ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+          sq.dataset.r = r;
+          sq.dataset.c = c;
+          const piece = board[r][c];
+          if (piece) {
+            const sym = piece.t;
+            sq.textContent = sym;
+            sq.classList.add('piece-' + (piece.s === 'W' ? 'white' : 'black'));
+          }
+          if (selected && selected[0] === r && selected[1] === c) sq.classList.add('selected');
+          if (highlights.some(([hr, hc]) => hr === r && hc === c)) sq.classList.add('highlight');
+          if (lastMove && (lastMove.to[0] === r && lastMove.to[1] === c)) sq.classList.add('last-move');
+          el.appendChild(sq);
+        }
+      }
+      if (gameOver) {
+        const winner = turn === P.W ? 'Black' : 'White';
+        statusEl.textContent = winner + ' wins! Raja captured.';
+        statusEl.classList.add('win');
+      } else {
+        statusEl.textContent = (turn === P.W ? 'White' : 'Black') + ' to move';
+        statusEl.classList.remove('win');
+      }
+    }
+
+    function onClick(r, c) {
+      if (gameOver) return;
+      const rn = parseInt(r, 10), cn = parseInt(c, 10);
+      if (selected) {
+        const ok = highlights.some(([hr, hc]) => hr === rn && hc === cn);
+        if (ok) {
+          move(selected[0], selected[1], rn, cn);
+          selected = null;
+          highlights = [];
+        } else if (isFriend(board[rn][cn])) {
+          selected = [rn, cn];
+          highlights = getMoves(rn, cn);
+        } else {
+          selected = null;
+          highlights = [];
+        }
+      } else {
+        if (isFriend(board[rn][cn])) {
+          selected = [rn, cn];
+          highlights = getMoves(rn, cn);
+        }
+      }
+      render();
+    }
+
+    function newGame() {
+      initBoard();
+      turn = P.W;
+      selected = null;
+      highlights = [];
+      lastMove = null;
+      gameOver = false;
+      render();
+    }
+
+    initBoard();
+    render();
+    document.getElementById('board').addEventListener('click', e => {
+      const sq = e.target.closest('.sq');
+      if (sq) onClick(sq.dataset.r, sq.dataset.c);
+    });
+    document.getElementById('newGame').addEventListener('click', newGame);
+  </script>
+</body>
+</html>

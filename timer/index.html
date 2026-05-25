@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #000;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    h1 {
+      font-weight: 900;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      letter-spacing: 0.2em;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+    }
+    .display {
+      font-size: clamp(4rem, 20vw, 10rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      margin: 1rem 0;
+      min-height: 1.2em;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+    .set-time {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .set-time label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    input[type="number"] {
+      width: 4.5rem;
+      padding: 0.5rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      background: #111;
+      color: #fff;
+      border: 2px solid #333;
+      border-radius: 4px;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #666;
+    }
+    button {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+    }
+    button:hover {
+      background: #ddd;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.reset {
+      background: #333;
+      color: #fff;
+    }
+    button.reset:hover {
+      background: #555;
+    }
+    .done {
+      color: #f00;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    .done .enemy-figure { animation: enemy-win 0.5s ease infinite; }
+    @keyframes pulse {
+      50% { opacity: 0.7; }
+    }
+    @keyframes enemy-win {
+      0%, 100% { filter: brightness(1.5); transform: scale(1.05); }
+      50% { filter: brightness(2); transform: scale(1.1); }
+    }
+
+    .arena {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      width: 100%;
+      max-width: 600px;
+      margin: 1.5rem 0;
+    }
+    .side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .side-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      opacity: 0.8;
+    }
+    .character-figure, .enemy-figure {
+      width: 80px;
+      height: 100px;
+      position: relative;
+    }
+    /* Hero: knight / warrior style */
+    .character-figure {
+      --hero-color: #e0e0e0;
+    }
+    .character-figure .head {
+      width: 28px;
+      height: 28px;
+      background: #ffdbac;
+      border: 3px solid var(--hero-color);
+      border-radius: 50%;
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+    .character-figure .body {
+      width: 36px;
+      height: 40px;
+      background: var(--hero-color);
+      border: 3px solid #fff;
+      position: absolute;
+      left: 50%;
+      top: 30px;
+      transform: translateX(-50%);
+      border-radius: 4px;
+    }
+    .character-figure .sword {
+      width: 6px;
+      height: 44px;
+      background: linear-gradient(180deg, #888 0%, #555 100%);
+      position: absolute;
+      right: -8px;
+      top: 32px;
+      transform: rotate(-15deg);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(200,200,200,0.4);
+    }
+    .character-figure .shield {
+      width: 22px;
+      height: 28px;
+      background: #4a7c59;
+      border: 3px solid #6b9b7a;
+      position: absolute;
+      left: -12px;
+      top: 34px;
+      border-radius: 4px;
+      clip-path: polygon(0 0, 100% 10%, 100% 90%, 0 100%);
+    }
+    .character-figure .legs {
+      width: 14px;
+      height: 28px;
+      background: #333;
+      border: 2px solid #444;
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Enemy: monster / boss style */
+    .enemy-figure {
+      --evil-color: #8b0000;
+    }
+    .enemy-figure .head {
+      width: 42px;
+      height: 38px;
+      background: #2d1b1b;
+      border: 3px solid var(--evil-color);
+      border-radius: 50% 50% 45% 45%;
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      box-shadow: inset 0 -4px 10px #1a0a0a;
+    }
+    .enemy-figure .eye {
+      width: 10px;
+      height: 12px;
+      background: #ff0;
+      border: 2px solid #cc0;
+      border-radius: 50%;
+      position: absolute;
+      top: 10px;
+      box-shadow: 0 0 12px #ff0, 0 0 20px #f80;
+    }
+    .enemy-figure .eye.left { left: 8px; }
+    .enemy-figure .eye.right { right: 8px; left: auto; }
+    .enemy-figure .horn {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 18px solid #444;
+      position: absolute;
+      top: -4px;
+    }
+    .enemy-figure .horn.left { left: 4px; transform: rotate(-25deg); }
+    .enemy-figure .horn.right { right: 4px; left: auto; transform: rotate(25deg); }
+    .enemy-figure .body {
+      width: 44px;
+      height: 42px;
+      background: linear-gradient(180deg, #4a1515 0%, var(--evil-color) 50%, #2d0a0a 100%);
+      border: 3px solid #660000;
+      position: absolute;
+      left: 50%;
+      top: 38px;
+      transform: translateX(-50%);
+      border-radius: 8px;
+      box-shadow: inset 0 2px 8px rgba(255,0,0,0.2);
+    }
+    .enemy-figure .arm {
+      width: 12px;
+      height: 36px;
+      background: #2d1b1b;
+      border: 2px solid var(--evil-color);
+      position: absolute;
+      top: 42px;
+      border-radius: 4px;
+    }
+    .enemy-figure .arm.left { left: -6px; transform: rotate(20deg); }
+    .enemy-figure .arm.right { right: -6px; left: auto; transform: rotate(-20deg); }
+    .enemy-figure .claw {
+      width: 8px;
+      height: 10px;
+      background: #333;
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    }
+  </style>
+</head>
+<body>
+  <h1>Timer</h1>
+  <div class="arena" id="arena">
+    <div class="side">
+      <span class="side-label">You</span>
+      <div class="character-figure">
+        <div class="head"></div>
+        <div class="body"></div>
+        <div class="sword"></div>
+        <div class="shield"></div>
+        <div class="legs"></div>
+      </div>
+    </div>
+    <div class="display" id="display">00:00</div>
+    <div class="side">
+      <span class="side-label">Enemy</span>
+      <div class="enemy-figure">
+        <div class="horn left"></div>
+        <div class="horn right"></div>
+        <div class="head"></div>
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="body"></div>
+        <div class="arm left"><div class="claw"></div></div>
+        <div class="arm right"><div class="claw"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="set-time">
+      <label for="minutes">Minutes</label>
+      <input type="number" id="minutes" min="0" max="999" value="5">
+    </div>
+    <div class="set-time">
+      <label for="seconds">Seconds</label>
+      <input type="number" id="seconds" min="0" max="59" value="0">
+    </div>
+    <button id="startBtn">Start</button>
+    <button id="pauseBtn" disabled>Pause</button>
+    <button class="reset" id="resetBtn">Reset</button>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    const minutesInput = document.getElementById('minutes');
+    const secondsInput = document.getElementById('seconds');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let timerId = null;
+    let isPaused = false;
+
+    function formatTime(secs) {
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function updateDisplay() {
+      display.textContent = formatTime(remainingSeconds);
+      if (remainingSeconds <= 0 && totalSeconds > 0) {
+        clearInterval(timerId);
+        timerId = null;
+        display.classList.add('done');
+        document.getElementById('arena').classList.add('done');
+        display.textContent = '00:00';
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+      }
+    }
+
+    function tick() {
+      if (remainingSeconds <= 0) return;
+      remainingSeconds--;
+      updateDisplay();
+    }
+
+    function readInput() {
+      const m = parseInt(minutesInput.value, 10) || 0;
+      const s = parseInt(secondsInput.value, 10) || 0;
+      return m * 60 + s;
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (timerId) return;
+      if (isPaused) {
+        isPaused = false;
+      } else {
+        totalSeconds = readInput();
+        remainingSeconds = totalSeconds;
+        if (remainingSeconds <= 0) return;
+        minutesInput.disabled = true;
+        secondsInput.disabled = true;
+      }
+      display.classList.remove('done');
+      document.getElementById('arena').classList.remove('done');
+      updateDisplay();
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      timerId = setInterval(tick, 1000);
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (!timerId) return;
+      clearInterval(timerId);
+      timerId = null;
+      isPaused = true;
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+      isPaused = false;
+      remainingSeconds = 0;
+      totalSeconds = 0;
+      display.classList.remove('done');
+      document.getElementById('arena').classList.remove('done');
+      remainingSeconds = readInput();
+      minutesInput.disabled = false;
+      secondsInput.disabled = false;
+      updateDisplay();
+      startBtn.disabled = false;
+      pauseBtn.disabled = true;
+    });
+
+    minutesInput.addEventListener('change', () => {
+      if (!timerId && !isPaused) {
+        remainingSeconds = readInput();
+        updateDisplay();
+      }
+    });
+    secondsInput.addEventListener('change', () => {
+      if (!timerId && !isPaused) {
+        remainingSeconds = readInput();
+        updateDisplay();
+      }
+    });
+
+    remainingSeconds = readInput();
+    updateDisplay();
+  </script>
+</body>
+</html>

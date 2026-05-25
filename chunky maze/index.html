@@ -1,0 +1,317 @@
+<!--
+Bo's request:
+- A very very simple maze.
+- No dead ends (you never walk into a hallway that stops).
+- Large chunks (big blocky rooms and paths).
+
+How it works:
+- Arrow keys or WASD to move.
+- Reach the green star to win.
+- Press R for a new maze.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chunky Maze</title>
+  <style>
+    :root {
+      --bg: #1a2438;
+      --wall: #3d4f6e;
+      --path: #8ecae6;
+      --path2: #6bb5d8;
+      --player: #ffd166;
+      --goal: #66d17a;
+      --ink: #f0f6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      background: radial-gradient(circle at 20% 10%, #2a3f5f, var(--bg) 55%, #0d1220);
+      color: var(--ink);
+    }
+    .wrap {
+      width: min(720px, 100%);
+      background: #121b2c;
+      border: 3px solid #4a628a;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.45);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    p.hint {
+      margin: 0 0 10px;
+      text-align: center;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 2px solid #5a7399;
+      background: #0f1624;
+      image-rendering: pixelated;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    button {
+      font: inherit;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 2px solid #6a8ab8;
+      background: #2a3d5c;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    button:hover { background: #355075; }
+    #status {
+      text-align: center;
+      font-weight: 700;
+      min-height: 1.4em;
+      margin-top: 8px;
+      color: var(--goal);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Chunky Maze</h1>
+    <p class="hint">Move with arrows or WASD. No dead ends — every hallway keeps going!</p>
+    <canvas id="game" width="624" height="480"></canvas>
+    <div class="row">
+      <button type="button" id="newBtn">New maze (R)</button>
+    </div>
+    <div id="status">Find the green star!</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const statusEl = document.getElementById("status");
+    const newBtn = document.getElementById("newBtn");
+
+    const COLS = 13;
+    const ROWS = 11;
+    const CHUNK = 48;
+
+    let grid = [];
+    let player = { c: 1, r: 1 };
+    let goal = { c: COLS - 2, r: ROWS - 2 };
+    let won = false;
+    let keys = {};
+
+    function inBounds(c, r) {
+      return c >= 0 && r >= 0 && c < COLS && r < ROWS;
+    }
+
+    function neighbors4(c, r) {
+      return [
+        [c + 1, r],
+        [c - 1, r],
+        [c, r + 1],
+        [c, r - 1],
+      ].filter(([nc, nr]) => inBounds(nc, nr));
+    }
+
+    function pathNeighborCount(c, r) {
+      let n = 0;
+      for (const [nc, nr] of neighbors4(c, r)) {
+        if (grid[nr][nc]) n++;
+      }
+      return n;
+    }
+
+    function carveMaze() {
+      grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+      const stack = [[1, 1]];
+      grid[1][1] = 1;
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      while (stack.length) {
+        const [c, r] = stack[stack.length - 1];
+        const choices = [];
+
+        for (const [dc, dr] of dirs) {
+          const nc = c + dc * 2;
+          const nr = r + dr * 2;
+          if (inBounds(nc, nr) && !grid[nr][nc]) {
+            choices.push([dc, dr, nc, nr]);
+          }
+        }
+
+        if (!choices.length) {
+          stack.pop();
+          continue;
+        }
+
+        const pick = choices[Math.floor(Math.random() * choices.length)];
+        const [dc, dr, nc, nr] = pick;
+        grid[r + dr][c + dc] = 1;
+        grid[nr][nc] = 1;
+        stack.push([nc, nr]);
+      }
+
+      // Punch extra holes so paths loop — removes dead-end hallways.
+      for (let pass = 0; pass < 40; pass++) {
+        const dead = [];
+        for (let r = 1; r < ROWS - 1; r++) {
+          for (let c = 1; c < COLS - 1; c++) {
+            if (!grid[r][c]) continue;
+            if (pathNeighborCount(c, r) === 1) dead.push([c, r]);
+          }
+        }
+        if (!dead.length) break;
+
+        const [c, r] = dead[Math.floor(Math.random() * dead.length)];
+        const walls = neighbors4(c, r).filter(([nc, nr]) => !grid[nr][nc]);
+        if (!walls.length) continue;
+        const [wc, wr] = walls[Math.floor(Math.random() * walls.length)];
+        grid[wr][wc] = 1;
+        const beyond = neighbors4(wc, wr).find(([bc, br]) => !grid[br][bc] && (bc !== c || br !== r));
+        if (beyond) grid[beyond[1]][beyond[0]] = 1;
+      }
+
+      // A few random loops for extra chunkiness.
+      for (let i = 0; i < 12; i++) {
+        const c = 1 + Math.floor(Math.random() * (COLS - 2));
+        const r = 1 + Math.floor(Math.random() * (ROWS - 2));
+        if (grid[r][c]) continue;
+        const touch = neighbors4(c, r).filter(([nc, nr]) => grid[nr][nc]);
+        if (touch.length >= 2) grid[r][c] = 1;
+      }
+
+      player = { c: 1, r: 1 };
+      goal = { c: COLS - 2, r: ROWS - 2 };
+      grid[goal.r][goal.c] = 1;
+      won = false;
+      statusEl.textContent = "Find the green star!";
+    }
+
+    function drawChunk(c, r, color, stroke) {
+      const x = c * CHUNK;
+      const y = r * CHUNK;
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 1, y + 1, CHUNK - 2, CHUNK - 2);
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x + 2, y + 2, CHUNK - 4, CHUNK - 4);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            const alt = (c + r) % 2 === 0;
+            drawChunk(c, r, alt ? "#8ecae6" : "#6bb5d8");
+          } else {
+            drawChunk(c, r, "#3d4f6e", "#2a3548");
+          }
+        }
+      }
+
+      drawChunk(goal.c, goal.r, "#66d17a", "#3d9a55");
+      ctx.fillStyle = "#0f2a18";
+      ctx.beginPath();
+      const gx = goal.c * CHUNK + CHUNK / 2;
+      const gy = goal.r * CHUNK + CHUNK / 2;
+      for (let i = 0; i < 5; i++) {
+        const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+        const x = gx + Math.cos(a) * 14;
+        const y = gy + Math.sin(a) * 14;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      drawChunk(player.c, player.r, "#ffd166", "#c9a227");
+      ctx.fillStyle = "#5a3d00";
+      ctx.beginPath();
+      const px = player.c * CHUNK + CHUNK / 2;
+      const py = player.r * CHUNK + CHUNK / 2;
+      ctx.arc(px, py, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(px - 4, py - 3, 3, 0, Math.PI * 2);
+      ctx.arc(px + 4, py - 3, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    let moveCooldown = 0;
+
+    function tryMove(dc, dr) {
+      if (moveCooldown > 0 || won) return;
+      const nc = player.c + dc;
+      const nr = player.r + dr;
+      if (!inBounds(nc, nr) || !grid[nr][nc]) return;
+      player.c = nc;
+      player.r = nr;
+      moveCooldown = 9;
+      if (player.c === goal.c && player.r === goal.r) {
+        won = true;
+        statusEl.textContent = "You made it! Press R for another maze.";
+      }
+      draw();
+    }
+
+    function loop() {
+      if (moveCooldown > 0) moveCooldown--;
+      if (keys.ArrowUp || keys.w || keys.W) tryMove(0, -1);
+      else if (keys.ArrowDown || keys.s || keys.S) tryMove(0, 1);
+      else if (keys.ArrowLeft || keys.a || keys.A) tryMove(-1, 0);
+      else if (keys.ArrowRight || keys.d || keys.D) tryMove(1, 0);
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      keys[e.key] = true;
+      if (e.key === "r" || e.key === "R") {
+        carveMaze();
+        draw();
+      }
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+        e.preventDefault();
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      keys[e.key] = false;
+    });
+
+    newBtn.addEventListener("click", () => {
+      carveMaze();
+      draw();
+    });
+
+    canvas.width = COLS * CHUNK;
+    canvas.height = ROWS * CHUNK;
+    carveMaze();
+    draw();
+    loop();
+  </script>
+</body>
+</html>

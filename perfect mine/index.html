@@ -1,0 +1,3282 @@
+<!-- Bo's game request: "perfect mine" where you start at the top of a mine, everything below is rock, danger increases deeper down with falling rocks, mined things give money, and some things need a better pickaxe. Added chunk loading: far map despawns and new nearby map spawns as you travel, with better resources deeper down. Then Bo asked for many more things to mine and many more pickaxe upgrades, so deep layers now have lots more ore tiers. Then Bo asked for lava far underground that cannot be mined and spreads into nearby empty blocks over time. Then Bo asked for buyable blue workers that only mine downward, use his current pickaxe level strength, mine once per second, stop on unbreakable blocks until upgrades, and die in lava. Then Bo asked for worker placement: buying now creates a slightly transparent blue hologram on the surface, +/- moves it, and Hire turns it into a real worker that starts mining from that spot. Then Bo asked for a pricier red 2x2 worker that mines 2 blocks at a time. Then Bo asked for Water Buckets to convert whole connected lava rivers to obsidian manually or by equipping nearby workers, while lava only flows sideways and down. Full mine, maze, chamber. Entering chamber asks Yes/No for respawn mode (Miner King death = respawn at chest). Boss fight, escape tunnel, surface celebration. Bombs stun Miner King (25 HP, dizzy wobble + stars, 3s). Any death during boss fight resets him and bombs. Respawn mode: boss or bomb death = chest. Victory cutscene; Continue = chamber bottom + chamber shop. Pick Lv25=4 blocks, Lv26=8 blocks, Lv27=auto dig on walk. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfect Mine</title>
+  <style>
+    :root {
+      --bg: #120e0b;
+      --panel: #251a14;
+      --text: #f6e7d5;
+      --muted: #c8aa8a;
+      --good: #79f08e;
+      --bad: #ff7373;
+      --warn: #ffd56b;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      font-family: Verdana, sans-serif;
+      background: radial-gradient(circle at top, #3d2a1e 0%, #21150f 45%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .app {
+      width: 100%;
+      height: 100vh;
+      max-width: none;
+      background: var(--panel);
+      border: none;
+      border-radius: 0;
+      padding: 8px;
+      box-shadow: none;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .main-layout {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      gap: 10px;
+    }
+    .sidebar {
+      width: min(300px, 32vw);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    #tipsBtn {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 5px 9px;
+      font-size: 0.78rem;
+      z-index: 5;
+    }
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 1.35rem;
+    }
+    .hud {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card {
+      border: 2px solid #7c5638;
+      border-radius: 10px;
+      padding: 7px 9px;
+      background: #1e140f;
+      font-size: 0.86rem;
+    }
+    .muted { color: var(--muted); }
+    .game {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      border: 3px solid #7a5637;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0e0b09;
+      position: relative;
+      display: flex;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      align-items: stretch;
+    }
+    .bar button { width: 100%; }
+    #msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+    button {
+      border: 2px solid #8d6545;
+      background: #2a1c15;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #msg { min-height: 1.2em; color: var(--warn); font-weight: 700; }
+    .respawn-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 20;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .respawn-panel {
+      background: var(--panel);
+      border: 3px solid #9b2dcf;
+      border-radius: 14px;
+      padding: 18px 20px;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+    .respawn-panel p { margin: 0 0 10px; }
+    .respawn-panel .muted-small { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+    .respawn-actions { display: flex; gap: 10px; justify-content: center; }
+    .respawn-actions button { min-width: 90px; }
+    #cutsceneOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 15;
+      pointer-events: none;
+    }
+    #victoryMenuModal { z-index: 25; background: rgba(0, 0, 0, 0.92); }
+    .victory-panel { max-width: 400px; }
+    .credits-block {
+      margin: 12px 0 16px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 213, 107, 0.35);
+      text-align: left;
+    }
+    .credits-block h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--warn);
+      text-align: center;
+    }
+    .credits-block p { margin: 0 0 6px; font-size: 0.88rem; }
+    .credits-block ul {
+      margin: 0 0 10px;
+      padding-left: 1.2rem;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .credits-block li { margin-bottom: 4px; }
+    .credits-thanks {
+      text-align: center;
+      font-size: 1rem;
+      color: var(--good);
+      font-weight: bold;
+      margin: 0 !important;
+    }
+    .controls {
+      flex-shrink: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.35;
+      padding: 0 4px 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Perfect Mine</h1>
+      <button id="tipsBtn">Tips</button>
+    </header>
+
+    <div class="main-layout">
+      <aside class="sidebar">
+        <section class="hud">
+          <div class="card">
+            <div><strong>Money:</strong> $<span id="money">0</span></div>
+            <div><strong>Depth:</strong> <span id="depth">0</span>m</div>
+          </div>
+          <div class="card">
+            <div><strong>Health:</strong> <span id="health">100</span>/100</div>
+            <div><strong>Pickaxe:</strong> Lv <span id="pickLvl">1</span></div>
+            <div><strong>Strength:</strong> <span id="pickStr">1</span></div>
+            <div><strong>Durability:</strong> <span id="pickDur">60</span>/<span id="pickDurMax">60</span></div>
+          </div>
+          <div class="card">
+            <div><strong>Inventory Value:</strong> $<span id="bag">0</span></div>
+            <div><strong>Workers:</strong> <span id="workerCount">0</span></div>
+            <div><strong>Water Buckets:</strong> <span id="bucketCount">0</span></div>
+            <div><strong>Pending Worker X:</strong> <span id="workerLane">-</span></div>
+            <div class="muted" id="shopHint">Go to the shop (top 3 rows, center) to bank and buy.</div>
+          </div>
+        </section>
+
+        <div class="bar">
+          <button id="upgradeBtn">Upgrade Pickaxe ($40)</button>
+          <button id="healBtn">Heal 25 HP ($20)</button>
+          <button id="repairBtn">Repair Pickaxe ($0)</button>
+          <button id="workerLaneLeftBtn">-</button>
+          <button id="workerLaneRightBtn">+</button>
+          <button id="workerBtn">Buy Worker ($0)</button>
+          <button id="heavyWorkerBtn">Buy Mega Worker ($0)</button>
+          <button id="buyBucketBtn">Buy Water Bucket ($500)</button>
+          <button id="useBucketBtn">Use Water Bucket</button>
+          <button id="equipWorkerBtn">Equip Worker</button>
+          <button id="hireBtn">Hire</button>
+          <span id="msg"></span>
+        </div>
+      </aside>
+
+      <section class="game">
+        <canvas id="view" width="640" height="320"></canvas>
+      </section>
+    </div>
+
+    <div class="controls" id="gameControlsHint">Move: WASD/Arrows | Space: mine, sword, arm bombs | Late pickaxes: 4 or 8 blocks, then Auto Digger</div>
+  </main>
+
+  <div id="cutsceneOverlay"></div>
+
+  <div id="victoryMenuModal" class="respawn-modal">
+    <div class="respawn-panel victory-panel">
+      <p><strong>You beat the Miner King!</strong></p>
+      <div class="credits-block">
+        <h3>Credits</h3>
+        <p><strong>Perfect Mine</strong> — made by Bo</p>
+        <p>Special thanks to:</p>
+        <ul>
+          <li>My family</li>
+          <li>You — the brave miner who saved the mine</li>
+        </ul>
+        <p class="credits-thanks">Thank you all for playing!</p>
+      </div>
+      <p class="muted-small">Play again from the start, or continue mining with a new chamber shop.</p>
+      <div class="respawn-actions">
+        <button id="playAgainBtn">Play again</button>
+        <button id="continueBtn">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="respawnModal" class="respawn-modal">
+    <div class="respawn-panel">
+      <p><strong>Do you want to activate respawn mode?</strong></p>
+      <p class="muted-small">Yes = come back at the chest if the Miner King or a bomb kills you.<br>No = if you die, that's it. Game over.</p>
+      <div class="respawn-actions">
+        <button id="respawnYesBtn">Yes</button>
+        <button id="respawnNoBtn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("view");
+    const ctx = canvas.getContext("2d");
+    const gamePanel = document.querySelector(".game");
+
+    const WORLD_W = 50;
+    const TILE = 24;
+    let VIEW_W = Math.floor(canvas.width / TILE);
+    let VIEW_H = Math.floor(canvas.height / TILE);
+    const PICK_NORMAL_MAX = 24;
+    const PICK_QUAD = 25; // mines 4 blocks (2x2)
+    const PICK_OCTO = 26; // mines 8 blocks (4x2)
+    const PICK_AUTO = 27; // auto-dig where you walk
+    const MAX_PICK = PICK_AUTO;
+    const WATER_BUCKET_COST = 500;
+
+    function getActiveRadius() {
+      return VIEW_H * 3;
+    }
+
+    function getLoadRadius() {
+      return VIEW_H * 4;
+    }
+
+    function resizeGameCanvas() {
+      if (!gamePanel) return;
+      const w = Math.max(TILE * 12, Math.floor(gamePanel.clientWidth / TILE) * TILE);
+      const h = Math.max(TILE * 10, Math.floor(gamePanel.clientHeight / TILE) * TILE);
+      if (canvas.width === w && canvas.height === h) return;
+      canvas.width = w;
+      canvas.height = h;
+      VIEW_W = Math.floor(canvas.width / TILE);
+      VIEW_H = Math.floor(canvas.height / TILE);
+    }
+    const WORLD_SEED = 943271;
+    const REVERSED_LAYER_TEST_MODE = false;
+    const REVERSED_LAYER_DEPTH_MAX = 5200;
+    const MAZE_TEST_MODE = false; // true = straight tunnel through maze (cheat)
+    const GAME_TEST_MODE = false; // true = max gear + auto boss for testing
+    const CHAMBER_SIZE = 48;
+    const MAZE_HEIGHT = 120;
+    const MAZE_Y_START = 2500;
+    const MAZE_Y_END = MAZE_Y_START + MAZE_HEIGHT - 1;
+    const CHAMBER_Y_START = MAZE_Y_END + 1;
+    const CHAMBER_Y_END = CHAMBER_Y_START + CHAMBER_SIZE - 1;
+    const CONTINUE_SHAFT_DEPTH = 2500;
+    const CHAMBER_SHOP_Y0 = CHAMBER_Y_START + 1;
+    const CHAMBER_SHOP_Y1 = CHAMBER_Y_START + 3;
+    const CHAMBER_WORKER_SPAWN_Y = CHAMBER_Y_START + 2;
+    const MAZE_X_MIN = 1;
+    const MAZE_X_MAX = WORLD_W - 2;
+    const SURFACE_Y_MAX = 2;
+    const GROUND_Y = SURFACE_Y_MAX + 1;
+    const PLAYER_MIN_Y = SURFACE_Y_MAX; // First sky row acts like cave; above is blocked.
+    const TUNNEL_X = Math.floor(WORLD_W / 2);
+    const CHAMBER_CHEST_X = TUNNEL_X;
+    const CHAMBER_CHEST_Y = CHAMBER_Y_END - 1;
+    const BOSS_WIN_REWARD = 25000;
+    const BOSS_MAX_HP = 1000;
+    const SWORD_DAMAGE = 20;
+    const BOSS_DAMAGE = 6;
+    const BOSS_LUNGE_DAMAGE = 8;
+    const BOSS_ATTACK_MS = 950;
+    const BOSS_MOVE_MS = 420;
+    const BOSS_LUNGE_MS = 1400;
+    const BOSS_W = 3;
+    const BOSS_H = 3;
+    const BOMB_FUSE_MS = 3000;
+    const BOMB_EXPLOSION_MS = 1000;
+    const BOSS_STUN_MS = 3000;
+    const BOMB_STUN_DAMAGE = 25;
+    const TUNNEL_SAFE_RADIUS = 1;
+    const SHOP_X = Math.floor(WORLD_W / 2) - 10;
+    const SHOP_HALF_WIDTH = 1;
+    const ANIM_MINE_MS = 260;
+    const ANIM_SWING_MS = 320;
+    const ANIM_BUY_MS = 500;
+
+    const oreDefs = {
+      dirt:     { color: "#594532", value: 1, hard: 1 },
+      stone:    { color: "#6d7482", value: 2, hard: 1 },
+      coal:     { color: "#2f3340", value: 8, hard: 1 },
+      iron:     { color: "#b87f4e", value: 16, hard: 2 },
+      silver:   { color: "#c7d3df", value: 28, hard: 3 },
+      gold:     { color: "#e3b83f", value: 45, hard: 4 },
+      ruby:     { color: "#cd2d54", value: 70, hard: 5 },
+      diamond:  { color: "#58dcff", value: 120, hard: 6 },
+      sapphire: { color: "#3f7cff", value: 160, hard: 7 },
+      emerald:  { color: "#1dcf7a", value: 210, hard: 8 },
+      obsidian: { color: "#3a2d4d", value: 290, hard: 9 },
+      mythril:  { color: "#7ce3ff", value: 380, hard: 10 },
+      titanium: { color: "#a2a8bd", value: 490, hard: 11 },
+      uranium:  { color: "#6cff6a", value: 620, hard: 12 },
+      plasma:   { color: "#ff58e2", value: 780, hard: 13 },
+      starite:  { color: "#ffe77a", value: 980, hard: 14 },
+      voidgem:  { color: "#7d4bff", value: 1250, hard: 15 },
+      corestone:{ color: "#ff6a3d", value: 1600, hard: 16 },
+      moonsteel:{ color: "#9ac4ff", value: 2050, hard: 17 },
+      sunshard: { color: "#ffcc5a", value: 2600, hard: 18 },
+      stormite: { color: "#62f0ff", value: 3300, hard: 19 },
+      darkmatter:{ color: "#5d5a74", value: 4200, hard: 20 },
+      aetherite:{ color: "#b8ffeb", value: 5300, hard: 21 },
+      dragonite:{ color: "#ff4b7f", value: 6700, hard: 22 },
+      phoenixite:{ color: "#ff8f42", value: 8400, hard: 23 },
+      godcore:  { color: "#fff2a8", value: 10500, hard: 24 },
+      lava:     { color: "#ff5a1f", value: 0, hard: 999 },
+      bedrock:  { color: "#141414", value: 0, hard: 999 }
+    };
+
+    let activeTiles = new Map();
+    let savedEdits = new Map();
+    let player = {};
+    let state = {};
+    let messageTimer = 0;
+    let lastLavaSpreadAt = 0;
+    let lastWorkerActionAt = 0;
+    let audioCtx = null;
+    let audioUnlocked = false;
+    const SFX_VOLUME_MULT = 3.4;
+    let tipIndex = 0;
+    let mazeAirTiles = new Set();
+    let mazeBuilt = false;
+    let celebrationCrowd = [];
+    let fxParticles = [];
+    const strategyTips = [
+      "Upgrade your pickaxe first so workers can break more ores.",
+      "Keep at least one Water Bucket for surprise lava flows.",
+      "Place workers in different lanes to mine more at once.",
+      "Repair before durability hits zero so you do not get stuck.",
+      "Bank often near the surface so you do not lose progress momentum.",
+      "Mega workers clear wide tunnels fast but cost more, so save up first."
+    ];
+
+    function startPlayerAnim(kind) {
+      player.anim = kind;
+      player.animStart = performance.now();
+    }
+
+    function getPlayerAnimProgress() {
+      if (!player.anim) return { kind: null, t: 0 };
+      const ms =
+        player.anim === "mine"
+          ? ANIM_MINE_MS
+          : player.anim === "swing"
+            ? ANIM_SWING_MS
+            : ANIM_BUY_MS;
+      const t = Math.min(1, (performance.now() - player.animStart) / ms);
+      if (t >= 1) player.anim = null;
+      return { kind: player.anim, t };
+    }
+
+    function spawnMineFx(wx, wy, color) {
+      for (let i = 0; i < 8; i++) {
+        fxParticles.push({
+          wx: wx + 0.5,
+          wy: wy + 0.5,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2 - 0.1,
+          life: 1,
+          color,
+          size: 2 + Math.random() * 4
+        });
+      }
+    }
+
+    function spawnBuyFx() {
+      for (let i = 0; i < 12; i++) {
+        fxParticles.push({
+          wx: player.x + 0.5 + (Math.random() - 0.5) * 0.7,
+          wy: player.y + 0.4 + (Math.random() - 0.5) * 0.5,
+          vx: (Math.random() - 0.5) * 0.14,
+          vy: -0.1 - Math.random() * 0.14,
+          life: 1,
+          color: ["#ffd56b", "#79f08e", "#ffe77a", "#62f0ff"][i % 4],
+          size: 3 + Math.random() * 4
+        });
+      }
+    }
+
+    function playShopBuyAnim() {
+      startPlayerAnim("buy");
+      spawnBuyFx();
+    }
+
+    function updateFxParticles() {
+      for (let i = fxParticles.length - 1; i >= 0; i--) {
+        const p = fxParticles[i];
+        p.wx += p.vx;
+        p.wy += p.vy;
+        p.vy += 0.007;
+        p.life -= 0.055;
+        if (p.life <= 0) fxParticles.splice(i, 1);
+      }
+    }
+
+    function drawFxParticles(camX, camY) {
+      for (const p of fxParticles) {
+        const sx = (p.wx - camX) * TILE;
+        const sy = (p.wy - camY) * TILE;
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(sx - p.size / 2, sy - p.size / 2, p.size, p.size);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function showMessage(text, color = "var(--warn)", duration = 130) {
+      const msg = document.getElementById("msg");
+      msg.textContent = text;
+      msg.style.color = color;
+      messageTimer = duration;
+    }
+
+    function ensureAudioReady() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return false;
+        audioCtx = new Ctx();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+      return true;
+    }
+
+    function canRespawnOnDeath(reason) {
+      return state.respawnMode === true && (reason === "boss" || reason === "bomb");
+    }
+
+    function killPlayer(message, reason = "generic") {
+      if (state.dead) return;
+      if (state.bossFight && !state.bossDefeated) resetBossFight();
+      if (canRespawnOnDeath(reason)) {
+        respawnAtChest(message);
+        return;
+      }
+      state.hp = 0;
+      state.dead = true;
+      player.deathAnimStart = performance.now();
+      player.deathReason = reason;
+      const noRespawn =
+        (reason === "boss" || reason === "bomb") && state.respawnPromptShown && !state.respawnMode;
+      const finalMessage = noRespawn ? `${message} You said No respawn — that's it!` : message;
+      showMessage(finalMessage, "var(--bad)");
+      sfx.gameOver();
+      updateHud();
+    }
+
+    function respawnAtChest(message) {
+      state.dead = false;
+      state.hp = 100;
+      player.deathAnimStart = null;
+      player.deathReason = null;
+      player.x = CHAMBER_CHEST_X;
+      player.y = CHAMBER_CHEST_Y - 1;
+      player.dirX = 0;
+      player.dirY = 1;
+      ensureLoadedAroundPlayer();
+      showMessage(`${message} Respawn at chest — Miner King reset!`, "var(--warn)");
+      playTone(440, 0.1, "triangle", 0.06);
+      updateHud();
+      draw();
+    }
+
+    function showRespawnPrompt() {
+      state.respawnPromptShown = true;
+      state.gamePaused = true;
+      document.getElementById("respawnModal").style.display = "flex";
+    }
+
+    function hideRespawnPrompt() {
+      state.gamePaused = false;
+      document.getElementById("respawnModal").style.display = "none";
+    }
+
+    function playTone(freq, duration, type = "square", volume = 0.05, when = 0) {
+      if (!ensureAudioReady()) return;
+      const start = audioCtx.currentTime + when;
+      const end = start + duration;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const outVol = Math.min(0.45, volume * SFX_VOLUME_MULT);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(outVol, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, end);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(end + 0.01);
+    }
+
+    const sfx = {
+      mine() {
+        playTone(220, 0.06, "square", 0.05, 0);
+        playTone(180, 0.05, "square", 0.035, 0.045);
+      },
+      blocked() {
+        playTone(120, 0.08, "sawtooth", 0.04, 0);
+      },
+      cash() {
+        playTone(660, 0.05, "triangle", 0.045, 0);
+        playTone(880, 0.07, "triangle", 0.045, 0.05);
+      },
+      upgrade() {
+        playTone(330, 0.06, "triangle", 0.05, 0);
+        playTone(440, 0.06, "triangle", 0.05, 0.06);
+        playTone(550, 0.08, "triangle", 0.05, 0.12);
+      },
+      hurt() {
+        playTone(160, 0.14, "sawtooth", 0.055, 0);
+      },
+      pickBreak() {
+        playTone(260, 0.06, "square", 0.05, 0);
+        playTone(180, 0.08, "sawtooth", 0.055, 0.05);
+        playTone(120, 0.12, "sawtooth", 0.06, 0.11);
+      },
+      gameOver() {
+        playTone(220, 0.14, "sawtooth", 0.05, 0);
+        playTone(170, 0.16, "sawtooth", 0.05, 0.12);
+        playTone(130, 0.2, "sawtooth", 0.05, 0.24);
+      },
+      place() {
+        playTone(500, 0.06, "square", 0.035, 0);
+      },
+      hire() {
+        playTone(260, 0.05, "square", 0.04, 0);
+        playTone(390, 0.07, "square", 0.04, 0.05);
+      },
+      water() {
+        playTone(700, 0.05, "triangle", 0.04, 0);
+        playTone(520, 0.09, "triangle", 0.04, 0.05);
+      }
+    };
+
+    function getMaxDurability(level) {
+      return 40 + level * 20;
+    }
+
+    function getPickStrength(level) {
+      return level;
+    }
+
+    function getPickaxeName(level) {
+      if (level >= PICK_AUTO) return "Auto Digger";
+      if (level >= PICK_OCTO) return "Octo Pick (8 blocks)";
+      if (level >= PICK_QUAD) return "Quad Pick (4 blocks)";
+      return `Lv ${level}`;
+    }
+
+    function hasAutoMine() {
+      return state.pickaxe >= PICK_AUTO;
+    }
+
+    function getUpgradePickCost(level) {
+      if (level >= MAX_PICK) return null;
+      if (level === PICK_NORMAL_MAX) return 75000;
+      if (level === PICK_QUAD) return 180000;
+      if (level === PICK_OCTO) return 350000;
+      return Math.floor(level * level * 28);
+    }
+
+    function getMineCellsForPick(dirX, dirY) {
+      const lvl = state.pickaxe;
+      const dx = dirX || 0;
+      const dy = dirY || 0;
+      if (dx === 0 && dy === 0) return [];
+
+      const width = lvl >= PICK_OCTO ? 4 : lvl >= PICK_QUAD ? 2 : 1;
+      const depth = lvl >= PICK_QUAD ? 2 : 1;
+      const out = [];
+      const seen = new Set();
+      const add = (x, y) => {
+        const key = `${x},${y}`;
+        if (seen.has(key) || !inBounds(x, y)) return;
+        seen.add(key);
+        out.push([x, y]);
+      };
+
+      if (dx !== 0) {
+        for (let step = 1; step <= depth; step++) {
+          const mx = player.x + dx * step;
+          for (let i = 0; i < width; i++) {
+            add(mx, player.y - Math.floor(width / 2) + i);
+          }
+        }
+      } else {
+        for (let step = 1; step <= depth; step++) {
+          const my = player.y + dy * step;
+          for (let i = 0; i < width; i++) {
+            add(player.x - Math.floor(width / 2) + i, my);
+          }
+        }
+      }
+      return out;
+    }
+
+    function mineOneTile(tx, ty) {
+      const tile = getTile(tx, ty);
+      if (tile === "air") return null;
+      if (tile === "lava") return null;
+      if (isMazeProtectedBlock(tx, ty, tile)) return null;
+      const def = oreDefs[tile];
+      if (!def || tile === "bedrock") return null;
+      if (getPickStrength(state.pickaxe) < def.hard) return null;
+
+      setTile(tx, ty, "air");
+      const durabilityLoss = Math.max(1, Math.ceil(def.hard / getPickStrength(state.pickaxe)));
+      state.pickDurability = Math.max(0, state.pickDurability - durabilityLoss);
+      return { tile, value: def.value, color: def.color };
+    }
+
+    function tryMineInDirection(dirX, dirY, opts = {}) {
+      const quiet = !!opts.quiet;
+      if (state.dead || state.gamePaused || isInCutscene()) return false;
+      if (state.pickDurability <= 0) {
+        if (!quiet) showMessage("Your pickaxe is broken! Repair it at the surface.");
+        return false;
+      }
+
+      const cells = getMineCellsForPick(dirX, dirY);
+      if (cells.length === 0) return false;
+
+      let mined = 0;
+      let totalValue = 0;
+      for (const [tx, ty] of cells) {
+        const result = mineOneTile(tx, ty);
+        if (!result) continue;
+        mined++;
+        totalValue += result.value;
+        state.bagValue += result.value;
+        player.mineFlashX = tx;
+        player.mineFlashY = ty;
+        player.mineFlashStart = performance.now();
+        spawnMineFx(tx, ty, result.color);
+      }
+
+      if (mined === 0) {
+        if (!quiet) {
+          const tx = player.x + dirX;
+          const ty = player.y + dirY;
+          const tile = getTile(tx, ty);
+          if (tile === "air") showMessage("Nothing to mine there.");
+          else if (tile === "lava") showMessage("Lava is too hot to mine!");
+          else if (isMazeProtectedBlock(tx, ty, tile)) showMessage("Maze walls are unbreakable.");
+          else showMessage("Too hard to break or blocked.");
+          sfx.blocked();
+        }
+        return false;
+      }
+
+      if (!quiet) startPlayerAnim("mine");
+      sfx.mine();
+      if (state.pickDurability === 0) {
+        showMessage("Your pickaxe broke! Go repair it.", "var(--bad)");
+        sfx.pickBreak();
+      }
+
+      if (!quiet) {
+        const danger = Math.min(0.72, 0.06 + player.y * 0.004);
+        if (Math.random() < danger) {
+          triggerRockFall();
+        } else {
+          showMessage(`Mined ${mined} block${mined > 1 ? "s" : ""} (+$${totalValue})!`, "var(--good)");
+        }
+      }
+      updateHud();
+      return true;
+    }
+
+    function getRepairCost() {
+      const missing = getMaxDurability(state.pickaxe) - state.pickDurability;
+      return Math.max(0, Math.ceil(missing * (state.pickaxe * 0.8)));
+    }
+
+    function getWorkerCost() {
+      return Math.floor(250 * Math.pow(1.45, state.workersBought));
+    }
+
+    function getHeavyWorkerCost() {
+      return Math.floor(1400 * Math.pow(1.65, state.heavyWorkersBought));
+    }
+
+    function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+      return aStart <= bEnd && bStart <= aEnd;
+    }
+
+    function isPendingWorkerTunnelBlocked() {
+      if (!state.pendingWorker) return false;
+      const pendingLeft = state.pendingWorker.x;
+      const pendingRight = state.pendingWorker.x + state.pendingWorker.width - 1;
+      for (const worker of state.workers) {
+        if (worker.dead) continue;
+        const workerLeft = worker.x;
+        const workerRight = worker.x + worker.width - 1;
+        if (rangesOverlap(pendingLeft, pendingRight, workerLeft, workerRight)) return true;
+      }
+      return false;
+    }
+
+    function isPendingWorkerOnSolidSurface() {
+      if (!state.pendingWorker) return false;
+      const groundY = GROUND_Y;
+      for (let ox = 0; ox < state.pendingWorker.width; ox++) {
+        const tile = getTile(state.pendingWorker.x + ox, groundY);
+        if (tile === "air" || tile === "lava") return false;
+      }
+      return true;
+    }
+
+    function canPlaceWorkerAtX(x, width) {
+      if (x < 1 || x > WORLD_W - width - 1) return false;
+      const left = x;
+      const right = x + width - 1;
+      for (const worker of state.workers) {
+        if (worker.dead) continue;
+        const workerLeft = worker.x;
+        const workerRight = worker.x + worker.width - 1;
+        if (rangesOverlap(left, right, workerLeft, workerRight)) return false;
+      }
+      return true;
+    }
+
+    function findNearestValidWorkerX(width, startX) {
+      const minX = 1;
+      const maxX = WORLD_W - width - 1;
+      const clampedStart = Math.max(minX, Math.min(maxX, startX));
+      if (canPlaceWorkerAtX(clampedStart, width)) return clampedStart;
+      for (let d = 1; d <= WORLD_W; d++) {
+        const left = clampedStart - d;
+        if (left >= minX && canPlaceWorkerAtX(left, width)) return left;
+        const right = clampedStart + d;
+        if (right <= maxX && canPlaceWorkerAtX(right, width)) return right;
+      }
+      return null;
+    }
+
+    function getWorldYMax() {
+      return state.bossDefeated ? CHAMBER_Y_END + CONTINUE_SHAFT_DEPTH : CHAMBER_Y_END;
+    }
+
+    function isChamberBreakableFloor(x, y) {
+      return state.bossDefeated && isThreeWideOpening(x, y, CHAMBER_Y_END);
+    }
+
+    function unlockChamberFloor() {
+      for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+        setTile(x, CHAMBER_Y_END, "stone");
+      }
+    }
+
+    function isAtSurface() {
+      return player.y === PLAYER_MIN_Y;
+    }
+
+    function isAtChamberShop() {
+      if (!state.continueUnlocked) return false;
+      return (
+        player.y >= CHAMBER_SHOP_Y0 &&
+        player.y <= CHAMBER_SHOP_Y1 &&
+        Math.abs(player.x - SHOP_X) <= SHOP_HALF_WIDTH
+      );
+    }
+
+    function isChamberShopTile(x, y) {
+      if (!state.continueUnlocked) return false;
+      if (y < CHAMBER_SHOP_Y0 || y > CHAMBER_SHOP_Y1) return false;
+      return Math.abs(x - SHOP_X) <= SHOP_HALF_WIDTH;
+    }
+
+    function isInShop() {
+      if (Math.abs(player.x - SHOP_X) > SHOP_HALF_WIDTH) return false;
+      return isAtSurface() || isAtChamberShop();
+    }
+
+    function isBuyingAtChamberShop() {
+      return isAtChamberShop();
+    }
+
+    function getPendingWorkerY() {
+      if (!state.pendingWorker) return PLAYER_MIN_Y;
+      return state.pendingWorker.spawnInChamber ? CHAMBER_WORKER_SPAWN_Y : PLAYER_MIN_Y;
+    }
+
+    function isInCutscene() {
+      return !!state.cutscene;
+    }
+
+    function convertLavaRiverAt(startX, startY) {
+      if (getTile(startX, startY) !== "lava") return 0;
+      const queue = [[startX, startY]];
+      const seen = new Set([keyFor(startX, startY)]);
+      let converted = 0;
+      while (queue.length > 0) {
+        const [x, y] = queue.shift();
+        if (getTile(x, y) !== "lava") continue;
+        setTile(x, y, "obsidian");
+        converted++;
+        const neighbors = [
+          [x, y - 1],
+          [x, y + 1],
+          [x - 1, y],
+          [x + 1, y]
+        ];
+        for (const [nx, ny] of neighbors) {
+          if (!inBounds(nx, ny)) continue;
+          const key = keyFor(nx, ny);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (getTile(nx, ny) === "lava") queue.push([nx, ny]);
+        }
+      }
+      return converted;
+    }
+
+    function getAdjacentLavaToPlayer() {
+      const checks = [
+        [player.x + player.dirX, player.y + player.dirY],
+        [player.x, player.y - 1],
+        [player.x, player.y + 1],
+        [player.x - 1, player.y],
+        [player.x + 1, player.y]
+      ];
+      for (const [x, y] of checks) {
+        if (!inBounds(x, y)) continue;
+        if (getTile(x, y) === "lava") return [x, y];
+      }
+      return null;
+    }
+
+    function getNearbyWorkerIndexForEquip() {
+      for (let i = 0; i < state.workers.length; i++) {
+        const worker = state.workers[i];
+        if (worker.dead || worker.hasWaterBucket) continue;
+        const left = worker.x;
+        const right = worker.x + worker.width - 1;
+        const top = worker.y;
+        const bottom = worker.y + worker.height - 1;
+        const nearX = player.x >= left - 1 && player.x <= right + 1;
+        const nearY = player.y >= top - 1 && player.y <= bottom + 1;
+        if (nearX && nearY) return i;
+      }
+      return -1;
+    }
+
+    function workerBucketConvertNearbyLava(worker) {
+      if (!worker.hasWaterBucket) return 0;
+      const toCheck = [];
+      for (let ox = -1; ox <= worker.width; ox++) {
+        for (let oy = -1; oy <= worker.height; oy++) {
+          toCheck.push([worker.x + ox, worker.y + oy]);
+        }
+      }
+      for (let ox = 0; ox < worker.width; ox++) {
+        toCheck.push([worker.x + ox, worker.y + worker.height]);
+      }
+      let converted = 0;
+      for (const [x, y] of toCheck) {
+        if (!inBounds(x, y)) continue;
+        if (getTile(x, y) !== "lava") continue;
+        converted += convertLavaRiverAt(x, y);
+      }
+      return converted;
+    }
+
+    function tileForDepth(y, r) {
+      if (y < 2) return "dirt";
+      if (y < 20) {
+        if (r < 0.70) return "stone";
+        if (r < 0.93) return "coal";
+        return "iron";
+      }
+      if (y < 60) {
+        if (r < 0.58) return "stone";
+        if (r < 0.78) return "coal";
+        if (r < 0.93) return "iron";
+        return "silver";
+      }
+      if (y < 120) {
+        if (r < 0.52) return "stone";
+        if (r < 0.68) return "iron";
+        if (r < 0.85) return "silver";
+        if (r < 0.96) return "gold";
+        return "ruby";
+      }
+      if (y < 200) {
+        if (r < 0.42) return "stone";
+        if (r < 0.57) return "silver";
+        if (r < 0.75) return "gold";
+        if (r < 0.90) return "ruby";
+        return "diamond";
+      }
+      if (y < 300) {
+        if (r < 0.40) return "stone";
+        if (r < 0.55) return "gold";
+        if (r < 0.72) return "ruby";
+        if (r < 0.88) return "diamond";
+        return "sapphire";
+      }
+      if (y < 420) {
+        if (r < 0.35) return "stone";
+        if (r < 0.50) return "ruby";
+        if (r < 0.66) return "diamond";
+        if (r < 0.82) return "sapphire";
+        return "emerald";
+      }
+      if (y < 560) {
+        if (r < 0.30) return "stone";
+        if (r < 0.47) return "diamond";
+        if (r < 0.63) return "sapphire";
+        if (r < 0.79) return "emerald";
+        return "obsidian";
+      }
+      if (y < 720) {
+        if (r < 0.28) return "stone";
+        if (r < 0.43) return "sapphire";
+        if (r < 0.59) return "emerald";
+        if (r < 0.75) return "obsidian";
+        return "mythril";
+      }
+      if (y < 900) {
+        if (r < 0.26) return "stone";
+        if (r < 0.40) return "emerald";
+        if (r < 0.56) return "obsidian";
+        if (r < 0.73) return "mythril";
+        return "titanium";
+      }
+      if (y < 1100) {
+        if (r < 0.24) return "stone";
+        if (r < 0.38) return "obsidian";
+        if (r < 0.54) return "mythril";
+        if (r < 0.71) return "titanium";
+        return "uranium";
+      }
+      if (y < 1320) {
+        if (r < 0.23) return "stone";
+        if (r < 0.36) return "mythril";
+        if (r < 0.52) return "titanium";
+        if (r < 0.69) return "uranium";
+        return "plasma";
+      }
+      if (y < 1560) {
+        if (r < 0.22) return "stone";
+        if (r < 0.35) return "titanium";
+        if (r < 0.50) return "uranium";
+        if (r < 0.67) return "plasma";
+        return "starite";
+      }
+      if (y < 1820) {
+        if (r < 0.20) return "stone";
+        if (r < 0.32) return "uranium";
+        if (r < 0.47) return "plasma";
+        if (r < 0.64) return "starite";
+        return "voidgem";
+      }
+      if (y < 2100) {
+        if (r < 0.18) return "stone";
+        if (r < 0.30) return "plasma";
+        if (r < 0.44) return "starite";
+        if (r < 0.60) return "voidgem";
+        return "corestone";
+      }
+      if (y < 2400) {
+        if (r < 0.16) return "stone";
+        if (r < 0.28) return "starite";
+        if (r < 0.42) return "voidgem";
+        if (r < 0.58) return "corestone";
+        return "moonsteel";
+      }
+      if (y < 2720) {
+        if (r < 0.15) return "stone";
+        if (r < 0.27) return "voidgem";
+        if (r < 0.40) return "corestone";
+        if (r < 0.56) return "moonsteel";
+        return "sunshard";
+      }
+      if (y < 3060) {
+        if (r < 0.14) return "stone";
+        if (r < 0.25) return "corestone";
+        if (r < 0.38) return "moonsteel";
+        if (r < 0.54) return "sunshard";
+        return "stormite";
+      }
+      if (y < 3420) {
+        if (r < 0.13) return "stone";
+        if (r < 0.24) return "moonsteel";
+        if (r < 0.36) return "sunshard";
+        if (r < 0.52) return "stormite";
+        return "darkmatter";
+      }
+      if (y < 3800) {
+        if (r < 0.12) return "stone";
+        if (r < 0.22) return "sunshard";
+        if (r < 0.34) return "stormite";
+        if (r < 0.50) return "darkmatter";
+        return "aetherite";
+      }
+      if (y < 4200) {
+        if (r < 0.11) return "stone";
+        if (r < 0.21) return "stormite";
+        if (r < 0.33) return "darkmatter";
+        if (r < 0.48) return "aetherite";
+        return "dragonite";
+      }
+      if (y < 4620) {
+        if (r < 0.10) return "stone";
+        if (r < 0.20) return "darkmatter";
+        if (r < 0.31) return "aetherite";
+        if (r < 0.46) return "dragonite";
+        return "phoenixite";
+      }
+      if (r < 0.09) return "stone";
+      if (r < 0.18) return "aetherite";
+      if (r < 0.29) return "dragonite";
+      if (r < 0.44) return "phoenixite";
+      return "godcore";
+    }
+
+    function getLayerDepth(y) {
+      if (!REVERSED_LAYER_TEST_MODE) return y;
+      return Math.max(0, REVERSED_LAYER_DEPTH_MAX - y);
+    }
+
+    function isProtectedTunnelColumn(x) {
+      return Math.abs(x - TUNNEL_X) <= TUNNEL_SAFE_RADIUS;
+    }
+
+    function isInChamberRegion(y) {
+      return y >= CHAMBER_Y_START && y <= CHAMBER_Y_END;
+    }
+
+    function isInMazeRegion(y) {
+      return y >= MAZE_Y_START && y <= MAZE_Y_END;
+    }
+
+    function isBelowWorld(y) {
+      return y > getWorldYMax();
+    }
+
+    function isThreeWideOpening(x, y, rowY) {
+      return y === rowY && Math.abs(x - TUNNEL_X) <= 1;
+    }
+
+    function isChamberEntrance(x, y) {
+      return isThreeWideOpening(x, y, CHAMBER_Y_START);
+    }
+
+    function isChamberEntranceOpen(x, y) {
+      return isChamberEntrance(x, y) && (!state.chamberSealed || state.doorsOpen);
+    }
+
+    function isMazeDoorOpen(x, y, rowY) {
+      return state.doorsOpen && isThreeWideOpening(x, y, rowY);
+    }
+
+    function sealChamberEntrance() {
+      if (state.chamberSealed) return;
+      state.chamberSealed = true;
+      for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+        setTile(x, CHAMBER_Y_START, "stone");
+      }
+      showMessage("The entrance sealed behind you! You are trapped.", "var(--warn)");
+    }
+
+    function checkChamberEntry() {
+      if (state.dead || state.doorsOpen) return;
+      if (player.y > CHAMBER_Y_START && player.y <= CHAMBER_Y_END) {
+        if (!state.respawnPromptShown) showRespawnPrompt();
+        if (!state.chamberSealed) sealChamberEntrance();
+      }
+    }
+
+    function isEscapeTunnel(x, y) {
+      if (!state.doorsOpen) return false;
+      if (Math.abs(x - TUNNEL_X) > 1) return false;
+      return y >= GROUND_Y && y <= CHAMBER_Y_END;
+    }
+
+    function carveEscapeTunnel() {
+      for (let y = GROUND_Y; y <= CHAMBER_Y_END; y++) {
+        for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+          setTile(x, y, "air");
+        }
+      }
+    }
+
+    function openAllDoors() {
+      state.doorsOpen = true;
+      state.chamberSealed = false;
+      for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+        setTile(x, CHAMBER_Y_START, "air");
+        setTile(x, MAZE_Y_END, "air");
+        setTile(x, MAZE_Y_START, "air");
+      }
+      carveEscapeTunnel();
+      showMessage("Doors opened! Straight tunnel back to the surface!", "var(--good)");
+    }
+
+    function ensureCelebrationCrowd() {
+      if (celebrationCrowd.length > 0) return;
+      for (let y = 0; y <= SURFACE_Y_MAX; y++) {
+        for (let x = 2; x < WORLD_W - 2; x++) {
+          if (Math.abs(x - SHOP_X) <= 2) continue;
+          celebrationCrowd.push({
+            x,
+            y,
+            skin: ["#7af0a1", "#f5c77a", "#9ac4ff", "#ff9aa2", "#c9f27a", "#ffd56b"][x % 6],
+            phase: hash2d(x, y) * Math.PI * 2
+          });
+        }
+      }
+    }
+
+    function checkSurfaceCelebration() {
+      if (isInCutscene() || !state.bossDefeated || !isAtSurface() || state.dead) return;
+      if (!state.celebrationShown) {
+        state.celebrationShown = true;
+        ensureCelebrationCrowd();
+        showMessage("Everyone celebrates! Even the shop guy!", "var(--good)");
+        sfx.cash();
+      }
+    }
+
+    function isChamberCarpet(x, y) {
+      if (!isInChamberRegion(y)) return false;
+      if (y <= CHAMBER_Y_START || y >= CHAMBER_Y_END) return false;
+      return Math.abs(x - TUNNEL_X) <= 1;
+    }
+
+    function isChamberChestPos(x, y) {
+      return x === CHAMBER_CHEST_X && y === CHAMBER_CHEST_Y;
+    }
+
+    function canOpenChest() {
+      if (state.dead) return false;
+      if (isChamberChestPos(player.x, player.y)) return true;
+      return isChamberChestPos(player.x + player.dirX, player.y + player.dirY);
+    }
+
+    function bossOccupies(x, y) {
+      if (!state.boss) return false;
+      const b = state.boss;
+      return x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h;
+    }
+
+    function isPlayerNearBoss() {
+      if (!state.boss) return false;
+      const b = state.boss;
+      return (
+        player.x >= b.x - 1 &&
+        player.x <= b.x + b.w &&
+        player.y >= b.y - 1 &&
+        player.y <= b.y + b.h
+      );
+    }
+
+    function getBossStartPos() {
+      return {
+        x: TUNNEL_X - 1,
+        y: CHAMBER_Y_START + Math.floor((CHAMBER_SIZE - BOSS_H) / 2)
+      };
+    }
+
+    function bossCanMoveTo(nx, ny) {
+      const b = state.boss;
+      if (nx < MAZE_X_MIN + 1 || nx + b.w > MAZE_X_MAX) return false;
+      if (ny <= CHAMBER_Y_START || ny + b.h >= CHAMBER_Y_END) return false;
+      for (let ox = 0; ox < b.w; ox++) {
+        for (let oy = 0; oy < b.h; oy++) {
+          const tx = nx + ox;
+          const ty = ny + oy;
+          if (tx === player.x && ty === player.y) return false;
+          if (!isAir(tx, ty)) return false;
+        }
+      }
+      return true;
+    }
+
+    function tryMoveBoss(dx, dy) {
+      const b = state.boss;
+      const nx = b.x + dx;
+      const ny = b.y + dy;
+      if (!bossCanMoveTo(nx, ny)) return false;
+      b.x = nx;
+      b.y = ny;
+      return true;
+    }
+
+    function spawnChamberBombs() {
+      const sideX = 5;
+      const nearTop = CHAMBER_Y_START + 10;
+      const nearBottom = CHAMBER_Y_END - 10;
+      const midY = CHAMBER_Y_START + Math.floor(CHAMBER_SIZE / 2);
+      state.chamberBombs = [
+        { x: MAZE_X_MIN + sideX, y: nearTop },
+        { x: MAZE_X_MAX - sideX, y: nearTop },
+        { x: MAZE_X_MIN + sideX, y: midY },
+        { x: MAZE_X_MAX - sideX, y: midY },
+        { x: MAZE_X_MIN + sideX, y: nearBottom },
+        { x: MAZE_X_MAX - sideX, y: nearBottom }
+      ].map((spot) => ({
+        x: spot.x,
+        y: spot.y,
+        armed: false,
+        exploding: false,
+        done: false,
+        fuseEnd: 0,
+        explosionEnd: 0
+      }));
+    }
+
+    function getBombAt(x, y) {
+      if (!state.chamberBombs) return null;
+      return state.chamberBombs.find((b) => !b.done && b.x === x && b.y === y) || null;
+    }
+
+    function getBombToActivate() {
+      const onTile = getBombAt(player.x, player.y);
+      if (onTile && !onTile.armed && !onTile.exploding) return onTile;
+      const facing = getBombAt(player.x + player.dirX, player.y + player.dirY);
+      if (facing && !facing.armed && !facing.exploding) return facing;
+      return null;
+    }
+
+    function bossCellHitByExplosion(b, x, y) {
+      return x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h;
+    }
+
+    function hurtBossFromBomb(bomb, now) {
+      const b = state.boss;
+      if (!b || bomb.damageApplied) return;
+      bomb.damageApplied = true;
+      b.hp -= BOMB_STUN_DAMAGE;
+      const stunEnd = now + BOSS_STUN_MS;
+      b.stunnedUntil = Math.max(b.stunnedUntil || 0, stunEnd);
+      bomb.stunShown = true;
+      showMessage(`BOOM! -${BOMB_STUN_DAMAGE} HP! Miner King is DIZZY!`, "var(--good)", 200);
+      playTone(180, 0.12, "sawtooth", 0.07);
+      sfx.hurt();
+      updateHud();
+      if (b.hp <= 0) defeatBoss();
+    }
+
+    function applyExplosionDamage(bomb, now) {
+      let bossInBlast = false;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = bomb.x + dx;
+          const y = bomb.y + dy;
+          if (state.boss && bossCellHitByExplosion(state.boss, x, y)) bossInBlast = true;
+          if (player.x === x && player.y === y && !state.dead) {
+            killPlayer("You were caught in the explosion!", "bomb");
+          }
+        }
+      }
+      if (bossInBlast) hurtBossFromBomb(bomb, now);
+    }
+
+    function updateChamberBombs(now) {
+      if (!state.chamberBombs) return;
+      for (const bomb of state.chamberBombs) {
+        if (bomb.done) continue;
+        if (bomb.armed && !bomb.exploding && now >= bomb.fuseEnd) {
+          bomb.exploding = true;
+          bomb.explosionEnd = now + BOMB_EXPLOSION_MS;
+          playTone(110, 0.18, "sawtooth", 0.09);
+        }
+        if (bomb.exploding) {
+          applyExplosionDamage(bomb, now);
+          if (now >= bomb.explosionEnd) {
+            bomb.exploding = false;
+            bomb.done = true;
+          }
+        }
+      }
+    }
+
+    function tryActivateBomb() {
+      if (!state.hasSword || !state.chamberBombs) return false;
+      const bomb = getBombToActivate();
+      if (!bomb) return false;
+      bomb.armed = true;
+      bomb.fuseEnd = performance.now() + BOMB_FUSE_MS;
+      showMessage("Bomb armed! 3 seconds — run!", "var(--warn)", 180);
+      playTone(660, 0.06, "square", 0.05);
+      return true;
+    }
+
+    function isBossStunned(now) {
+      return state.boss && state.boss.stunnedUntil && now < state.boss.stunnedUntil;
+    }
+
+    function makeBoss() {
+      const start = getBossStartPos();
+      const now = performance.now();
+      return {
+        name: "Miner King",
+        x: start.x,
+        y: start.y,
+        w: BOSS_W,
+        h: BOSS_H,
+        hp: BOSS_MAX_HP,
+        maxHp: BOSS_MAX_HP,
+        lastAttackAt: now,
+        lastMoveAt: now,
+        lastLungeAt: now,
+        stunnedUntil: 0
+      };
+    }
+
+    function resetBossFight() {
+      if (!state.bossFight || state.bossDefeated) return;
+      spawnChamberBombs();
+      state.boss = makeBoss();
+    }
+
+    function startBossFight() {
+      spawnChamberBombs();
+      state.bossFight = true;
+      state.boss = makeBoss();
+    }
+
+    function defeatBoss() {
+      state.boss = null;
+      state.bossFight = false;
+      state.bossDefeated = true;
+      state.chamberBombs = null;
+      state.money += BOSS_WIN_REWARD;
+      unlockChamberFloor();
+      sfx.cash();
+      updateHud();
+      startVictoryCutscene();
+    }
+
+    function startVictoryCutscene() {
+      state.cutscene = "fadeOut";
+      state.cutsceneStart = performance.now();
+      state.gamePaused = true;
+      document.getElementById("cutsceneOverlay").style.display = "block";
+      showMessage(`You beat the Miner King! +$${BOSS_WIN_REWARD}`, "var(--good)", 300);
+    }
+
+    function placePlayerForVictoryScene() {
+      player.x = SHOP_X;
+      player.y = PLAYER_MIN_Y;
+      player.dirX = 0;
+      player.dirY = 1;
+      ensureCelebrationCrowd();
+      state.celebrationShown = true;
+      ensureLoadedAroundPlayer();
+      sfx.cash();
+    }
+
+    function showVictoryMenu() {
+      state.cutscene = "menu";
+      document.getElementById("victoryMenuModal").style.display = "flex";
+    }
+
+    function hideVictoryMenu() {
+      const menu = document.getElementById("victoryMenuModal");
+      const overlay = document.getElementById("cutsceneOverlay");
+      if (menu) menu.style.display = "none";
+      if (overlay) {
+        overlay.style.display = "none";
+        overlay.style.opacity = "0";
+      }
+    }
+
+    function getCutsceneBlackAlpha(now) {
+      if (!state.cutscene) return 0;
+      const t = now - state.cutsceneStart;
+      if (state.cutscene === "fadeOut") return Math.min(1, t / 2500);
+      if (state.cutscene === "celebrate") {
+        if (t < 1600) return 1 - t / 1600;
+        return 0;
+      }
+      if (state.cutscene === "fadeMenu") return Math.min(1, t / 1800);
+      if (state.cutscene === "menu") return 1;
+      return 0;
+    }
+
+    function updateVictoryCutscene(now) {
+      if (!state.cutscene || state.cutscene === "menu") return;
+      const elapsed = now - state.cutsceneStart;
+      const overlay = document.getElementById("cutsceneOverlay");
+      overlay.style.opacity = String(getCutsceneBlackAlpha(now));
+
+      if (state.cutscene === "fadeOut" && elapsed >= 2500) {
+        placePlayerForVictoryScene();
+        state.cutscene = "celebrate";
+        state.cutsceneStart = now;
+        return;
+      }
+      if (state.cutscene === "celebrate" && elapsed >= 5500) {
+        state.cutscene = "fadeMenu";
+        state.cutsceneStart = now;
+        return;
+      }
+      if (state.cutscene === "fadeMenu" && elapsed >= 1800) {
+        showVictoryMenu();
+      }
+    }
+
+    function onVictoryContinue() {
+      hideVictoryMenu();
+      state.cutscene = null;
+      state.gamePaused = false;
+      state.continueUnlocked = true;
+      openChamberBottom();
+      openAllDoors();
+      player.x = SHOP_X;
+      player.y = CHAMBER_SHOP_Y1;
+      player.dirX = 0;
+      player.dirY = -1;
+      ensureLoadedAroundPlayer();
+      showMessage(`Chamber shop open! Mine ${CONTINUE_SHAFT_DEPTH} levels deeper below!`, "var(--good)", 280);
+      updateHud();
+      draw();
+    }
+
+    function onVictoryPlayAgain() {
+      hideVictoryMenu();
+      state.cutscene = null;
+      state.gamePaused = false;
+      resetGame();
+    }
+
+    function updateBossMove(now) {
+      const b = state.boss;
+      if (now - b.lastMoveAt < BOSS_MOVE_MS) return;
+      b.lastMoveAt = now;
+
+      const targetX = player.x < b.x ? -1 : player.x > b.x + b.w - 1 ? 1 : 0;
+      const targetY = player.y < b.y ? -1 : player.y > b.y + b.h - 1 ? 1 : 0;
+
+      if (targetX !== 0 || targetY !== 0) {
+        if (!tryMoveBoss(targetX, targetY)) {
+          if (targetX !== 0 && tryMoveBoss(targetX, 0)) return;
+          if (targetY !== 0 && tryMoveBoss(0, targetY)) return;
+          const wiggle = [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1]
+          ];
+          const pick = wiggle[Math.floor(hash2d(b.x + now, b.y) * 4)];
+          tryMoveBoss(pick[0], pick[1]);
+        }
+      }
+    }
+
+    function bossMeleeAttack(now) {
+      const b = state.boss;
+      const attackSpeed = b.hp < b.maxHp * 0.4 ? BOSS_ATTACK_MS * 0.7 : BOSS_ATTACK_MS;
+      if (now - b.lastAttackAt < attackSpeed) return;
+      if (!isPlayerNearBoss()) return;
+      b.lastAttackAt = now;
+      const hitDamage = b.hp < b.maxHp * 0.25 ? BOSS_DAMAGE + 2 : BOSS_DAMAGE;
+      state.hp -= hitDamage;
+      showMessage(`${b.name} slashes you for ${hitDamage}!`, "var(--bad)");
+      sfx.hurt();
+      updateHud();
+      if (state.hp <= 0) killPlayer("The Miner King defeated you!", "boss");
+    }
+
+    function bossLungeAttack(now) {
+      const b = state.boss;
+      if (now - b.lastLungeAt < BOSS_LUNGE_MS) return;
+      const dist =
+        Math.abs(player.x - (b.x + Math.floor(b.w / 2))) +
+        Math.abs(player.y - (b.y + Math.floor(b.h / 2)));
+      if (dist > 10 || dist < 2) return;
+
+      b.lastLungeAt = now;
+      const dx = player.x < b.x ? -1 : player.x > b.x + b.w - 1 ? 1 : 0;
+      const dy = player.y < b.y ? -1 : player.y > b.y + b.h - 1 ? 1 : 0;
+      for (let step = 0; step < 3; step++) {
+        if (dx !== 0) tryMoveBoss(dx, 0);
+        if (dy !== 0) tryMoveBoss(0, dy);
+      }
+
+      if (isPlayerNearBoss() && now - b.lastAttackAt >= 400) {
+        b.lastAttackAt = now;
+        state.hp -= BOSS_LUNGE_DAMAGE;
+        showMessage(`${b.name} lunges and smashes you!`, "var(--bad)");
+        sfx.hurt();
+        updateHud();
+        if (state.hp <= 0) killPlayer("The Miner King defeated you!", "boss");
+      }
+    }
+
+    function updateBossFight() {
+      if (!state.bossFight || !state.boss || state.dead || state.gamePaused) return;
+      const now = performance.now();
+      if (isBossStunned(now)) return;
+      updateBossMove(now);
+      bossLungeAttack(now);
+      bossMeleeAttack(now);
+    }
+
+    function tryAttackBoss() {
+      if (!state.bossFight || !state.hasSword || !state.boss) return false;
+      if (!isPlayerNearBoss()) {
+        showMessage("Get closer to the boss to swing your sword!");
+        sfx.blocked();
+        return true;
+      }
+      state.boss.hp -= SWORD_DAMAGE;
+      startPlayerAnim("swing");
+      playTone(320, 0.08, "sawtooth", 0.06);
+      showMessage(`Sword hit! Boss has ${Math.max(0, state.boss.hp)} HP left.`, "var(--good)");
+      if (state.boss.hp <= 0) defeatBoss();
+      updateHud();
+      return true;
+    }
+
+    function tryOpenChest() {
+      if (!canOpenChest()) return false;
+      if (state.chamberChestOpened) {
+        if (tryActivateBomb()) return true;
+        if (state.bossFight) return tryAttackBoss();
+        showMessage("The chest is empty.");
+        sfx.blocked();
+        return true;
+      }
+      state.chamberChestOpened = true;
+      state.hasSword = true;
+      startBossFight();
+      showMessage("You got the Sword! Six bombs appeared! Miner King too!", "var(--good)");
+      playTone(520, 0.12, "triangle", 0.07);
+      updateHud();
+      return true;
+    }
+
+    function isMazeTopOpening(x, y) {
+      return isThreeWideOpening(x, y, MAZE_Y_START);
+    }
+
+    function isMazeBottomOpening(x, y) {
+      return isThreeWideOpening(x, y, MAZE_Y_END);
+    }
+
+    function isChamberWall(x, y) {
+      if (!isInChamberRegion(y)) return false;
+      if (isChamberEntranceOpen(x, y)) return false;
+      if (isChamberBreakableFloor(x, y)) return false;
+      return (
+        x === MAZE_X_MIN ||
+        x === MAZE_X_MAX ||
+        y === CHAMBER_Y_START ||
+        y === CHAMBER_Y_END
+      );
+    }
+
+    function openChamberBottom() {
+      for (let y = CHAMBER_Y_END; y <= getWorldYMax(); y++) {
+        for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+          setTile(x, y, "air");
+        }
+      }
+      showMessage(`The chamber floor opened! ${CONTINUE_SHAFT_DEPTH} more levels to mine below!`, "var(--good)");
+    }
+
+    function mazeKey(x, y) {
+      return `${x},${y}`;
+    }
+
+    function addMazeAir(x, y) {
+      if (x < MAZE_X_MIN || x > MAZE_X_MAX) return;
+      if (!isInMazeRegion(y)) return;
+      mazeAirTiles.add(mazeKey(x, y));
+    }
+
+    function buildMazeLayout() {
+      if (mazeBuilt) return;
+      mazeBuilt = true;
+      mazeAirTiles = new Set();
+
+      for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+        addMazeAir(x, MAZE_Y_START);
+        addMazeAir(x, MAZE_Y_END);
+      }
+
+      if (MAZE_TEST_MODE) {
+        for (let y = MAZE_Y_START; y <= MAZE_Y_END; y++) {
+          addMazeAir(TUNNEL_X, y);
+          addMazeAir(TUNNEL_X - 1, y);
+          addMazeAir(TUNNEL_X + 1, y);
+        }
+      }
+
+      const startX = TUNNEL_X % 2 === 1 ? TUNNEL_X : TUNNEL_X - 1;
+      const startY = MAZE_Y_START + 1;
+      const stack = [[startX, startY]];
+      const visited = new Set([mazeKey(startX, startY)]);
+      addMazeAir(startX, startY);
+
+      while (stack.length > 0) {
+        const [cx, cy] = stack[stack.length - 1];
+        const neighbors = [
+          [cx + 2, cy],
+          [cx - 2, cy],
+          [cx, cy + 2],
+          [cx, cy - 2]
+        ].filter(([nx, ny]) => {
+          return (
+            nx > MAZE_X_MIN &&
+            nx < MAZE_X_MAX &&
+            ny > MAZE_Y_START &&
+            ny < MAZE_Y_END &&
+            nx % 2 === 1 &&
+            ny % 2 === 1 &&
+            !visited.has(mazeKey(nx, ny))
+          );
+        });
+
+        if (neighbors.length === 0) {
+          stack.pop();
+          continue;
+        }
+
+        const pickIdx = Math.floor(hash2d(cx * 17 + cy, cy * 31 + neighbors.length) * neighbors.length);
+        const [nx, ny] = neighbors[pickIdx];
+        visited.add(mazeKey(nx, ny));
+        addMazeAir(nx, ny);
+        addMazeAir(cx + (nx - cx) / 2, cy + (ny - cy) / 2);
+        stack.push([nx, ny]);
+      }
+    }
+
+    function getSurfaceSpawn() {
+      return { x: TUNNEL_X, y: PLAYER_MIN_Y };
+    }
+
+    function getMazeEntranceSpawn() {
+      buildMazeLayout();
+      const spawnY = MAZE_Y_START + 1;
+      const trySpots = [
+        [TUNNEL_X, spawnY],
+        [TUNNEL_X - 1, spawnY],
+        [TUNNEL_X + 1, spawnY],
+        [TUNNEL_X, MAZE_Y_START + 2]
+      ];
+      for (const [x, y] of trySpots) {
+        if (mazeAirTiles.has(mazeKey(x, y))) return { x, y };
+      }
+      addMazeAir(TUNNEL_X, spawnY);
+      return { x: TUNNEL_X, y: spawnY };
+    }
+
+    function isMazeProtectedBlock(x, y, tile) {
+      if (isChamberEntranceOpen(x, y)) return false;
+      if (
+        isMazeTopOpening(x, y) ||
+        isMazeBottomOpening(x, y) ||
+        isMazeDoorOpen(x, y, MAZE_Y_START) ||
+        isMazeDoorOpen(x, y, MAZE_Y_END)
+      ) {
+        return false;
+      }
+      if (isChamberBreakableFloor(x, y)) return false;
+      if (isChamberWall(x, y) && tile === "stone") return true;
+      return isInMazeRegion(y) && tile === "stone";
+    }
+
+    function keyFor(x, y) {
+      return `${x},${y}`;
+    }
+
+    function hash2d(x, y) {
+      let h = (x * 374761393 + y * 668265263 + WORLD_SEED) | 0;
+      h = (h ^ (h >>> 13)) * 1274126177;
+      return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+    }
+
+    function generateTileAt(x, y) {
+      if (y <= SURFACE_Y_MAX) return "air";
+      if (x === 0 || x === WORLD_W - 1) return "bedrock";
+      if (x === Math.floor(WORLD_W / 2) && y < 4) return "air";
+      if (isBelowWorld(y)) return "bedrock";
+      if (isEscapeTunnel(x, y)) return "air";
+      if (isInChamberRegion(y)) {
+        if (isChamberBreakableFloor(x, y)) return "stone";
+        if (isChamberWall(x, y)) return "stone";
+        if (isChamberEntranceOpen(x, y)) return "air";
+        return "air";
+      }
+      if (y > CHAMBER_Y_END) {
+        if (!state.bossDefeated || isBelowWorld(y)) return "bedrock";
+        if (Math.abs(x - TUNNEL_X) <= 1) return "air";
+        const layerDepth = y - CHAMBER_Y_END + getLayerDepth(CHAMBER_Y_END);
+        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) {
+          return "lava";
+        }
+        return tileForDepth(layerDepth, hash2d(x, y));
+      }
+      if (isInMazeRegion(y)) {
+        buildMazeLayout();
+        if (
+          isMazeTopOpening(x, y) ||
+          isMazeBottomOpening(x, y) ||
+          isMazeDoorOpen(x, y, MAZE_Y_START) ||
+          isMazeDoorOpen(x, y, MAZE_Y_END)
+        ) {
+          return "air";
+        }
+        if (mazeAirTiles.has(mazeKey(x, y))) return "air";
+        return "stone";
+      }
+      const layerDepth = getLayerDepth(y);
+      if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
+      return tileForDepth(layerDepth, hash2d(x, y));
+    }
+
+    function getTile(x, y) {
+      if (!inBounds(x, y)) return "bedrock";
+      const key = keyFor(x, y);
+      if (!activeTiles.has(key)) {
+        const tile = savedEdits.has(key) ? savedEdits.get(key) : generateTileAt(x, y);
+        activeTiles.set(key, tile);
+      }
+      const tile = activeTiles.get(key);
+      if (tile === "carpet") return "air";
+      return tile;
+    }
+
+    function setTile(x, y, tile) {
+      if (!inBounds(x, y)) return;
+      const key = keyFor(x, y);
+      activeTiles.set(key, tile);
+      savedEdits.set(key, tile);
+    }
+
+    function ensureLoadedAroundPlayer() {
+      const minY = Math.max(0, player.y - getLoadRadius());
+      const maxY = Math.min(getWorldYMax(), player.y + getLoadRadius());
+      for (let y = minY; y <= maxY; y++) {
+        for (let x = 0; x < WORLD_W; x++) {
+          getTile(x, y);
+        }
+      }
+    }
+
+    function despawnFarTiles() {
+      const minY = Math.max(0, player.y - getActiveRadius());
+      const maxY = player.y + getActiveRadius();
+      for (const key of activeTiles.keys()) {
+        const y = Number(key.split(",")[1]);
+        if (y < minY || y > maxY) {
+          activeTiles.delete(key);
+        }
+      }
+    }
+
+    function applyGameTestLoad() {
+      state.money = 99999999;
+      state.bagValue = 99999;
+      state.pickaxe = MAX_PICK;
+      state.pickDurability = getMaxDurability(MAX_PICK);
+      state.hp = 100;
+      state.waterBuckets = 99;
+      state.hasSword = true;
+      state.chamberChestOpened = true;
+      state.respawnMode = true;
+      state.respawnPromptShown = true;
+      state.dead = false;
+      state.gamePaused = false;
+      state.cutscene = null;
+      state.pendingWorker = null;
+      state.workersBought = 10;
+      state.heavyWorkersBought = 10;
+      state.bossDefeated = false;
+      state.continueUnlocked = false;
+      state.doorsOpen = true;
+      state.chamberSealed = true;
+      state.celebrationShown = false;
+      openAllDoors();
+      startBossFight();
+      state.workers = [
+        {
+          x: 8,
+          y: PLAYER_MIN_Y,
+          type: "normal",
+          width: 1,
+          height: 1,
+          hasWaterBucket: true,
+          infiniteWaterBucket: true,
+          dead: false
+        },
+        {
+          x: 36,
+          y: CHAMBER_WORKER_SPAWN_Y,
+          type: "heavy",
+          width: 2,
+          height: 2,
+          hasWaterBucket: true,
+          infiniteWaterBucket: true,
+          dead: false
+        }
+      ];
+      player.x = CHAMBER_CHEST_X;
+      player.y = CHAMBER_CHEST_Y - 2;
+      player.dirX = 0;
+      player.dirY = 1;
+      player.deathAnimStart = null;
+      player.deathReason = null;
+      hideVictoryMenu();
+      hideRespawnPrompt();
+      ensureLoadedAroundPlayer();
+      showMessage("TEST MODE: max gear! Miner King fight started — go get him!", "var(--good)", 280);
+      updateHud();
+    }
+
+    function resetGame() {
+      activeTiles = new Map();
+      savedEdits = new Map();
+      mazeBuilt = false;
+      mazeAirTiles = new Set();
+      celebrationCrowd = [];
+      const startPos = getSurfaceSpawn();
+      fxParticles = [];
+      player = {
+        x: startPos.x,
+        y: startPos.y,
+        dirX: 0,
+        dirY: 1,
+        deathAnimStart: null,
+        deathReason: null,
+        anim: null,
+        animStart: 0,
+        mineFlashX: null,
+        mineFlashY: null,
+        mineFlashStart: 0
+      };
+      state = {
+        money: 0,
+        bagValue: 0,
+        pickaxe: 1,
+        pickDurability: getMaxDurability(1),
+        workers: [],
+        workersBought: 0,
+        heavyWorkersBought: 0,
+        waterBuckets: 0,
+        pendingWorker: null,
+        hp: 100,
+        dead: false,
+        chamberSealed: false,
+        chamberChestOpened: false,
+        hasSword: false,
+        bossFight: false,
+        bossDefeated: false,
+        boss: null,
+        doorsOpen: false,
+        celebrationShown: false,
+        respawnMode: false,
+        respawnPromptShown: false,
+        gamePaused: false,
+        chamberBombs: null,
+        cutscene: null,
+        cutsceneStart: 0,
+        continueUnlocked: false
+      };
+      hideVictoryMenu();
+      player.deathAnimStart = null;
+      lastLavaSpreadAt = performance.now();
+      lastWorkerActionAt = performance.now();
+      hideRespawnPrompt();
+      ensureLoadedAroundPlayer();
+      if (GAME_TEST_MODE) {
+        applyGameTestLoad();
+      } else {
+        showMessage("You start at the top! Dig down to find the maze and the chamber.", "var(--good)");
+      }
+      updateHud();
+      draw();
+    }
+
+    function inBounds(x, y) {
+      return x >= 0 && x < WORLD_W && y >= 0 && y <= getWorldYMax();
+    }
+
+    function canPlayerOccupy(x, y) {
+      return inBounds(x, y) && y >= PLAYER_MIN_Y;
+    }
+
+    function isAir(x, y) {
+      return inBounds(x, y) && getTile(x, y) === "air";
+    }
+
+    function movePlayer(dx, dy) {
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+      const nx = player.x + dx;
+      const ny = player.y + dy;
+      player.dirX = dx;
+      player.dirY = dy;
+
+      if (canPlayerOccupy(nx, ny) && getTile(nx, ny) === "lava") {
+        killPlayer("You ran into lava!", "lava");
+        return;
+      }
+
+      if (bossOccupies(nx, ny)) {
+        showMessage("The boss is in the way!");
+        sfx.blocked();
+        updateHud();
+        return;
+      }
+
+      if (hasAutoMine() && (dx !== 0 || dy !== 0) && canPlayerOccupy(nx, ny)) {
+        const blockTile = getTile(nx, ny);
+        if (blockTile !== "air" && blockTile !== "lava" && !bossOccupies(nx, ny)) {
+          tryMineInDirection(dx, dy, { quiet: true, auto: true });
+        }
+      }
+
+      if (canPlayerOccupy(nx, ny) && isAir(nx, ny)) {
+        player.x = nx;
+        player.y = ny;
+        ensureLoadedAroundPlayer();
+        despawnFarTiles();
+        if (isInShop() && state.bagValue > 0) {
+          state.money += state.bagValue;
+          showMessage(`Sold loot for $${state.bagValue}!`, "var(--good)");
+          sfx.cash();
+          state.bagValue = 0;
+        }
+        checkChamberEntry();
+        checkSurfaceCelebration();
+      }
+      updateHud();
+    }
+
+    function checkPlayerLavaDeath() {
+      if (state.dead) return;
+      if (getTile(player.x, player.y) === "lava") {
+        killPlayer("Lava engulfed you!", "lava");
+      }
+    }
+
+    function mineTile() {
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+      if (tryActivateBomb()) return;
+      if (state.bossFight && state.hasSword && tryAttackBoss()) return;
+      if (tryOpenChest()) return;
+      let dx = player.dirX;
+      let dy = player.dirY;
+      if (dx === 0 && dy === 0) dy = 1;
+      tryMineInDirection(dx, dy, { quiet: false });
+    }
+
+    function triggerRockFall() {
+      const cols = Math.floor(Math.random() * 3) + 1;
+      let totalDamage = 0;
+      for (let i = 0; i < cols; i++) {
+        const x = Math.max(1, Math.min(WORLD_W - 2, player.x + (Math.floor(Math.random() * 9) - 4)));
+        for (let y = player.y - 1; y >= 1; y--) {
+          const cell = getTile(x, y);
+          if (cell !== "air") {
+            setTile(x, y + 1, cell);
+            setTile(x, y, "air");
+            if (x === player.x && y + 1 === player.y) {
+              const dmg = 10 + Math.floor(player.y / 18);
+              totalDamage += dmg;
+            }
+            break;
+          }
+        }
+      }
+
+      if (totalDamage > 0) {
+        state.hp -= totalDamage;
+        showMessage(`Rock fall! You took ${totalDamage} damage!`, "var(--bad)");
+        sfx.hurt();
+      } else {
+        showMessage("Rocks fell nearby!", "var(--warn)");
+        playTone(190, 0.06, "square", 0.03);
+      }
+
+      if (state.hp <= 0) {
+        killPlayer("You were crushed!", "crushed");
+      }
+      updateHud();
+    }
+
+    function checkStuckGameOver() {
+      if (state.dead || isAtSurface() || state.bossFight) return;
+      const dirs = [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0]
+      ];
+
+      for (const [dx, dy] of dirs) {
+        const nx = player.x + dx;
+        const ny = player.y + dy;
+        if (!inBounds(nx, ny)) continue;
+        const tile = getTile(nx, ny);
+
+        // Any open neighbor means you are not stuck.
+        if (tile === "air") return;
+
+        // If you can mine at least one adjacent block, you are not stuck.
+        const def = oreDefs[tile];
+        if (
+          state.pickDurability > 0 &&
+          def &&
+          tile !== "bedrock" &&
+          tile !== "lava" &&
+          state.pickaxe >= def.hard
+        ) {
+          return;
+        }
+      }
+
+      killPlayer("Game over! You got stuck in the cave.", "stuck");
+    }
+
+    function updateControlsHint() {
+      const el = document.getElementById("gameControlsHint");
+      if (!el) return;
+      const base = "Move: WASD/Arrows | Space: mine, sword, arm bombs";
+      const testNote = GAME_TEST_MODE ? " | T = test refill" : "";
+      if (state.bossFight && !state.bossDefeated) {
+        el.textContent = `${base} | Beat Miner King, use bombs to stun him!${testNote}`;
+      } else if (state.bossDefeated && !state.continueUnlocked) {
+        el.textContent = `${base} | Mine the chamber floor (down) to go deeper!${testNote}`;
+      } else {
+        el.textContent = `${base}${testNote}`;
+      }
+    }
+
+    function updateHud() {
+      updateControlsHint();
+      document.getElementById("money").textContent = state.money;
+      document.getElementById("depth").textContent = player.y;
+      document.getElementById("health").textContent = state.hp;
+      document.getElementById("pickLvl").textContent =
+        state.pickaxe >= PICK_QUAD ? getPickaxeName(state.pickaxe) : state.pickaxe;
+      document.getElementById("pickStr").textContent = getPickStrength(state.pickaxe);
+      document.getElementById("bag").textContent = state.bagValue;
+      document.getElementById("pickDur").textContent = state.pickDurability;
+      document.getElementById("pickDurMax").textContent = getMaxDurability(state.pickaxe);
+      document.getElementById("workerCount").textContent = state.workers.filter((w) => !w.dead).length;
+      document.getElementById("bucketCount").textContent = state.waterBuckets;
+      const shopHint = document.getElementById("shopHint");
+      if (state.continueUnlocked) {
+        shopHint.textContent = "Shop on surface OR in the chamber (center, near top).";
+      } else {
+        shopHint.textContent = "Go to the shop (top 3 rows, center) to bank and buy.";
+      }
+      if (state.pendingWorker) {
+        const typeText = state.pendingWorker.type === "heavy" ? "Mega" : "Worker";
+        document.getElementById("workerLane").textContent = `${typeText} X ${state.pendingWorker.x}`;
+      } else {
+        document.getElementById("workerLane").textContent = "-";
+      }
+
+      const upgradeCost = getUpgradePickCost(state.pickaxe);
+      const upBtn = document.getElementById("upgradeBtn");
+      if (upgradeCost === null) {
+        upBtn.textContent = "Pickaxe MAX";
+        upBtn.disabled = true;
+      } else {
+        const nextName = getPickaxeName(state.pickaxe + 1);
+        upBtn.textContent = `Upgrade → ${nextName} ($${upgradeCost})`;
+        upBtn.disabled = state.money < upgradeCost || !isInShop();
+      }
+
+      const healBtn = document.getElementById("healBtn");
+      healBtn.disabled = state.money < 20 || state.hp >= 100 || !isInShop();
+
+      const repairCost = getRepairCost();
+      const repairBtn = document.getElementById("repairBtn");
+      repairBtn.textContent = `Repair Pickaxe ($${repairCost})`;
+      repairBtn.disabled = !isInShop() || repairCost <= 0 || state.money < repairCost;
+
+      const workerCost = getWorkerCost();
+      const workerBtn = document.getElementById("workerBtn");
+      workerBtn.textContent = `Buy Worker ($${workerCost})`;
+      workerBtn.disabled = !isInShop() || state.money < workerCost || state.dead || !!state.pendingWorker;
+
+      const heavyWorkerCost = getHeavyWorkerCost();
+      const heavyWorkerBtn = document.getElementById("heavyWorkerBtn");
+      heavyWorkerBtn.textContent = `Buy Mega Worker ($${heavyWorkerCost})`;
+      heavyWorkerBtn.disabled = !isInShop() || state.money < heavyWorkerCost || state.dead || !!state.pendingWorker;
+
+      const buyBucketBtn = document.getElementById("buyBucketBtn");
+      buyBucketBtn.textContent = `Buy Water Bucket ($${WATER_BUCKET_COST})`;
+      buyBucketBtn.disabled = !isInShop() || state.money < WATER_BUCKET_COST || state.dead;
+
+      const useBucketBtn = document.getElementById("useBucketBtn");
+      useBucketBtn.disabled = state.waterBuckets <= 0 || state.dead;
+
+      const equipWorkerBtn = document.getElementById("equipWorkerBtn");
+      equipWorkerBtn.disabled = state.waterBuckets <= 0 || getNearbyWorkerIndexForEquip() === -1 || state.dead;
+
+      const laneLeftBtn = document.getElementById("workerLaneLeftBtn");
+      const laneRightBtn = document.getElementById("workerLaneRightBtn");
+      laneLeftBtn.disabled = !state.pendingWorker || state.pendingWorker.x <= 1 || state.dead;
+      const maxPendingX = state.pendingWorker ? WORLD_W - state.pendingWorker.width - 1 : WORLD_W - 2;
+      laneRightBtn.disabled = !state.pendingWorker || state.pendingWorker.x >= maxPendingX || state.dead;
+
+      const hireBtn = document.getElementById("hireBtn");
+      hireBtn.disabled =
+        !state.pendingWorker ||
+        state.dead ||
+        isInCutscene() ||
+        isPendingWorkerTunnelBlocked();
+    }
+
+    function drawCarpet(sx, sy) {
+      ctx.fillStyle = "#9f1239";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "#dc2626";
+      ctx.fillRect(sx + 1, sy + 1, TILE - 2, TILE - 2);
+      ctx.fillStyle = "#b91c1c";
+      for (let stripe = 4; stripe < TILE; stripe += 7) {
+        ctx.fillRect(sx + 2, sy + stripe, TILE - 4, 3);
+      }
+    }
+
+    function drawSwordIcon(sx, sy, size) {
+      ctx.fillStyle = "#c0c8d8";
+      ctx.fillRect(sx + Math.floor(size * 0.45), sy, 3, size);
+      ctx.fillStyle = "#ffd56b";
+      ctx.fillRect(sx, sy + size - 5, size, 4);
+      ctx.fillStyle = "#8b5a2b";
+      ctx.fillRect(sx + 2, sy + size - 3, size - 4, 2);
+    }
+
+    function drawPickaxeSwing(cx, cy, dirX, dirY, t) {
+      const angle = Math.atan2(dirY, dirX || 0.01) + t * 1.5 - 0.7;
+      const dist = 8 + t * 10;
+      const px = cx + Math.cos(angle) * dist;
+      const py = cy + Math.sin(angle) * dist;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(angle + Math.PI / 2);
+      ctx.fillStyle = "#6b4423";
+      ctx.fillRect(-2, 0, 4, 12);
+      ctx.fillStyle = "#b8c0cc";
+      ctx.fillRect(-5, 10, 10, 3);
+      ctx.fillStyle = "#9aa0a8";
+      ctx.fillRect(-1, -10, 2, 12);
+      ctx.restore();
+    }
+
+    function drawSwingSlash(cx, cy, dirX, dirY, t) {
+      const base = Math.atan2(dirY, dirX || 0.01);
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 240, 150, ${0.95 - t * 0.7})`;
+      ctx.lineWidth = 4 - t * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 12 + t * 14, base - 0.8, base - 0.8 + (1.6 * t));
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 - t * 0.5})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 8 + t * 10, base - 0.5, base - 0.5 + (1.2 * t));
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLivingPlayer(px, py) {
+      const { kind, t } = getPlayerAnimProgress();
+      const mineT = kind === "mine" ? t : 0;
+      const swingT = kind === "swing" ? t : 0;
+      const buyT = kind === "buy" ? t : 0;
+      const dx = player.dirX;
+      const dy = player.dirY;
+      const cx = px + TILE / 2;
+      const cy = py + TILE / 2;
+      const bump = Math.sin(mineT * Math.PI) * 5;
+      const leanX = dx * (2 + bump) + dx * swingT * 4;
+      const leanY = dy * (2 + bump) - Math.sin(buyT * Math.PI) * 6;
+
+      ctx.save();
+      ctx.translate(cx + leanX, cy + leanY);
+      if (swingT > 0) ctx.rotate((dx || 1) * swingT * 0.4);
+
+      ctx.fillStyle = "#7af0a1";
+      ctx.fillRect(-8, -8, 16, 16);
+      ctx.fillStyle = "#203f2d";
+      if (buyT > 0) {
+        const armUp = Math.sin(buyT * Math.PI) * 6;
+        ctx.fillRect(-11, -10 - armUp, 4, 8);
+        ctx.fillRect(7, -10 - armUp, 4, 8);
+      }
+      ctx.fillRect(-4, -2, 4, 4);
+      ctx.fillRect(2, -2, 4, 4);
+      ctx.restore();
+
+      if (mineT > 0) drawPickaxeSwing(cx + leanX, cy + leanY, dx, dy, mineT);
+      if (swingT > 0) {
+        drawSwingSlash(cx + leanX, cy + leanY, dx, dy, swingT);
+        const sa = Math.atan2(dy, dx || 0.01) + swingT * 1.2 - 0.4;
+        drawSwordIcon(
+          cx + leanX + Math.cos(sa) * 12 - 7,
+          cy + leanY + Math.sin(sa) * 12 - 7,
+          14
+        );
+      } else if (state.hasSword && !state.bossDefeated) {
+        drawSwordIcon(px + (dx >= 0 ? TILE - 6 : 2), py + 8, 14);
+      }
+
+      if (buyT > 0) {
+        ctx.fillStyle = `rgba(255, 213, 107, ${0.9 * (1 - buyT * 0.5)})`;
+        ctx.font = "bold 16px Verdana";
+        ctx.textAlign = "center";
+        ctx.fillText("$", cx + leanX, cy + leanY - 20 - buyT * 6);
+        ctx.textAlign = "start";
+      }
+    }
+
+    function drawMineFlash(camX, camY) {
+      if (player.mineFlashX == null) return;
+      if (performance.now() - player.mineFlashStart > ANIM_MINE_MS) return;
+      const t = 1 - (performance.now() - player.mineFlashStart) / ANIM_MINE_MS;
+      const sx = (player.mineFlashX - camX) * TILE;
+      const sy = (player.mineFlashY - camY) * TILE;
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.45 * t})`;
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.strokeStyle = `rgba(255, 213, 107, ${0.7 * t})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx + 2, sy + 2, TILE - 4, TILE - 4);
+    }
+
+    function drawShopkeeper(sx, sy) {
+      const celebrate =
+        state.bossDefeated && (isAtSurface() || state.cutscene === "celebrate");
+      const t = performance.now() / 1000;
+      const bounce = celebrate ? Math.sin(t * 8) * 4 : 0;
+      const y = sy - bounce;
+
+      ctx.fillStyle = "#8845d9";
+      ctx.fillRect(sx + 5, y + 4, TILE - 10, TILE - 8);
+      if (celebrate) {
+        ctx.fillStyle = "#8845d9";
+        ctx.fillRect(sx + 2, y + 1, 4, 10);
+        ctx.fillRect(sx + TILE - 6, y + 1, 4, 10);
+        ctx.fillStyle = "#f3e7ff";
+        ctx.fillRect(sx + 8, y + 9, 3, 2);
+        ctx.fillRect(sx + 13, y + 9, 3, 2);
+        ctx.fillStyle = "#ffe77a";
+        ctx.fillRect(sx + 9, y + 13, 6, 2);
+        ctx.fillStyle = "#ffd56b";
+        for (let i = 0; i < 6; i++) {
+          const fx = sx + 4 + i * 3;
+          const fy = y - 4 - ((t * 40 + i * 7) % 12);
+          ctx.fillRect(fx, fy, 3, 3);
+        }
+      } else {
+        ctx.fillStyle = "#f3e7ff";
+        ctx.fillRect(sx + 8, y + 8, 3, 3);
+        ctx.fillRect(sx + 13, y + 8, 3, 3);
+      }
+    }
+
+    function drawMiniPerson(sx, sy, skin, armUp) {
+      ctx.fillStyle = skin;
+      ctx.fillRect(sx + 5, sy + 6, TILE - 10, TILE - 10);
+      ctx.fillStyle = "#203f2d";
+      ctx.fillRect(sx + 8, sy + 10, 3, 3);
+      ctx.fillRect(sx + 13, sy + 10, 3, 3);
+      if (armUp) {
+        ctx.fillStyle = skin;
+        ctx.fillRect(sx + 2, sy + 2, 4, 8);
+        ctx.fillRect(sx + TILE - 6, sy + 2, 4, 8);
+      }
+    }
+
+    function drawCelebration(camX, camY) {
+      if (!state.bossDefeated) return;
+      if (!isAtSurface() && state.cutscene !== "celebrate") return;
+      ensureCelebrationCrowd();
+      const t = performance.now() / 1000;
+      for (const person of celebrationCrowd) {
+        if (person.y < camY || person.y > camY + VIEW_H - 1) continue;
+        const sx = (person.x - camX) * TILE;
+        const sy = (person.y - camY) * TILE;
+        const bounce = Math.sin(t * 8 + person.phase) * 4;
+        const armUp = Math.sin(t * 10 + person.phase) > 0.2;
+        drawMiniPerson(sx, sy - bounce, person.skin, armUp);
+      }
+      for (let i = 0; i < 70; i++) {
+        const fx = (i * 53 + t * 140) % canvas.width;
+        const fy = (i * 97 + t * 110) % canvas.height;
+        ctx.fillStyle = ["#ffe77a", "#ff7eb9", "#62f0ff", "#79f08e", "#ff8f42"][i % 5];
+        ctx.fillRect(fx, fy, 5, 5);
+      }
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.font = "bold 14px Verdana";
+      ctx.textAlign = "center";
+      ctx.fillText("HERO!", canvas.width / 2, 18);
+      ctx.textAlign = "start";
+    }
+
+    function drawBossHealthBar(camX, camY) {
+      if (!state.boss) return;
+      const b = state.boss;
+      const bx = (b.x - camX) * TILE;
+      const by = (b.y - camY) * TILE;
+      const bw = b.w * TILE;
+      const barW = Math.max(90, bw + 20);
+      const barH = 10;
+      const x = bx + bw / 2 - barW / 2;
+      const y = by - 16;
+      const hp = Math.max(0, b.hp);
+      const pct = hp / b.maxHp;
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+      ctx.fillRect(x - 2, y - 12, barW + 4, barH + 16);
+      ctx.fillStyle = "#3a1515";
+      ctx.fillRect(x, y, barW, barH);
+      ctx.fillStyle = pct > 0.35 ? "#ff3b5c" : "#ff8f00";
+      ctx.fillRect(x, y, barW * pct, barH);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 9px Verdana";
+      ctx.textAlign = "center";
+      ctx.fillText(`${b.name}  ${hp}/${b.maxHp}`, x + barW / 2, y - 3);
+      ctx.textAlign = "start";
+    }
+
+    function drawBomb(sx, sy, bomb, now) {
+      if (bomb.exploding) return;
+      const t = now / 1000;
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(sx + 6, sy + 8, TILE - 12, TILE - 12);
+      ctx.fillStyle = bomb.armed ? "#ff8f00" : "#444";
+      ctx.fillRect(sx + 8, sy + 10, TILE - 16, TILE - 16);
+      if (bomb.armed) {
+        const left = Math.max(0, bomb.fuseEnd - now);
+        const blink = Math.sin(t * 18) > 0;
+        if (blink) {
+          ctx.fillStyle = "#ff3b5c";
+          ctx.fillRect(sx + 10, sy + 4, 4, 5);
+        }
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 10px Verdana";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.ceil(left / 1000), sx + TILE / 2, sy + TILE - 4);
+        ctx.textAlign = "start";
+      } else {
+        ctx.fillStyle = "#888";
+        ctx.fillRect(sx + 11, sy + 5, 2, 4);
+      }
+    }
+
+    function drawExplosion(camX, camY, bomb, now) {
+      if (!bomb.exploding) return;
+      const pulse = 0.55 + Math.sin(now / 40) * 0.25;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const wx = bomb.x + dx;
+          const wy = bomb.y + dy;
+          const sx = (wx - camX) * TILE;
+          const sy = (wy - camY) * TILE;
+          if (sx < -TILE || sy < -TILE || sx > canvas.width || sy > canvas.height) continue;
+          ctx.fillStyle = `rgba(255, ${Math.floor(120 + 80 * pulse)}, 40, ${pulse})`;
+          ctx.fillRect(sx + 1, sy + 1, TILE - 2, TILE - 2);
+          ctx.fillStyle = `rgba(255, 255, 180, ${pulse * 0.85})`;
+          ctx.fillRect(sx + 6, sy + 6, TILE - 12, TILE - 12);
+        }
+      }
+    }
+
+    function drawChamberBombs(camX, camY) {
+      if (!state.chamberBombs) return;
+      const now = performance.now();
+      for (const bomb of state.chamberBombs) {
+        if (bomb.done) continue;
+        const sx = (bomb.x - camX) * TILE;
+        const sy = (bomb.y - camY) * TILE;
+        if (sx < -TILE || sy < -TILE || sx > canvas.width || sy > canvas.height) continue;
+        if (bomb.exploding) drawExplosion(camX, camY, bomb, now);
+        else drawBomb(sx, sy, bomb, now);
+      }
+    }
+
+    function drawDizzyStars(cx, cy, t) {
+      for (let i = 0; i < 6; i++) {
+        const angle = t * 9 + (i * Math.PI * 2) / 6;
+        const sx = cx + Math.cos(angle) * 34;
+        const sy = cy + Math.sin(angle) * 26;
+        ctx.fillStyle = "#ffe77a";
+        ctx.font = "bold 14px Verdana";
+        ctx.textAlign = "center";
+        ctx.fillText("*", sx, sy + 5);
+      }
+      ctx.textAlign = "start";
+    }
+
+    function drawBoss(camX, camY) {
+      if (!state.boss) return;
+      const b = state.boss;
+      const bx = (b.x - camX) * TILE;
+      const by = (b.y - camY) * TILE;
+      const bw = b.w * TILE;
+      const bh = b.h * TILE;
+      if (bx + bw < 0 || by + bh < 0 || bx > canvas.width || by > canvas.height) return;
+      drawBossHealthBar(camX, camY);
+      const now = performance.now();
+      const stunned = isBossStunned(now);
+      const t = now / 1000;
+      const centerX = bx + bw / 2;
+      const centerY = by + bh / 2;
+
+      if (stunned) {
+        const stunLeft = Math.ceil((b.stunnedUntil - now) / 1000);
+        drawDizzyStars(centerX, centerY, t);
+        ctx.fillStyle = "#ffe77a";
+        ctx.font = "bold 12px Verdana";
+        ctx.textAlign = "center";
+        ctx.fillText(`DIZZY ${stunLeft}s`, centerX, by - 8);
+        ctx.textAlign = "start";
+      }
+
+      const wobbleX = stunned ? Math.sin(t * 16) * 6 : 0;
+      const wobbleY = stunned ? Math.cos(t * 13) * 5 : 0;
+      const spin = stunned ? Math.sin(t * 10) * 0.22 : 0;
+
+      ctx.save();
+      ctx.translate(centerX + wobbleX, centerY + wobbleY);
+      ctx.rotate(spin);
+      ctx.translate(-bw / 2, -bh / 2);
+
+      ctx.fillStyle = stunned ? "#7a7a9a" : "#4a154b";
+      ctx.fillRect(2, 2, bw - 4, bh - 4);
+      ctx.fillStyle = stunned ? "#b08fd9" : "#9b2dcf";
+      ctx.fillRect(6, 8, bw - 12, bh - 14);
+      if (stunned) {
+        ctx.strokeStyle = "#203f2d";
+        ctx.lineWidth = 2;
+        const eyeY = 16;
+        ctx.beginPath();
+        ctx.moveTo(10, eyeY - 3);
+        ctx.lineTo(14, eyeY + 3);
+        ctx.moveTo(14, eyeY - 3);
+        ctx.lineTo(10, eyeY + 3);
+        ctx.moveTo(bw - 14, eyeY - 3);
+        ctx.lineTo(bw - 10, eyeY + 3);
+        ctx.moveTo(bw - 10, eyeY - 3);
+        ctx.lineTo(bw - 14, eyeY + 3);
+        ctx.stroke();
+        ctx.fillStyle = "#9eeaff";
+        ctx.fillRect(bw / 2 - 5, bh - 10, 10, 3);
+      } else {
+        ctx.fillStyle = "#ff3b5c";
+        ctx.fillRect(10, 14, 8, 8);
+        ctx.fillRect(bw - 18, 14, 8, 8);
+        ctx.fillStyle = "#ffe77a";
+        ctx.fillRect(Math.floor(bw / 2) - 4, 4, 8, 4);
+      }
+      ctx.restore();
+    }
+
+    function drawChest(sx, sy, opened) {
+      ctx.fillStyle = "#6b4423";
+      ctx.fillRect(sx + 3, sy + 10, TILE - 6, TILE - 12);
+      ctx.fillStyle = "#8b5a2b";
+      ctx.fillRect(sx + 4, sy + 11, TILE - 8, TILE - 14);
+      ctx.fillStyle = "#ffd56b";
+      ctx.fillRect(sx + Math.floor(TILE / 2) - 2, sy + 14, 4, 4);
+      if (opened && !state.hasSword) {
+        ctx.fillStyle = "#4a3018";
+        ctx.fillRect(sx + 3, sy + 4, TILE - 6, 8);
+        drawSwordIcon(sx + 8, sy + 6, 10);
+      } else if (opened) {
+        ctx.fillStyle = "#4a3018";
+        ctx.fillRect(sx + 3, sy + 4, TILE - 6, 8);
+      } else {
+        ctx.fillStyle = "#5a3818";
+        ctx.fillRect(sx + 3, sy + 6, TILE - 6, 6);
+      }
+    }
+
+    function drawTile(x, y, tile, sx, sy) {
+      if (tile === "air") return;
+      const def = oreDefs[tile];
+      ctx.fillStyle = def ? def.color : "#999";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      if (tile === "lava") {
+        ctx.fillStyle = "rgba(255, 220, 100, 0.65)";
+        ctx.fillRect(sx + 3, sy + 4, TILE - 6, 6);
+        ctx.fillRect(sx + 5, sy + 13, TILE - 10, 5);
+        return;
+      }
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      ctx.fillRect(sx + 2, sy + 2, TILE - 4, 4);
+      if (tile !== "dirt" && tile !== "stone" && tile !== "bedrock") {
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.fillRect(sx + 7, sy + 7, 4, 4);
+        ctx.fillRect(sx + 14, sy + 13, 3, 3);
+      }
+    }
+
+    function draw() {
+      resizeGameCanvas();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - Math.floor(VIEW_W / 2)));
+      const camY = Math.max(0, player.y - Math.floor(VIEW_H / 2));
+
+      for (let vy = 0; vy < VIEW_H; vy++) {
+        for (let vx = 0; vx < VIEW_W; vx++) {
+          const wx = camX + vx;
+          const wy = camY + vy;
+          const sx = vx * TILE;
+          const sy = vy * TILE;
+
+          if (wy <= SURFACE_Y_MAX) {
+            const inShopCol = Math.abs(wx - SHOP_X) <= SHOP_HALF_WIDTH;
+            ctx.fillStyle = "#7ec7ff";
+            ctx.fillRect(sx, sy, TILE, TILE);
+            if (inShopCol) {
+              if (wy === 0 || wy === SURFACE_Y_MAX) {
+                // Top and bottom wood planks of the 3x3 shop.
+                ctx.fillStyle = "#7b4f2d";
+                ctx.fillRect(sx, sy, TILE, TILE);
+                ctx.fillStyle = "rgba(255, 220, 180, 0.18)";
+                ctx.fillRect(sx + 1, sy + 3, TILE - 2, 4);
+              } else if (wy === 1) {
+                if (wx === SHOP_X) {
+                  drawShopkeeper(sx, sy);
+                } else {
+                  // Thin fence-post-like pillars on each side.
+                  ctx.fillStyle = "#b38a64";
+                  ctx.fillRect(sx + Math.floor(TILE / 2) - 2, sy, 4, TILE);
+                }
+              }
+            }
+            continue;
+          }
+
+          if (isChamberShopTile(wx, wy)) {
+            if (isChamberCarpet(wx, wy)) drawCarpet(sx, sy);
+            else {
+              ctx.fillStyle = "#3b2a22";
+              ctx.fillRect(sx, sy, TILE, TILE);
+            }
+            if (wy === CHAMBER_SHOP_Y0 || wy === CHAMBER_SHOP_Y1) {
+              ctx.fillStyle = "#7b4f2d";
+              ctx.fillRect(sx, sy, TILE, TILE);
+              ctx.fillStyle = "rgba(255, 220, 180, 0.18)";
+              ctx.fillRect(sx + 1, sy + 3, TILE - 2, 4);
+            } else if (wy === CHAMBER_WORKER_SPAWN_Y) {
+              if (wx === SHOP_X) drawShopkeeper(sx, sy);
+              else {
+                ctx.fillStyle = "#b38a64";
+                ctx.fillRect(sx + Math.floor(TILE / 2) - 2, sy, 4, TILE);
+              }
+            }
+            if (isChamberChestPos(wx, wy)) drawChest(sx, sy, state.chamberChestOpened);
+            continue;
+          }
+
+          const tile = getTile(wx, wy);
+          drawTile(wx, wy, tile, sx, sy);
+          if (isChamberCarpet(wx, wy)) drawCarpet(sx, sy);
+          if (isChamberChestPos(wx, wy)) drawChest(sx, sy, state.chamberChestOpened);
+        }
+      }
+
+      drawChamberBombs(camX, camY);
+
+      // White SHOP letters on top of the shop roof (drawn after tiles so nothing overwrites it).
+      if (0 >= camY && 0 < camY + VIEW_H) {
+        const shopLeftPx = (SHOP_X - SHOP_HALF_WIDTH - camX) * TILE;
+        const roofY = (0 - camY) * TILE;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px Verdana";
+        ctx.textAlign = "center";
+        const spacing = (TILE * 3) / 5;
+        const baseX = shopLeftPx + spacing * 1;
+        const textY = roofY + 14;
+        ctx.fillText("S", baseX, textY);
+        ctx.fillText("H", baseX + spacing, textY);
+        ctx.fillText("O", baseX + spacing * 2, textY);
+        ctx.fillText("P", baseX + spacing * 3, textY);
+        ctx.textAlign = "start";
+      }
+
+      if (state.continueUnlocked && CHAMBER_SHOP_Y0 >= camY && CHAMBER_SHOP_Y0 < camY + VIEW_H) {
+        const shopLeftPx = (SHOP_X - SHOP_HALF_WIDTH - camX) * TILE;
+        const roofY = (CHAMBER_SHOP_Y0 - camY) * TILE;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 9px Verdana";
+        ctx.textAlign = "center";
+        const spacing = (TILE * 3) / 5;
+        const baseX = shopLeftPx + spacing * 1;
+        const textY = roofY + 14;
+        ctx.fillText("S", baseX, textY);
+        ctx.fillText("H", baseX + spacing, textY);
+        ctx.fillText("O", baseX + spacing * 2, textY);
+        ctx.fillText("P", baseX + spacing * 3, textY);
+        ctx.textAlign = "start";
+      }
+
+      drawBoss(camX, camY);
+
+      // Draw player.
+      const px = (player.x - camX) * TILE;
+      const py = (player.y - camY) * TILE;
+      if (state.dead) {
+        const elapsed = player.deathAnimStart ? (performance.now() - player.deathAnimStart) / 1000 : 0;
+        const t = Math.min(1.5, elapsed);
+        const isStuckDeath = player.deathReason === "stuck";
+        const impact = Math.max(0, 1 - t * 3.2); // Strong at start then fades.
+        const shakeX = (Math.sin(elapsed * 90) * 4 + Math.cos(elapsed * 66) * 2) * impact;
+        const shakeY = Math.sin(elapsed * 72) * 2 * impact;
+        const bodyScale = isStuckDeath ? Math.max(0.34, 1 - t * 0.42) : Math.max(0.22, 1 - t * 0.62);
+        const fallOffset = isStuckDeath ? Math.min(6, t * 4) : Math.min(13, t * 11);
+        const alpha = Math.max(0.20, 1 - t * 0.62);
+        const bodyW = (TILE - 8) * bodyScale * (isStuckDeath ? 1.5 : 1);
+        const bodyH = (TILE - 8) * bodyScale * (isStuckDeath ? 0.62 : 1);
+        const centerX = px + TILE / 2 + shakeX;
+        const centerY = py + TILE / 2 + fallOffset + shakeY;
+        const rot = isStuckDeath ? Math.min(0.4, t * 0.35) : Math.min(0.9, t * 0.95);
+        const spinDir = player.deathReason === "lava" ? -1 : 1;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rot * spinDir);
+        ctx.fillStyle = `rgba(166, 166, 166, ${alpha})`;
+        ctx.fillRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH);
+        ctx.strokeStyle = `rgba(55, 55, 55, ${alpha})`;
+        ctx.lineWidth = 2;
+        // X eyes.
+        const eyeY = -bodyH * 0.15;
+        const eyeDX = bodyW * 0.22;
+        const eyeSize = Math.max(2, bodyW * 0.10);
+        ctx.beginPath();
+        ctx.moveTo(-eyeDX - eyeSize, eyeY - eyeSize);
+        ctx.lineTo(-eyeDX + eyeSize, eyeY + eyeSize);
+        ctx.moveTo(-eyeDX + eyeSize, eyeY - eyeSize);
+        ctx.lineTo(-eyeDX - eyeSize, eyeY + eyeSize);
+        ctx.moveTo(eyeDX - eyeSize, eyeY - eyeSize);
+        ctx.lineTo(eyeDX + eyeSize, eyeY + eyeSize);
+        ctx.moveTo(eyeDX + eyeSize, eyeY - eyeSize);
+        ctx.lineTo(eyeDX - eyeSize, eyeY + eyeSize);
+        ctx.stroke();
+        ctx.restore();
+
+        const overlayAlpha = Math.min(0.52, 0.12 + t * 0.30);
+        ctx.fillStyle = `rgba(0, 0, 0, ${overlayAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const pulse = 1 + Math.sin(elapsed * 10) * 0.08;
+        ctx.fillStyle = "rgba(255, 55, 55, 0.98)";
+        ctx.font = `bold ${Math.floor(42 * pulse)}px Verdana`;
+        ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+        ctx.shadowBlur = 12;
+        ctx.fillText(isStuckDeath ? "STUCK - GAME OVER" : "YOU DIED", canvas.width / 2, Math.floor(canvas.height / 2));
+        ctx.shadowBlur = 0;
+        ctx.textAlign = "start";
+      } else {
+        drawLivingPlayer(px, py);
+      }
+
+      drawMineFlash(camX, camY);
+      drawFxParticles(camX, camY);
+
+      // Draw workers.
+      for (const worker of state.workers) {
+        if (worker.dead) continue;
+        const wx = (worker.x - camX) * TILE;
+        const wy = (worker.y - camY) * TILE;
+        const workerW = worker.width * TILE;
+        const workerH = worker.height * TILE;
+        if (wx < -workerW || wy < -workerH || wx > canvas.width || wy > canvas.height) continue;
+        if (worker.type === "heavy") {
+          ctx.fillStyle = "#d84c4c";
+          ctx.fillRect(wx + 3, wy + 3, workerW - 6, workerH - 6);
+          ctx.fillStyle = "#6e1a1a";
+          ctx.fillRect(wx + Math.floor(workerW * 0.3), wy + 8, 5, 5);
+          ctx.fillRect(wx + Math.floor(workerW * 0.65), wy + 8, 5, 5);
+        } else {
+          ctx.fillStyle = "#5ea6ff";
+          ctx.fillRect(wx + 4, wy + 4, TILE - 8, TILE - 8);
+          ctx.fillStyle = "#173766";
+          ctx.fillRect(wx + 8, wy + 8, 4, 4);
+          ctx.fillRect(wx + 14, wy + 8, 4, 4);
+        }
+        if (worker.hasWaterBucket) {
+          ctx.fillStyle = "#62f0ff";
+          ctx.fillRect(wx + workerW - 10, wy + 2, 7, 7);
+          ctx.fillStyle = "#173766";
+          ctx.fillRect(wx + workerW - 8, wy + 4, 3, 3);
+        }
+      }
+
+      // Draw pending worker hologram on surface.
+      if (state.pendingWorker) {
+        const hx = (state.pendingWorker.x - camX) * TILE;
+        const hy = (getPendingWorkerY() - camY) * TILE;
+        const hologramW = state.pendingWorker.width * TILE;
+        const hologramH = state.pendingWorker.height * TILE;
+        if (hx >= -hologramW && hx <= canvas.width && hy >= -hologramH && hy <= canvas.height) {
+          if (state.pendingWorker.type === "heavy") {
+            ctx.fillStyle = "rgba(255, 105, 105, 0.42)";
+            ctx.fillRect(hx + 3, hy + 3, hologramW - 6, hologramH - 6);
+            ctx.fillStyle = "rgba(100, 20, 20, 0.55)";
+            ctx.fillRect(hx + Math.floor(hologramW * 0.3), hy + 8, 5, 5);
+            ctx.fillRect(hx + Math.floor(hologramW * 0.65), hy + 8, 5, 5);
+          } else {
+            ctx.fillStyle = "rgba(110, 180, 255, 0.45)";
+            ctx.fillRect(hx + 4, hy + 4, TILE - 8, TILE - 8);
+            ctx.fillStyle = "rgba(25, 60, 120, 0.55)";
+            ctx.fillRect(hx + 8, hy + 8, 4, 4);
+            ctx.fillRect(hx + 14, hy + 8, 4, 4);
+          }
+        }
+      }
+
+      // Surface line.
+      const sy = (SURFACE_Y_MAX - camY) * TILE;
+      if (sy >= 0 && sy <= canvas.height) {
+        ctx.fillStyle = "#6ec56a";
+        ctx.fillRect(0, sy + TILE - 4, canvas.width, 4);
+      }
+
+      drawCelebration(camX, camY);
+    }
+
+    function tick() {
+      const now = performance.now();
+      updateVictoryCutscene(now);
+      if (messageTimer > 0) {
+        messageTimer--;
+        if (messageTimer === 0) document.getElementById("msg").textContent = "";
+      }
+      if (isInCutscene()) {
+        updateFxParticles();
+        draw();
+        requestAnimationFrame(tick);
+        return;
+      }
+      updateFxParticles();
+      spreadLava();
+      checkPlayerLavaDeath();
+      updateChamberBombs(now);
+      updateBossFight();
+      updateWorkers();
+      checkStuckGameOver();
+      ensureLoadedAroundPlayer();
+      despawnFarTiles();
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function updateWorkers() {
+      const now = performance.now();
+      if (now - lastWorkerActionAt < 1000) return;
+      lastWorkerActionAt = now;
+
+      const strength = getPickStrength(state.pickaxe);
+      for (const worker of state.workers) {
+        if (worker.dead) continue;
+
+        let touchingLava = false;
+        for (let ox = 0; ox < worker.width; ox++) {
+          for (let oy = 0; oy < worker.height; oy++) {
+            if (getTile(worker.x + ox, worker.y + oy) === "lava") touchingLava = true;
+          }
+        }
+        if (touchingLava && worker.hasWaterBucket) {
+          const converted = workerBucketConvertNearbyLava(worker);
+          if (converted > 0) sfx.water();
+          touchingLava = false;
+          for (let ox = 0; ox < worker.width; ox++) {
+            for (let oy = 0; oy < worker.height; oy++) {
+              if (getTile(worker.x + ox, worker.y + oy) === "lava") touchingLava = true;
+            }
+          }
+        }
+        if (touchingLava && !worker.hasWaterBucket) {
+          worker.dead = true;
+          sfx.hurt();
+          continue;
+        }
+
+        const targetY = worker.y + worker.height;
+        const targets = [];
+        for (let ox = 0; ox < worker.width; ox++) {
+          targets.push([worker.x + ox, targetY]);
+        }
+
+        let canFall = true;
+        let blocked = false;
+        for (const [tx, ty] of targets) {
+          if (!inBounds(tx, ty)) {
+            canFall = false;
+            blocked = true;
+            break;
+          }
+          const tile = getTile(tx, ty);
+          if (tile === "lava") {
+            if (worker.hasWaterBucket) {
+              const converted = convertLavaRiverAt(tx, ty);
+              if (converted > 0) sfx.water();
+              const newTile = getTile(tx, ty);
+              if (newTile !== "air") canFall = false;
+              continue;
+            }
+            worker.dead = true;
+            blocked = true;
+            sfx.hurt();
+            break;
+          }
+          if (tile !== "air") canFall = false;
+        }
+        if (worker.dead || blocked) continue;
+        if (canFall) {
+          worker.y++;
+          continue;
+        }
+
+        // Mine one row below the worker (2 blocks for mega worker).
+        for (const [tx, ty] of targets) {
+          const tile = getTile(tx, ty);
+          if (tile === "air" || tile === "bedrock") continue;
+          if (isMazeProtectedBlock(tx, ty, tile)) continue;
+          const def = oreDefs[tile];
+          if (!def || strength < def.hard) continue;
+          setTile(tx, ty, "air");
+          state.money += def.value;
+          playTone(worker.type === "heavy" ? 190 : 230, 0.05, "square", 0.028);
+        }
+        if (worker.hasWaterBucket) {
+          const converted = workerBucketConvertNearbyLava(worker);
+          if (converted > 0) sfx.water();
+        }
+      }
+      updateHud();
+    }
+
+    function spreadLava() {
+      const now = performance.now();
+      if (now - lastLavaSpreadAt < 1000) return;
+      lastLavaSpreadAt = now;
+
+      const toFill = [];
+      for (const key of activeTiles.keys()) {
+        if (activeTiles.get(key) !== "lava") continue;
+        const [xStr, yStr] = key.split(",");
+        const x = Number(xStr);
+        const y = Number(yStr);
+        if (y <= 0) continue;
+
+        // Lava flows down, then sideways (never up).
+        const targets = [
+          [x, y + 1],
+          [x - 1, y],
+          [x + 1, y]
+        ];
+        for (const [nx, ny] of targets) {
+          if (!inBounds(nx, ny) || ny === 0) continue;
+          if (isProtectedTunnelColumn(nx)) continue;
+          if (getTile(nx, ny) !== "air") continue;
+          // If adjacent is empty, no blocking tile is in the way.
+          toFill.push([nx, ny]);
+          break;
+        }
+      }
+
+      for (const [x, y] of toFill) {
+        if (getTile(x, y) === "air") setTile(x, y, "lava");
+      }
+    }
+
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (!audioUnlocked) {
+          ensureAudioReady();
+          audioUnlocked = true;
+        }
+        const k = e.key.toLowerCase();
+        const isGameKey =
+          k === "arrowleft" ||
+          k === "a" ||
+          k === "arrowright" ||
+          k === "d" ||
+          k === "arrowup" ||
+          k === "w" ||
+          k === "arrowdown" ||
+          k === "s" ||
+          k === " ";
+        if (k === "t" && GAME_TEST_MODE) {
+          e.preventDefault();
+          applyGameTestLoad();
+          draw();
+          return;
+        }
+        if (state.gamePaused || isInCutscene()) return;
+        if (isGameKey && document.activeElement instanceof HTMLButtonElement) {
+          document.activeElement.blur();
+        }
+        if (k === "arrowleft" || k === "a") movePlayer(-1, 0);
+        else if (k === "arrowright" || k === "d") movePlayer(1, 0);
+        else if (k === "arrowup" || k === "w") movePlayer(0, -1);
+        else if (k === "arrowdown" || k === "s") movePlayer(0, 1);
+        else if (k === " ") {
+          // Stop Space from also "clicking" a focused button (e.g. Use Water Bucket).
+          e.preventDefault();
+          mineTile();
+        }
+      },
+      { capture: true }
+    );
+
+    document.getElementById("upgradeBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to upgrade.");
+        return;
+      }
+      if (state.pickaxe >= MAX_PICK) return;
+      const cost = getUpgradePickCost(state.pickaxe);
+      if (state.money < cost) {
+        showMessage("Not enough money.");
+        return;
+      }
+      state.money -= cost;
+      state.pickaxe++;
+      state.pickDurability = getMaxDurability(state.pickaxe);
+      playShopBuyAnim();
+      showMessage(`You got the ${getPickaxeName(state.pickaxe)}!`, "var(--good)");
+      sfx.upgrade();
+      updateHud();
+    });
+
+    document.getElementById("healBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to heal.");
+        return;
+      }
+      if (state.money < 20 || state.hp >= 100) return;
+      state.money -= 20;
+      state.hp = Math.min(100, state.hp + 25);
+      playShopBuyAnim();
+      showMessage("You feel better.", "var(--good)");
+      playTone(420, 0.08, "triangle", 0.04);
+      updateHud();
+    });
+
+    document.getElementById("repairBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to repair.");
+        return;
+      }
+      const repairCost = getRepairCost();
+      if (repairCost <= 0) {
+        showMessage("Your pickaxe is already fully repaired.");
+        return;
+      }
+      if (state.money < repairCost) {
+        showMessage("Not enough money to repair.");
+        return;
+      }
+      state.money -= repairCost;
+      state.pickDurability = getMaxDurability(state.pickaxe);
+      playShopBuyAnim();
+      showMessage("Pickaxe repaired!", "var(--good)");
+      playTone(300, 0.07, "triangle", 0.04);
+      playTone(520, 0.08, "triangle", 0.04, 0.07);
+      updateHud();
+    });
+
+    document.getElementById("workerBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to buy workers.");
+        return;
+      }
+      if (state.pendingWorker) {
+        showMessage("Place or hire your current hologram first.");
+        return;
+      }
+      const cost = getWorkerCost();
+      if (state.money < cost) {
+        showMessage("Not enough money to buy a worker.");
+        return;
+      }
+      const spawnX = findNearestValidWorkerX(1, Math.floor(WORLD_W / 2));
+      if (spawnX === null) {
+        showMessage("No open lane to place a worker.");
+        return;
+      }
+      state.money -= cost;
+      state.workersBought++;
+      playShopBuyAnim();
+      state.pendingWorker = {
+        x: spawnX,
+        type: "normal",
+        width: 1,
+        height: 1,
+        spawnInChamber: isBuyingAtChamberShop()
+      };
+      showMessage(
+        state.pendingWorker.spawnInChamber
+          ? "Chamber hologram ready! +/- then Hire — mines down!"
+          : "Hologram ready! Move it with +/- then press Hire.",
+        "var(--good)"
+      );
+      sfx.place();
+      updateHud();
+    });
+
+    document.getElementById("heavyWorkerBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to buy workers.");
+        return;
+      }
+      if (state.pendingWorker) {
+        showMessage("Place or hire your current hologram first.");
+        return;
+      }
+      const cost = getHeavyWorkerCost();
+      if (state.money < cost) {
+        showMessage("Not enough money to buy a mega worker.");
+        return;
+      }
+      const spawnX = findNearestValidWorkerX(2, Math.floor(WORLD_W / 2));
+      if (spawnX === null) {
+        showMessage("No open lane to place a mega worker.");
+        return;
+      }
+      state.money -= cost;
+      state.heavyWorkersBought++;
+      playShopBuyAnim();
+      state.pendingWorker = {
+        x: spawnX,
+        type: "heavy",
+        width: 2,
+        height: 2,
+        spawnInChamber: isBuyingAtChamberShop()
+      };
+      if (state.pendingWorker.x > WORLD_W - state.pendingWorker.width - 1) {
+        state.pendingWorker.x = WORLD_W - state.pendingWorker.width - 1;
+      }
+      showMessage(
+        state.pendingWorker.spawnInChamber
+          ? "Chamber mega hologram ready! +/- then Hire!"
+          : "Red mega hologram ready! Move it with +/- then press Hire.",
+        "var(--good)"
+      );
+      sfx.place();
+      updateHud();
+    });
+
+    document.getElementById("buyBucketBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to buy buckets.");
+        return;
+      }
+      if (state.money < WATER_BUCKET_COST) {
+        showMessage("Not enough money for a water bucket.");
+        return;
+      }
+      state.money -= WATER_BUCKET_COST;
+      state.waterBuckets++;
+      playShopBuyAnim();
+      showMessage("Bought a Water Bucket!", "var(--good)");
+      sfx.water();
+      updateHud();
+    });
+
+    document.getElementById("useBucketBtn").addEventListener("click", () => {
+      if (state.waterBuckets <= 0) {
+        showMessage("No Water Buckets left.");
+        document.getElementById("useBucketBtn").blur();
+        return;
+      }
+      const lavaPos = getAdjacentLavaToPlayer();
+      if (!lavaPos) {
+        showMessage("Stand next to lava (or face it) to use bucket.");
+        document.getElementById("useBucketBtn").blur();
+        return;
+      }
+      const converted = convertLavaRiverAt(lavaPos[0], lavaPos[1]);
+      if (converted <= 0) {
+        showMessage("No lava to convert.");
+        document.getElementById("useBucketBtn").blur();
+        return;
+      }
+      state.waterBuckets--;
+      showMessage(`Splash! ${converted} lava tiles became obsidian.`, "var(--good)");
+      sfx.water();
+      document.getElementById("useBucketBtn").blur();
+      updateHud();
+    });
+
+    document.getElementById("equipWorkerBtn").addEventListener("click", () => {
+      if (state.waterBuckets <= 0) {
+        showMessage("No Water Buckets left.");
+        return;
+      }
+      const idx = getNearbyWorkerIndexForEquip();
+      if (idx === -1) {
+        showMessage("Stand next to a worker to equip.");
+        return;
+      }
+      state.waterBuckets--;
+      state.workers[idx].hasWaterBucket = true;
+      state.workers[idx].infiniteWaterBucket = true;
+      playShopBuyAnim();
+      showMessage("Worker got an infinite Water Bucket! It never runs out.", "var(--good)");
+      sfx.water();
+      updateHud();
+    });
+
+    document.getElementById("hireBtn").addEventListener("click", () => {
+      if (!state.pendingWorker) {
+        showMessage("Buy a worker first.");
+        return;
+      }
+      if (isPendingWorkerTunnelBlocked()) {
+        showMessage("That tunnel already has a worker. Pick another lane.");
+        return;
+      }
+      state.workers.push({
+        x: state.pendingWorker.x,
+        y: getPendingWorkerY(),
+        type: state.pendingWorker.type,
+        width: state.pendingWorker.width,
+        height: state.pendingWorker.height,
+        hasWaterBucket: false,
+        infiniteWaterBucket: false,
+        dead: false
+      });
+      state.pendingWorker = null;
+      playShopBuyAnim();
+      showMessage("Worker hired and mining started!", "var(--good)");
+      sfx.hire();
+      updateHud();
+    });
+
+    document.getElementById("workerLaneLeftBtn").addEventListener("click", () => {
+      if (!state.pendingWorker) {
+        showMessage("Buy a worker first.");
+        return;
+      }
+      state.pendingWorker.x = Math.max(1, state.pendingWorker.x - 1);
+      playTone(340, 0.04, "square", 0.025);
+      updateHud();
+    });
+
+    document.getElementById("workerLaneRightBtn").addEventListener("click", () => {
+      if (!state.pendingWorker) {
+        showMessage("Buy a worker first.");
+        return;
+      }
+      const maxPendingX = WORLD_W - state.pendingWorker.width - 1;
+      state.pendingWorker.x = Math.min(maxPendingX, state.pendingWorker.x + 1);
+      playTone(380, 0.04, "square", 0.025);
+      updateHud();
+    });
+
+    document.getElementById("tipsBtn").addEventListener("click", () => {
+      const tip = strategyTips[tipIndex % strategyTips.length];
+      tipIndex++;
+      showMessage(`Tip: ${tip}`, "var(--good)", 360);
+    });
+
+    document.getElementById("respawnYesBtn").addEventListener("click", () => {
+      state.respawnMode = true;
+      hideRespawnPrompt();
+      showMessage("Respawn mode ON! Boss or bomb deaths send you to the chest.", "var(--good)");
+    });
+
+    document.getElementById("respawnNoBtn").addEventListener("click", () => {
+      state.respawnMode = false;
+      hideRespawnPrompt();
+      showMessage("No respawns. If you die, that's it!", "var(--bad)", 200);
+    });
+
+    document.getElementById("playAgainBtn").addEventListener("click", onVictoryPlayAgain);
+    document.getElementById("continueBtn").addEventListener("click", onVictoryContinue);
+
+    window.addEventListener("resize", () => {
+      resizeGameCanvas();
+      draw();
+    });
+
+    resizeGameCanvas();
+    resetGame();
+    tick();
+  </script>
+</body>
+</html>

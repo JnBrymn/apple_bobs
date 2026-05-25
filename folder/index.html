@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Bo asked for a simple start screen with a Play button that opens Level Devil Poki in the same tab. -->
+  <title>Level Devil Launcher</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    .card {
+      text-align: center;
+      padding: 24px;
+      border: 2px solid #fff;
+      border-radius: 14px;
+      background: #1d1d1d;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 12px 20px;
+      font-size: 20px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #4caf50;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Level Devil</h1>
+    <button id="playBtn">Play</button>
+  </div>
+
+  <script>
+    document.getElementById("playBtn").addEventListener("click", () => {
+      window.location.href = "https://poki.com/en/g/level-devil";
+    });
+  </script>
+</body>
+</html>

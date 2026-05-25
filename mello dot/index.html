@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mello Dot</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: none;
+      background: #111;
+      font-family: system-ui, sans-serif;
+      user-select: none;
+    }
+    body.paused, body.paused canvas { cursor: default; }
+    canvas { display: block; cursor: none; }
+    #msg {
+      position: fixed;
+      left: 50%;
+      top: 24px;
+      transform: translateX(-50%);
+      color: #222;
+      font-size: 1.1rem;
+      font-weight: 600;
+      pointer-events: none;
+      text-shadow: 0 0 8px #fff8;
+      text-align: center;
+    }
+    #levelTag {
+      position: fixed;
+      left: 50%;
+      top: 56px;
+      transform: translateX(-50%);
+      color: #333;
+      font-size: 0.95rem;
+      font-weight: 700;
+      pointer-events: none;
+      text-shadow: 0 0 8px #fff8;
+    }
+    #streakHud {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      color: #333;
+      font-size: 0.95rem;
+      font-weight: 700;
+      pointer-events: none;
+      text-shadow: 0 0 8px #fff8;
+      text-align: right;
+      line-height: 1.5;
+    }
+    #win {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(0,0,0,0.45);
+      pointer-events: none;
+    }
+    #win span {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 2px 12px #000;
+      text-align: center;
+      padding: 0 20px;
+    }
+    #win small {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #ffe566;
+      text-shadow: 0 2px 8px #000;
+    }
+    #fail {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(0,0,0,0.55);
+      pointer-events: none;
+    }
+    #fail span {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #ff6677;
+      text-shadow: 0 2px 12px #000;
+    }
+    #fail p {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 8px #000;
+    }
+    #fail small {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffe566;
+      text-shadow: 0 2px 8px #000;
+    }
+  </style>
+</head>
+<body>
+<!--
+  Bo's game: Mello Dot
+  - Very simple maze, no dead ends, big chunky black path on yellow
+  - Maze is inspired by Bo's picture idea (not pixel-perfect copy)
+  - Mouse is a tiny dot; normal cursor hidden
+  - Touch yellow on level 2+ = back to level 2, shows streak and best streak
+  - Level 1 tutorial mess up = restart tutorial
+  - Level 1 is the tutorial; infinite random levels after
+  - Beat a level by reaching the bottom on the black path
+  - Path pieces overlap a few pixels so yellow gaps never show
+  - Lots of different maze shapes — not the same zig-zag every time
+  - Press ESC to pause: normal mouse, dot freezes. Press ESC again to play.
+-->
+<canvas id="c"></canvas>
+<p id="msg">Move your dot onto the black path at the top to start</p>
+<p id="levelTag">Level 1 — Tutorial</p>
+<p id="streakHud">Streak: 0<br>Best: 0</p>
+<div id="win"><span>You win!</span><small></small></div>
+<div id="fail">
+  <span>You messed up!</span>
+  <p id="failStreak">Streak: 0</p>
+  <p id="failBest">Best streak: 0</p>
+  <small>Back to Level 2…</small>
+</div>
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const msg = document.getElementById('msg');
+  const levelTag = document.getElementById('levelTag');
+  const streakHud = document.getElementById('streakHud');
+  const winEl = document.getElementById('win');
+  const failEl = document.getElementById('fail');
+  const failStreak = document.getElementById('failStreak');
+  const failBest = document.getElementById('failBest');
+  const winText = winEl.querySelector('span');
+  const winSub = winEl.querySelector('small');
+
+  const YELLOW = '#FFE566';
+  const BLACK = '#000000';
+  const DOT_R = 3;
+
+  let W, H, thin, chunk;
+  let mouseX = 0, mouseY = 0;
+  let frozenX = 0, frozenY = 0;
+  let paused = false;
+  let state = 'ready'; // ready | playing | won | failed
+  let startX = 0, startY = 0;
+  let level = 1;
+  let streak = 0;
+  let bestStreak = 0;
+  let mazeRects = [];
+  let mazePixels = null;
+  let transitionTimer = 0;
+  const JOIN = 6;
+
+  function even(n) {
+    n = Math.round(n);
+    return n % 2 === 0 ? n : n + 1;
+  }
+
+  function r(x, y, w, h) {
+    return {
+      x: Math.round(x) - JOIN,
+      y: Math.round(y) - JOIN,
+      w: Math.max(1, Math.round(w) + JOIN * 2),
+      h: Math.max(1, Math.round(h) + JOIN * 2)
+    };
+  }
+
+  function v(cx, y0, y1) {
+    mazeRects.push(r(cx - thin / 2, y0, thin, y1 - y0));
+  }
+
+  function h(y, x0, x1) {
+    const left = Math.min(x0, x1);
+    mazeRects.push(r(left, y - thin, Math.abs(x1 - x0), thin));
+  }
+
+  function block(x, y0, w, ht) {
+    mazeRects.push(r(x, y0 - thin, w, ht + thin));
+  }
+
+  function seededRandom(seed) {
+    return () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+  }
+
+  function buildTutorial() {
+    const xMid = Math.round(W * 0.58 - thin / 2);
+    const yJoin = Math.round(H * 0.28);
+    const xChunk = Math.round(W * 0.22);
+    const yChunkBot = Math.round(H * 0.72);
+    const xExit = Math.round(W * 0.62 - thin / 2);
+
+    mazeRects = [
+      r(xMid, 0, thin, yJoin),
+      r(xChunk, yJoin - thin, xMid + thin - xChunk, thin),
+      r(xChunk, yJoin - thin, chunk, yChunkBot - yJoin + thin),
+      r(xChunk + chunk - thin, yChunkBot - thin, xExit + thin - (xChunk + chunk - thin), thin),
+      r(xExit, yChunkBot - thin, thin, H - yChunkBot + thin)
+    ];
+    startX = xMid + thin / 2;
+    startY = thin + 4;
+  }
+
+  function buildRandomLevel(n) {
+    const rand = seededRandom(n * 7919 + 12345);
+    thin = even(Math.max(10, Math.round(W * 0.022 * Math.max(0.5, 1.08 - n * 0.012))));
+    chunk = Math.max(55, Math.round(W * (0.18 + rand() * 0.1)));
+    mazeRects = [];
+
+    const styles = [
+      buildZigzag, buildStairs, buildBigCenter, buildWideBars,
+      buildTriple, buildSpiral, buildLShape, buildSwitchback
+    ];
+    styles[(n - 2) % styles.length](rand, n);
+    startY = thin + 4;
+  }
+
+  function buildZigzag(rand) {
+    const rows = 2 + Math.floor(rand() * 4);
+    let cx = Math.round(W * (0.35 + rand() * 0.3));
+    const top = Math.round(H * (0.1 + rand() * 0.08));
+    v(cx, 0, top);
+    startX = cx;
+    let y = top;
+    let goLeft = rand() > 0.5;
+    const rowH = (H - top - thin) / rows;
+
+    for (let i = 0; i < rows; i++) {
+      const tx = Math.round(goLeft ? W * (0.1 + rand() * 0.06) : W * (0.78 - chunk / W));
+      const ht = Math.round(rowH * (0.75 + rand() * 0.35));
+      h(y, cx - thin / 2, tx + chunk);
+      block(tx, y, chunk, ht);
+      cx = tx + chunk / 2;
+      y += ht;
+      goLeft = !goLeft;
+    }
+    v(cx, y - thin, H);
+  }
+
+  function buildStairs(rand) {
+    const steps = 3 + Math.floor(rand() * 3);
+    const goLeft = rand() > 0.5;
+    let cx = Math.round(goLeft ? W * 0.78 : W * 0.22);
+    startX = cx;
+    const top = Math.round(H * 0.1);
+    v(cx, 0, top);
+    let y = top;
+    const stepH = (H - top - thin) / steps;
+
+    for (let i = 0; i < steps; i++) {
+      const shift = (i + 1) * (W * 0.12);
+      const tx = Math.round(goLeft ? W * 0.78 - shift : W * 0.1 + shift);
+      const ht = Math.round(stepH * (0.85 + rand() * 0.2));
+      h(y, cx - thin / 2, tx + chunk);
+      block(tx, y, chunk, ht);
+      cx = tx + chunk / 2;
+      y += ht;
+    }
+    v(cx, y - thin, H);
+  }
+
+  function buildBigCenter(rand) {
+    const cx = Math.round(W * (0.38 + rand() * 0.12));
+    const bigW = Math.round(W * (0.28 + rand() * 0.12));
+    const bigX = Math.round(W * 0.5 - bigW / 2);
+    const yTop = Math.round(H * (0.12 + rand() * 0.06));
+    const yMid = Math.round(H * (0.55 + rand() * 0.1));
+    const exitX = Math.round(W * (rand() > 0.5 ? 0.72 : 0.18));
+
+    v(cx, 0, yTop);
+    h(yTop, cx - thin / 2, bigX + bigW);
+    block(bigX, yTop, bigW, yMid - yTop);
+    h(yMid, bigX, exitX + thin / 2);
+    v(exitX, yMid - thin, H);
+    startX = cx;
+  }
+
+  function buildWideBars(rand) {
+    const bars = 2 + Math.floor(rand() * 2);
+    let cx = Math.round(W * (0.25 + rand() * 0.5));
+    startX = cx;
+    const top = Math.round(H * 0.1);
+    v(cx, 0, top);
+    let y = top;
+    const barH = (H - top - thin) / (bars * 2 + 1);
+
+    for (let i = 0; i < bars; i++) {
+      const barW = Math.round(W * (0.55 + rand() * 0.25));
+      const barX = Math.round(W * (0.08 + rand() * (0.92 - barW / W)));
+      const drop = Math.round(barH * (0.7 + rand() * 0.4));
+      h(y, cx - thin / 2, barX + barW);
+      block(barX, y, barW, drop);
+      cx = Math.round(barX + (i % 2 === 0 ? barW - thin / 2 : thin / 2));
+      y += drop;
+      if (i < bars - 1) v(cx, y - thin, y + Math.round(barH * 0.5));
+      y += Math.round(barH * 0.5);
+    }
+    v(cx, y - thin, H);
+  }
+
+  function buildTriple(rand) {
+    const cols = [
+      Math.round(W * 0.12),
+      Math.round(W * 0.42),
+      Math.round(W * 0.72)
+    ];
+    const order = rand() > 0.5 ? [0, 1, 2] : [2, 1, 0];
+    let cx = cols[order[0]] + chunk / 2;
+    startX = cx;
+    const top = Math.round(H * 0.1);
+    v(cx, 0, top);
+    let y = top;
+    const segH = (H - top - thin) / 3;
+
+    for (let i = 0; i < 3; i++) {
+      const tx = cols[order[i]];
+      const ht = Math.round(segH * (0.8 + rand() * 0.25));
+      h(y, cx - thin / 2, tx + chunk);
+      block(tx, y, chunk, ht);
+      cx = tx + chunk / 2;
+      y += ht;
+    }
+    v(cx, y - thin, H);
+  }
+
+  function buildSpiral(rand) {
+    let cx = Math.round(W * (0.5 + (rand() - 0.5) * 0.15));
+    startX = cx;
+    const top = Math.round(H * 0.08);
+    v(cx, 0, top);
+    let y = top;
+    const turns = 3 + Math.floor(rand() * 3);
+    const turnH = (H - top - thin) / turns;
+    let angle = rand() * Math.PI * 2;
+
+    for (let i = 0; i < turns; i++) {
+      angle += 0.9 + rand() * 0.5;
+      const tx = Math.round(W * 0.5 + Math.cos(angle) * W * 0.28 - chunk / 2);
+      const ht = Math.round(turnH * (0.75 + rand() * 0.3));
+      h(y, cx - thin / 2, tx + chunk);
+      block(tx, y, chunk, ht);
+      cx = tx + chunk / 2;
+      y += ht;
+    }
+    v(cx, y - thin, H);
+  }
+
+  function buildLShape(rand) {
+    const startSide = rand() > 0.5;
+    let cx = Math.round(startSide ? W * 0.75 : W * 0.25);
+    const top = Math.round(H * 0.1);
+    const knee = Math.round(H * (0.45 + rand() * 0.15));
+    const endX = Math.round(startSide ? W * 0.2 : W * 0.75);
+
+    v(cx, 0, knee);
+    block(Math.round(cx - chunk / 2), Math.round(knee * 0.35), chunk, Math.round(knee * 0.45));
+    h(knee, cx - thin / 2, endX + thin / 2);
+    v(endX, knee - thin, H);
+    startX = cx;
+  }
+
+  function buildSwitchback(rand) {
+    let cx = Math.round(W * 0.5);
+    startX = cx;
+    const top = Math.round(H * 0.08);
+    v(cx, 0, top);
+    let y = top;
+    const legs = 4 + Math.floor(rand() * 2);
+    const legH = (H - top - thin) / legs;
+
+    for (let i = 0; i < legs; i++) {
+      const goFar = i % 2 === 0;
+      const tx = Math.round(goFar ? W * 0.08 : W * 0.72);
+      const w = Math.round(chunk * (1.1 + rand() * 0.5));
+      const ht = Math.round(legH * (0.7 + rand() * 0.35));
+      h(y, cx - thin / 2, tx + w);
+      block(tx, y, w, ht);
+      cx = tx + w / 2;
+      y += ht;
+    }
+    v(cx, y - thin, H);
+  }
+
+  function bakeMaze() {
+    mazePixels = ctx.createImageData(W, H);
+    const d = mazePixels.data;
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = 255;
+      d[i + 1] = 229;
+      d[i + 2] = 102;
+      d[i + 3] = 255;
+    }
+    for (const rect of mazeRects) {
+      const x0 = Math.max(0, Math.floor(rect.x));
+      const y0 = Math.max(0, Math.floor(rect.y));
+      const x1 = Math.min(W, Math.ceil(rect.x + rect.w));
+      const y1 = Math.min(H, Math.ceil(rect.y + rect.h));
+      for (let py = y0; py < y1; py++) {
+        for (let px = x0; px < x1; px++) {
+          const i = (py * W + px) * 4;
+          d[i] = 0;
+          d[i + 1] = 0;
+          d[i + 2] = 0;
+          d[i + 3] = 255;
+        }
+      }
+    }
+  }
+
+  function buildLevel(n) {
+    W = canvas.width;
+    H = canvas.height;
+    thin = even(Math.max(14, Math.round(W * 0.022)));
+    chunk = Math.max(80, Math.round(W * 0.2));
+
+    if (n === 1) buildTutorial();
+    else buildRandomLevel(n);
+
+    bakeMaze();
+    levelTag.textContent = n === 1 ? 'Level 1 — Tutorial' : 'Level ' + n;
+  }
+
+  function drawMaze() {
+    if (mazePixels) ctx.putImageData(mazePixels, 0, 0);
+  }
+
+  function isBlack(x, y) {
+    const px = Math.floor(x);
+    const py = Math.floor(y);
+    if (!mazePixels || px < 0 || py < 0 || px >= W || py >= H) return false;
+    const i = (py * W + px) * 4;
+    const d = mazePixels.data;
+    return d[i] < 80 && d[i + 1] < 80 && d[i + 2] < 80;
+  }
+
+  function updateStreakHud() {
+    streakHud.innerHTML = 'Streak: ' + streak + '<br>Best: ' + bestStreak;
+  }
+
+  function setPaused(on) {
+    paused = on;
+    document.body.classList.toggle('paused', paused);
+    if (paused) {
+      frozenX = mouseX;
+      frozenY = mouseY;
+      msg.textContent = 'PAUSED — press ESC to keep playing';
+    } else {
+      mouseX = frozenX;
+      mouseY = frozenY;
+      if (state === 'playing') msg.textContent = 'Stay on the black!';
+      else msg.textContent = 'Move your dot onto the black path at the top to start';
+    }
+  }
+
+  function togglePause() {
+    if (state === 'won' || state === 'failed') return;
+    setPaused(!paused);
+  }
+
+  function restartLevel() {
+    setPaused(false);
+    state = 'ready';
+    winEl.style.display = 'none';
+    failEl.style.display = 'none';
+    msg.textContent = 'Move your dot onto the black path at the top to start';
+    mouseX = startX;
+    mouseY = startY;
+    updateStreakHud();
+  }
+
+  function failLevel() {
+    if (level === 1) {
+      restartLevel();
+      return;
+    }
+
+    const endedStreak = streak;
+    if (endedStreak > bestStreak) bestStreak = endedStreak;
+
+    failStreak.textContent = 'Streak: ' + endedStreak;
+    failBest.textContent = 'Best streak: ' + bestStreak;
+    failEl.style.display = 'flex';
+    winEl.style.display = 'none';
+
+    streak = 0;
+    level = 2;
+    buildLevel(2);
+    state = 'failed';
+    transitionTimer = 150;
+    updateStreakHud();
+  }
+
+  function nextLevel() {
+    if (level >= 2) {
+      streak += 1;
+      if (streak > bestStreak) bestStreak = streak;
+    }
+    level += 1;
+    buildLevel(level);
+    restartLevel();
+    msg.textContent = 'Level ' + level + '! Get on the black path at the top';
+  }
+
+  function showWin() {
+    state = 'won';
+    winEl.style.display = 'flex';
+    if (level === 1) {
+      winText.textContent = 'That was a tutorial!';
+      winSub.textContent = 'Get ready for Level 2…';
+    } else {
+      winText.textContent = 'Level ' + level + ' complete!';
+      winSub.textContent = 'Next level coming up…';
+    }
+    transitionTimer = 150;
+  }
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    buildLevel(level);
+    if (state === 'ready' || state === 'playing') {
+      mouseX = startX;
+      mouseY = startY;
+    }
+  }
+
+  function loop() {
+    drawMaze();
+
+    if (state === 'won') {
+      transitionTimer -= 1;
+      if (transitionTimer <= 0) nextLevel();
+    } else if (state === 'failed') {
+      transitionTimer -= 1;
+      if (transitionTimer <= 0) restartLevel();
+    } else if (!paused) {
+      const onBlack = isBlack(mouseX, mouseY);
+
+      if (state === 'ready') {
+        if (onBlack && mouseY < H * 0.15) {
+          state = 'playing';
+          msg.textContent = 'Stay on the black!';
+        }
+      } else if (state === 'playing') {
+        if (!onBlack) {
+          failLevel();
+        } else if (mouseY >= H - thin - 6 && isBlack(mouseX, H - 4)) {
+          showWin();
+        }
+      }
+    }
+
+    ctx.fillStyle = '#ff3366';
+    ctx.beginPath();
+    const dotX = paused ? frozenX : mouseX;
+    const dotY = paused ? frozenY : mouseY;
+    ctx.arc(dotX, dotY, DOT_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      togglePause();
+    }
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (paused) return;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+  window.addEventListener('touchmove', (e) => {
+    if (paused) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    mouseX = t.clientX;
+    mouseY = t.clientY;
+  }, { passive: false });
+
+  resize();
+  updateStreakHud();
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>

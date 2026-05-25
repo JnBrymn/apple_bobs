@@ -1,0 +1,3620 @@
+<!--
+Nintendo Wii vibe game by Bo!
+- Real-style Wii menu (gray TV, 4×3 channels) — mouse not Wii remote
+- Wii Sports only from Disc Channel 💿 — green field + 5 classic sports (like the real game)
+- More sports hidden under "More Sports" — not a rainbow button wall
+- Mii Channel, Shop, Weather, News, Messages, Settings
+- Real Mii Channel music (MIDI) — soft pure sine waves in the browser
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wii — Mii & Sports!</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+    body.wii-pointer-active { cursor: none; }
+    body.wii-pointer-active * { cursor: none !important; }
+
+    #wii-pointer {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 26px;
+      height: 26px;
+      margin: -4px 0 0 -4px;
+      border: 2.5px solid #1a1a1a;
+      border-radius: 50% 50% 50% 8%;
+      background: linear-gradient(145deg, #fff 30%, #e8e8e8);
+      transform: rotate(-35deg);
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
+      box-shadow: 1px 2px 4px rgba(0,0,0,0.35);
+    }
+    #wii-pointer::after {
+      content: '';
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 6px;
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 50%;
+    }
+
+    .wii-menu-screen {
+      padding: 12px !important;
+      justify-content: center !important;
+    }
+    .wii-tv-frame {
+      width: 100%;
+      max-width: 820px;
+      background: linear-gradient(180deg, #a8b4c0 0%, #c5cdd6 35%, #b0bcc8 100%);
+      border-radius: 20px;
+      padding: 20px 24px 16px;
+      box-shadow:
+        0 0 0 8px #2a2a3a,
+        0 0 0 12px #4a4a5a,
+        0 16px 48px rgba(0,0,0,0.5),
+        inset 0 2px 0 rgba(255,255,255,0.4);
+    }
+    .wii-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .wii-menu-header .wii-logo-mini {
+      font-size: 1.5rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: #4a6a8a;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .wii-menu-header .clock {
+      font-size: 1.1rem;
+      color: #3a5a7a;
+      font-weight: 600;
+      margin: 0;
+    }
+    .wii-date {
+      font-size: 0.75rem;
+      color: #5a7a9a;
+      text-align: right;
+      margin-bottom: 6px;
+    }
+    .channels.wii-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 100%;
+      width: 100%;
+    }
+    .channels.wii-grid .channel {
+      aspect-ratio: 4/3;
+      border-radius: 10px;
+      font-size: 0.62rem;
+      padding: 4px;
+      gap: 4px;
+      box-shadow:
+        0 4px 8px rgba(0,0,0,0.2),
+        inset 0 2px 0 rgba(255,255,255,0.45),
+        inset 0 -2px 0 rgba(0,0,0,0.08);
+    }
+    .channels.wii-grid .channel .icon { font-size: 1.6rem; }
+    .channels.wii-grid .channel.locked {
+      filter: grayscale(0.7) brightness(0.85);
+      opacity: 0.85;
+    }
+    .channels.wii-grid .channel.locked::after {
+      content: '🔒';
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 0.7rem;
+    }
+    .channels.wii-grid .channel { position: relative; }
+    .channels.wii-grid .channel.empty-slot {
+      background: linear-gradient(145deg, #8a96a4, #6a7684) !important;
+      opacity: 0.5;
+      cursor: default;
+      pointer-events: none;
+    }
+    .ch-disc { background: linear-gradient(145deg, #d0d8e0, #98a8b8); color: #333; text-shadow: none; }
+    .ch-photo { background: linear-gradient(145deg, #7ec8e8, #4a9fd4); }
+    .ch-weather { background: linear-gradient(145deg, #5dade2, #2874a6); }
+    .ch-news { background: linear-gradient(145deg, #85929e, #566573); }
+    .ch-mail { background: linear-gradient(145deg, #f5b041, #d68910); }
+    .ch-settings { background: linear-gradient(145deg, #aab7b8, #717d7e); }
+    .menu-pager {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 14px;
+    }
+    .menu-pager button {
+      background: linear-gradient(180deg, #e8eef4, #b8c4d0);
+      border: 2px solid #6a7a8a;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 700;
+      color: #3a5a7a;
+      cursor: pointer;
+    }
+    .menu-pager span { font-weight: 600; color: #3a5a7a; }
+    .wii-points-corner {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #c65d00;
+    }
+    .menu-hint-wii {
+      text-align: center;
+      color: #4a6a8a;
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+
+    .wii-plaza-screen {
+      background: linear-gradient(180deg, #6eb5e8 0%, #b8e8f8 45%, #d4f0d4 100%) !important;
+    }
+    .mii-parade-wrap {
+      width: 100%;
+      max-width: 520px;
+      background: rgba(255,255,255,0.55);
+      border-radius: 16px;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 2px solid rgba(255,255,255,0.8);
+    }
+    .mii-parade-wrap canvas { width: 100%; height: 110px; display: block; border-radius: 10px; background: #f0f8ff; }
+    .mii-parade-label {
+      font-size: 0.7rem;
+      color: #5a8ab0;
+      text-align: center;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .wii-shop-screen {
+      background: linear-gradient(180deg, #ff9c4a 0%, #ffb366 30%, #ffe8cc 100%) !important;
+    }
+    .shop-welcome-banner {
+      max-width: 720px;
+      width: 100%;
+      background: linear-gradient(180deg, #fff8f0 0%, #ffe0c0 100%);
+      border: 4px solid #e85d04;
+      border-radius: 16px;
+      padding: 16px 20px;
+      text-align: center;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 0 #c65d00;
+    }
+    .shop-welcome-banner h3 {
+      color: #c65d00;
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+    }
+    .shop-welcome-banner p { color: #8b4513; font-size: 0.9rem; }
+
+    .channel-info-panel {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .channel-info-panel .big-icon { font-size: 4rem; display: block; margin-bottom: 12px; }
+    .channel-info-panel h2 { color: #2a6a9a; margin-bottom: 12px; }
+    .photo-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .photo-gallery canvas {
+      border: 3px solid #4a9fd4;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .screen { display: none; min-height: 100vh; padding: 16px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; }
+    .screen:not(.wii-menu-screen) {
+      background: linear-gradient(180deg, #b8d4f0 0%, #e8f4fc 40%, #f5f9ff 100%);
+      width: 100%;
+    }
+
+    /* Wii logo bar */
+    .wii-bar {
+      background: linear-gradient(90deg, #6eb5e8, #9dd4f5, #6eb5e8);
+      width: 100%;
+      max-width: 720px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,80,150,0.2);
+    }
+    .wii-logo {
+      font-size: 2.4rem;
+      font-weight: 300;
+      letter-spacing: 0.35em;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,60,120,0.4);
+    }
+    .wii-logo span { display: inline-block; transform: scaleY(1.15); }
+    .wii-logo .ii { letter-spacing: 0.1em; font-style: italic; }
+
+    .clock {
+      font-size: 0.9rem;
+      color: #2a6a9a;
+      margin-top: 4px;
+    }
+
+    /* Channel grid */
+    .channels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      max-width: 720px;
+      width: 100%;
+    }
+    .channel {
+      aspect-ratio: 1;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.35);
+    }
+    .channel:hover { transform: scale(1.05); }
+    .channel:active { transform: scale(0.98); }
+    .channel .icon { font-size: 2.5rem; }
+    .ch-mii { background: linear-gradient(145deg, #4a9fd4, #2d7ab8); }
+    .ch-sports { background: linear-gradient(145deg, #5cb85c, #3d8b3d); }
+    .ch-bowl { background: linear-gradient(145deg, #e67e22, #c0392b); }
+    .ch-tennis { background: linear-gradient(145deg, #9b59b6, #6c3483); }
+    .ch-baseball { background: linear-gradient(145deg, #3498db, #2471a3); }
+    .ch-boxing { background: linear-gradient(145deg, #e74c3c, #922b21); }
+    .ch-shop { background: linear-gradient(145deg, #ff9c4a, #e85d04); }
+
+    .wii-points-bar {
+      background: linear-gradient(90deg, #fff9e6, #fff);
+      border: 2px solid #f5a623;
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #c65d00;
+      margin-bottom: 12px;
+      max-width: 720px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .shop-panel {
+      max-width: 720px;
+      width: 100%;
+      background: linear-gradient(180deg, #fff5e6 0%, #ffe8cc 100%);
+      border-radius: 20px;
+      padding: 20px;
+      border: 3px solid #ff9c4a;
+      box-shadow: 0 8px 24px rgba(230, 93, 4, 0.2);
+    }
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .shop-item {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+      border: 2px solid #ffd4a8;
+      transition: transform 0.15s;
+    }
+    .shop-item.owned { border-color: #5cb85c; background: #f0fff4; }
+    .shop-item .shop-icon { font-size: 2.2rem; display: block; margin-bottom: 6px; }
+    .shop-item .shop-name { font-size: 0.85rem; font-weight: 600; color: #333; }
+    .shop-item .shop-price { color: #e85d04; font-weight: 700; margin: 6px 0; }
+    .shop-item button {
+      background: linear-gradient(180deg, #6eb5e8, #4a9fd4);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    .shop-item button:disabled { background: #ccc; cursor: default; }
+    .shop-item button.equip-btn { background: linear-gradient(180deg, #5cb85c, #3d8b3d); }
+    .shop-item button.takeoff-btn { background: linear-gradient(180deg, #e67e22, #d35400); }
+
+    .accessory-box {
+      max-width: 400px;
+      width: 100%;
+      background: rgba(255,255,255,0.9);
+      border-radius: 16px;
+      padding: 14px;
+      margin: 8px 0;
+    }
+    .accessory-box label { font-size: 0.85rem; color: #2a6a9a; font-weight: 600; }
+    .accessory-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center; }
+    .accessory-btns .btn { margin: 0; padding: 10px 14px; font-size: 0.85rem; }
+    .accessory-btns .btn-off { background: linear-gradient(180deg, #e67e22, #d35400); box-shadow: 0 4px 0 #a04000; }
+
+    .points-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff9e6;
+      border: 3px solid #f5a623;
+      border-radius: 16px;
+      padding: 16px 28px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #c65d00;
+      z-index: 200;
+      pointer-events: none;
+      animation: pointsPop 1.2s ease forwards;
+    }
+    @keyframes pointsPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      80% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -80%) scale(0.9); }
+    }
+
+    .channels.three-channels {
+      grid-template-columns: repeat(3, minmax(130px, 180px));
+      justify-content: center;
+      max-width: 620px;
+    }
+    .channels.three-channels .channel .icon { font-size: 2.5rem; }
+
+    .mii-preview-wrap {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+    }
+    canvas#miiCanvas { display: block; margin: 0 auto; }
+
+    .controls {
+      max-width: 400px;
+      width: 100%;
+      background: rgba(255,255,255,0.9);
+      border-radius: 16px;
+      padding: 16px;
+      margin: 8px 0;
+    }
+    .controls label {
+      display: block;
+      font-size: 0.8rem;
+      color: #555;
+      margin: 8px 0 4px;
+    }
+    .controls input[type="range"] { width: 100%; }
+    .controls input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #9dd4f5;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .color-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+    }
+    .color-btn.selected { border-color: #2d7ab8; box-shadow: 0 0 0 2px #fff; }
+
+    .btn {
+      background: linear-gradient(180deg, #7ec8f7, #4a9fd4);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 8px;
+      box-shadow: 0 4px 0 #2d7ab8;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #2d7ab8; }
+    .btn-back { background: linear-gradient(180deg, #ccc, #999); box-shadow: 0 4px 0 #666; }
+
+    h2 { color: #2a6a9a; margin: 12px 0; font-weight: 400; }
+
+    /* Game areas */
+    .game-panel {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      max-width: 720px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    canvas.game-canvas {
+      display: block;
+      width: 100%;
+      max-width: 680px;
+      height: auto;
+      border-radius: 8px;
+      background: #1a472a;
+      cursor: crosshair;
+    }
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #2a6a9a;
+    }
+    .hint {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      margin: 8px 0;
+    }
+    .sport-pick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .sport-pick button {
+      padding: 10px 12px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.75rem;
+      min-width: 100px;
+      padding: 8px 10px;
+    }
+    .sport-pick { max-width: 620px; }
+
+    .wii-sports-screen {
+      padding: 0 !important;
+      overflow: hidden;
+      background: #6eb5e8;
+    }
+    .wii-sports-screen .sports-field-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .wii-sports-screen .sports-ui {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .sports-title {
+      font-size: 2.2rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,60,120,0.5);
+      margin-bottom: 4px;
+    }
+    .sports-sub {
+      color: rgba(255,255,255,0.9);
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+    .sports-points-small {
+      background: rgba(255,255,255,0.85);
+      border-radius: 12px;
+      padding: 6px 14px;
+      font-weight: 700;
+      color: #c65d00;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    .sports-classic {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+    }
+    .sport-tile {
+      width: 118px;
+      padding: 14px 8px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff 0%, #e8eef4 100%);
+      box-shadow: 0 4px 0 #8a9aaa, 0 6px 16px rgba(0,0,0,0.2);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #2a4a6a;
+      transition: transform 0.1s;
+    }
+    .sport-tile:hover { transform: translateY(-2px); }
+    .sport-tile:active { transform: translateY(2px); box-shadow: 0 2px 0 #8a9aaa; }
+    .sport-tile .sport-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
+    .sports-more-btn {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.25);
+      border: 2px solid rgba(255,255,255,0.7);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sports-extra {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+      max-width: 640px;
+    }
+    .sports-extra.open { display: flex; }
+    .sport-tile-small {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.92);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #2a4a6a;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .wii-sports-screen .btn-back {
+      margin-top: auto;
+      background: rgba(80,80,90,0.85);
+      box-shadow: 0 4px 0 #444;
+    }
+    .floating-mii {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .floating-mii canvas { width: 100%; height: 100%; }
+
+    @keyframes channelPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .channels .channel { animation: channelPop 0.4s ease backwards; }
+    .channels .channel:nth-child(2) { animation-delay: 0.05s; }
+    .channels .channel:nth-child(3) { animation-delay: 0.1s; }
+    .channels .channel:nth-child(4) { animation-delay: 0.15s; }
+    .channels .channel:nth-child(5) { animation-delay: 0.2s; }
+    .channels.two-only {
+      grid-template-columns: repeat(2, minmax(160px, 220px));
+      justify-content: center;
+      max-width: 480px;
+    }
+    .channels.two-only .channel { font-size: 1rem; }
+    .channels.two-only .channel .icon { font-size: 3rem; }
+
+    .music-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 100;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(180deg, #fff, #d4e9f7);
+      box-shadow: 0 4px 12px rgba(0,80,150,0.25);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .music-btn:hover { transform: scale(1.08); }
+    .music-btn.muted { opacity: 0.55; }
+    .music-hint {
+      position: fixed;
+      bottom: 78px;
+      left: 16px;
+      z-index: 99;
+      background: rgba(255,255,255,0.95);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      color: #2a6a9a;
+      max-width: 200px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      animation: fadeHint 4s forwards;
+    }
+    @keyframes fadeHint {
+      0%, 70% { opacity: 1; }
+      100% { opacity: 0; pointer-events: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MENU -->
+  <div id="wii-pointer" aria-hidden="true"></div>
+  <div id="menu" class="screen active wii-menu-screen">
+    <div class="wii-tv-frame">
+      <p class="wii-date" id="menuDate"></p>
+      <div class="wii-menu-header">
+        <span class="wii-logo-mini"><span>W</span><span class="ii" style="font-style:italic">ii</span></span>
+        <span class="clock" id="menuClock">12:00</span>
+      </div>
+      <div class="channels wii-grid" id="menuGrid"></div>
+      <div class="menu-pager">
+        <button type="button" id="menuPrev" aria-label="Previous page">◀</button>
+        <span id="menuPageNum">1 / 2</span>
+        <button type="button" id="menuNext" aria-label="Next page">▶</button>
+      </div>
+      <div class="wii-points-corner" id="menuPoints">⭐ 0 Wii Points</div>
+      <p class="menu-hint-wii">Wii Sports is on the Disc Channel 💿</p>
+    </div>
+    <p class="hint" style="margin-top:12px;color:#9dd4f5">♪ Click once for the real Mii Channel song!</p>
+  </div>
+
+  <div id="disc" class="screen wii-menu-screen">
+    <div class="wii-tv-frame">
+      <div class="channel-info-panel">
+        <span class="big-icon">💿</span>
+        <h2>Disc Channel</h2>
+        <p class="hint">Wii Sports is in the drive!</p>
+        <button class="btn" data-go="sportsHub">Start game</button>
+        <button class="btn btn-back" data-go="menu">Wii Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="photo" class="screen wii-plaza-screen">
+    <div class="wii-bar"><div class="wii-logo">Photo Channel</div></div>
+    <div class="channel-info-panel">
+      <span class="big-icon">📷</span>
+      <p class="hint">Your Mii photos — snap one!</p>
+      <div class="photo-gallery" id="photoGallery"></div>
+      <button class="btn" id="snapPhoto">📸 Snap Mii Photo!</button>
+      <button class="btn btn-back" data-go="menu">Wii Menu</button>
+    </div>
+  </div>
+
+  <div id="weather" class="screen">
+    <div class="wii-bar" style="background:linear-gradient(90deg,#5dade2,#85c1e9)">
+      <div class="wii-logo">Forecast Channel</div>
+    </div>
+    <div class="channel-info-panel">
+      <span class="big-icon">🌤️</span>
+      <h2 id="weatherCity">Sunnyville</h2>
+      <p style="font-size:2.5rem;font-weight:700;margin:12px 0" id="weatherTemp">72°F</p>
+      <p class="hint" id="weatherDesc">Partly cloudy — great for Wii Sports!</p>
+      <button class="btn btn-back" data-go="menu">Wii Menu</button>
+    </div>
+  </div>
+
+  <div id="news" class="screen">
+    <div class="wii-bar" style="background:linear-gradient(90deg,#566573,#85929e)">
+      <div class="wii-logo">News Channel</div>
+    </div>
+    <div class="channel-info-panel" style="text-align:left">
+      <span class="big-icon" style="text-align:center;display:block">📰</span>
+      <h2 style="text-align:center">Today's Headlines</h2>
+      <ul id="newsList" style="margin:16px 0;line-height:1.8;color:#444"></ul>
+      <button class="btn btn-back" data-go="menu" style="display:block;margin:0 auto">Wii Menu</button>
+    </div>
+  </div>
+
+  <div id="messages" class="screen">
+    <div class="wii-bar" style="background:linear-gradient(90deg,#f5b041,#f8c471)">
+      <div class="wii-logo">Wii Message Board</div>
+    </div>
+    <div class="channel-info-panel">
+      <span class="big-icon">✉️</span>
+      <div id="msgBoard" style="text-align:left;margin:12px 0;min-height:80px"></div>
+      <button class="btn" id="newMsg">Write a note</button>
+      <button class="btn btn-back" data-go="menu">Wii Menu</button>
+    </div>
+  </div>
+
+  <div id="settings" class="screen">
+    <div class="wii-bar" style="background:linear-gradient(90deg,#95a5a6,#7f8c8d)">
+      <div class="wii-logo">Wii Settings</div>
+    </div>
+    <div class="channel-info-panel">
+      <span class="big-icon">⚙️</span>
+      <p class="hint">Pointer: <strong id="settingPointer">ON</strong></p>
+      <p class="hint">Music: <strong id="settingMusic">ON</strong></p>
+      <button class="btn" id="togglePointer">Toggle pointer</button>
+      <button class="btn" id="toggleMusicSetting">Toggle music</button>
+      <button class="btn btn-back" data-go="menu">Wii Menu</button>
+    </div>
+  </div>
+
+  <!-- MII CHANNEL -->
+  <div id="mii" class="screen wii-plaza-screen">
+    <div class="wii-bar"><div class="wii-logo"><span>W</span><span class="ii">ii</span> — Mii Channel</div></div>
+    <div class="mii-parade-wrap">
+      <p class="mii-parade-label">Mii Parade</p>
+      <canvas id="miiParade" width="500" height="110"></canvas>
+    </div>
+    <div class="mii-preview-wrap">
+      <canvas id="miiCanvas" width="200" height="280"></canvas>
+    </div>
+    <div class="controls">
+      <label>Your Mii name</label>
+      <input type="text" id="miiName" maxlength="10" placeholder="Enter name...">
+      <label>Skin tone</label>
+      <input type="range" id="skinTone" min="0" max="4" value="2">
+      <label>Hair style</label>
+      <input type="range" id="hairStyle" min="0" max="3" value="1">
+      <label>Hair color</label>
+      <div class="color-row" id="hairColors"></div>
+      <label>Shirt color</label>
+      <div class="color-row" id="shirtColors"></div>
+      <label>Eye size</label>
+      <input type="range" id="eyeSize" min="1" max="3" value="2">
+    </div>
+    <div class="accessory-box">
+      <label>Hats & extras (from Wii Shop)</label>
+      <div id="miiAccessoryBtns" class="accessory-btns"></div>
+    </div>
+    <button class="btn" id="saveMii">Save Mii!</button>
+    <button class="btn btn-back" data-go="menu">Wii Menu</button>
+  </div>
+
+  <!-- SPORTS (Disc — like real Wii Sports field) -->
+  <div id="sportsHub" class="screen wii-sports-screen">
+    <canvas id="sportsFieldCanvas" class="sports-field-canvas" width="800" height="600"></canvas>
+    <div class="sports-ui">
+      <h1 class="sports-title">Wii Sports</h1>
+      <p class="sports-sub">Pick a sport on the training field</p>
+      <p class="sports-points-small" id="sportsPoints">⭐ 0 Wii Points</p>
+      <div class="sports-classic">
+        <button type="button" class="sport-tile" data-go="baseball"><span class="sport-icon">⚾</span>Baseball</button>
+        <button type="button" class="sport-tile" data-go="tennis"><span class="sport-icon">🎾</span>Tennis</button>
+        <button type="button" class="sport-tile" data-go="golf"><span class="sport-icon">⛳</span>Golf</button>
+        <button type="button" class="sport-tile" data-go="bowling"><span class="sport-icon">🎳</span>Bowling</button>
+        <button type="button" class="sport-tile" data-go="boxing"><span class="sport-icon">🥊</span>Boxing</button>
+      </div>
+      <button type="button" class="sports-more-btn" id="sportsMoreBtn">More Sports ▼</button>
+      <div class="sports-extra" id="sportsExtra">
+        <button type="button" class="sport-tile-small" data-go="basketball">🏀 Basketball</button>
+        <button type="button" class="sport-tile-small" data-go="archery">🏹 Archery</button>
+        <button type="button" class="sport-tile-small" data-go="sword">⚔️ Sword</button>
+        <button type="button" class="sport-tile-small" data-go="soccer">⚽ Soccer</button>
+        <button type="button" class="sport-tile-small" data-go="frisbee">🥏 Frisbee</button>
+        <button type="button" class="sport-tile-small" data-go="pingpong">🏓 Ping Pong</button>
+        <button type="button" class="sport-tile-small" data-go="surfing">🏄 Surfing</button>
+        <button type="button" class="sport-tile-small" data-go="skiing">🎿 Skiing</button>
+        <button type="button" class="sport-tile-small" data-go="cycling">🚴 Cycling</button>
+        <button type="button" class="sport-tile-small" data-go="dodgeball">🤾 Dodgeball</button>
+        <button type="button" class="sport-tile-small" data-go="volleyball">🏐 Volleyball</button>
+      </div>
+      <button class="btn btn-back" data-go="menu">Wii Menu</button>
+    </div>
+  </div>
+
+  <!-- WII SHOP -->
+  <div id="shop" class="screen wii-shop-screen">
+    <div class="wii-bar" style="background:linear-gradient(90deg,#ff9c4a,#ffb366,#ff9c4a)">
+      <div class="wii-logo" style="letter-spacing:0.15em">Wii Shop Channel</div>
+    </div>
+    <div class="shop-welcome-banner">
+      <h3>Welcome to the Wii Shop Channel!</h3>
+      <p>Play Wii Sports to earn Wii Points · buy Mii stuff & channels!</p>
+    </div>
+    <div class="wii-points-bar" id="shopPoints">⭐ 0 Wii Points</div>
+    <div class="shop-panel">
+      <p class="hint" style="color:#c65d00;font-weight:600">Welcome! Play Wii Sports to earn points, then buy cool stuff!</p>
+      <div id="shopGrid" class="shop-grid"></div>
+    </div>
+    <button class="btn btn-back" data-go="menu">Wii Menu</button>
+  </div>
+
+  <!-- BOWLING -->
+  <div id="bowling" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Bowling</div></div>
+    <div class="score-bar">
+      <span>Frame: <span id="bowlFrame">1</span>/10</span>
+      <span>Score: <span id="bowlScore">0</span></span>
+      <span>Pins: <span id="bowlPins">10</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="bowlCanvas" class="game-canvas" width="400" height="500"></canvas>
+      <p class="hint">Move mouse left/right to aim · Click to roll!</p>
+      <button class="btn" id="bowlRoll">Roll ball!</button>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- TENNIS -->
+  <div id="tennis" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Tennis</div></div>
+    <div class="score-bar">
+      <span>You: <span id="tennisYou">0</span></span>
+      <span>CPU: <span id="tennisCpu">0</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="tennisCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse to move your Mii · Ball bounces automatically!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- BASEBALL -->
+  <div id="baseball" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Baseball</div></div>
+    <div class="score-bar">
+      <span>Hits: <span id="baseHits">0</span></span>
+      <span>Strikes: <span id="baseStrikes">0</span>/3</span>
+      <span>Home runs: <span id="baseHR">0</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="baseCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click when the ball is in the green zone to swing!</p>
+      <button class="btn" id="baseSwing">Swing!</button>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- BOXING -->
+  <div id="boxing" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Boxing</div></div>
+    <div class="score-bar">
+      <span>Your HP: <span id="boxYouHp">100</span></span>
+      <span>Enemy HP: <span id="boxCpuHp">100</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="boxCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Left punch · Right punch · Block (middle) — keyboard or buttons below</p>
+      <div style="text-align:center">
+        <button class="btn" id="boxLeft">👊 Left</button>
+        <button class="btn" id="boxBlock">🛡️ Block</button>
+        <button class="btn" id="boxRight">👊 Right</button>
+      </div>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- GOLF -->
+  <div id="golf" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Golf</div></div>
+    <div class="score-bar">
+      <span>Hole: <span id="golfHole">1</span>/9</span>
+      <span>Strokes: <span id="golfStrokes">0</span></span>
+      <span>Total: <span id="golfTotal">0</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="golfCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse to aim · Click to start power · Click again to swing!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- BASKETBALL -->
+  <div id="basketball" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Basketball</div></div>
+    <div class="score-bar">
+      <span>Baskets: <span id="hoopScore">0</span></span>
+      <span>Shots: <span id="hoopShots">0</span>/10</span>
+    </div>
+    <div class="game-panel">
+      <canvas id="hoopCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click when the meter is in the green zone!</p>
+      <button class="btn" id="hoopShoot">Shoot!</button>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- ARCHERY -->
+  <div id="archery" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports Resort — Archery</div></div>
+    <div class="score-bar">
+      <span>Score: <span id="archScore">0</span></span>
+      <span>Arrows: <span id="archArrows">10</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="archCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click the target — closer to center = more points!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- SWORDPLAY -->
+  <div id="sword" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports Resort — Swordplay</div></div>
+    <div class="score-bar">
+      <span>Blocked: <span id="swordBlock">0</span></span>
+      <span>Missed: <span id="swordMiss">0</span>/5</span>
+    </div>
+    <div class="game-panel">
+      <canvas id="swordCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click when the ball gets close to you!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- SOCCER -->
+  <div id="soccer" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Soccer</div></div>
+    <div class="score-bar">
+      <span>Goals: <span id="soccerGoals">0</span></span>
+      <span>Kicks: <span id="soccerKicks">0</span>/8</span>
+    </div>
+    <div class="game-panel">
+      <canvas id="soccerCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click where you want to kick the ball!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- FRISBEE -->
+  <div id="frisbee" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports Resort — Frisbee</div></div>
+    <div class="score-bar">
+      <span>Hits: <span id="frisbeeHits">0</span></span>
+      <span>Throws: <span id="frisbeeThrows">0</span>/8</span>
+    </div>
+    <div class="game-panel">
+      <canvas id="frisbeeCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse to aim · Click to throw!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- PING PONG -->
+  <div id="pingpong" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Ping Pong</div></div>
+    <div class="score-bar">
+      <span>You: <span id="ppYou">0</span></span>
+      <span>CPU: <span id="ppCpu">0</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="ppCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse — fast table tennis! First to 7 wins.</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- SURFING -->
+  <div id="surfing" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports Resort — Surfing</div></div>
+    <div class="score-bar">
+      <span>Time: <span id="surfTime">30</span>s</span>
+      <span>Dodged: <span id="surfDodged">0</span></span>
+    </div>
+    <div class="game-panel">
+      <canvas id="surfCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse left/right to dodge rocks!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+
+  <!-- SKIING -->
+  <div id="skiing" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Skiing</div></div>
+    <div class="score-bar"><span>Distance: <span id="skiDist">0</span>m</span><span>Hits: <span id="skiHits">0</span>/3</span></div>
+    <div class="game-panel">
+      <canvas id="skiCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse — dodge trees!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- CYCLING -->
+  <div id="cycling" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Cycling</div></div>
+    <div class="score-bar"><span>Distance: <span id="cycleDist">0</span>m</span><span>Goal: 500m</span></div>
+    <div class="game-panel">
+      <canvas id="cycleCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click Pedal! · dodge holes with mouse</p>
+      <button class="btn" id="cyclePedal">Pedal!</button>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- DODGEBALL -->
+  <div id="dodgeball" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Dodgeball</div></div>
+    <div class="score-bar"><span>Hits: <span id="dodgeHits">0</span></span><span>HP: <span id="dodgeHp">100</span></span></div>
+    <div class="game-panel">
+      <canvas id="dodgeCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Move mouse · click to throw!</p>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+  <!-- VOLLEYBALL -->
+  <div id="volleyball" class="screen">
+    <div class="wii-bar"><div class="wii-logo">Wii Sports — Volleyball</div></div>
+    <div class="score-bar"><span>You: <span id="volYou">0</span></span><span>CPU: <span id="volCpu">0</span></span></div>
+    <div class="game-panel">
+      <canvas id="volCanvas" class="game-canvas" width="500" height="400"></canvas>
+      <p class="hint">Click Bump when ball is near you!</p>
+      <button class="btn" id="volBump">Bump!</button>
+      <button class="btn btn-back" data-go="sportsHub">Wii Sports</button>
+    </div>
+  </div>
+
+
+    <button type="button" class="music-btn" id="musicBtn" title="Mii Channel music on/off">🔊</button>
+    <div class="music-hint" id="musicHint">Click the screen or 🔊 for Mii music!</div>
+
+  <div class="floating-mii" id="floatMii" style="display:none">
+    <canvas id="floatCanvas" width="64" height="64"></canvas>
+  </div>
+
+  <script>
+    // --- Mii data ---
+    const SKINS = ['#ffdbac', '#f1c27d', '#e0ac69', '#c68642', '#8d5524'];
+    const HAIR_COLORS = ['#1a1a1a', '#4a3728', '#d4a017', '#c0392b', '#7f8c8d'];
+    const SHIRT_COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+
+    let mii = {
+      name: 'Player',
+      skin: 2,
+      hairStyle: 1,
+      hairColor: 0,
+      shirt: 0,
+      eyeSize: 2,
+      hat: 0,
+      glasses: 0,
+      mustache: 0
+    };
+
+    let wiiSave = { points: 0, owned: [], equipped: {} };
+
+    const SHOP_ITEMS = [
+      { id: 'cap', name: 'Baseball Cap', icon: '🧢', price: 50, type: 'hat', value: 1 },
+      { id: 'tophat', name: 'Top Hat', icon: '🎩', price: 80, type: 'hat', value: 2 },
+      { id: 'glasses', name: 'Glasses', icon: '👓', price: 40, type: 'glasses', value: 1 },
+      { id: 'stache', name: 'Mustache', icon: '🥸', price: 35, type: 'mustache', value: 1 },
+      { id: 'gold_shirt', name: 'Gold Shirt', icon: '✨', price: 60, type: 'shirt', value: 6 },
+      { id: 'pro_ball', name: 'Pro Bowling Ball', icon: '🎳', price: 75, type: 'upgrade', desc: 'Bigger ball!' },
+      { id: 'gold_gloves', name: 'Gold Gloves', icon: '🥊', price: 100, type: 'upgrade', desc: 'Stronger punches!' },
+      { id: 'photo_ch', name: 'Photo Channel', icon: '📷', price: 200, type: 'channel', desc: 'Wii classic!' }
+    ];
+
+    function loadWiiSave() {
+      try {
+        const s = JSON.parse(localStorage.getItem('wiiSave') || '{}');
+        wiiSave.points = s.points || 0;
+        wiiSave.owned = s.owned || [];
+        wiiSave.equipped = s.equipped || {};
+      } catch (_) {}
+      updatePointsUI();
+    }
+
+    function saveWiiSave() {
+      localStorage.setItem('wiiSave', JSON.stringify(wiiSave));
+      updatePointsUI();
+    }
+
+    function owns(id) { return wiiSave.owned.includes(id); }
+
+    function updatePointsUI() {
+      const txt = '⭐ ' + wiiSave.points + ' Wii Points';
+      ['menuPoints', 'sportsPoints', 'shopPoints'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      });
+    }
+
+    function showPointsPopup(amt) {
+      const p = document.createElement('div');
+      p.className = 'points-popup';
+      p.textContent = '+' + amt + ' Wii Points!';
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1200);
+    }
+
+    function earnPoints(amt) {
+      if (amt <= 0) return;
+      wiiSave.points += amt;
+      saveWiiSave();
+      showPointsPopup(amt);
+    }
+
+    function getShirtColor(i) {
+      if (i === 6 && owns('gold_shirt')) return '#ffd700';
+      return SHIRT_COLORS[i] || SHIRT_COLORS[0];
+    }
+
+    function renderShop() {
+      const grid = document.getElementById('shopGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      SHOP_ITEMS.forEach(item => {
+        const owned = owns(item.id);
+        const div = document.createElement('div');
+        div.className = 'shop-item' + (owned ? ' owned' : '');
+        div.innerHTML =
+          '<span class="shop-icon">' + item.icon + '</span>' +
+          '<span class="shop-name">' + item.name + '</span>' +
+          (item.desc ? '<div style="font-size:0.7rem;color:#666">' + item.desc + '</div>' : '') +
+          '<div class="shop-price">' + (owned ? 'OWNED ✓' : item.price + ' WP') + '</div>';
+        const btn = document.createElement('button');
+        if (owned && ['hat', 'glasses', 'mustache'].includes(item.type)) {
+          if (mii[item.type] === item.value) {
+            btn.textContent = 'Take off';
+            btn.className = 'takeoff-btn';
+            btn.onclick = () => unequipAccessory(item.type);
+          } else {
+            btn.textContent = 'Wear it';
+            btn.className = 'equip-btn';
+            btn.onclick = () => equipShopItem(item);
+          }
+        } else if (owned) {
+          btn.textContent = 'Owned';
+          btn.disabled = true;
+        } else {
+          btn.textContent = wiiSave.points >= item.price ? 'Buy!' : 'Need more points';
+          btn.disabled = wiiSave.points < item.price;
+          btn.onclick = () => buyShopItem(item);
+        }
+        div.appendChild(btn);
+        grid.appendChild(div);
+      });
+      updatePointsUI();
+    }
+
+    function buyShopItem(item) {
+      if (owns(item.id) || wiiSave.points < item.price) return;
+      wiiSave.points -= item.price;
+      wiiSave.owned.push(item.id);
+      if (item.type === 'hat' || item.type === 'glasses' || item.type === 'mustache') {
+        mii[item.type] = item.value;
+        wiiSave.equipped[item.type] = item.value;
+      }
+      if (item.type === 'shirt') mii.shirt = item.value;
+      saveWiiSave();
+      localStorage.setItem('wiiMii', JSON.stringify(mii));
+      renderShop();
+      renderMenuGrid();
+      playBlip();
+      alert('You bought ' + item.name + '!');
+    }
+
+    function equipShopItem(item) {
+      mii[item.type] = item.value;
+      wiiSave.equipped[item.type] = item.value;
+      localStorage.setItem('wiiMii', JSON.stringify(mii));
+      saveWiiSave();
+      redrawMiiPreview();
+      refreshMiiAccessoriesUI();
+      renderShop();
+      playBlip();
+    }
+
+    function unequipAccessory(type) {
+      mii[type] = 0;
+      wiiSave.equipped[type] = 0;
+      localStorage.setItem('wiiMii', JSON.stringify(mii));
+      saveWiiSave();
+      redrawMiiPreview();
+      refreshMiiAccessoriesUI();
+      renderShop();
+      playBlip();
+    }
+
+    function redrawMiiPreview() {
+      const big = document.getElementById('miiCanvas');
+      const small = document.getElementById('floatCanvas');
+      if (big) drawMii(big, 200, 280);
+      if (small) drawMii(small, 64, 64, true);
+    }
+
+    function refreshMiiAccessoriesUI() {
+      const el = document.getElementById('miiAccessoryBtns');
+      if (!el) return;
+      el.innerHTML = '';
+
+      if (mii.hat) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-off';
+        b.textContent = '🧢 Take off hat';
+        b.onclick = () => unequipAccessory('hat');
+        el.appendChild(b);
+      }
+      if (mii.glasses) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-off';
+        b.textContent = '👓 Take off glasses';
+        b.onclick = () => unequipAccessory('glasses');
+        el.appendChild(b);
+      }
+      if (mii.mustache) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-off';
+        b.textContent = '🥸 Take off mustache';
+        b.onclick = () => unequipAccessory('mustache');
+        el.appendChild(b);
+      }
+
+      SHOP_ITEMS.filter(it =>
+        ['hat', 'glasses', 'mustache'].includes(it.type) && owns(it.id) && mii[it.type] !== it.value
+      ).forEach(item => {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = item.icon + ' Wear ' + item.name;
+        b.onclick = () => equipShopItem(item);
+        el.appendChild(b);
+      });
+
+      if (mii.shirt === 6 && owns('gold_shirt')) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-off';
+        b.textContent = '✨ Take off gold shirt';
+        b.onclick = () => {
+          mii.shirt = 0;
+          localStorage.setItem('wiiMii', JSON.stringify(mii));
+          buildColorPickers();
+          redrawMiiPreview();
+          refreshMiiAccessoriesUI();
+          playBlip();
+        };
+        el.appendChild(b);
+      }
+
+      if (!el.children.length) {
+        const p = document.createElement('p');
+        p.className = 'hint';
+        p.style.margin = '0';
+        p.textContent = 'No extras on — get stuff in the Wii Shop!';
+        el.appendChild(p);
+      }
+    }
+
+    function loadMii() {
+      try {
+        const s = localStorage.getItem('wiiMii');
+        if (s) mii = { ...mii, ...JSON.parse(s) };
+      } catch (_) {}
+      document.getElementById('miiName').value = mii.name;
+      document.getElementById('skinTone').value = mii.skin;
+      document.getElementById('hairStyle').value = mii.hairStyle;
+      document.getElementById('eyeSize').value = mii.eyeSize;
+      refreshMiiAccessoriesUI();
+    }
+
+    function saveMiiData() {
+      mii.name = document.getElementById('miiName').value.trim() || 'Player';
+      mii.skin = +document.getElementById('skinTone').value;
+      mii.hairStyle = +document.getElementById('hairStyle').value;
+      mii.eyeSize = +document.getElementById('eyeSize').value;
+      localStorage.setItem('wiiMii', JSON.stringify(mii));
+      drawMii(document.getElementById('miiCanvas'), 200, 280);
+      drawMii(document.getElementById('floatCanvas'), 64, 64, true);
+      document.getElementById('floatMii').style.display = 'block';
+      playBlip();
+    }
+
+    function withMii(data, fn) {
+      const saved = { ...mii };
+      Object.assign(mii, data);
+      fn();
+      Object.assign(mii, saved);
+    }
+
+    const paradeStamp = document.createElement('canvas');
+    paradeStamp.width = 56;
+    paradeStamp.height = 72;
+
+    function stampMii(ctx, footX, footY, data) {
+      withMii(data, () => drawMii(paradeStamp, 56, 72, true));
+      ctx.drawImage(paradeStamp, Math.round(footX - 28), Math.round(footY - 66), 56, 72);
+    }
+
+    const PARADE_GUESTS = [
+      { name: 'Matt', skin: 1, hairStyle: 0, hairColor: 0, shirt: 2, eyeSize: 2, hat: 0, glasses: 0, mustache: 0 },
+      { name: 'Lucy', skin: 0, hairStyle: 2, hairColor: 2, shirt: 4, eyeSize: 2, hat: 0, glasses: 1, mustache: 0 },
+      { name: 'Ryan', skin: 3, hairStyle: 1, hairColor: 1, shirt: 0, eyeSize: 1, hat: 1, glasses: 0, mustache: 0 },
+      { name: 'Kate', skin: 2, hairStyle: 3, hairColor: 3, shirt: 5, eyeSize: 3, hat: 0, glasses: 0, mustache: 0 }
+    ];
+
+    function drawMii(canvas, w, h, tiny) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2;
+      const scale = tiny ? 0.28 : 1;
+      const skin = SKINS[mii.skin];
+      const hairC = HAIR_COLORS[mii.hairColor];
+      const shirt = getShirtColor(mii.shirt >= 6 && !owns('gold_shirt') ? 0 : mii.shirt);
+
+      if (!tiny) {
+        ctx.fillStyle = '#e8f4fc';
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // Body / shirt
+      ctx.fillStyle = shirt;
+      ctx.beginPath();
+      ctx.ellipse(cx, h * 0.72, w * 0.22 * scale / (tiny ? 0.28 : 1), h * 0.18, 0, 0, Math.PI * 2);
+      if (tiny) {
+        ctx.arc(cx, h * 0.55, w * 0.35, 0, Math.PI * 2);
+      } else {
+        ctx.fillRect(cx - w * 0.2, h * 0.55, w * 0.4, h * 0.35);
+        ctx.fill();
+      }
+
+      // Head
+      const headR = (tiny ? w * 0.32 : w * 0.28);
+      const headY = tiny ? h * 0.42 : h * 0.32;
+      ctx.fillStyle = skin;
+      ctx.beginPath();
+      ctx.arc(cx, headY, headR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hair
+      ctx.fillStyle = hairC;
+      const hs = mii.hairStyle;
+      if (hs === 0) {
+        ctx.beginPath();
+        ctx.arc(cx, headY - headR * 0.3, headR * 1.05, Math.PI, 0);
+        ctx.fill();
+      } else if (hs === 1) {
+        ctx.beginPath();
+        ctx.ellipse(cx, headY - headR * 0.5, headR * 1.1, headR * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (hs === 2) {
+        ctx.fillRect(cx - headR, headY - headR * 1.2, headR * 2, headR * 0.9);
+        ctx.beginPath();
+        ctx.arc(cx - headR * 0.6, headY, headR * 0.4, 0, Math.PI * 2);
+        ctx.arc(cx + headR * 0.6, headY, headR * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        for (let i = -1; i <= 1; i++) {
+          ctx.beginPath();
+          ctx.arc(cx + i * headR * 0.5, headY - headR * 0.8, headR * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Eyes
+      const eyeR = (mii.eyeSize * 3 + 4) * (tiny ? 0.5 : 1);
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = tiny ? 1 : 2;
+      [-1, 1].forEach(side => {
+        const ex = cx + side * headR * 0.35;
+        const ey = headY + headR * 0.05;
+        ctx.beginPath();
+        ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#222';
+        ctx.beginPath();
+        ctx.arc(ex, ey, eyeR * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+      });
+
+      // Nose
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.beginPath();
+      ctx.ellipse(cx, headY + headR * 0.25, headR * 0.08, headR * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mustache
+      if (mii.mustache) {
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.ellipse(cx, headY + headR * 0.38, headR * 0.35, headR * 0.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Glasses
+      if (mii.glasses) {
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = tiny ? 2 : 3;
+        [-1, 1].forEach(side => {
+          const ex = cx + side * headR * 0.35;
+          const ey = headY + headR * 0.05;
+          ctx.strokeRect(ex - eyeR * 1.1, ey - eyeR * 1.1, eyeR * 2.2, eyeR * 2.2);
+        });
+        ctx.beginPath();
+        ctx.moveTo(cx - headR * 0.35 - eyeR, headY + headR * 0.05);
+        ctx.lineTo(cx + headR * 0.35 + eyeR, headY + headR * 0.05);
+        ctx.stroke();
+      }
+
+      // Hat
+      if (mii.hat === 1) {
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(cx - headR * 1.1, headY - headR * 1.3, headR * 2.2, headR * 0.45);
+        ctx.beginPath();
+        ctx.ellipse(cx, headY - headR * 1.05, headR * 1.2, headR * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (mii.hat === 2) {
+        ctx.fillStyle = '#222';
+        ctx.fillRect(cx - headR * 0.7, headY - headR * 1.8, headR * 1.4, headR * 1.1);
+        ctx.fillRect(cx - headR * 1.2, headY - headR * 0.75, headR * 2.4, headR * 0.2);
+      }
+
+      // Smile
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = tiny ? 1 : 2;
+      ctx.beginPath();
+      ctx.arc(cx, headY + headR * 0.15, headR * 0.35, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+
+      if (!tiny && mii.name) {
+        ctx.fillStyle = '#2a6a9a';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(mii.name, cx, h - 16);
+      }
+    }
+
+    // Color pickers
+    function buildColorPickers() {
+      const hairEl = document.getElementById('hairColors');
+      const shirtEl = document.getElementById('shirtColors');
+      hairEl.innerHTML = '';
+      shirtEl.innerHTML = '';
+      HAIR_COLORS.forEach((c, i) => {
+        const b = document.createElement('button');
+        b.className = 'color-btn' + (i === mii.hairColor ? ' selected' : '');
+        b.style.background = c;
+        b.type = 'button';
+        b.onclick = () => {
+          mii.hairColor = i;
+          hairEl.querySelectorAll('.color-btn').forEach((x, j) => x.classList.toggle('selected', j === i));
+          drawMii(document.getElementById('miiCanvas'), 200, 280);
+        };
+        hairEl.appendChild(b);
+      });
+      SHIRT_COLORS.forEach((c, i) => {
+        const b = document.createElement('button');
+        b.className = 'color-btn' + (i === mii.shirt ? ' selected' : '');
+        b.style.background = c;
+        b.type = 'button';
+        b.onclick = () => {
+          mii.shirt = i;
+          shirtEl.querySelectorAll('.color-btn').forEach((x, j) => x.classList.toggle('selected', j === i));
+          drawMii(document.getElementById('miiCanvas'), 200, 280);
+        };
+        shirtEl.appendChild(b);
+      });
+      if (owns('gold_shirt')) {
+        const b = document.createElement('button');
+        b.className = 'color-btn' + (mii.shirt === 6 ? ' selected' : '');
+        b.style.background = '#ffd700';
+        b.type = 'button';
+        b.onclick = () => {
+          mii.shirt = 6;
+          shirtEl.querySelectorAll('.color-btn').forEach(x => x.classList.remove('selected'));
+          b.classList.add('selected');
+          drawMii(document.getElementById('miiCanvas'), 200, 280);
+        };
+        shirtEl.appendChild(b);
+      }
+    }
+
+
+    // ========== Wii Menu, pointer, channels ==========
+    const MENU_PAGES = [
+      [
+        { go: 'disc', icon: '💿', name: 'Disc', cls: 'ch-disc' },
+        { go: 'mii', icon: '👤', name: 'Mii', cls: 'ch-mii' },
+        { go: 'photo', icon: '📷', name: 'Photo', cls: 'ch-photo' },
+        { go: 'shop', icon: '🛒', name: 'Shop', cls: 'ch-shop' },
+        { empty: true },
+        { go: 'weather', icon: '🌤️', name: 'Forecast', cls: 'ch-weather' },
+        { go: 'news', icon: '📰', name: 'News', cls: 'ch-news' },
+        { go: 'messages', icon: '✉️', name: 'Messages', cls: 'ch-mail' },
+        { go: 'settings', icon: '⚙️', name: 'Settings', cls: 'ch-settings' },
+        { empty: true },
+        { empty: true },
+        { empty: true }
+      ],
+      [
+        { icon: '🌐', name: 'Internet', coming: 'Internet Channel is not in this vibe Wii yet!' },
+        { icon: '📊', name: 'Votes', coming: 'Everybody Votes — coming soon!' },
+        { icon: '⭐', name: 'Nintendo', coming: 'Nintendo Channel — coming soon!' },
+        { icon: '👀', name: 'Check Mii', go: 'mii' },
+        { icon: '🎵', name: 'Music', go: 'mii' },
+        { icon: '📺', name: 'TV', coming: 'Watch videos on a real Wii!' },
+        { empty: true },
+        { empty: true },
+        { empty: true },
+        { empty: true },
+        { empty: true },
+        { empty: true },
+        { empty: true }
+      ]
+    ];
+
+    const POINTER_SCREENS = ['menu', 'shop', 'disc', 'photo', 'weather', 'news', 'messages', 'settings'];
+    let menuPage = 0;
+    let pointerOn = true;
+    let paradeAnim = null;
+    let audioCtx = null;
+
+    let musicOn = true;
+    let musicStarted = false;
+    let miiMusicPlaying = false;
+    const WAITING_ROOM_SCREENS = ['menu', 'mii', 'shop', 'disc', 'photo', 'weather', 'news', 'messages', 'settings'];
+
+    function isWaitingRoom() {
+      const active = document.querySelector('.screen.active');
+      return active && WAITING_ROOM_SCREENS.includes(active.id);
+    }
+
+    // Real Mii Channel song — MIDI baked in so it always loads in the browser
+    const MII_MIDI_B64 = "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";
+    let miiMidiReady = false;
+    let miiMidiEvents = [];
+    let miiLoopEnd = 0;
+    let miiLoopTimer = null;
+    let miiMusicBus = null;
+
+    function getAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+      }
+      return audioCtx;
+    }
+
+    async function resumeAudio() {
+      const ac = getAudio();
+      if (ac && ac.state === 'suspended') {
+        try { await ac.resume(); } catch (_) {}
+      }
+    }
+
+    function getMiiMusicBus() {
+      const ac = getAudio();
+      if (!ac) return null;
+      if (!miiMusicBus) {
+        const mix = ac.createGain();
+        mix.gain.value = 1.15;
+        const lp = ac.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 3200;
+        mix.connect(lp);
+        lp.connect(ac.destination);
+        miiMusicBus = mix;
+      }
+      return miiMusicBus;
+    }
+
+    function playTone(freq, dur, _type, vol) {
+      const ac = getAudio();
+      if (!ac || ac.state !== 'running') return;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.06, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+      o.connect(g);
+      g.connect(ac.destination);
+      o.start(ac.currentTime);
+      o.stop(ac.currentTime + dur);
+    }
+
+    function playBlip() {
+      playTone(880, 0.08, 'sine', 0.07);
+    }
+
+    function playWhoosh() {
+      playTone(420, 0.12, 'sine', 0.04);
+      setTimeout(() => playTone(620, 0.08, 'sine', 0.03), 40);
+    }
+
+    function playHover() {
+      playTone(1200, 0.04, 'sine', 0.03);
+    }
+
+    function getMidiBytes() {
+      const bin = atob(MII_MIDI_B64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+
+    function readMidiVar(data, i) {
+      let v = 0;
+      while (true) {
+        const b = data[i++];
+        v = (v << 7) | (b & 0x7f);
+        if (!(b & 0x80)) break;
+      }
+      return [v, i];
+    }
+
+    const MIDI_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    function midiNumToName(n) {
+      return MIDI_NAMES[n % 12] + (Math.floor(n / 12) - 1);
+    }
+
+    function parseTempoMap(tr) {
+      const tempos = [{ tick: 0, uspq: 500000 }];
+      let t = 0, i = 0, status = null;
+      while (i < tr.length) {
+        let dt; [dt, i] = readMidiVar(tr, i);
+        t += dt;
+        const b = tr[i];
+        if (b >= 0x80) { status = b; i++; }
+        if (!status) continue;
+        if (status === 0xff) {
+          const meta = tr[i++];
+          const ln = tr[i++];
+          if (meta === 0x51 && ln === 3) {
+            const uspq = (tr[i] << 16) | (tr[i + 1] << 8) | tr[i + 2];
+            tempos.push({ tick: t, uspq });
+          }
+          i += ln;
+        } else if (status === 0xf0 || status === 0xf7) {
+          let ln; [ln, i] = readMidiVar(tr, i);
+          i += ln;
+        } else if ((status & 0xf0) === 0x90 || (status & 0xf0) === 0x80 ||
+                   (status & 0xf0) === 0xa0 || (status & 0xf0) === 0xb0 || (status & 0xf0) === 0xe0) {
+          i += 2;
+        } else if ((status & 0xf0) === 0xc0 || (status & 0xf0) === 0xd0) {
+          i += 1;
+        }
+      }
+      return tempos;
+    }
+
+    function tickToSec(tick, tempos, tpq) {
+      let sec = 0;
+      for (let i = 0; i < tempos.length; i++) {
+        const { tick: t0, uspq } = tempos[i];
+        const t1 = i + 1 < tempos.length ? tempos[i + 1].tick : tick;
+        if (tick <= t0) break;
+        const end = Math.min(tick, t1);
+        if (end > t0) sec += ((end - t0) / tpq) * (uspq / 1e6);
+        if (tick <= t1) break;
+      }
+      return sec;
+    }
+
+    function parseTrackNotes(tr, tickToSecFn) {
+      const events = [];
+      let t = 0, i = 0, status = null;
+      const on = {};
+      while (i < tr.length) {
+        let dt; [dt, i] = readMidiVar(tr, i);
+        t += dt;
+        const b = tr[i];
+        if (b >= 0x80) { status = b; i++; }
+        if (!status) continue;
+        if (status === 0xff) {
+          const ln = tr[i++];
+          i += ln;
+        } else if (status === 0xf0 || status === 0xf7) {
+          let ln; [ln, i] = readMidiVar(tr, i);
+          i += ln;
+        } else if ((status & 0xf0) === 0x90) {
+          const n = tr[i++], v = tr[i++];
+          const sec = tickToSecFn(t);
+          if (v > 0) on[n] = { tick: t, v };
+          else if (on[n]) {
+            const st = on[n];
+            events.push({
+              time: tickToSecFn(st.tick),
+              name: midiNumToName(n),
+              duration: sec - tickToSecFn(st.tick),
+              velocity: st.v / 127
+            });
+            delete on[n];
+          }
+          if (v === 0) status = 0x80;
+        } else if ((status & 0xf0) === 0x80) {
+          const n = tr[i++]; i++;
+          if (on[n]) {
+            const st = on[n];
+            const sec = tickToSecFn(t);
+            events.push({
+              time: tickToSecFn(st.tick),
+              name: midiNumToName(n),
+              duration: sec - tickToSecFn(st.tick),
+              velocity: st.v / 127
+            });
+            delete on[n];
+          }
+        } else if ((status & 0xf0) === 0xa0 || (status & 0xf0) === 0xb0 || (status & 0xf0) === 0xe0) {
+          i += 2;
+        } else if ((status & 0xf0) === 0xc0 || (status & 0xf0) === 0xd0) {
+          i += 1;
+        }
+      }
+      return events;
+    }
+
+    function parseMiiMidiNotes() {
+      const data = getMidiBytes();
+      if (data.length < 14 || String.fromCharCode(data[0], data[1], data[2], data[3]) !== 'MThd') return [];
+      const hLen = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+      const tpq = (data[12] << 8) | data[13];
+      let pos = 8 + hLen;
+      const tracks = [];
+      while (pos + 8 <= data.length && String.fromCharCode(data[pos], data[pos + 1], data[pos + 2], data[pos + 3]) === 'MTrk') {
+        const tLen = (data[pos + 4] << 24) | (data[pos + 5] << 16) | (data[pos + 6] << 8) | data[pos + 7];
+        tracks.push(data.subarray(pos + 8, pos + 8 + tLen));
+        pos += 8 + tLen;
+      }
+      if (!tracks.length) return [];
+      const tempos = parseTempoMap(tracks[0]);
+      const toSec = (tick) => tickToSec(tick, tempos, tpq);
+      const noteTrack = tracks.length > 1 ? tracks[1] : tracks[0];
+      return parseTrackNotes(noteTrack, toSec);
+    }
+
+    function noteNameToHz(name) {
+      const m = name.match(/^([A-G])(#|b)?(-?\d+)?$/);
+      if (!m) return 440;
+      const steps = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+      let n = steps[m[1]] + (parseInt(m[3] || '4', 10) + 1) * 12;
+      if (m[2] === '#') n += 1;
+      if (m[2] === 'b') n -= 1;
+      return 440 * Math.pow(2, (n - 69) / 12);
+    }
+
+    function schedulePureSineNote(when, hz, dur, vel) {
+      const ac = getAudio();
+      const bus = getMiiMusicBus();
+      if (!ac || ac.state !== 'running' || !bus) return;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(hz, when);
+      const vol = Math.min(0.32, 0.14 + vel * 0.2);
+      const end = when + Math.max(0.06, dur);
+      g.gain.setValueAtTime(0.001, when);
+      g.gain.linearRampToValueAtTime(vol, when + 0.01);
+      g.gain.linearRampToValueAtTime(0.001, end);
+      o.connect(g);
+      g.connect(bus);
+      o.start(when);
+      o.stop(when + dur + 0.03);
+    }
+
+    function loadMiiMidiSong() {
+      miiMidiReady = false;
+      miiMidiEvents = [];
+      miiLoopEnd = 0;
+      try {
+        const notes = parseMiiMidiNotes();
+        miiMidiEvents = [];
+        miiLoopEnd = 0;
+        notes.forEach(n => {
+          if (!n.name || n.duration <= 0) return;
+          miiMidiEvents.push({
+            hz: noteNameToHz(n.name),
+            time: n.time,
+            duration: Math.min(n.duration, 1.5),
+            velocity: Math.max(0.35, Math.min(1, n.velocity))
+          });
+          miiLoopEnd = Math.max(miiLoopEnd, n.time + n.duration);
+        });
+        if (!miiMidiEvents.length) return false;
+        const startAt = Math.min(...miiMidiEvents.map(e => e.time));
+        miiMidiEvents.forEach(e => { e.time -= startAt; });
+        miiLoopEnd -= startAt;
+        miiMidiReady = true;
+        return true;
+      } catch (err) {
+        console.warn('Mii MIDI error', err);
+        return false;
+      }
+    }
+
+    function playMiiLoop() {
+      if (!miiMusicPlaying || !musicOn || !isWaitingRoom()) return;
+      const ac = getAudio();
+      if (!ac || ac.state !== 'running') return;
+      const t0 = ac.currentTime + 0.05;
+      miiMidiEvents.forEach(ev => {
+        schedulePureSineNote(t0 + ev.time, ev.hz, ev.duration, ev.velocity);
+      });
+      miiLoopTimer = setTimeout(playMiiLoop, Math.max(500, (miiLoopEnd + 0.4) * 1000));
+    }
+
+    async function ensureAudioReady() {
+      await resumeAudio();
+      const ac = getAudio();
+      if (!ac) return false;
+      if (ac.state === 'suspended') {
+        try { await ac.resume(); } catch (_) {}
+      }
+      return ac.state === 'running';
+    }
+
+    async function startMiiMusic() {
+      if (!musicOn) return;
+      if (miiMusicPlaying) return;
+      if (!(await ensureAudioReady())) return;
+      if (!loadMiiMidiSong()) return;
+      miiMusicPlaying = true;
+      playMiiLoop();
+    }
+
+    function stopMiiMusic() {
+      miiMusicPlaying = false;
+      if (miiLoopTimer) clearTimeout(miiLoopTimer);
+      miiLoopTimer = null;
+    }
+
+    function renderMenuGrid() {
+      const grid = document.getElementById('menuGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      const slots = MENU_PAGES[menuPage] || MENU_PAGES[0];
+      slots.forEach((ch, i) => {
+        if (ch.empty) {
+          const e = document.createElement('div');
+          e.className = 'channel empty-slot';
+          e.innerHTML = '<span class="icon">·</span>';
+          grid.appendChild(e);
+          return;
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'channel ' + (ch.cls || '');
+        const locked = ch.need && !owns(ch.need);
+        if (locked) btn.classList.add('locked');
+        btn.innerHTML = '<span class="icon">' + ch.icon + '</span>' + ch.name;
+        btn.addEventListener('mouseenter', playHover);
+        btn.onclick = () => {
+          playWhoosh();
+          if (ch.coming) { alert(ch.coming); return; }
+          if (locked) { playBlip(); alert('Buy ' + ch.name + ' Channel in the Wii Shop!'); return; }
+          if (ch.go) showScreen(ch.go);
+        };
+        btn.style.animationDelay = (i * 0.04) + 's';
+        grid.appendChild(btn);
+      });
+      const pn = document.getElementById('menuPageNum');
+      if (pn) pn.textContent = (menuPage + 1) + ' / ' + MENU_PAGES.length;
+    }
+
+    function updateWiiPointer() {
+      const ptr = document.getElementById('wii-pointer');
+      const active = document.querySelector('.screen.active');
+      const on = pointerOn && active && POINTER_SCREENS.includes(active.id);
+      document.body.classList.toggle('wii-pointer-active', on);
+      if (ptr) ptr.style.display = on ? 'block' : 'none';
+    }
+
+    document.addEventListener('mousemove', e => {
+      const ptr = document.getElementById('wii-pointer');
+      if (!ptr || ptr.style.display === 'none') return;
+      ptr.style.left = e.clientX + 'px';
+      ptr.style.top = e.clientY + 'px';
+    });
+
+    document.getElementById('menuPrev')?.addEventListener('click', () => {
+      menuPage = (menuPage - 1 + MENU_PAGES.length) % MENU_PAGES.length;
+      playWhoosh();
+      renderMenuGrid();
+    });
+    document.getElementById('menuNext')?.addEventListener('click', () => {
+      menuPage = (menuPage + 1) % MENU_PAGES.length;
+      playWhoosh();
+      renderMenuGrid();
+    });
+
+    const WEATHER_DATA = [
+      { city: 'Sunnyville', temp: '72°F', desc: 'Partly cloudy — great for Wii Sports!' },
+      { city: 'Mii Plaza', temp: '68°F', desc: 'Light breeze in the parade.' },
+      { city: 'Bowling Alley', temp: '70°F', desc: 'Perfect indoor weather.' }
+    ];
+
+    function initWeather() {
+      const w = WEATHER_DATA[Math.floor(Math.random() * WEATHER_DATA.length)];
+      const c = document.getElementById('weatherCity');
+      const t = document.getElementById('weatherTemp');
+      const d = document.getElementById('weatherDesc');
+      if (c) c.textContent = w.city;
+      if (t) t.textContent = w.temp;
+      if (d) d.textContent = w.desc;
+    }
+
+    const NEWS_HEADLINES = [
+      'Local Mii wins bowling tournament by 50 pins!',
+      'Wii Sports Resort fans excited for swordplay.',
+      'Wii Shop Channel: big sale on hats this week.',
+      'Forecast: sunny skies over the channel grid.',
+      'Message Board: remember to save your Mii!'
+    ];
+
+    function initNews() {
+      const ul = document.getElementById('newsList');
+      if (!ul) return;
+      ul.innerHTML = NEWS_HEADLINES.map(h => '<li>' + h + '</li>').join('');
+    }
+
+    function loadMessages() {
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem('wiiMessages') || '[]'); } catch (_) {}
+      const board = document.getElementById('msgBoard');
+      if (!board) return;
+      if (!msgs.length) {
+        board.innerHTML = '<p class="hint">No notes yet. Write one!</p>';
+        return;
+      }
+      board.innerHTML = msgs.map(m => '<p style="margin:8px 0;padding:8px;background:#fff8e6;border-radius:8px"><strong>' + m.date + '</strong><br>' + m.text + '</p>').join('');
+    }
+
+    document.getElementById('newMsg')?.addEventListener('click', () => {
+      const text = prompt('Write a note for the Message Board:');
+      if (!text) return;
+      let msgs = [];
+      try { msgs = JSON.parse(localStorage.getItem('wiiMessages') || '[]'); } catch (_) {}
+      msgs.unshift({ text: text.trim(), date: new Date().toLocaleDateString() });
+      localStorage.setItem('wiiMessages', JSON.stringify(msgs.slice(0, 8)));
+      loadMessages();
+      playBlip();
+    });
+
+    function loadPhotos() {
+      const gal = document.getElementById('photoGallery');
+      if (!gal) return;
+      gal.innerHTML = '';
+      let photos = [];
+      try { photos = JSON.parse(localStorage.getItem('wiiPhotos') || '[]'); } catch (_) {}
+      if (!photos.length) {
+        gal.innerHTML = '<p class="hint">No photos yet!</p>';
+        return;
+      }
+      photos.forEach(data => {
+        const img = document.createElement('img');
+        img.src = data;
+        img.width = 80;
+        img.height = 112;
+        img.style.borderRadius = '8px';
+        gal.appendChild(img);
+      });
+    }
+
+    document.getElementById('snapPhoto')?.addEventListener('click', () => {
+      const c = document.createElement('canvas');
+      c.width = 200;
+      c.height = 280;
+      drawMii(c, 200, 280);
+      const data = c.toDataURL('image/png');
+      let photos = [];
+      try { photos = JSON.parse(localStorage.getItem('wiiPhotos') || '[]'); } catch (_) {}
+      photos.unshift(data);
+      localStorage.setItem('wiiPhotos', JSON.stringify(photos.slice(0, 12)));
+      loadPhotos();
+      playBlip();
+      alert('Photo saved to Photo Channel!');
+    });
+
+    let paradeX = 0;
+    function drawMiiParade() {
+      const c = document.getElementById('miiParade');
+      if (!c) return;
+      const w = c.width;
+      const h = c.height;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#e8f4fc';
+      ctx.fillRect(0, 0, w, h);
+      const floorY = h - 18;
+      ctx.fillStyle = '#8fcf8f';
+      ctx.fillRect(0, floorY, w, 18);
+      ctx.fillStyle = '#6ebf6e';
+      ctx.fillRect(0, floorY, w, 4);
+      const walkers = [
+        { ...mii },
+        PARADE_GUESTS[0],
+        PARADE_GUESTS[1],
+        PARADE_GUESTS[2],
+        PARADE_GUESTS[3]
+      ];
+      for (let i = 0; i < walkers.length; i++) {
+        const px = ((paradeX + i * 105) % (w + 90)) - 40;
+        stampMii(ctx, px, floorY, walkers[i]);
+      }
+      paradeX += 1;
+    }
+
+    function startParade() {
+      if (paradeAnim) cancelAnimationFrame(paradeAnim);
+      function loop() {
+        if (!document.getElementById('mii')?.classList.contains('active')) return;
+        drawMiiParade();
+        paradeAnim = requestAnimationFrame(loop);
+      }
+      loop();
+    }
+
+    function drawSportsField() {
+      const c = document.getElementById('sportsFieldCanvas');
+      if (!c) return;
+      const w = c.width;
+      const h = c.height;
+      const ctx = c.getContext('2d');
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+      sky.addColorStop(0, '#7ec8f7');
+      sky.addColorStop(1, '#b8e8f8');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#4a9f4a';
+      ctx.fillRect(0, h * 0.48, w, h * 0.52);
+      ctx.fillStyle = '#3d8b3d';
+      for (let i = 0; i < 8; i++) {
+        ctx.fillRect(0, h * 0.5 + i * 18, w, 4);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(w * 0.15, h * 0.52, w * 0.7, h * 0.38);
+      drawMiniMii(ctx, w * 0.5, h * 0.72, 1);
+    }
+
+    function initSportsHub() {
+      drawSportsField();
+      const extra = document.getElementById('sportsExtra');
+      const btn = document.getElementById('sportsMoreBtn');
+      if (extra) extra.classList.remove('open');
+      if (btn) btn.textContent = 'More Sports ▼';
+      updatePointsUI();
+    }
+
+    document.getElementById('sportsMoreBtn')?.addEventListener('click', () => {
+      const extra = document.getElementById('sportsExtra');
+      const btn = document.getElementById('sportsMoreBtn');
+      if (!extra || !btn) return;
+      const open = extra.classList.toggle('open');
+      btn.textContent = open ? 'Hide extra sports ▲' : 'More Sports ▼';
+      playBlip();
+    });
+
+    document.getElementById('togglePointer')?.addEventListener('click', () => {
+      pointerOn = !pointerOn;
+      document.getElementById('settingPointer').textContent = pointerOn ? 'ON' : 'OFF';
+      updateWiiPointer();
+      playBlip();
+    });
+
+    document.getElementById('toggleMusicSetting')?.addEventListener('click', () => {
+      musicOn = !musicOn;
+      document.getElementById('settingMusic').textContent = musicOn ? 'ON' : 'OFF';
+      const btn = document.getElementById('musicBtn');
+      if (btn) { btn.textContent = musicOn ? '🔊' : '🔇'; btn.classList.toggle('muted', !musicOn); }
+      updateMenuMusic();
+      playBlip();
+    });
+
+
+    // ========== Mii Channel music (browser only) ==========
+    function updateMenuMusic() {
+      if (musicOn && musicStarted && isWaitingRoom()) startMiiMusic();
+      else stopMiiMusic();
+    }
+
+    async function tryStartMusic() {
+      if (!(await ensureAudioReady())) return;
+      if (!musicStarted) {
+        musicStarted = true;
+        document.getElementById('musicHint')?.remove();
+      }
+      if (musicOn && isWaitingRoom()) {
+        await startMiiMusic();
+      } else {
+        stopMiiMusic();
+      }
+    }
+
+    document.getElementById('musicBtn').onclick = async (e) => {
+      e.stopPropagation();
+      if (!(await ensureAudioReady())) return;
+      if (!musicStarted) {
+        musicStarted = true;
+        musicOn = true;
+        document.getElementById('musicHint')?.remove();
+      } else {
+        musicOn = !musicOn;
+      }
+      const btn = document.getElementById('musicBtn');
+      btn.textContent = musicOn ? '🔊' : '🔇';
+      btn.classList.toggle('muted', !musicOn);
+      playBlip();
+      if (musicOn && isWaitingRoom()) await startMiiMusic();
+      else stopMiiMusic();
+    };
+
+    ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(ev => {
+      document.body.addEventListener(ev, () => tryStartMusic(), { passive: true });
+    });
+
+    // Navigation
+    const screens = document.querySelectorAll('.screen');
+    function showScreen(id) {
+      screens.forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+      playBlip();
+      updateMenuMusic();
+      if (id === 'bowling') initBowling();
+      if (id === 'tennis') initTennis();
+      if (id === 'baseball') initBaseball();
+      if (id === 'boxing') initBoxing();
+      if (id === 'golf') initGolf();
+      if (id === 'basketball') initBasketball();
+      if (id === 'archery') initArchery();
+      if (id === 'sword') initSword();
+      if (id === 'soccer') initSoccer();
+      if (id === 'frisbee') initFrisbee();
+      if (id === 'pingpong') initPingPong();
+      if (id === 'surfing') initSurfing();
+      if (id === 'skiing') initSkiing();
+      if (id === 'cycling') initCycling();
+      if (id === 'dodgeball') initDodgeball();
+      if (id === 'volleyball') initVolleyball();
+      if (id === 'mii') {
+        loadMii();
+        buildColorPickers();
+        redrawMiiPreview();
+        refreshMiiAccessoriesUI();
+        startParade();
+      }
+      if (id === 'shop') renderShop();
+      if (id === 'sportsHub') initSportsHub();
+      if (id === 'menu') renderMenuGrid();
+      if (id === 'weather') initWeather();
+      if (id === 'news') initNews();
+      if (id === 'messages') loadMessages();
+      if (id === 'photo') loadPhotos();
+      updateWiiPointer();
+      updatePointsUI();
+    }
+
+    document.querySelectorAll('[data-go]').forEach(el => {
+      el.addEventListener('click', () => showScreen(el.dataset.go));
+    });
+
+    document.getElementById('saveMii').onclick = saveMiiData;
+    ['skinTone', 'hairStyle', 'eyeSize', 'miiName'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        mii.skin = +document.getElementById('skinTone').value;
+        mii.hairStyle = +document.getElementById('hairStyle').value;
+        mii.eyeSize = +document.getElementById('eyeSize').value;
+        drawMii(document.getElementById('miiCanvas'), 200, 280);
+        drawMiiParade();
+      });
+    });
+
+    // Clock
+    function updateClock() {
+      const n = new Date();
+      const tim = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const el = document.getElementById('menuClock');
+      if (el) el.textContent = tim;
+      const dEl = document.getElementById('menuDate');
+      if (dEl) dEl.textContent = n.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ========== BOWLING ==========
+    let bowl = { pins: [], ball: null, rolling: false, frame: 1, score: 0, totalPins: 10 };
+
+    function initBowling() {
+      const c = document.getElementById('bowlCanvas');
+      bowl.canvas = c;
+      bowl.ctx = c.getContext('2d');
+      resetPins();
+      bowl.ball = { x: 200, y: 450, vx: 0, vy: 0 };
+      bowl.rolling = false;
+      updateBowlUI();
+      c.onmousemove = e => {
+        if (bowl.rolling) return;
+        const r = c.getBoundingClientRect();
+        bowl.ball.x = ((e.clientX - r.left) / r.width) * 400;
+      };
+      drawBowling();
+    }
+
+    function resetPins() {
+      bowl.pins = [];
+      const startX = 200, startY = 80, gap = 28;
+      const rows = [[0], [-1, 1], [-2, 0, 2], [-3, -1, 1, 3]];
+      rows.forEach((row, ri) => {
+        row.forEach(col => {
+          bowl.pins.push({ x: startX + col * gap, y: startY + ri * gap, up: true });
+        });
+      });
+      bowl.totalPins = bowl.pins.filter(p => p.up).length;
+    }
+
+    function rollBall() {
+      if (bowl.rolling) return;
+      bowl.rolling = true;
+      bowl.ball.vy = -9;
+      bowl.ball.vx = (200 - bowl.ball.x) * 0.02;
+      animateBowl();
+    }
+
+    document.getElementById('bowlRoll').onclick = rollBall;
+    document.getElementById('bowlCanvas').onclick = rollBall;
+
+    function animateBowl() {
+      const b = bowl.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.15;
+
+      bowl.pins.forEach(p => {
+        if (!p.up) return;
+        const dx = p.x - b.x, dy = p.y - b.y;
+        if (Math.hypot(dx, dy) < (owns('pro_ball') ? 26 : 22)) {
+          p.up = false;
+          b.vx += dx * 0.08;
+          playBlip();
+        }
+      });
+
+      drawBowling();
+
+      if (b.y < 60 || b.y > 480) {
+        endBowlRoll();
+        return;
+      }
+      requestAnimationFrame(animateBowl);
+    }
+
+    function endBowlRoll() {
+      bowl.rolling = false;
+      const knocked = bowl.pins.filter(p => !p.up).length;
+      const before = bowl.totalPins;
+      bowl.totalPins = bowl.pins.filter(p => p.up).length;
+      const got = before - bowl.totalPins;
+      bowl.score += got * 10;
+      earnPoints(got * 5);
+      if (got === before && got > 0) earnPoints(25);
+      document.getElementById('bowlPins').textContent = bowl.totalPins;
+
+      if (bowl.totalPins === 0) {
+        bowl.frame++;
+        if (bowl.frame > 10) {
+          earnPoints(30);
+          alert('Game over! Score: ' + bowl.score + ' — +30 Wii Points! ' + mii.name + ' rules!');
+          bowl.frame = 1;
+          bowl.score = 0;
+        }
+        setTimeout(() => { resetPins(); bowl.ball = { x: 200, y: 450, vx: 0, vy: 0 }; drawBowling(); }, 800);
+      } else {
+        bowl.ball = { x: 200, y: 450, vx: 0, vy: 0 };
+      }
+      updateBowlUI();
+      drawBowling();
+    }
+
+    function updateBowlUI() {
+      document.getElementById('bowlFrame').textContent = bowl.frame;
+      document.getElementById('bowlScore').textContent = bowl.score;
+      document.getElementById('bowlPins').textContent = bowl.totalPins;
+    }
+
+    function drawBowling() {
+      const ctx = bowl.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#c4a574';
+      ctx.fillRect(0, 0, 400, 500);
+      ctx.fillStyle = '#2a1a0a';
+      ctx.fillRect(120, 0, 160, 500);
+
+      bowl.pins.forEach(p => {
+        if (!p.up) return;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(p.x - 4, p.y - 14, 8, 6);
+      });
+
+      const b = bowl.ball;
+      const br = owns('pro_ball') ? 18 : 14;
+      ctx.fillStyle = owns('pro_ball') ? '#ffd700' : '#3498db';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, br, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('🎳', b.x - 8, b.y - 20);
+    }
+
+    // ========== TENNIS ==========
+    let tennis = { running: false, you: 0, cpu: 0 };
+
+    function initTennis() {
+      const c = document.getElementById('tennisCanvas');
+      tennis.canvas = c;
+      tennis.ctx = c.getContext('2d');
+      tennis.ball = { x: 250, y: 200, vx: 4, vy: 3 };
+      tennis.paddleYou = 250;
+      tennis.paddleCpu = 250;
+      tennis.running = true;
+      if (tennis.loop) cancelAnimationFrame(tennis.loop);
+      tennisLoop();
+    }
+
+    function tennisLoop() {
+      if (!tennis.running || !document.getElementById('tennis').classList.contains('active')) return;
+      const c = tennis.canvas;
+      const b = tennis.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+
+      if (b.x < 20 || b.x > 480) b.vx *= -1;
+      if (b.y < 20) {
+        tennis.you++;
+        earnPoints(10);
+        document.getElementById('tennisYou').textContent = tennis.you;
+        resetTennisBall(1);
+      }
+      if (b.y > 380) {
+        tennis.cpu++;
+        document.getElementById('tennisCpu').textContent = tennis.cpu;
+        resetTennisBall(-1);
+      }
+
+      tennis.paddleCpu += (b.x - tennis.paddleCpu) * 0.06;
+
+      const ctx = tennis.ctx;
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, 200);
+      ctx.lineTo(500, 200);
+      ctx.stroke();
+
+      drawMiniMii(ctx, tennis.paddleYou, 370, 1);
+      drawMiniMii(ctx, tennis.paddleCpu, 30, -1);
+
+      ctx.fillStyle = '#f1c40f';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      tennis.loop = requestAnimationFrame(tennisLoop);
+    }
+
+    function resetTennisBall(dir) {
+      tennis.ball = { x: 250, y: 200, vx: (Math.random() > 0.5 ? 4 : -4), vy: 4 * dir };
+    }
+
+    function drawMiniMii(ctx, x, y, flip) {
+      ctx.save();
+      ctx.translate(x, y);
+      if (flip < 0) ctx.scale(1, -1);
+      ctx.fillStyle = getShirtColor(mii.shirt >= 6 && !owns('gold_shirt') ? 0 : mii.shirt);
+      ctx.fillRect(-15, -10, 30, 25);
+      ctx.fillStyle = SKINS[mii.skin];
+      ctx.beginPath();
+      ctx.arc(0, -25, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    document.getElementById('tennisCanvas').onmousemove = e => {
+      const r = tennis.canvas.getBoundingClientRect();
+      tennis.paddleYou = ((e.clientX - r.left) / r.width) * 500;
+      tennis.ball.x += (tennis.paddleYou - tennis.ball.x) * 0.02;
+      if (tennis.ball.y > 300) tennis.ball.vy = -Math.abs(tennis.ball.vy);
+    };
+
+    // ========== BASEBALL ==========
+    let base = { hits: 0, strikes: 0, hr: 0, pitchY: 0, pitching: true };
+
+    function initBaseball() {
+      base.hits = 0;
+      base.strikes = 0;
+      base.hr = 0;
+      base.pitchY = -20;
+      base.pitching = true;
+      base.canvas = document.getElementById('baseCanvas');
+      base.ctx = base.canvas.getContext('2d');
+      if (base.anim) cancelAnimationFrame(base.anim);
+      baseLoop();
+    }
+
+    function baseLoop() {
+      if (!document.getElementById('baseball').classList.contains('active')) return;
+      if (base.pitching) {
+        base.pitchY += 5;
+        if (base.pitchY > 320) {
+          base.strikes++;
+          document.getElementById('baseStrikes').textContent = base.strikes;
+          if (base.strikes >= 3) {
+            alert('Strike out! Hits: ' + base.hits + ' HR: ' + base.hr);
+            showScreen('sportsHub');
+            return;
+          }
+          base.pitchY = -20;
+        }
+      }
+      drawBase();
+      base.anim = requestAnimationFrame(baseLoop);
+    }
+
+    function swingBase() {
+      if (!base.pitching) return;
+      const zone = base.pitchY > 200 && base.pitchY < 280;
+      base.pitching = false;
+      if (zone) {
+        const quality = Math.abs(base.pitchY - 240);
+        if (quality < 15) {
+          base.hr++;
+          earnPoints(25);
+          document.getElementById('baseHR').textContent = base.hr;
+          playBlip();
+        } else {
+          base.hits++;
+          earnPoints(8);
+          document.getElementById('baseHits').textContent = base.hits;
+        }
+      } else {
+        base.strikes++;
+        document.getElementById('baseStrikes').textContent = base.strikes;
+      }
+      setTimeout(() => { base.pitchY = -20; base.pitching = true; }, 600);
+    }
+
+    document.getElementById('baseSwing').onclick = swingBase;
+    document.getElementById('baseCanvas').onclick = swingBase;
+
+    function drawBase() {
+      const ctx = base.ctx;
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#d4a574';
+      ctx.beginPath();
+      ctx.moveTo(250, 350);
+      ctx.lineTo(150, 250);
+      ctx.lineTo(350, 250);
+      ctx.closePath();
+      ctx.fill();
+      drawMiniMii(ctx, 250, 320, 1);
+      if (base.pitching) {
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(250, base.pitchY, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(0,255,0,0.2)';
+      ctx.fillRect(200, 200, 100, 80);
+    }
+
+    // ========== BOXING ==========
+    let box = { youHp: 100, cpuHp: 100, blocking: false };
+
+    function initBoxing() {
+      box.youHp = 100;
+      box.cpuHp = 100;
+      box.canvas = document.getElementById('boxCanvas');
+      box.ctx = box.canvas.getContext('2d');
+      if (box.timer) clearInterval(box.timer);
+      box.timer = setInterval(boxCpuTurn, 1200);
+      drawBox();
+    }
+
+    function drawBox() {
+      const ctx = box.ctx;
+      ctx.fillStyle = '#2c3e50';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(50, 150, 80, 120);
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(370, 150, 80, 120);
+      drawMiniMii(ctx, 90, 200, 1);
+      drawMiniMii(ctx, 410, 200, -1);
+      document.getElementById('boxYouHp').textContent = box.youHp;
+      document.getElementById('boxCpuHp').textContent = box.cpuHp;
+      if (box.youHp <= 0) { alert('You got KO!'); showScreen('menu'); }
+      if (box.cpuHp <= 0) {
+        earnPoints(50);
+        alert(mii.name + ' wins by KO! +50 Wii Points!');
+        showScreen('sportsHub');
+      }
+    }
+
+    function punch(side) {
+      if (box.blocking) return;
+      const dmg = Math.floor((8 + Math.random() * 8) * (owns('gold_gloves') ? 1.5 : 1));
+      box.cpuHp -= dmg;
+      earnPoints(5);
+      playBlip();
+      drawBox();
+    }
+
+    function boxCpuTurn() {
+      if (!document.getElementById('boxing').classList.contains('active')) return;
+      if (!box.blocking) box.youHp -= 6 + Math.floor(Math.random() * 10);
+      else box.youHp -= 2;
+      drawBox();
+    }
+
+    document.getElementById('boxLeft').onclick = () => punch('l');
+    document.getElementById('boxRight').onclick = () => punch('r');
+    document.getElementById('boxBlock').onmousedown = () => { box.blocking = true; };
+    document.getElementById('boxBlock').onmouseup = () => { box.blocking = false; };
+
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('boxing').classList.contains('active')) return;
+      if (e.key === 'a' || e.key === 'ArrowLeft') punch('l');
+      if (e.key === 'd' || e.key === 'ArrowRight') punch('r');
+      if (e.key === 's' || e.key === ' ') box.blocking = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 's' || e.key === ' ') box.blocking = false;
+    });
+
+    // ========== GOLF ==========
+    let golf = { hole: 1, strokes: 0, total: 0, phase: 'aim', power: 0, powerDir: 1, ball: { x: 80, y: 320 }, holePos: { x: 420, y: 100 }, moving: false };
+
+    function initGolf() {
+      golf.hole = 1;
+      golf.strokes = 0;
+      golf.total = 0;
+      golf.phase = 'aim';
+      golf.power = 0;
+      golf.ball = { x: 80, y: 320, vx: 0, vy: 0 };
+      golf.holePos = { x: 350 + Math.random() * 100, y: 80 + Math.random() * 80 };
+      golf.canvas = document.getElementById('golfCanvas');
+      golf.ctx = golf.canvas.getContext('2d');
+      golf.aimX = 250;
+      golf.canvas.onmousemove = e => {
+        if (golf.phase !== 'aim' || golf.moving) return;
+        const r = golf.canvas.getBoundingClientRect();
+        golf.aimX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      golf.canvas.onclick = golfClick;
+      updateGolfUI();
+      drawGolf();
+      if (golf.loop) cancelAnimationFrame(golf.loop);
+      golfPowerLoop();
+    }
+
+    function golfPowerLoop() {
+      if (!document.getElementById('golf').classList.contains('active')) return;
+      if (golf.phase === 'power') {
+        golf.power += golf.powerDir * 3;
+        if (golf.power >= 100 || golf.power <= 0) golf.powerDir *= -1;
+        drawGolf();
+      }
+      golf.loop = requestAnimationFrame(golfPowerLoop);
+    }
+
+    function golfClick() {
+      if (golf.moving) return;
+      if (golf.phase === 'aim') {
+        golf.phase = 'power';
+        golf.power = 0;
+        golf.powerDir = 1;
+        return;
+      }
+      if (golf.phase === 'power') {
+        golf.phase = 'aim';
+        golf.strokes++;
+        const dx = golf.holePos.x - golf.ball.x;
+        const dy = golf.holePos.y - golf.ball.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const p = golf.power / 100;
+        golf.ball.vx = (dx / dist) * p * 12;
+        golf.ball.vy = (dy / dist) * p * 12;
+        golf.moving = true;
+        animateGolf();
+      }
+    }
+
+    function animateGolf() {
+      const b = golf.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vx *= 0.98;
+      b.vy *= 0.98;
+      drawGolf();
+      if (Math.hypot(b.x - golf.holePos.x, b.y - golf.holePos.y) < 18) {
+        golf.moving = false;
+        earnPoints(20);
+        golf.total += golf.strokes;
+        golf.hole++;
+        golf.strokes = 0;
+        if (golf.hole > 9) {
+          earnPoints(40);
+          alert('You finished 9 holes! +40 Wii Points!');
+          showScreen('sportsHub');
+          return;
+        }
+        golf.ball = { x: 80, y: 320, vx: 0, vy: 0 };
+        golf.holePos = { x: 350 + Math.random() * 100, y: 80 + Math.random() * 80 };
+        updateGolfUI();
+        drawGolf();
+        return;
+      }
+      if (Math.abs(b.vx) < 0.2 && Math.abs(b.vy) < 0.2) {
+        golf.moving = false;
+        earnPoints(3);
+        updateGolfUI();
+        drawGolf();
+        return;
+      }
+      requestAnimationFrame(animateGolf);
+    }
+
+    function updateGolfUI() {
+      document.getElementById('golfHole').textContent = golf.hole;
+      document.getElementById('golfStrokes').textContent = golf.strokes;
+      document.getElementById('golfTotal').textContent = golf.total + golf.strokes;
+    }
+
+    function drawGolf() {
+      const ctx = golf.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#5cb85c';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#4a90d9';
+      ctx.beginPath();
+      ctx.arc(golf.holePos.x, golf.holePos.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.arc(golf.holePos.x, golf.holePos.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(golf.ball.x, golf.ball.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      drawMiniMii(ctx, golf.ball.x, golf.ball.y + 20, 1);
+      if (golf.phase === 'power') {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(50, 350, 400, 20);
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(200, 350, 100, 20);
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(50 + golf.power * 4, 345, 10, 30);
+      }
+    }
+
+    // ========== BASKETBALL ==========
+    let hoop = { score: 0, shots: 0, meter: 0, meterDir: 1, maxShots: 10 };
+
+    function initBasketball() {
+      hoop.score = 0;
+      hoop.shots = 0;
+      hoop.meter = 0;
+      hoop.meterDir = 1;
+      hoop.canvas = document.getElementById('hoopCanvas');
+      hoop.ctx = hoop.canvas.getContext('2d');
+      document.getElementById('hoopScore').textContent = 0;
+      document.getElementById('hoopShots').textContent = '0/10';
+      if (hoop.anim) cancelAnimationFrame(hoop.anim);
+      hoopLoop();
+    }
+
+    function hoopLoop() {
+      if (!document.getElementById('basketball').classList.contains('active')) return;
+      hoop.meter += hoop.meterDir * 2.5;
+      if (hoop.meter >= 100 || hoop.meter <= 0) hoop.meterDir *= -1;
+      drawHoop();
+      hoop.anim = requestAnimationFrame(hoopLoop);
+    }
+
+    function shootHoop() {
+      if (hoop.shots >= hoop.maxShots) return;
+      hoop.shots++;
+      const good = hoop.meter >= 42 && hoop.meter <= 58;
+      if (good) {
+        hoop.score++;
+        earnPoints(15);
+        playBlip();
+      } else earnPoints(2);
+      document.getElementById('hoopScore').textContent = hoop.score;
+      document.getElementById('hoopShots').textContent = hoop.shots + '/10';
+      if (hoop.shots >= hoop.maxShots) {
+        earnPoints(hoop.score * 5);
+        setTimeout(() => {
+          alert('Game over! Baskets: ' + hoop.score + '/10');
+          showScreen('sportsHub');
+        }, 400);
+      }
+    }
+
+    document.getElementById('hoopShoot').onclick = shootHoop;
+    document.getElementById('hoopCanvas').onclick = shootHoop;
+
+    function drawHoop() {
+      const ctx = hoop.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#e67e22';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(180, 80, 140, 10);
+      ctx.beginPath();
+      ctx.arc(250, 95, 35, 0, Math.PI);
+      ctx.stroke();
+      drawMiniMii(ctx, 250, 320, 1);
+      ctx.fillStyle = '#333';
+      ctx.fillRect(50, 200, 400, 24);
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(210, 200, 80, 24);
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(50 + hoop.meter * 4, 195, 12, 34);
+    }
+
+    // ========== ARCHERY ==========
+    let arch = { score: 0, arrows: 10, targets: [] };
+
+    function initArchery() {
+      arch.score = 0;
+      arch.arrows = 10;
+      arch.canvas = document.getElementById('archCanvas');
+      arch.ctx = arch.canvas.getContext('2d');
+      spawnArchTargets();
+      document.getElementById('archScore').textContent = 0;
+      document.getElementById('archArrows').textContent = 10;
+      arch.canvas.onclick = archClick;
+      drawArch();
+    }
+
+    function spawnArchTargets() {
+      arch.targets = [];
+      for (let i = 0; i < 3; i++) {
+        arch.targets.push({
+          x: 120 + Math.random() * 260,
+          y: 60 + Math.random() * 200,
+          r: 28 + Math.random() * 12,
+          vx: (Math.random() - 0.5) * 2
+        });
+      }
+    }
+
+    function archClick(e) {
+      if (arch.arrows <= 0) return;
+      const r = arch.canvas.getBoundingClientRect();
+      const mx = (e.clientX - r.left) / r.width * 500;
+      const my = (e.clientY - r.top) / r.height * 400;
+      let best = 0;
+      arch.targets.forEach(t => {
+        const d = Math.hypot(mx - t.x, my - t.y);
+        if (d < t.r) {
+          const pts = Math.max(5, Math.round((1 - d / t.r) * 30));
+          best = Math.max(best, pts);
+        }
+      });
+      arch.arrows--;
+      arch.score += best;
+      earnPoints(best);
+      document.getElementById('archScore').textContent = arch.score;
+      document.getElementById('archArrows').textContent = arch.arrows;
+      spawnArchTargets();
+      drawArch();
+      if (arch.arrows <= 0) {
+        earnPoints(25);
+        setTimeout(() => {
+          alert('Great shooting! Score: ' + arch.score);
+          showScreen('sportsHub');
+        }, 500);
+      }
+    }
+
+    function drawArch() {
+      const ctx = arch.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#87ceeb';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#5cb85c';
+      ctx.fillRect(0, 300, 500, 100);
+      arch.targets.forEach(t => {
+        t.x += t.vx;
+        if (t.x < 50 || t.x > 450) t.vx *= -1;
+        for (let i = 4; i >= 0; i--) {
+          ctx.fillStyle = ['#fff', '#ff0', '#f90', '#f00', '#f0f'][i];
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, t.r * (1 - i * 0.18), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+      drawMiniMii(ctx, 60, 350, 1);
+    }
+
+    if (!arch.animTimer) {
+      arch.animTimer = setInterval(() => {
+        if (document.getElementById('archery')?.classList.contains('active')) drawArch();
+      }, 50);
+    }
+
+    // ========== SWORDPLAY ==========
+    let sword = { blocked: 0, missed: 0, balls: [], maxMiss: 5 };
+
+    function initSword() {
+      sword.blocked = 0;
+      sword.missed = 0;
+      sword.balls = [];
+      sword.canvas = document.getElementById('swordCanvas');
+      sword.ctx = sword.canvas.getContext('2d');
+      document.getElementById('swordBlock').textContent = 0;
+      document.getElementById('swordMiss').textContent = '0/5';
+      sword.canvas.onclick = swordSlash;
+      if (sword.loop) cancelAnimationFrame(sword.loop);
+      swordLoop();
+    }
+
+    function swordLoop() {
+      if (!document.getElementById('sword').classList.contains('active')) return;
+      if (Math.random() < 0.03) {
+        sword.balls.push({ x: Math.random() * 400 + 50, y: -20, vy: 4 + Math.random() * 3, hit: false });
+      }
+      sword.balls.forEach(b => {
+        b.y += b.vy;
+        if (b.y > 380 && !b.hit) {
+          b.dead = true;
+          sword.missed++;
+          document.getElementById('swordMiss').textContent = sword.missed + '/5';
+          if (sword.missed >= sword.maxMiss) {
+            earnPoints(sword.blocked * 4);
+            alert('Too many misses! Blocked: ' + sword.blocked);
+            showScreen('sportsHub');
+            return;
+          }
+        }
+      });
+      sword.balls = sword.balls.filter(b => !b.dead && b.y < 450);
+      drawSword();
+      sword.loop = requestAnimationFrame(swordLoop);
+    }
+
+    function swordSlash(e) {
+      const r = sword.canvas.getBoundingClientRect();
+      const mx = (e.clientX - r.left) / r.width * 500;
+      sword.balls.forEach(b => {
+        if (!b.hit && b.y > 250 && b.y < 380 && Math.abs(b.x - mx) < 60) {
+          b.hit = true;
+          b.dead = true;
+          sword.blocked++;
+          earnPoints(8);
+          playBlip();
+          document.getElementById('swordBlock').textContent = sword.blocked;
+        }
+      });
+    }
+
+    function drawSword() {
+      const ctx = sword.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#d4a574';
+      ctx.fillRect(0, 350, 500, 50);
+      drawMiniMii(ctx, 250, 330, 1);
+      ctx.strokeStyle = '#bdc3c7';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(250, 300);
+      ctx.lineTo(250, 200);
+      ctx.stroke();
+      sword.balls.forEach(b => {
+        if (b.dead) return;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 14, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // ========== SOCCER ==========
+    let soccer = { goals: 0, kicks: 0, maxKicks: 8, ball: { x: 250, y: 320 }, moving: false, keeper: 250 };
+
+    function initSoccer() {
+      soccer.goals = 0;
+      soccer.kicks = 0;
+      soccer.ball = { x: 250, y: 320, vx: 0, vy: 0 };
+      soccer.moving = false;
+      soccer.keeper = 250;
+      soccer.canvas = document.getElementById('soccerCanvas');
+      soccer.ctx = soccer.canvas.getContext('2d');
+      document.getElementById('soccerGoals').textContent = 0;
+      document.getElementById('soccerKicks').textContent = '0/8';
+      soccer.canvas.onclick = soccerKick;
+      drawSoccer();
+    }
+
+    function soccerKick(e) {
+      if (soccer.moving || soccer.kicks >= soccer.maxKicks) return;
+      const r = soccer.canvas.getBoundingClientRect();
+      const tx = (e.clientX - r.left) / r.width * 500;
+      const ty = (e.clientY - r.top) / r.height * 400;
+      soccer.kicks++;
+      soccer.moving = true;
+      const dx = tx - soccer.ball.x, dy = ty - soccer.ball.y;
+      const d = Math.hypot(dx, dy) || 1;
+      soccer.ball.vx = (dx / d) * 10;
+      soccer.ball.vy = (dy / d) * 10;
+      animateSoccer();
+    }
+
+    function animateSoccer() {
+      soccer.keeper += (Math.random() - 0.5) * 40;
+      soccer.keeper = Math.max(180, Math.min(320, soccer.keeper));
+      const b = soccer.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vx *= 0.99;
+      b.vy *= 0.99;
+      drawSoccer();
+      if (b.y < 80 && b.x > 200 && b.x < 300 && Math.abs(b.x - soccer.keeper) > 35) {
+        soccer.goals++;
+        earnPoints(20);
+        playBlip();
+        document.getElementById('soccerGoals').textContent = soccer.goals;
+        endSoccerKick();
+        return;
+      }
+      if (b.y < 0 || b.x < 0 || b.x > 500 || b.y > 400 || (Math.abs(b.vx) < 0.3 && Math.abs(b.vy) < 0.3)) {
+        earnPoints(3);
+        endSoccerKick();
+        return;
+      }
+      requestAnimationFrame(animateSoccer);
+    }
+
+    function endSoccerKick() {
+      soccer.moving = false;
+      soccer.ball = { x: 250, y: 320, vx: 0, vy: 0 };
+      document.getElementById('soccerKicks').textContent = soccer.kicks + '/8';
+      drawSoccer();
+      if (soccer.kicks >= soccer.maxKicks) {
+        earnPoints(soccer.goals * 5);
+        setTimeout(() => {
+          alert('Final score: ' + soccer.goals + ' goals!');
+          showScreen('sportsHub');
+        }, 400);
+      }
+    }
+
+    function drawSoccer() {
+      const ctx = soccer.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(200, 20, 100, 60);
+      ctx.fillStyle = '#f1c40f';
+      ctx.beginPath();
+      ctx.arc(soccer.keeper, 55, 20, 0, Math.PI * 2);
+      ctx.fill();
+      drawMiniMii(ctx, soccer.keeper, 55, -1);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(soccer.ball.x, soccer.ball.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+      drawMiniMii(ctx, soccer.ball.x, soccer.ball.y + 25, 1);
+    }
+
+    // ========== FRISBEE ==========
+    let frisbee = { hits: 0, throws: 0, maxThrows: 8, disc: null, poles: [] };
+
+    function initFrisbee() {
+      frisbee.hits = 0;
+      frisbee.throws = 0;
+      frisbee.canvas = document.getElementById('frisbeeCanvas');
+      frisbee.ctx = frisbee.canvas.getContext('2d');
+      frisbee.poles = [
+        { x: 400, y: 120, r: 25 },
+        { x: 350, y: 250, r: 22 },
+        { x: 420, y: 300, r: 20 }
+      ];
+      document.getElementById('frisbeeHits').textContent = 0;
+      document.getElementById('frisbeeThrows').textContent = '0/8';
+      frisbee.canvas.onmousemove = e => {
+        if (frisbee.disc && frisbee.disc.flying) return;
+        const r = frisbee.canvas.getBoundingClientRect();
+        frisbee.aimX = (e.clientX - r.left) / r.width * 500;
+        frisbee.aimY = (e.clientY - r.top) / r.height * 400;
+        drawFrisbee();
+      };
+      frisbee.canvas.onclick = throwFrisbee;
+      frisbee.disc = { x: 80, y: 300, flying: false };
+      drawFrisbee();
+    }
+
+    function throwFrisbee() {
+      if (frisbee.disc.flying || frisbee.throws >= frisbee.maxThrows) return;
+      frisbee.throws++;
+      frisbee.disc.flying = true;
+      const dx = (frisbee.aimX || 400) - frisbee.disc.x;
+      const dy = (frisbee.aimY || 150) - frisbee.disc.y;
+      const d = Math.hypot(dx, dy) || 1;
+      frisbee.disc.vx = (dx / d) * 7;
+      frisbee.disc.vy = (dy / d) * 7;
+      animateFrisbee();
+    }
+
+    function animateFrisbee() {
+      const d = frisbee.disc;
+      d.x += d.vx;
+      d.y += d.vy;
+      d.vy += 0.05;
+      let hit = false;
+      frisbee.poles.forEach(p => {
+        if (Math.hypot(d.x - p.x, d.y - p.y) < p.r + 10) hit = true;
+      });
+      drawFrisbee();
+      if (hit) {
+        frisbee.hits++;
+        earnPoints(18);
+        playBlip();
+        document.getElementById('frisbeeHits').textContent = frisbee.hits;
+        endFrisbeeThrow();
+        return;
+      }
+      if (d.y > 400 || d.x > 500 || d.x < 0) {
+        earnPoints(2);
+        endFrisbeeThrow();
+        return;
+      }
+      requestAnimationFrame(animateFrisbee);
+    }
+
+    function endFrisbeeThrow() {
+      frisbee.disc = { x: 80, y: 300, flying: false };
+      document.getElementById('frisbeeThrows').textContent = frisbee.throws + '/8';
+      drawFrisbee();
+      if (frisbee.throws >= frisbee.maxThrows) {
+        earnPoints(frisbee.hits * 6);
+        setTimeout(() => {
+          alert('Frisbee done! Hits: ' + frisbee.hits);
+          showScreen('sportsHub');
+        }, 400);
+      }
+    }
+
+    function drawFrisbee() {
+      const ctx = frisbee.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#87ceeb';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#5cb85c';
+      ctx.fillRect(0, 280, 500, 120);
+      frisbee.poles.forEach(p => {
+        ctx.fillStyle = '#e67e22';
+        ctx.fillRect(p.x - 4, p.y, 8, 80);
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      drawMiniMii(ctx, 80, 320, 1);
+      if (frisbee.disc) {
+        ctx.fillStyle = '#e91e63';
+        ctx.beginPath();
+        ctx.ellipse(frisbee.disc.x, frisbee.disc.y, 16, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (!frisbee.disc?.flying) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(80, 300);
+        ctx.lineTo(frisbee.aimX || 400, frisbee.aimY || 150);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ========== PING PONG ==========
+    let pp = { you: 0, cpu: 0, winScore: 7 };
+
+    function initPingPong() {
+      pp.you = 0;
+      pp.cpu = 0;
+      pp.canvas = document.getElementById('ppCanvas');
+      pp.ctx = pp.canvas.getContext('2d');
+      pp.ball = { x: 250, y: 200, vx: 6, vy: 5 };
+      pp.paddleYou = 250;
+      pp.paddleCpu = 250;
+      pp.running = true;
+      document.getElementById('ppYou').textContent = 0;
+      document.getElementById('ppCpu').textContent = 0;
+      if (pp.loop) cancelAnimationFrame(pp.loop);
+      pp.canvas.onmousemove = e => {
+        const r = pp.canvas.getBoundingClientRect();
+        pp.paddleYou = ((e.clientX - r.left) / r.width) * 500;
+        if (pp.ball && pp.ball.y > 280) {
+          pp.ball.x += (pp.paddleYou - pp.ball.x) * 0.08;
+          pp.ball.vy = -Math.abs(pp.ball.vy);
+        }
+      };
+      ppLoop();
+    }
+
+    function ppLoop() {
+      if (!pp.running || !document.getElementById('pingpong').classList.contains('active')) return;
+      const b = pp.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+      if (b.x < 15 || b.x > 485) b.vx *= -1;
+      if (b.y < 15) {
+        pp.you++;
+        earnPoints(10);
+        document.getElementById('ppYou').textContent = pp.you;
+        if (pp.you >= pp.winScore) { ppWin(true); return; }
+        resetPpBall(1);
+      }
+      if (b.y > 385) {
+        pp.cpu++;
+        document.getElementById('ppCpu').textContent = pp.cpu;
+        if (pp.cpu >= pp.winScore) { ppWin(false); return; }
+        resetPpBall(-1);
+      }
+      pp.paddleCpu += (b.x - pp.paddleCpu) * 0.1;
+      const ctx = pp.ctx;
+      ctx.fillStyle = '#1a5276';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = '#2980b9';
+      ctx.fillRect(20, 20, 460, 360);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(20, 200);
+      ctx.lineTo(480, 200);
+      ctx.stroke();
+      drawMiniMii(ctx, pp.paddleYou, 370, 1);
+      drawMiniMii(ctx, pp.paddleCpu, 30, -1);
+      ctx.fillStyle = '#f1c40f';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      pp.loop = requestAnimationFrame(ppLoop);
+    }
+
+    function resetPpBall(dir) {
+      pp.ball = { x: 250, y: 200, vx: (Math.random() > 0.5 ? 7 : -7), vy: 6 * dir };
+    }
+
+    function ppWin(won) {
+      pp.running = false;
+      earnPoints(won ? 45 : 15);
+      alert(won ? mii.name + ' wins ping pong! +45 points!' : 'CPU wins! +15 points for trying.');
+      showScreen('sportsHub');
+    }
+
+    // ========== SURFING ==========
+    let surf = { time: 30, dodged: 0, playerX: 250, rocks: [], timer: null };
+
+    function initSurfing() {
+      surf.time = 30;
+      surf.dodged = 0;
+      surf.playerX = 250;
+      surf.rocks = [];
+      surf.canvas = document.getElementById('surfCanvas');
+      surf.ctx = surf.canvas.getContext('2d');
+      document.getElementById('surfTime').textContent = 30;
+      document.getElementById('surfDodged').textContent = 0;
+      surf.canvas.onmousemove = e => {
+        const r = surf.canvas.getBoundingClientRect();
+        surf.playerX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      if (surf.timer) clearInterval(surf.timer);
+      surf.timer = setInterval(surfTick, 1000);
+      if (surf.loop) cancelAnimationFrame(surf.loop);
+      surfLoop();
+    }
+
+    function surfTick() {
+      if (!document.getElementById('surfing').classList.contains('active')) return;
+      surf.time--;
+      document.getElementById('surfTime').textContent = surf.time;
+      if (surf.time <= 0) {
+        clearInterval(surf.timer);
+        earnPoints(surf.dodged * 5 + 20);
+        alert('Surf session over! Dodged ' + surf.dodged + ' rocks!');
+        showScreen('sportsHub');
+      }
+    }
+
+    function surfLoop() {
+      if (!document.getElementById('surfing').classList.contains('active')) return;
+      if (Math.random() < 0.04) {
+        surf.rocks.push({ x: Math.random() * 420 + 40, y: -30, vy: 5 + Math.random() * 2 });
+      }
+      surf.rocks.forEach(r => {
+        r.y += r.vy;
+        if (r.y > 300 && r.y < 360 && Math.abs(r.x - surf.playerX) < 35) {
+          r.hit = true;
+          clearInterval(surf.timer);
+          earnPoints(surf.dodged * 3);
+          alert('Wiped out! Dodged ' + surf.dodged);
+          showScreen('sportsHub');
+        } else if (r.y > 380 && !r.counted) {
+          r.counted = true;
+          surf.dodged++;
+          earnPoints(6);
+          document.getElementById('surfDodged').textContent = surf.dodged;
+        }
+      });
+      surf.rocks = surf.rocks.filter(r => r.y < 420 && !r.hit);
+      drawSurf();
+      surf.loop = requestAnimationFrame(surfLoop);
+    }
+
+    function drawSurf() {
+      const ctx = surf.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      for (let i = 0; i < 5; i++) {
+        ctx.fillRect(0, 80 + i * 60 + (Date.now() / 50 % 20), 500, 8);
+      }
+      surf.rocks.forEach(r => {
+        ctx.fillStyle = '#7f8c8d';
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, 22, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      drawMiniMii(ctx, surf.playerX, 330, 1);
+    }
+
+    // ========== SKIING ==========
+    let ski = { dist: 0, hits: 0, maxHits: 3, playerX: 250, trees: [] };
+
+    function initSkiing() {
+      ski.dist = 0;
+      ski.hits = 0;
+      ski.playerX = 250;
+      ski.trees = [];
+      ski.canvas = document.getElementById('skiCanvas');
+      ski.ctx = ski.canvas.getContext('2d');
+      document.getElementById('skiDist').textContent = 0;
+      document.getElementById('skiHits').textContent = '0/3';
+      ski.canvas.onmousemove = e => {
+        const r = ski.canvas.getBoundingClientRect();
+        ski.playerX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      if (ski.loop) cancelAnimationFrame(ski.loop);
+      skiLoop();
+    }
+
+    function skiLoop() {
+      if (!document.getElementById('skiing').classList.contains('active')) return;
+      ski.dist += 1;
+      if (Math.random() < 0.04) ski.trees.push({ x: Math.random() * 440 + 30, y: -40, vy: 6 });
+      ski.trees.forEach(t => {
+        t.y += t.vy;
+        if (t.y > 300 && t.y < 360 && Math.abs(t.x - ski.playerX) < 30) {
+          t.hit = true;
+          ski.hits++;
+          document.getElementById('skiHits').textContent = ski.hits + '/3';
+          if (ski.hits >= ski.maxHits) {
+            earnPoints(Math.floor(ski.dist / 5));
+            alert('Crash! You went ' + ski.dist + 'm');
+            showScreen('sportsHub');
+            return;
+          }
+        }
+      });
+      ski.trees = ski.trees.filter(t => t.y < 420 && !t.hit);
+      document.getElementById('skiDist').textContent = ski.dist;
+      if (ski.dist >= 400) {
+        earnPoints(35);
+        alert('Finish! ' + ski.dist + 'm downhill!');
+        showScreen('sportsHub');
+        return;
+      }
+      drawSki();
+      ski.loop = requestAnimationFrame(skiLoop);
+    }
+
+    function drawSki() {
+      const ctx = ski.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#ecf0f1';
+      ctx.fillRect(0, 0, 500, 400);
+      ski.trees.forEach(t => {
+        ctx.fillStyle = '#27ae60';
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y + 30);
+        ctx.lineTo(t.x - 15, t.y + 30);
+        ctx.lineTo(t.x, t.y - 10);
+        ctx.lineTo(t.x + 15, t.y + 30);
+        ctx.fill();
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(t.x - 4, t.y + 20, 8, 15);
+      });
+      drawMiniMii(ctx, ski.playerX, 330, 1);
+    }
+
+    // ========== CYCLING ==========
+    let cycle = { dist: 0, goal: 500, playerX: 250, holes: [] };
+
+    function initCycling() {
+      cycle.dist = 0;
+      cycle.playerX = 250;
+      cycle.holes = [];
+      cycle.canvas = document.getElementById('cycleCanvas');
+      cycle.ctx = cycle.canvas.getContext('2d');
+      document.getElementById('cycleDist').textContent = 0;
+      cycle.canvas.onmousemove = e => {
+        const r = cycle.canvas.getBoundingClientRect();
+        cycle.playerX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      document.getElementById('cyclePedal').onclick = () => {
+        cycle.dist += 8 + Math.floor(Math.random() * 6);
+        earnPoints(2);
+        playBlip();
+        if (cycle.dist >= cycle.goal) {
+          earnPoints(40);
+          alert('You finished the race! ' + cycle.dist + 'm');
+          showScreen('sportsHub');
+        }
+        document.getElementById('cycleDist').textContent = cycle.dist;
+      };
+      if (cycle.loop) cancelAnimationFrame(cycle.loop);
+      cycleLoop();
+    }
+
+    function cycleLoop() {
+      if (!document.getElementById('cycling').classList.contains('active')) return;
+      if (Math.random() < 0.02) cycle.holes.push({ x: Math.random() * 460 + 20, y: -20, vy: 5 });
+      cycle.holes.forEach(h => {
+        h.y += h.vy;
+        if (h.y > 300 && h.y < 360 && Math.abs(h.x - cycle.playerX) < 35) {
+          cycle.dist = Math.max(0, cycle.dist - 30);
+          h.hit = true;
+          wiiSave.points = Math.max(0, wiiSave.points - 5);
+          saveWiiSave();
+          document.getElementById('cycleDist').textContent = cycle.dist;
+        }
+      });
+      cycle.holes = cycle.holes.filter(h => h.y < 420 && !h.hit);
+      drawCycle();
+      cycle.loop = requestAnimationFrame(cycleLoop);
+    }
+
+    function drawCycle() {
+      const ctx = cycle.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#95a5a6';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.strokeStyle = '#fff';
+      ctx.setLineDash([20, 20]);
+      ctx.beginPath();
+      ctx.moveTo(250, 0);
+      ctx.lineTo(250, 400);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      cycle.holes.forEach(h => {
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, 20, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      drawMiniMii(ctx, cycle.playerX, 320, 1);
+    }
+
+    // ========== DODGEBALL ==========
+    let dodge = { hits: 0, hp: 100, playerX: 250, enemyBalls: [], yourBalls: [] };
+
+    function initDodgeball() {
+      dodge.hits = 0;
+      dodge.hp = 100;
+      dodge.playerX = 250;
+      dodge.enemyBalls = [];
+      dodge.yourBalls = [];
+      dodge.canvas = document.getElementById('dodgeCanvas');
+      dodge.ctx = dodge.canvas.getContext('2d');
+      document.getElementById('dodgeHits').textContent = 0;
+      document.getElementById('dodgeHp').textContent = 100;
+      dodge.canvas.onmousemove = e => {
+        const r = dodge.canvas.getBoundingClientRect();
+        dodge.playerX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      dodge.canvas.onclick = dodgeThrow;
+      if (dodge.loop) cancelAnimationFrame(dodge.loop);
+      dodgeLoop();
+    }
+
+    function dodgeThrow() {
+      dodge.yourBalls.push({ x: dodge.playerX, y: 320, vy: -8 });
+    }
+
+    function dodgeLoop() {
+      if (!document.getElementById('dodgeball').classList.contains('active')) return;
+      if (Math.random() < 0.025) dodge.enemyBalls.push({ x: Math.random() * 400 + 50, y: -10, vy: 5 });
+      dodge.enemyBalls.forEach(b => {
+        b.y += b.vy;
+        if (b.y > 300 && Math.abs(b.x - dodge.playerX) < 30) {
+          b.dead = true;
+          dodge.hp -= 15;
+          document.getElementById('dodgeHp').textContent = dodge.hp;
+          if (dodge.hp <= 0) {
+            earnPoints(dodge.hits * 5);
+            alert('Out! Hits: ' + dodge.hits);
+            showScreen('sportsHub');
+            return;
+          }
+        }
+      });
+      dodge.yourBalls.forEach(b => {
+        b.y += b.vy;
+        if (b.y < 80) {
+          b.dead = true;
+          dodge.hits++;
+          earnPoints(12);
+          playBlip();
+          document.getElementById('dodgeHits').textContent = dodge.hits;
+          if (dodge.hits >= 5) {
+            earnPoints(30);
+            alert('You win dodgeball!');
+            showScreen('sportsHub');
+            return;
+          }
+        }
+      });
+      dodge.enemyBalls = dodge.enemyBalls.filter(b => !b.dead && b.y < 420);
+      dodge.yourBalls = dodge.yourBalls.filter(b => !b.dead && b.y > -20);
+      drawDodge();
+      dodge.loop = requestAnimationFrame(dodgeLoop);
+    }
+
+    function drawDodge() {
+      const ctx = dodge.ctx;
+      if (!ctx) return;
+      ctx.fillStyle = '#9b59b6';
+      ctx.fillRect(0, 0, 500, 400);
+      drawMiniMii(ctx, dodge.playerX, 330, 1);
+      drawMiniMii(ctx, 250, 60, -1);
+      ctx.fillStyle = '#e74c3c';
+      dodge.enemyBalls.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 12, 0, Math.PI * 2); ctx.fill(); });
+      ctx.fillStyle = '#3498db';
+      dodge.yourBalls.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 12, 0, Math.PI * 2); ctx.fill(); });
+    }
+
+    // ========== VOLLEYBALL ==========
+    let vol = { you: 0, cpu: 0, winScore: 5, ball: null };
+
+    function initVolleyball() {
+      vol.you = 0;
+      vol.cpu = 0;
+      vol.canvas = document.getElementById('volCanvas');
+      vol.ctx = vol.canvas.getContext('2d');
+      vol.ball = { x: 250, y: 200, vx: 3, vy: -4 };
+      vol.playerX = 250;
+      document.getElementById('volYou').textContent = 0;
+      document.getElementById('volCpu').textContent = 0;
+      vol.canvas.onmousemove = e => {
+        const r = vol.canvas.getBoundingClientRect();
+        vol.playerX = ((e.clientX - r.left) / r.width) * 500;
+      };
+      document.getElementById('volBump').onclick = volBump;
+      vol.canvas.onclick = volBump;
+      if (vol.loop) cancelAnimationFrame(vol.loop);
+      volLoop();
+    }
+
+    function volBump() {
+      const b = vol.ball;
+      if (b.y > 250 && b.y < 380) {
+        b.vy = -Math.abs(b.vy) - 2;
+        b.vx = (b.x - vol.playerX) * 0.08;
+        playBlip();
+      }
+    }
+
+    function volLoop() {
+      if (!document.getElementById('volleyball').classList.contains('active')) return;
+      const b = vol.ball;
+      b.x += b.vx;
+      b.y += b.vy;
+      b.vy += 0.12;
+      if (b.x < 30 || b.x > 470) b.vx *= -1;
+      if (b.y < 40) {
+        vol.you++;
+        earnPoints(10);
+        document.getElementById('volYou').textContent = vol.you;
+        if (vol.you >= vol.winScore) { volEnd(true); return; }
+        vol.ball = { x: 250, y: 200, vx: 3, vy: 4 };
+      }
+      if (b.y > 380) {
+        vol.cpu++;
+        document.getElementById('volCpu').textContent = vol.cpu;
+        if (vol.cpu >= vol.winScore) { volEnd(false); return; }
+        vol.ball = { x: 250, y: 200, vx: -3, vy: -4 };
+      }
+      const ctx = vol.ctx;
+      ctx.fillStyle = '#f39c12';
+      ctx.fillRect(0, 0, 500, 400);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, 200);
+      ctx.lineTo(500, 200);
+      ctx.stroke();
+      drawMiniMii(ctx, vol.playerX, 340, 1);
+      drawMiniMii(ctx, 250, 60, -1);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 14, 0, Math.PI * 2);
+      ctx.fill();
+      vol.loop = requestAnimationFrame(volLoop);
+    }
+
+    function volEnd(won) {
+      earnPoints(won ? 40 : 10);
+      alert(won ? 'You win volleyball!' : 'CPU wins!');
+      showScreen('sportsHub');
+    }
+
+    // Init
+    loadWiiSave();
+    loadMii();
+    renderMenuGrid();
+    initNews();
+    updateWiiPointer();
+    if (wiiSave.equipped) {
+      if (wiiSave.equipped.hat) mii.hat = wiiSave.equipped.hat;
+      if (wiiSave.equipped.glasses) mii.glasses = wiiSave.equipped.glasses;
+      if (wiiSave.equipped.mustache) mii.mustache = wiiSave.equipped.mustache;
+    }
+    buildColorPickers();
+    drawMii(document.getElementById('miiCanvas'), 200, 280);
+    drawMii(document.getElementById('floatCanvas'), 64, 64, true);
+    document.getElementById('floatMii').style.display = 'block';
+  </script>
+</body>
+</html>

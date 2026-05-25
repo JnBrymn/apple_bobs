@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<!-- Bo wants: blob carry, shadow, flashlight, amulet, hitboxes, jump, land on blob to squish it -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blob Carry</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: system-ui, sans-serif; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; left: 16px; top: 16px; color: #ccc;
+      font-size: 0.95rem; line-height: 1.6; pointer-events: none;
+      text-shadow: 0 0 8px #000;
+    }
+    #hud b { color: #ff9de2; }
+    #start {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px; background: rgba(0,0,0,0.85); z-index: 10;
+    }
+    #start h1 {
+      font-size: 2.4rem; color: #ff9de2;
+      text-shadow: 0 0 20px #ff9de2aa;
+    }
+    #start p { color: #aaa; text-align: center; max-width: 420px; line-height: 1.5; }
+    #start button {
+      margin-top: 8px; padding: 14px 32px; font-size: 1.1rem; font-weight: 700;
+      border: none; border-radius: 999px; cursor: pointer;
+      background: linear-gradient(135deg, #ff9de2, #b388ff); color: #111;
+    }
+    #start button:hover { filter: brightness(1.1); }
+    #hint {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      color: #ddd; font-size: 1rem; pointer-events: none;
+      text-shadow: 0 0 10px #000; opacity: 0; transition: opacity 0.3s;
+    }
+    #hint.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <b>BLOB CARRY</b><br>
+    WASD move · mouse look · <b>Space</b> jump<br>
+  </div>
+  <div id="start">
+    <h1>🫧 Blob Carry</h1>
+    <p>You're in a dark room with your <b>flashlight</b> and a glowing <b>amulet</b>. Find the squishy blob, pick it up, carry it around, and drop it on stuff!</p>
+    <p><b>E</b> grab / drop &nbsp;·&nbsp; <b>Space</b> jump (or toss when holding)</p>
+    <button id="playBtn">Click to play</button>
+  </div>
+  <div id="hint"></div>
+
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+    scene.fog = new THREE.FogExp2(0x050508, 0.045);
+
+    const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 1.6, 5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    // Very dark room — flashlight + glowing amulet
+    const ambient = new THREE.AmbientLight(0x334466, 0.22);
+    scene.add(ambient);
+
+    const amuletLight = new THREE.PointLight(0x88aaff, 1.8, 18);
+    amuletLight.castShadow = false;
+    scene.add(amuletLight);
+
+    const amuletGem = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.07, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xaaddff,
+        emissive: 0x4488ff,
+        emissiveIntensity: 2.5,
+        roughness: 0.2,
+        metalness: 0.4
+      })
+    );
+    scene.add(amuletGem);
+
+    const amuletRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.09, 0.012, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0xc9a227, metalness: 0.9, roughness: 0.25 })
+    );
+    amuletRing.rotation.x = Math.PI / 2;
+    amuletGem.add(amuletRing);
+
+    const moon = new THREE.DirectionalLight(0x4466aa, 0.15);
+    moon.position.set(-8, 12, -6);
+    moon.castShadow = true;
+    moon.shadow.mapSize.set(2048, 2048);
+    moon.shadow.camera.near = 0.5;
+    moon.shadow.camera.far = 40;
+    moon.shadow.camera.left = -15;
+    moon.shadow.camera.right = 15;
+    moon.shadow.camera.top = 15;
+    moon.shadow.camera.bottom = -15;
+    moon.shadow.bias = -0.0005;
+    scene.add(moon);
+
+    const flashlight = new THREE.SpotLight(0xfff4dd, 2.2, 28, Math.PI / 7, 0.35, 1.2);
+    flashlight.castShadow = true;
+    flashlight.shadow.mapSize.set(1024, 1024);
+    flashlight.shadow.camera.near = 0.3;
+    flashlight.shadow.camera.far = 30;
+    flashlight.shadow.bias = -0.001;
+    scene.add(flashlight);
+    scene.add(flashlight.target);
+
+    // Floor
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.9, metalness: 0.05 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Some props to drop blob on
+    const propMat = new THREE.MeshStandardMaterial({ color: 0x2a2a35, roughness: 0.85 });
+    const props = [];
+    const colliders = [];
+
+    function makeAABB(cx, cy, cz, hw, hh, hd) {
+      return {
+        minX: cx - hw, maxX: cx + hw,
+        minY: cy - hh, maxY: cy + hh,
+        minZ: cz - hd, maxZ: cz + hd
+      };
+    }
+
+    function aabbFromMesh(mesh) {
+      const { width: w, height: h, depth: d } = mesh.geometry.parameters;
+      return makeAABB(mesh.position.x, mesh.position.y, mesh.position.z, w / 2, h / 2, d / 2);
+    }
+
+    function addBox(x, y, z, w, h, d, color) {
+      const mat = color ? new THREE.MeshStandardMaterial({ color, roughness: 0.8 }) : propMat;
+      const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      box.position.set(x, y + h / 2, z);
+      box.castShadow = true;
+      box.receiveShadow = true;
+      scene.add(box);
+      props.push(box);
+      colliders.push(aabbFromMesh(box));
+      return box;
+    }
+    addBox(-4, 0, -3, 2.5, 0.6, 2.5, 0x3d3550);
+    addBox(3.5, 0, 2, 1.8, 1.2, 1.8, 0x35403d);
+    addBox(-2, 0.6, 2.5, 1.2, 0.5, 1.2, 0x403535);
+    addBox(5, 0, -5, 3, 0.4, 1.5, null);
+    addBox(-6, 0, 4, 1, 2, 1, 0x333344);
+
+    // Wall + floor hitboxes
+    colliders.push(makeAABB(0, 4, -11.75, 11.5, 4, 0.25));
+    colliders.push(makeAABB(0, 4, 11.75, 11.5, 4, 0.25));
+    colliders.push(makeAABB(-11.75, 4, 0, 0.25, 4, 11.5));
+    colliders.push(makeAABB(11.75, 4, 0, 0.25, 4, 11.5));
+    colliders.push(makeAABB(0, -0.05, 0, 11.5, 0.05, 11.5));
+
+  // Walls (barely visible in dark)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x121218, roughness: 1 });
+    [[0, 4, -12, 24, 8], [0, 4, 12, 24, 8], [-12, 4, 0, 8, 24], [12, 4, 0, 8, 24]].forEach(([x, y, z, w, h]) => {
+      const wall = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
+      wall.position.set(x, y, z);
+      if (Math.abs(z) > 10) wall.rotation.y = Math.PI;
+      if (x < 0 && Math.abs(x) > 10) wall.rotation.y = Math.PI / 2;
+      if (x > 0 && Math.abs(x) > 10) wall.rotation.y = -Math.PI / 2;
+      wall.receiveShadow = true;
+      scene.add(wall);
+    });
+
+    // Squishy blob
+    const blobGeo = new THREE.IcosahedronGeometry(0.55, 5);
+    const baseVerts = blobGeo.attributes.position.array.slice();
+    const blobMat = new THREE.MeshStandardMaterial({
+      color: 0xff7ec8,
+      emissive: 0xff3da8,
+      emissiveIntensity: 0.35,
+      roughness: 0.35,
+      metalness: 0.05
+    });
+    const blob = new THREE.Mesh(blobGeo, blobMat);
+    blob.castShadow = true;
+    blob.receiveShadow = true;
+    blob.position.set(0, blobRadius, -2);
+    scene.add(blob);
+
+    // Blob physics
+    const blobVel = new THREE.Vector3();
+    const blobRadius = 0.55;
+    const playerHalf = { x: 0.35, y: 0.875, z: 0.35 };
+    let carrying = false;
+    let grabDist = 3.2;
+    let time = 0;
+    let splatAge = 999;
+    let splatPower = 0;
+    let splatSlideX = 0;
+    let splatSlideZ = 0;
+
+    function triggerSplat(speed, vx, vz) {
+      if (speed < 0.2) return;
+      splatAge = 0;
+      splatPower = Math.min(1, Math.pow(speed / 5.5, 0.75));
+      const h = Math.hypot(vx, vz);
+      if (h > 0.3) {
+        splatSlideX = vx / h;
+        splatSlideZ = vz / h;
+      } else {
+        splatSlideX = Math.random() - 0.5;
+        splatSlideZ = Math.random() - 0.5;
+      }
+    }
+
+    function squishFromPlayer(speed) {
+      splatAge = 0;
+      splatPower = Math.max(0.5, Math.min(1.4, Math.pow(Math.max(speed, 0.5) / 2.8, 0.65) + 0.35));
+      splatSlideX = (Math.random() - 0.5) * 0.6;
+      splatSlideZ = (Math.random() - 0.5) * 0.6;
+    }
+
+    function overBlobXZ(px, pz) {
+      const dx = px - blob.position.x;
+      const dz = pz - blob.position.z;
+      return Math.hypot(dx, dz) < blobRadius + playerHalf.x + 0.15;
+    }
+
+    function blobTopY() {
+      return blob.position.y + blobRadius;
+    }
+
+    function playerFeetY() {
+      return camera.position.y - eyeHeight;
+    }
+
+    function playerBodyCenterY() {
+      return camera.position.y - eyeHeight + playerHalf.y;
+    }
+
+    function isOnBlobTop(feetY) {
+      if (!overBlobXZ(camera.position.x, camera.position.z)) return false;
+      return feetY >= blobTopY() - 0.25 && feetY <= blobTopY() + 0.15;
+    }
+
+    function getGroundHeight(px, pz, feetY) {
+      let y = 0;
+      for (const box of colliders) {
+        if (box.maxY > 2.5) continue;
+        if (px >= box.minX - 0.15 && px <= box.maxX + 0.15 &&
+            pz >= box.minZ - 0.15 && pz <= box.maxZ + 0.15 &&
+            feetY <= box.maxY + 0.35) {
+          y = Math.max(y, box.maxY);
+        }
+      }
+      if (!carrying && overBlobXZ(px, pz) && feetY >= blobTopY() - 0.45) {
+        y = Math.max(y, blobTopY());
+      }
+      return y;
+    }
+
+    function wobbleBlob(dt) {
+      if (splatPower > 0.01) splatAge += dt;
+
+      const pos = blobGeo.attributes.position;
+      const p = splatPower;
+      const age = splatAge;
+      const active = p > 0.02 && age < 0.55 + p * 0.45;
+
+      if (!active) {
+        splatPower = 0;
+        for (let i = 0; i < pos.count; i++) {
+          const ix = i * 3;
+          const bx = baseVerts[ix], by = baseVerts[ix + 1], bz = baseVerts[ix + 2];
+          const len = Math.hypot(bx, by, bz) || 1;
+          pos.array[ix] = bx / len * blobRadius;
+          pos.array[ix + 1] = by / len * blobRadius;
+          pos.array[ix + 2] = bz / len * blobRadius;
+        }
+        pos.needsUpdate = true;
+        blobGeo.computeVertexNormals();
+        return;
+      }
+
+      // slam = instant pancake on impact, settle = jiggle rings out
+      const slam = Math.exp(-age * 16) * p;
+      const settle = Math.sin(age * (20 + p * 30)) * Math.exp(-age * (5 + p * 2)) * p;
+      const squash = slam * (0.35 + p * 0.75) + Math.abs(settle) * 0.18;
+      const spread = slam * (0.3 + p * 0.85) + Math.abs(settle) * 0.12;
+      const slide = slam * p * 0.55;
+      const stretchUp = Math.max(0, settle) * 0.22 * p;
+
+      for (let i = 0; i < pos.count; i++) {
+        const ix = i * 3;
+        const bx = baseVerts[ix], by = baseVerts[ix + 1], bz = baseVerts[ix + 2];
+        const len = Math.hypot(bx, by, bz) || 1;
+        const nx = bx / len, ny = by / len, nz = bz / len;
+        const bottom = Math.max(0, -ny);
+        const slideDot = nx * splatSlideX + nz * splatSlideZ;
+
+        const sx = 1 + spread + bottom * squash * 1.15 + slide * Math.max(0, slideDot);
+        const sy = 1 - squash * (0.65 + bottom * 0.55) + stretchUp * Math.max(0, ny);
+        const sz = 1 + spread + bottom * squash * 1.15 + slide * Math.max(0, -slideDot);
+
+        pos.array[ix] = nx * blobRadius * sx;
+        pos.array[ix + 1] = ny * blobRadius * sy;
+        pos.array[ix + 2] = nz * blobRadius * sz;
+      }
+      pos.needsUpdate = true;
+      blobGeo.computeVertexNormals();
+    }
+
+    function aabbOverlap(a, b) {
+      return a.minX < b.maxX && a.maxX > b.minX &&
+        a.minY < b.maxY && a.maxY > b.minY &&
+        a.minZ < b.maxZ && a.maxZ > b.minZ;
+    }
+
+    function resolvePlayerHitbox() {
+      let px = camera.position.x;
+      let pz = camera.position.z;
+      const py = playerBodyCenterY();
+      const feetY = playerFeetY();
+      for (let n = 0; n < 6; n++) {
+        for (const box of colliders) {
+          const p = makeAABB(px, py, pz, playerHalf.x, playerHalf.y, playerHalf.z);
+          if (!aabbOverlap(p, box)) continue;
+          const penX = Math.min(p.maxX - box.minX, box.maxX - p.minX);
+          const penZ = Math.min(p.maxZ - box.minZ, box.maxZ - p.minZ);
+          if (penX < penZ) {
+            px += px < (box.minX + box.maxX) * 0.5 ? -penX : penX;
+          } else {
+            pz += pz < (box.minZ + box.maxZ) * 0.5 ? -penZ : penZ;
+          }
+        }
+      }
+      if (!carrying) {
+        const dx = px - blob.position.x;
+        const dz = pz - blob.position.z;
+        const dist = Math.hypot(dx, dz);
+        const minDist = playerHalf.x + blobRadius;
+        const onTop = isOnBlobTop(feetY);
+        if (!onTop && dist < minDist && dist > 0.001) {
+          const push = minDist - dist;
+          px += (dx / dist) * push;
+          pz += (dz / dist) * push;
+        }
+      }
+      camera.position.x = px;
+      camera.position.z = pz;
+    }
+
+    function resolveSphereBox(pos, radius, box, vel) {
+      const cx = THREE.MathUtils.clamp(pos.x, box.minX, box.maxX);
+      const cy = THREE.MathUtils.clamp(pos.y, box.minY, box.maxY);
+      const cz = THREE.MathUtils.clamp(pos.z, box.minZ, box.maxZ);
+      let dx = pos.x - cx, dy = pos.y - cy, dz = pos.z - cz;
+      let distSq = dx * dx + dy * dy + dz * dz;
+      if (distSq >= radius * radius) return null;
+      if (distSq < 0.0001) { dy = 1; dx = 0; dz = 0; distSq = 1; }
+      const dist = Math.sqrt(distSq);
+      const push = radius - dist;
+      const nx = dx / dist, ny = dy / dist, nz = dz / dist;
+      pos.x += nx * push;
+      pos.y += ny * push;
+      pos.z += nz * push;
+      const dot = vel.x * nx + vel.y * ny + vel.z * nz;
+      if (dot < 0) {
+        vel.x -= nx * dot * 1.4;
+        vel.y -= ny * dot * 1.4;
+        vel.z -= nz * dot * 1.4;
+      }
+      return { nx, ny, nz, hitSpeed: Math.abs(dot) };
+    }
+
+    function resolveBlobHitboxes() {
+      if (carrying) return;
+      for (let n = 0; n < 4; n++) {
+        for (const box of colliders) {
+          const hit = resolveSphereBox(blob.position, blobRadius, box, blobVel);
+          if (hit && hit.ny > 0.65 && blobVel.y < 0) {
+            triggerSplat(hit.hitSpeed || Math.abs(blobVel.y), blobVel.x, blobVel.z);
+            const hs = Math.abs(blobVel.y);
+            blobVel.y = hs > 0.35 ? hs * 0.58 : 0;
+            blobVel.x *= 0.8;
+            blobVel.z *= 0.8;
+          }
+        }
+
+        const pBox = makeAABB(
+          camera.position.x, playerBodyCenterY(), camera.position.z,
+          playerHalf.x, playerHalf.y, playerHalf.z
+        );
+        const feetY = playerFeetY();
+        const playerOnBlob = isOnBlobTop(feetY);
+        if (!playerOnBlob) {
+          const hit = resolveSphereBox(blob.position, blobRadius, pBox, blobVel);
+          if (hit && hit.ny > 0.5) {
+            triggerSplat(Math.max(0.4, hit.hitSpeed), blobVel.x, blobVel.z);
+          }
+        }
+      }
+    }
+
+    function updateBlob(dt) {
+      if (carrying) {
+        const hold = new THREE.Vector3(0, -0.35, -1.4);
+        hold.applyQuaternion(camera.quaternion);
+        blob.position.copy(camera.position).add(hold);
+        blobVel.set(0, 0, 0);
+        splatPower = 0;
+        splatAge = 999;
+        return;
+      }
+
+      blobVel.y -= 9.8 * dt;
+      blob.position.x += blobVel.x * dt;
+      blob.position.y += blobVel.y * dt;
+      blob.position.z += blobVel.z * dt;
+
+      resolveBlobHitboxes();
+
+      blobVel.x *= 0.99;
+      blobVel.z *= 0.99;
+    }
+
+    // Player movement
+    const keys = {};
+    let yaw = 0, pitch = 0;
+    let locked = false;
+    const moveSpeed = 4.5;
+    const eyeHeight = 1.6;
+    let playerVelY = 0;
+    let onGround = true;
+
+    const raycaster = new THREE.Raycaster();
+    const hintEl = document.getElementById('hint');
+
+    function showHint(text) {
+      hintEl.textContent = text;
+      hintEl.classList.add('show');
+      clearTimeout(showHint._t);
+      showHint._t = setTimeout(() => hintEl.classList.remove('show'), 2200);
+    }
+
+    function blobInReach() {
+      return camera.position.distanceTo(blob.position) < grabDist;
+    }
+
+    function toggleCarry() {
+      if (carrying) {
+        carrying = false;
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        blobVel.copy(forward.multiplyScalar(1.2));
+        blobVel.y = -4;
+        showHint('Splat!');
+        return;
+      }
+      if (blobInReach()) {
+        carrying = true;
+        showHint('Got the blob!');
+      }
+    }
+
+    function tossBlob() {
+      if (!carrying) return;
+      carrying = false;
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      blobVel.copy(forward.multiplyScalar(7));
+      blobVel.y += 2.5;
+      showHint('Toss!');
+    }
+
+    function jump() {
+      if (!onGround) return;
+      playerVelY = 6.5;
+      onGround = false;
+    }
+
+    function updatePlayer(dt) {
+      const prevVelY = playerVelY;
+      playerVelY -= 9.8 * dt;
+      camera.position.y += playerVelY * dt;
+
+      const feetY = playerFeetY();
+      const px = camera.position.x;
+      const pz = camera.position.z;
+      const ground = getGroundHeight(px, pz, feetY);
+      const top = blobTopY();
+      const stompBlob = !carrying && overBlobXZ(px, pz) && prevVelY < -0.5 &&
+        feetY <= top + 0.08 && feetY >= top - 0.55;
+
+      if (stompBlob) {
+        const hitSpeed = Math.abs(prevVelY);
+        camera.position.y = top + eyeHeight;
+        squishFromPlayer(hitSpeed);
+        blob.position.y = blobRadius - Math.min(0.18, hitSpeed * 0.035);
+        blobVel.y -= hitSpeed * 0.35;
+        blobVel.x *= 0.85;
+        blobVel.z *= 0.85;
+        playerVelY = 0;
+        onGround = true;
+        return;
+      }
+
+      if (feetY <= ground) {
+        const hitSpeed = Math.abs(prevVelY);
+        camera.position.y = ground + eyeHeight;
+
+        if (isOnBlobTop(ground) && hitSpeed > 0.15) {
+          squishFromPlayer(hitSpeed);
+          blob.position.y = blobRadius - Math.min(0.15, hitSpeed * 0.03);
+          blobVel.y -= hitSpeed * 0.3;
+        }
+
+        playerVelY = 0;
+        onGround = true;
+      } else {
+        onGround = false;
+      }
+    }
+
+    document.getElementById('playBtn').onclick = () => {
+      document.getElementById('start').style.display = 'none';
+      renderer.domElement.requestPointerLock();
+    };
+
+    document.addEventListener('pointerlockchange', () => {
+      locked = document.pointerLockElement === renderer.domElement;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!locked) return;
+      yaw -= e.movementX * 0.0022;
+      pitch -= e.movementY * 0.0022;
+      pitch = THREE.MathUtils.clamp(pitch, -1.45, 1.45);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'KeyE') toggleCarry();
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (carrying) tossBlob();
+        else jump();
+      }
+    });
+    document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    let last = performance.now();
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      time += dt;
+
+      if (locked) {
+        camera.rotation.order = 'YXZ';
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+
+        const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+        const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+        const move = new THREE.Vector3();
+        if (keys.KeyW) move.add(forward);
+        if (keys.KeyS) move.sub(forward);
+        if (keys.KeyD) move.add(right);
+        if (keys.KeyA) move.sub(right);
+        if (move.lengthSq() > 0) move.normalize().multiplyScalar(moveSpeed * dt);
+        camera.position.add(move);
+        updatePlayer(dt);
+        resolvePlayerHitbox();
+      }
+
+      // Flashlight follows look direction
+      flashlight.position.copy(camera.position);
+      const flashTarget = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).add(camera.position);
+      flashlight.target.position.copy(flashTarget);
+
+      // Amulet hangs in front of you — soft blue glow
+      const amuletOff = new THREE.Vector3(0.28, -0.42, -0.55).applyQuaternion(camera.quaternion);
+      amuletLight.position.copy(camera.position).add(amuletOff);
+      amuletGem.position.copy(amuletLight.position);
+      amuletGem.quaternion.copy(camera.quaternion);
+      amuletLight.intensity = 1.8 + Math.sin(time * 3) * 0.25;
+      amuletGem.material.emissiveIntensity = 2.2 + Math.sin(time * 4) * 0.6;
+
+      updateBlob(dt);
+      wobbleBlob(dt);
+
+      // Eyes on blob when close
+      if (!carrying && blobInReach() && locked) {
+        hintEl.textContent = 'Press E to pick up blob';
+        hintEl.classList.add('show');
+      } else if (carrying && locked) {
+        hintEl.textContent = 'E drop · Space toss';
+        hintEl.classList.add('show');
+      } else if (onGround && locked) {
+        hintEl.textContent = 'Space to jump · land on blob to squish!';
+        hintEl.classList.add('show');
+      } else if (!carrying) {
+        hintEl.classList.remove('show');
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate(performance.now());
+  </script>
+</body>
+</html>

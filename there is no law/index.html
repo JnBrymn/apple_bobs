@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    Bo's game: "there is no law"
+    - Start with $5.
+    - You can buy the ability to steal.
+    - You can pay to disable laws (including money law).
+    - If someone steals from you, show warning:
+      "oh no! (character's nickname) is going to steal your (item)" for 3 seconds.
+    - Stolen items can be sold for money.
+    - First player to reach $10,000,000,000 wins.
+    - Multiplayer: players in same browser auto-join same world; also supports private worlds by code.
+  -->
+  <title>there is no law</title>
+  <style>
+    :root {
+      --bg: #111827;
+      --card: #1f2937;
+      --ink: #f9fafb;
+      --soft: #9ca3af;
+      --good: #10b981;
+      --bad: #ef4444;
+      --gold: #f59e0b;
+      --line: #374151;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1e293b, var(--bg));
+      color: var(--ink);
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      color: var(--gold);
+      text-transform: lowercase;
+    }
+    .card {
+      background: linear-gradient(180deg, #1f2937, #17212f);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    .pill {
+      display: inline-block;
+      background: #0f172a;
+      border: 1px solid var(--line);
+      color: var(--soft);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.86rem;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    button, input, select {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #0f172a;
+      color: var(--ink);
+      padding: 8px 10px;
+      font-size: 0.95rem;
+    }
+    button { cursor: pointer; }
+    button:hover { filter: brightness(1.1); }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .money {
+      font-size: 1.2rem;
+      color: var(--good);
+      font-weight: bold;
+    }
+    .warning {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 2px dashed #7f1d1d;
+      background: #3f1313;
+      color: #fecaca;
+      border-radius: 12px;
+      font-weight: bold;
+      padding: 8px;
+    }
+    .warning.hidden {
+      visibility: hidden;
+    }
+    ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+    .small { color: var(--soft); font-size: 0.9rem; }
+    .win {
+      color: #fde68a;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    .law-on { color: #bbf7d0; }
+    .law-off { color: #fecaca; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">
+      <h1>there is no law</h1>
+      <div id="worldBadge" class="pill">world: public</div>
+    </div>
+
+    <div id="warningBox" class="warning hidden">warning text</div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Your Character</h2>
+        <div class="row">
+          <label>nickname <input id="nicknameInput" maxlength="16" /></label>
+          <button id="saveNameBtn">save nickname</button>
+        </div>
+        <p class="money" id="moneyText">$5</p>
+        <div id="winText" class="win"></div>
+        <div id="lawsText" class="small"></div>
+        <h3>Your items</h3>
+        <ul id="myItems"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Law Shop</h2>
+        <p class="small">You start with $5. Buy powers. Disable laws.</p>
+        <div class="row">
+          <button id="buyStealBtn">buy steal ability ($5)</button>
+          <button id="disableMoneyLawBtn">disable money law ($100)</button>
+          <button id="disableTradeTaxLawBtn">disable trade tax law ($250)</button>
+        </div>
+        <p class="small">Trade tax law ON means selling gives 80%. OFF means full value.</p>
+      </section>
+
+      <section class="card">
+        <h2>Sell Stolen Items</h2>
+        <div class="row">
+          <select id="sellSelect"></select>
+          <button id="sellBtn">sell selected stolen item</button>
+        </div>
+        <p class="small">Only stolen items can be sold.</p>
+      </section>
+
+      <section class="card">
+        <h2>Steal</h2>
+        <div class="row">
+          <select id="targetPlayerSelect"></select>
+          <select id="targetItemSelect"></select>
+          <button id="stealBtn">start stealing</button>
+          <button id="stealMoneyBtn">steal $20</button>
+        </div>
+        <p class="small">Steal warning is shown for 3 seconds before item transfer.</p>
+      </section>
+
+      <section class="card">
+        <h2>World</h2>
+        <p class="small">Same browser tabs auto-join the same world. You can also do private worlds.</p>
+        <div class="row">
+          <button id="joinPublicBtn">join public</button>
+          <input id="privateCodeInput" placeholder="private code" maxlength="24" />
+          <button id="joinPrivateBtn">join private</button>
+          <button id="newPrivateBtn">new private code</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Players</h2>
+        <ul id="playersList"></ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const START_MONEY = 5;
+    const WIN_MONEY = 10_000_000_000;
+    const ITEM_CATALOG = [
+      { name: "apple", value: 15 },
+      { name: "laser toy", value: 25 },
+      { name: "shield", value: 40 },
+      { name: "hat", value: 12 },
+      { name: "gold coin", value: 30 }
+    ];
+
+    const ELS = {
+      warningBox: document.getElementById("warningBox"),
+      worldBadge: document.getElementById("worldBadge"),
+      nicknameInput: document.getElementById("nicknameInput"),
+      saveNameBtn: document.getElementById("saveNameBtn"),
+      moneyText: document.getElementById("moneyText"),
+      winText: document.getElementById("winText"),
+      lawsText: document.getElementById("lawsText"),
+      myItems: document.getElementById("myItems"),
+      buyStealBtn: document.getElementById("buyStealBtn"),
+      disableMoneyLawBtn: document.getElementById("disableMoneyLawBtn"),
+      disableTradeTaxLawBtn: document.getElementById("disableTradeTaxLawBtn"),
+      sellSelect: document.getElementById("sellSelect"),
+      sellBtn: document.getElementById("sellBtn"),
+      targetPlayerSelect: document.getElementById("targetPlayerSelect"),
+      targetItemSelect: document.getElementById("targetItemSelect"),
+      stealBtn: document.getElementById("stealBtn"),
+      stealMoneyBtn: document.getElementById("stealMoneyBtn"),
+      joinPublicBtn: document.getElementById("joinPublicBtn"),
+      privateCodeInput: document.getElementById("privateCodeInput"),
+      joinPrivateBtn: document.getElementById("joinPrivateBtn"),
+      newPrivateBtn: document.getElementById("newPrivateBtn"),
+      playersList: document.getElementById("playersList")
+    };
+
+    const myId = ensureLocalId();
+    let currentWorld = localStorage.getItem("tnl_world") || "public";
+    let warningTimer = null;
+
+    function ensureLocalId() {
+      let id = localStorage.getItem("tnl_player_id");
+      if (!id) {
+        id = "p_" + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem("tnl_player_id", id);
+      }
+      return id;
+    }
+
+    function worldKey(world) {
+      return `tnl_state_${world}`;
+    }
+
+    function now() {
+      return Date.now();
+    }
+
+    function createDefaultPlayer() {
+      return {
+        id: myId,
+        nickname: "player-" + myId.slice(-3),
+        money: START_MONEY,
+        inventory: [
+          { name: "apple", value: 15, stolenFrom: null },
+          { name: "hat", value: 12, stolenFrom: null }
+        ],
+        laws: {
+          canStealItems: false,
+          canStealMoney: false,
+          tradeTaxDisabled: false
+        },
+        lastSeen: now()
+      };
+    }
+
+    function readState() {
+      const raw = localStorage.getItem(worldKey(currentWorld));
+      if (!raw) {
+        const fresh = { world: currentWorld, players: {}, events: [], createdAt: now() };
+        return fresh;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        parsed.players ||= {};
+        parsed.events ||= [];
+        return parsed;
+      } catch {
+        return { world: currentWorld, players: {}, events: [], createdAt: now() };
+      }
+    }
+
+    function writeState(state) {
+      localStorage.setItem(worldKey(currentWorld), JSON.stringify(state));
+    }
+
+    function updateState(mutator) {
+      const state = readState();
+      mutator(state);
+      writeState(state);
+      render();
+    }
+
+    function getMe(state) {
+      if (!state.players[myId]) {
+        state.players[myId] = createDefaultPlayer();
+      }
+      state.players[myId].lastSeen = now();
+      return state.players[myId];
+    }
+
+    function cleanupOldPlayers(state) {
+      const cut = now() - 60_000;
+      for (const id of Object.keys(state.players)) {
+        if (state.players[id].lastSeen < cut) {
+          delete state.players[id];
+        }
+      }
+    }
+
+    function setWarning(text) {
+      ELS.warningBox.textContent = text;
+      ELS.warningBox.classList.remove("hidden");
+      clearTimeout(warningTimer);
+      warningTimer = setTimeout(() => {
+        ELS.warningBox.classList.add("hidden");
+      }, 3000);
+    }
+
+    function addEvent(state, type, payload) {
+      state.events.push({ id: crypto.randomUUID(), at: now(), type, payload });
+      if (state.events.length > 100) state.events.splice(0, state.events.length - 100);
+    }
+
+    function getOnlinePlayers(state) {
+      const cut = now() - 20_000;
+      return Object.values(state.players).filter(p => p.lastSeen > cut);
+    }
+
+    function render() {
+      const state = readState();
+      const me = getMe(state);
+      cleanupOldPlayers(state);
+      writeState(state);
+
+      ELS.worldBadge.textContent = `world: ${currentWorld}`;
+      ELS.nicknameInput.value = me.nickname;
+      ELS.moneyText.textContent = "$" + me.money.toLocaleString();
+      ELS.winText.textContent = me.money >= WIN_MONEY ? "YOU WIN! You reached $10,000,000,000!" : "";
+      ELS.lawsText.innerHTML = `
+        <span class="${me.laws.canStealItems ? "law-off" : "law-on"}">Steal item law: ${me.laws.canStealItems ? "DISABLED" : "ON"}</span><br>
+        <span class="${me.laws.canStealMoney ? "law-off" : "law-on"}">Money law: ${me.laws.canStealMoney ? "DISABLED" : "ON"}</span><br>
+        <span class="${me.laws.tradeTaxDisabled ? "law-off" : "law-on"}">Trade tax law: ${me.laws.tradeTaxDisabled ? "DISABLED" : "ON"}</span>
+      `;
+
+      ELS.myItems.innerHTML = "";
+      me.inventory.forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = `${item.name} ($${item.value})${item.stolenFrom ? ` - stolen from ${item.stolenFrom}` : ""}`;
+        ELS.myItems.appendChild(li);
+      });
+
+      ELS.buyStealBtn.disabled = me.laws.canStealItems || me.money < 5;
+      ELS.disableMoneyLawBtn.disabled = me.laws.canStealMoney || me.money < 100;
+      ELS.disableTradeTaxLawBtn.disabled = me.laws.tradeTaxDisabled || me.money < 250;
+
+      const stolenItems = me.inventory.filter(i => i.stolenFrom);
+      ELS.sellSelect.innerHTML = "";
+      stolenItems.forEach((item, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx);
+        opt.textContent = `${item.name} ($${item.value}) from ${item.stolenFrom}`;
+        ELS.sellSelect.appendChild(opt);
+      });
+      ELS.sellBtn.disabled = stolenItems.length === 0;
+
+      const players = getOnlinePlayers(state).filter(p => p.id !== myId);
+      ELS.targetPlayerSelect.innerHTML = "";
+      players.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.nickname} ($${p.money.toLocaleString()})`;
+        ELS.targetPlayerSelect.appendChild(opt);
+      });
+      const canStealTarget = players.length > 0;
+      ELS.stealBtn.disabled = !me.laws.canStealItems || !canStealTarget;
+      ELS.stealMoneyBtn.disabled = !me.laws.canStealMoney || !canStealTarget;
+
+      fillTargetItems(state);
+
+      ELS.playersList.innerHTML = "";
+      getOnlinePlayers(state).forEach((p) => {
+        const li = document.createElement("li");
+        li.textContent = `${p.nickname}: $${p.money.toLocaleString()} | items: ${p.inventory.length}`;
+        ELS.playersList.appendChild(li);
+      });
+
+      const newestEvent = state.events[state.events.length - 1];
+      if (newestEvent && newestEvent.type === "warning" && newestEvent.at > now() - 3200) {
+        const victim = state.players[newestEvent.payload.victimId];
+        if (victim && victim.id === myId) {
+          setWarning(`oh no! ${newestEvent.payload.thiefName} is going to steal your ${newestEvent.payload.itemName}`);
+        }
+      }
+    }
+
+    function fillTargetItems(state) {
+      const targetId = ELS.targetPlayerSelect.value;
+      ELS.targetItemSelect.innerHTML = "";
+      if (!targetId || !state.players[targetId]) return;
+      state.players[targetId].inventory.forEach((item, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx);
+        opt.textContent = `${item.name} ($${item.value})`;
+        ELS.targetItemSelect.appendChild(opt);
+      });
+    }
+
+    function joinWorld(newWorld) {
+      currentWorld = newWorld.trim() || "public";
+      localStorage.setItem("tnl_world", currentWorld);
+      updateState((state) => {
+        getMe(state);
+      });
+      render();
+    }
+
+    ELS.saveNameBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        const clean = (ELS.nicknameInput.value || "").trim();
+        if (clean) me.nickname = clean.slice(0, 16);
+      });
+    });
+
+    ELS.buyStealBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        if (!me.laws.canStealItems && me.money >= 5) {
+          me.money -= 5;
+          me.laws.canStealItems = true;
+        }
+      });
+    });
+
+    ELS.disableMoneyLawBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        if (!me.laws.canStealMoney && me.money >= 100) {
+          me.money -= 100;
+          me.laws.canStealMoney = true;
+        }
+      });
+    });
+
+    ELS.disableTradeTaxLawBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        if (!me.laws.tradeTaxDisabled && me.money >= 250) {
+          me.money -= 250;
+          me.laws.tradeTaxDisabled = true;
+        }
+      });
+    });
+
+    ELS.sellBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        const stolenItems = me.inventory.filter(i => i.stolenFrom);
+        const selected = Number(ELS.sellSelect.value || 0);
+        const item = stolenItems[selected];
+        if (!item) return;
+        const invIdx = me.inventory.findIndex(i => i === item);
+        if (invIdx < 0) return;
+        me.inventory.splice(invIdx, 1);
+        const tax = me.laws.tradeTaxDisabled ? 1 : 0.8;
+        me.money += Math.floor(item.value * tax);
+      });
+    });
+
+    ELS.targetPlayerSelect.addEventListener("change", () => render());
+
+    ELS.stealBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        const targetId = ELS.targetPlayerSelect.value;
+        if (!me.laws.canStealItems || !targetId || !state.players[targetId]) return;
+        const victim = state.players[targetId];
+        const itemIdx = Number(ELS.targetItemSelect.value || 0);
+        const item = victim.inventory[itemIdx];
+        if (!item) return;
+        addEvent(state, "warning", {
+          victimId: victim.id,
+          thiefName: me.nickname,
+          itemName: item.name
+        });
+        setTimeout(() => {
+          updateState((laterState) => {
+            const laterMe = getMe(laterState);
+            const laterVictim = laterState.players[targetId];
+            if (!laterVictim) return;
+            const stealIndex = laterVictim.inventory.findIndex(x => x.name === item.name && x.value === item.value);
+            if (stealIndex < 0) return;
+            const stolen = laterVictim.inventory.splice(stealIndex, 1)[0];
+            stolen.stolenFrom = laterVictim.nickname;
+            laterMe.inventory.push(stolen);
+          });
+        }, 3000);
+      });
+    });
+
+    ELS.stealMoneyBtn.addEventListener("click", () => {
+      updateState((state) => {
+        const me = getMe(state);
+        const targetId = ELS.targetPlayerSelect.value;
+        if (!me.laws.canStealMoney || !targetId || !state.players[targetId]) return;
+        const victim = state.players[targetId];
+        const amount = Math.min(20, Math.max(0, victim.money));
+        if (amount <= 0) return;
+        victim.money -= amount;
+        me.money += amount;
+      });
+    });
+
+    ELS.joinPublicBtn.addEventListener("click", () => {
+      joinWorld("public");
+    });
+
+    ELS.joinPrivateBtn.addEventListener("click", () => {
+      const code = ELS.privateCodeInput.value.trim();
+      if (!code) return;
+      joinWorld("private-" + code);
+    });
+
+    ELS.newPrivateBtn.addEventListener("click", () => {
+      const code = Math.random().toString(36).slice(2, 8);
+      ELS.privateCodeInput.value = code;
+      joinWorld("private-" + code);
+    });
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === worldKey(currentWorld)) render();
+    });
+
+    setInterval(() => {
+      updateState((state) => {
+        const me = getMe(state);
+        me.lastSeen = now();
+      });
+    }, 3000);
+
+    joinWorld(currentWorld);
+  </script>
+</body>
+</html>
