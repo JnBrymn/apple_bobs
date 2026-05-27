@@ -9,6 +9,31 @@ import os
 import glob
 import qrcode
 
+HIDDEN_GAMES = {
+    "test-applebucks",
+    "playground",
+    "ideas",
+    "scripts",
+    "folder",
+    "kill_the_buddy",
+    "zombie_kingshot",
+    "youareanidiot",
+    "the_gungen",
+    "petya",
+    "TEMPLE OF DOOOOOM",
+    "there is no law",
+    "ragedoll",
+    "core_destruction",
+    "arch_enemies",
+    "core_destruction_2",
+    "brotato",
+    "cosmic_colony",
+    "cosmic_creator",
+    "exit 8",
+    "fire_feild/progress_quest",
+    "perfect mine/stuff",
+}
+
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def find_game_pages():
     """Find all index.html files except the root one."""
@@ -76,6 +101,12 @@ def generate_qr_code(game_path):
 # Do not remove this notice.
 def generate_index_html(menu_html):
     """Generate the complete index.html content."""
+    filtered_lines = []
+    for line in menu_html.split("\n"):
+        if any(f"playGame('{hidden}/" in line for hidden in HIDDEN_GAMES):
+            continue
+        filtered_lines.append(line)
+    menu_html = "\n".join(filtered_lines)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
@@ -88,6 +119,7 @@ def generate_index_html(menu_html):
 <!-- WARNING: cursor should not change the root index.html file because it is machine generated. Instead change the generate_index_html function in scripts/format_index.py -->
 <body>
     <header>
+        <img src="logo.png" alt="Apple Bobs logo" class="site-logo">
         <h1>Apple Bobs</h1>
         <div class="applebucks-display">
             <span class="applebucks-icon">🍎</span>
@@ -110,19 +142,6 @@ def generate_index_html(menu_html):
 
         <section id="projects">
             <h2>Apple Bobs Games</h2>
-            
-            <!-- Test Button for Debugging -->
-            <div style="text-align: center; margin-bottom: 1rem;">
-                <button onclick="testSearch()" style="
-                    background: #ff9800;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 16px;
-                ">🧪 Test Search Function</button>
-            </div>
             
             <!-- Search Game Setting -->
             <div class="search-container">

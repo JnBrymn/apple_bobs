@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poison World — Bo's Bad Level</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: "Press Start 2P", "Courier New", monospace;
+    }
+    #wrap {
+      position: relative;
+      padding: 24px;
+      background: #000;
+      font-family: "Consolas", "Courier New", monospace;
+      color: #fff;
+    }
+    #wrap::before {
+      content: "⌜ SYS://Y3940.0 — POISON.WORLD.EXE";
+      position: absolute;
+      top: 6px;
+      left: 18px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+    #wrap::after {
+      content: "AUTH:OK · UPLINK:STABLE ⌟";
+      position: absolute;
+      bottom: 6px;
+      right: 18px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid #fff;
+      outline: 1px solid #fff;
+      outline-offset: 3px;
+      background: #fff;
+    }
+    #year {
+      position: absolute;
+      bottom: -52px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 6px 22px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 14px;
+      letter-spacing: 5px;
+      border: 1px solid #fff;
+      outline: 1px solid #fff;
+      outline-offset: 4px;
+      white-space: nowrap;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      text-align: center;
+      gap: 16px;
+      padding: 20px;
+      cursor: pointer;
+    }
+    #overlay h1 { color: #fff; font-size: 18px; line-height: 1.6; }
+    #overlay p { font-size: 10px; line-height: 1.8; max-width: 420px; color: #fff; }
+    #overlay .hint { color: #fff; font-size: 9px; opacity: 0.7; }
+    .hidden { display: none !important; }
+    #shop {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      background: #000;
+      color: #fff;
+      border: 1px solid #fff;
+      outline: 1px solid #fff;
+      outline-offset: 3px;
+      padding: 10px 14px;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-align: center;
+      cursor: pointer;
+      line-height: 1.5;
+      z-index: 5;
+      user-select: none;
+    }
+    #shop:hover { background: #fff; color: #000; }
+    #shop:active { transform: translate(2px, 2px); }
+    #shop .price { font-size: 10px; display: block; margin-top: 4px; letter-spacing: 2px; }
+    #overlay h1 { font-family: "Consolas", "Courier New", monospace; letter-spacing: 4px; }
+    #overlay p { font-family: "Consolas", "Courier New", monospace; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="c" width="768" height="720"></canvas>
+    <div id="shop">[SHOP]<span class="price">3 ¢</span></div>
+    <div id="year">// Y3940.A.D. //</div>
+    <div id="overlay">
+      <h1>&gt;&gt; POISON.WORLD &lt;&lt;<br>SECTOR 01</h1>
+      <p>BO-3940 DEPLOYED. FUNGAL UNITS = TOXIC.<br>CONTACT HOSTILES (NO STOMP) TO ABSORB UPGRADES… EXCESS = POP.<br>POWERED-UP DAMAGE DEMOTES TIER INSTEAD OF TERMINATING.</p>
+      <p class="hint">[CLICK] or [ENTER] = INIT<br>← → MOVE · Z / SPACE JUMP · ↓ SQUAT · X FIRE</p>
+    </div>
+  </div>
+
+  <script>
+    /*
+     * POISON WORLD — Bo's vibe coding
+     * A side-scrolling parody platformer with original color palette and twists.
+     * Twists:
+     *  - Poison mushrooms kill / demote
+     *  - Touch Grumps for power-ups: 1 big, 2 fire, 3 fat, 4 POP
+     *  - Squat too much = back break
+     *  - Jump = shrink half a pixel
+     *  - Clouds fall + can squish
+     *  - Skinny pits extend when jumped over
+     *  - Evil bushes become enemies
+     *  - Every 4th coin is cursed (shrinks Bo)
+     *  - Ground crumbles behind you
+     *  - When powered up, getting hurt knocks you back a level instead.
+     */
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const shopBtn = document.getElementById('shop');
+
+    const SHOP_ITEMS = [
+      'POISON APPLE', 'BAD GUM', 'ROTTEN PIZZA', 'SKETCHY SODA',
+      'MYSTERY MEAT', 'FANCY HAT', 'OLD SHOE', 'EXPIRED MILK',
+      'WEIRD STICK', 'BURNT TOAST', 'STALE CRACKER', 'SNAIL JUICE',
+    ];
+
+    function buyFromShop() {
+      if (state !== 'play' && state !== 'pipe') return;
+      if (player.dead) return;
+      ensureAudio();
+      if (coins < 3) {
+        particles.push({ type: 'text', text: 'TOO POOR!', x: player.x, y: player.y - 16, t: 0, life: 60 });
+        SFX.bump();
+        return;
+      }
+      coins -= 3;
+      const item = SHOP_ITEMS[Math.floor(Math.random() * SHOP_ITEMS.length)];
+      particles.push({ type: 'text', text: 'BOUGHT ' + item, x: player.x, y: player.y - 28, t: 0, life: 90 });
+      particles.push({ type: 'text', text: '…POISON!', x: player.x, y: player.y - 16, t: 0, life: 110 });
+      SFX.coin();
+      SFX.crack();
+      hurtMario('shop-poison');
+    }
+
+    const SCALE = 3;
+    const TW = 16;
+    const TH = 16;
+    const VW = 256;
+    const VH = 240;
+    const ROWS = 15;
+    const LEVEL_W = 212;
+
+    canvas.width = VW * SCALE;
+    canvas.height = VH * SCALE;
+    ctx.imageSmoothingEnabled = false;
+
+    // Pure black & white — no grays allowed
+    const PAL = {
+      sky: '#ffffff',
+      black: '#000000',
+      white: '#000000',
+      red: '#000000',
+      redDark: '#000000',
+      orange: '#000000',
+      brown: '#000000',
+      brownDark: '#000000',
+      green: '#000000',
+      greenDark: '#000000',
+      blue: '#000000',
+      blueDark: '#000000',
+      gray: '#000000',
+      coin: '#000000',
+    };
+
+  const TILE = {
+    AIR: 0, GROUND: 1, BRICK: 2, Q_COIN: 3, Q_MUSH: 4, Q_MULTI: 5,
+    USED: 6, PIPE_TL: 7, PIPE_TR: 8, PIPE_BL: 9, PIPE_BR: 10,
+    HARD: 11, STAIR: 12, FLAG: 13, CASTLE: 14, HIDDEN: 15,
+    SLIME: 16,
+  };
+
+  const MAX_LEVEL = 3;
+  let currentLevel = 1;
+
+  let tiles = new Uint8Array(LEVEL_W * ROWS);
+  let tileMeta = new Array(LEVEL_W * ROWS).fill(null);
+  let cameraX = 0;
+  let timeLeft = 400;
+  let score = 0;
+  let coins = 0;
+  let lives = 3;
+  let frame = 0;
+  let state = 'title'; // title | play | dead | win | timeup | pipe
+  let deadTimer = 0;
+  let winTimer = 0;
+
+  const keys = {};
+  let prevJump = false;
+  let prevDown = false;
+
+  const SQUAT_LIMIT = 20;
+  const FIRST_PIPE_X = 28;
+
+  // ---- Sound (synthesized, no files) ----
+  let audioCtx = null;
+  let audioReady = false;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    audioReady = true;
+  }
+
+  function tone(freq, dur, type, vol) {
+    if (!audioReady) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol || 0.08, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur);
+  }
+
+  function sweep(f1, f2, dur, type, vol) {
+    if (!audioReady) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1, f2), t0 + dur);
+    gain.gain.setValueAtTime(vol || 0.08, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur);
+  }
+
+  function noise(dur, vol) {
+    if (!audioReady) return;
+    const t0 = audioCtx.currentTime;
+    const sr = audioCtx.sampleRate;
+    const buf = audioCtx.createBuffer(1, Math.max(1, Math.floor(sr * dur)), sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(vol || 0.08, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(gain).connect(audioCtx.destination);
+    src.start(t0);
+  }
+
+  const SFX = {
+    jump()   { sweep(380, 760, 0.14, 'square', 0.07); },
+    coin()   { tone(990, 0.06, 'square', 0.08); setTimeout(() => tone(1320, 0.1, 'square', 0.08), 50); },
+    bump()   { tone(180, 0.07, 'square', 0.08); },
+    brick()  { noise(0.18, 0.12); tone(140, 0.12, 'sawtooth', 0.06); },
+    powerup(){ sweep(220, 880, 0.35, 'square', 0.09); },
+    stomp()  { tone(120, 0.1, 'square', 0.1); },
+    fire()   { sweep(700, 200, 0.12, 'sawtooth', 0.07); },
+    squat()  { tone(90, 0.05, 'square', 0.06); },
+    crack()  { noise(0.4, 0.15); sweep(220, 60, 0.4, 'sawtooth', 0.08); },
+    piranha(){ sweep(180, 520, 0.5, 'sawtooth', 0.07); },
+    cloud()  { sweep(900, 200, 0.5, 'sine', 0.07); },
+    squish() { noise(0.25, 0.18); tone(80, 0.2, 'square', 0.08); },
+    pit()    { noise(0.3, 0.1); sweep(150, 50, 0.3, 'sawtooth', 0.08); },
+    death()  { sweep(500, 90, 0.7, 'square', 0.09); },
+    win()    {
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'square', 0.08), i * 150));
+    },
+    gameover() { sweep(440, 110, 1.0, 'square', 0.09); },
+  };
+
+  const player = {
+    x: 48, y: 0, vx: 0, vy: 0,
+    w: 12, h: 14,
+    onGround: false,
+    facing: 1,
+    anim: 0,
+    dead: false,
+    deadVy: 0,
+    powerLevel: 0,
+    invincible: 0,
+    fireCooldown: 0,
+    squatting: false,
+    squatCount: 0,
+    shrink: 0,
+  };
+
+  let pipeTimer = 0;
+
+  // Evil bushes — wake up and become goombas when Mario walks near.
+  const BUSH_POSITIONS = [80, 240, 400, 560, 720, 880, 1040, 1200, 1360, 1520, 1680, 1840, 2000, 2160, 2320, 2480, 2640, 2800, 2960];
+  let bushes = [];
+
+  function initBushes() {
+    // Only every 3rd bush is evil — others are just decoration
+    bushes = BUSH_POSITIONS.map((x, i) => ({ x, y: 192, awake: false, evil: i % 3 === 0 }));
+  }
+
+  function updateBushes() {
+    bushes.forEach(b => {
+      if (b.awake || !b.evil) return;
+      const dx = (player.x + player.w / 2) - (b.x + 18);
+      if (Math.abs(dx) < 32) {
+        b.awake = true;
+        SFX.bump();
+        entities.push({
+          type: 'goomba',
+          x: b.x + 8, y: 13 * TH - 16,
+          w: 16, h: 16,
+          vx: dx > 0 ? -0.9 : 0.9,
+          vy: 0, dead: false, squish: 0,
+          evil: true,
+        });
+      }
+    });
+  }
+
+  // Crumbling ground — tiles Mario walks on collapse a bit later.
+  const crumbling = new Map();
+  function markCrumble(tx) {
+    if (getTile(tx, 13) !== TILE.GROUND) return;
+    if (!crumbling.has(tx)) crumbling.set(tx, frame);
+  }
+  function updateCrumbling() {
+    crumbling.forEach((startFrame, tx) => {
+      if (frame - startFrame > 300) {
+        setTile(tx, 13, TILE.AIR);
+        setTile(tx, 14, TILE.AIR);
+        particles.push({ type: 'crumble', x: tx * TW, y: 13 * TH, t: 0, life: 30 });
+        crumbling.delete(tx);
+      }
+    });
+  }
+
+  // Cursed coins — every 4th coin shrinks Mario instead.
+  let coinCount = 0;
+
+  // Sky anvils — drop from above every few seconds, aimed near Bo.
+  let anvilTimer = 0;
+  function maybeSpawnAnvil() {
+    anvilTimer++;
+    if (anvilTimer < 360) return;
+    anvilTimer = 0;
+    const aimX = player.x + (Math.random() * 80 - 40);
+    entities.push({
+      type: 'anvil',
+      x: aimX, y: -20,
+      w: 14, h: 12,
+      vy: 0, dead: false,
+    });
+    SFX.bump();
+  }
+
+  // Pop-up spikes — random ground tile briefly grows spikes.
+  const spikes = [];
+  let spikeTimer = 0;
+  function maybeSpawnSpike() {
+    spikeTimer++;
+    if (spikeTimer < 240) return;
+    spikeTimer = 0;
+    const playerTx = Math.floor((player.x + player.w / 2) / TW);
+    const tx = playerTx + (Math.floor(Math.random() * 12) - 6);
+    if (getTile(tx, 13) !== TILE.GROUND) return;
+    spikes.push({ tx, born: frame, life: 150 });
+    SFX.crack();
+  }
+  function updateSpikes() {
+    for (let i = spikes.length - 1; i >= 0; i--) {
+      const s = spikes[i];
+      const age = frame - s.born;
+      if (age > s.life) { spikes.splice(i, 1); continue; }
+      if (age > 30 && age < s.life - 20) {
+        const sx = s.tx * TW;
+        const sy = 13 * TH - 6;
+        const box = { x: sx + 2, y: sy, w: 12, h: 6 };
+        if (!player.dead && aabb(player, box)) hurtMario('spike');
+      }
+    }
+  }
+
+  // Ice patches per level
+  const iceTiles = new Set();
+  const LEVEL_ICE = {
+    1: [24, 50, 100, 128, 144, 160],
+    2: [40, 60, 110, 130],
+    3: [30, 55, 78, 110, 135, 158],
+  };
+  function initIce() {
+    iceTiles.clear();
+    (LEVEL_ICE[currentLevel] || []).forEach(tx => iceTiles.add(tx));
+  }
+  function isOnIce() {
+    if (!player.onGround) return false;
+    const tx = Math.floor((player.x + player.w / 2) / TW);
+    return iceTiles.has(tx);
+  }
+
+  function isOnSlime() {
+    if (!player.onGround) return false;
+    const tx = Math.floor((player.x + player.w / 2) / TW);
+    const ty = Math.floor((player.y + player.h + 1) / TH);
+    return getTile(tx, ty) === TILE.SLIME;
+  }
+
+  // Skinny pits per level
+  const LEVEL_PITS = {
+    1: [70, 87, 154],
+    2: [50, 75, 105, 135],
+    3: [38, 65, 92, 120, 148],
+  };
+  let pits = [];
+
+  function initPits() {
+    pits = (LEVEL_PITS[currentLevel] || []).map(tx => ({
+      tx,
+      triggered: false,
+      currentHalfWidth: 0,
+      targetHalfWidth: 1,
+      growTimer: 0,
+    }));
+  }
+
+  function updatePits() {
+    const playerTx = (player.x + player.w / 2) / TW;
+    pits.forEach(p => {
+      if (!p.triggered) {
+        if (!player.onGround && Math.abs(playerTx - (p.tx + 0.5)) < 3) {
+          p.triggered = true;
+          SFX.pit();
+        }
+      } else if (p.currentHalfWidth < p.targetHalfWidth) {
+        p.growTimer++;
+        if (p.growTimer >= 3) {
+          p.growTimer = 0;
+          p.currentHalfWidth++;
+          const h = p.currentHalfWidth;
+          for (let dx = -h; dx <= h; dx++) {
+            setTile(p.tx + dx, 13, TILE.AIR);
+            setTile(p.tx + dx, 14, TILE.AIR);
+          }
+        }
+      }
+    });
+  }
+
+  // All clouds are real, falling, deadly. Walk under = it falls = squish.
+  const CLOUD_POSITIONS = [
+    [96, 56], [200, 40], [320, 64], [440, 48], [560, 72],
+    [680, 40], [800, 56], [920, 64], [1040, 48], [1160, 72],
+    [1280, 40], [1400, 56], [1520, 64], [1640, 48], [1760, 72],
+    [1880, 40], [2000, 56], [2120, 64], [2240, 48], [2360, 72],
+    [2480, 56], [2600, 40], [2720, 64], [2840, 48],
+  ];
+  let clouds = [];
+
+  function initClouds() {
+    // Only ~1 in 3 clouds is the dangerous falling kind; others are normal
+    clouds = CLOUD_POSITIONS.map(([x, y], i) => ({
+      x, y, w: 36, h: 14, vy: 0,
+      falling: false, fallen: false,
+      deadly: i % 3 === 0,
+    }));
+  }
+
+  const POWER_MSG = ['', 'SUPER!', 'FIRE POWER!', 'TOO FAT!', 'MORBID OBESITY!'];
+
+  let entities = [];
+  let particles = [];
+
+  function baseHeight() {
+    if (player.powerLevel === 0) return 14;
+    return 28;
+  }
+
+  function updatePlayerSize() {
+    const feet = player.y + player.h;
+    if (player.powerLevel === 0) { player.w = 12; player.h = 14; }
+    else if (player.powerLevel <= 2) { player.w = 12; player.h = 28; }
+    else { player.w = 24; player.h = 28; }
+    player.h = Math.max(2, player.h - player.shrink);
+    player.y = feet - player.h;
+  }
+
+  function applyPowerUp() {
+    player.powerLevel++;
+    if (player.powerLevel >= 4) {
+      killMario('obesity');
+      return;
+    }
+    SFX.powerup();
+    updatePlayerSize();
+    player.invincible = 90;
+    particles.push({
+      type: 'text', text: POWER_MSG[player.powerLevel],
+      x: player.x, y: player.y - 16, t: 0, life: 90,
+    });
+  }
+
+  function powerSpeed() {
+    if (player.powerLevel === 3) return { max: 1.1, acc: 0.07 };
+    if (player.powerLevel >= 1) return { max: 2.6, acc: 0.16 };
+    return { max: 2.4, acc: 0.15 };
+  }
+
+  function shootFireball() {
+    if (player.powerLevel !== 2 || player.fireCooldown > 0 || player.dead) return;
+    SFX.fire();
+    entities.push({
+      type: 'fireball',
+      x: player.x + (player.facing > 0 ? player.w : -8),
+      y: player.y + 8,
+      w: 8, h: 8, vx: player.facing * 4, vy: 0, life: 90,
+    });
+    player.fireCooldown = 20;
+  }
+
+
+  function idx(x, y) { return y * LEVEL_W + x; }
+  function inBounds(x, y) { return x >= 0 && x < LEVEL_W && y >= 0 && y < ROWS; }
+  function getTile(x, y) {
+    if (y < 0 || y >= ROWS) return TILE.AIR;
+    if (x < 0 || x >= LEVEL_W) return TILE.HARD;
+    return tiles[idx(x, y)];
+  }
+  function setTile(x, y, t) { if (inBounds(x, y)) tiles[idx(x, y)] = t; }
+  function isSolid(t) {
+    return t !== TILE.AIR && t !== TILE.FLAG;
+  }
+
+  function rectTile(x, y, w, h) {
+    const out = [];
+    const x0 = Math.floor(x / TW);
+    const y0 = Math.floor(y / TH);
+    const x1 = Math.floor((x + w - 0.01) / TW);
+    const y1 = Math.floor((y + h - 0.01) / TH);
+    for (let ty = y0; ty <= y1; ty++)
+      for (let tx = x0; tx <= x1; tx++)
+        out.push({ tx, ty, t: getTile(tx, ty) });
+    return out;
+  }
+
+  function addPipe(x, y, height) {
+    setTile(x, y, TILE.PIPE_TL);
+    setTile(x + 1, y, TILE.PIPE_TR);
+    for (let i = 1; i < height; i++) {
+      setTile(x, y + i, TILE.PIPE_BL);
+      setTile(x + 1, y + i, TILE.PIPE_BR);
+    }
+  }
+
+  function addStairs(x, y, count) {
+    for (let i = 0; i < count; i++)
+      for (let j = 0; j <= i; j++)
+        setTile(x + i, y - j, TILE.STAIR);
+  }
+
+  function buildFlagAndCastle() {
+    // flag pole
+    for (let y = 3; y <= 12; y++) setTile(166, y, TILE.FLAG);
+
+    // castle
+    for (let x = 168; x <= 176; x++) {
+      for (let y = 8; y <= 12; y++) setTile(x, y, TILE.CASTLE);
+    }
+    setTile(170, 7, TILE.CASTLE);
+    setTile(171, 7, TILE.CASTLE);
+    setTile(172, 7, TILE.CASTLE);
+    setTile(173, 7, TILE.CASTLE);
+    setTile(174, 7, TILE.CASTLE);
+    setTile(171, 12, TILE.AIR);
+    setTile(172, 12, TILE.AIR);
+    setTile(171, 13, TILE.AIR);
+    setTile(172, 13, TILE.AIR);
+
+    // end wall
+    for (let y = 0; y < ROWS; y++)
+      for (let x = 180; x < LEVEL_W; x++)
+        setTile(x, y, TILE.HARD);
+  }
+
+  function buildLevel(n) {
+    tiles.fill(TILE.AIR);
+    tileMeta.fill(null);
+    if (n === 2) buildLevel2();
+    else if (n === 3) buildLevel3();
+    else buildLevel1();
+  }
+
+  function buildLevel1() {
+    for (let x = 0; x < LEVEL_W; x++) {
+      setTile(x, 13, TILE.GROUND);
+      setTile(x, 14, TILE.GROUND);
+    }
+
+    // pits (skinny — 1 tile wide; they extend when you jump over!)
+    setTile(70, 13, TILE.AIR); setTile(70, 14, TILE.AIR);
+    setTile(87, 13, TILE.AIR); setTile(87, 14, TILE.AIR);
+    setTile(154, 13, TILE.AIR); setTile(154, 14, TILE.AIR);
+
+    // opening ? blocks (mushroom in first)
+    setTile(16, 9, TILE.Q_MUSH);
+    setTile(17, 9, TILE.Q_COIN);
+    setTile(18, 9, TILE.Q_COIN);
+
+    // brick rows
+    for (let x = 20; x <= 21; x++) setTile(x, 9, TILE.BRICK);
+    setTile(22, 5, TILE.Q_COIN);
+
+    // hidden 1-up style block area (coin block)
+    setTile(20, 5, TILE.HIDDEN);
+    tileMeta[idx(20, 5)] = { revealed: false };
+
+    // first pipe
+    addPipe(28, 11, 2);
+
+    // brick ceiling section
+    for (let x = 38; x <= 45; x++) setTile(x, 9, TILE.BRICK);
+    setTile(42, 5, TILE.Q_COIN);
+
+    // second pipe (tall)
+    addPipe(36, 10, 3);
+
+    // third pipe
+    addPipe(46, 11, 2);
+
+    // mushroom block on solo brick
+    setTile(52, 9, TILE.BRICK);
+    setTile(52, 5, TILE.Q_MUSH);
+
+    // pipe before pit
+    addPipe(57, 11, 2);
+
+    // post-pit bricks
+    for (let x = 74; x <= 77; x++) setTile(x, 9, TILE.BRICK);
+    setTile(74, 5, TILE.Q_COIN);
+
+    addPipe(80, 11, 2);
+
+  for (let x = 92; x <= 95; x++) setTile(x, 9, TILE.BRICK);
+    setTile(94, 5, TILE.Q_MUSH);
+
+    // stair to hidden area
+    addStairs(100, 13, 4);
+    setTile(104, 9, TILE.Q_COIN);
+    setTile(105, 9, TILE.Q_COIN);
+    setTile(106, 9, TILE.Q_COIN);
+
+    // mid pipes
+    addPipe(112, 11, 2);
+    addPipe(118, 10, 3);
+
+    for (let x = 124; x <= 127; x++) setTile(x, 9, TILE.BRICK);
+
+    // coin row
+    for (let x = 130; x <= 134; x++) setTile(x, 6, TILE.Q_COIN);
+
+    addPipe(138, 11, 2);
+
+    // bricks before big stairs
+    for (let x = 145; x <= 149; x++) setTile(x, 9, TILE.BRICK);
+
+    // final staircase (classic end-of-level)
+    addStairs(158, 13, 8);
+
+    buildFlagAndCastle();
+  }
+
+  function buildLevel2() {
+    // SLIME PATH — slime patches everywhere, simpler layout
+    for (let x = 0; x < LEVEL_W; x++) {
+      setTile(x, 13, TILE.GROUND);
+      setTile(x, 14, TILE.GROUND);
+    }
+
+    // slime patches (replace top ground with slime)
+    [[22, 26], [42, 47], [68, 73], [90, 96], [115, 120], [140, 146]].forEach(([a, b]) => {
+      for (let x = a; x <= b; x++) setTile(x, 13, TILE.SLIME);
+    });
+
+    // skinny pits
+    LEVEL_PITS[2].forEach(tx => {
+      setTile(tx, 13, TILE.AIR); setTile(tx, 14, TILE.AIR);
+    });
+
+    // ? blocks (mushroom + coins)
+    setTile(14, 9, TILE.Q_MUSH);
+    setTile(15, 9, TILE.Q_COIN);
+    setTile(32, 8, TILE.Q_COIN);
+    setTile(33, 8, TILE.Q_COIN);
+    setTile(60, 9, TILE.Q_MUSH);
+    setTile(85, 8, TILE.Q_COIN);
+    setTile(86, 8, TILE.Q_COIN);
+    setTile(86, 4, TILE.Q_MUSH);
+    setTile(112, 9, TILE.Q_COIN);
+    setTile(125, 8, TILE.Q_MUSH);
+
+    // brick clusters for cover
+    for (let x = 28; x <= 36; x++) setTile(x, 5, TILE.BRICK);
+    for (let x = 55; x <= 62; x++) setTile(x, 9, TILE.BRICK);
+    for (let x = 80; x <= 88; x++) setTile(x, 5, TILE.BRICK);
+    for (let x = 100; x <= 108; x++) setTile(x, 9, TILE.BRICK);
+    for (let x = 120; x <= 130; x++) setTile(x, 5, TILE.BRICK);
+
+    // two short pipes
+    addPipe(38, 11, 2);
+    addPipe(98, 11, 2);
+
+    // stair to flag
+    addStairs(155, 13, 6);
+
+    buildFlagAndCastle();
+  }
+
+  function buildLevel3() {
+    // SLIMY CASTLE — most dangerous, slime + many pits + stair walls
+    for (let x = 0; x < LEVEL_W; x++) {
+      setTile(x, 13, TILE.GROUND);
+      setTile(x, 14, TILE.GROUND);
+    }
+
+    // big slime patches
+    [[18, 26], [44, 52], [70, 76], [97, 105], [122, 130], [150, 158]].forEach(([a, b]) => {
+      for (let x = a; x <= b; x++) setTile(x, 13, TILE.SLIME);
+    });
+
+    // 5 skinny pits
+    LEVEL_PITS[3].forEach(tx => {
+      setTile(tx, 13, TILE.AIR); setTile(tx, 14, TILE.AIR);
+    });
+
+    // ? blocks scattered (lots of mushrooms = poison)
+    setTile(12, 9, TILE.Q_MUSH);
+    setTile(13, 9, TILE.Q_MUSH);
+    setTile(28, 5, TILE.Q_COIN);
+    setTile(29, 5, TILE.Q_MUSH);
+    setTile(50, 8, TILE.Q_MUSH);
+    setTile(72, 8, TILE.Q_COIN);
+    setTile(73, 8, TILE.Q_MUSH);
+    setTile(96, 5, TILE.Q_MUSH);
+    setTile(100, 9, TILE.Q_COIN);
+    setTile(124, 8, TILE.Q_MUSH);
+    setTile(125, 8, TILE.Q_COIN);
+    setTile(145, 5, TILE.Q_MUSH);
+
+    // brick walls — vertical obstacles
+    for (let y = 9; y <= 12; y++) setTile(35, y, TILE.BRICK);
+    setTile(35, 8, TILE.BRICK);
+    for (let y = 10; y <= 12; y++) setTile(80, y, TILE.BRICK);
+    for (let y = 9; y <= 12; y++) setTile(110, y, TILE.BRICK);
+    setTile(110, 8, TILE.BRICK);
+
+    // pipes
+    addPipe(55, 11, 2);
+    addPipe(85, 10, 3);
+    addPipe(115, 11, 2);
+    addPipe(140, 10, 3);
+
+    // floating brick platforms
+    for (let x = 40; x <= 46; x++) setTile(x, 7, TILE.BRICK);
+    for (let x = 60; x <= 65; x++) setTile(x, 6, TILE.BRICK);
+    for (let x = 95; x <= 101; x++) setTile(x, 7, TILE.BRICK);
+    for (let x = 130; x <= 138; x++) setTile(x, 6, TILE.BRICK);
+
+    // stair to flag
+    addStairs(158, 13, 8);
+
+    buildFlagAndCastle();
+  }
+
+  const LEVEL_GOOMBAS = {
+    1: [36, 48, 76, 98, 120, 142],
+    2: [30, 55, 80, 100, 125, 145],
+    3: [25, 50, 75, 100, 115, 135, 155],
+  };
+  function spawnGoombas() {
+    entities = [];
+    const spots = LEVEL_GOOMBAS[currentLevel] || LEVEL_GOOMBAS[1];
+    spots.forEach(x => {
+      entities.push({ type: 'goomba', x: x * TW, y: 13 * TH - 16, w: 16, h: 16, vx: -0.6, vy: 0, dead: false, squish: 0 });
+    });
+  }
+
+  function resetLevel() {
+    buildLevel(currentLevel);
+    spawnGoombas();
+    player.x = 48;
+    player.y = 13 * TH - player.h;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = false;
+    player.facing = 1;
+    player.dead = false;
+    player.deadVy = 0;
+    player.powerLevel = 0;
+    player.invincible = 0;
+    player.fireCooldown = 0;
+    player.squatting = false;
+    player.squatCount = 0;
+    player.shrink = 0;
+    player.w = 12;
+    player.h = 14;
+    pipeTimer = 0;
+    initClouds();
+    initPits();
+    initBushes();
+    initIce();
+    crumbling.clear();
+    coinCount = 0;
+    anvilTimer = 0;
+    spikeTimer = 0;
+    spikes.length = 0;
+    cameraX = 0;
+    timeLeft = 400;
+    frame = 0;
+    particles = [];
+    deadTimer = 0;
+    winTimer = 0;
+  }
+
+  function startGame() {
+    ensureAudio();
+    score = 0;
+    coins = 0;
+    lives = 5;
+    currentLevel = 1;
+    resetLevel();
+    state = 'play';
+    overlay.classList.add('hidden');
+  }
+
+  function spawnMushroom(tx, ty) {
+    entities.push({
+      type: 'mushroom', poison: true,
+      x: tx * TW, y: ty * TH - 16,
+      w: 16, h: 16, vx: 1.2, vy: 0,
+      emerged: false, emergeY: ty * TH - 16,
+    });
+  }
+
+  function spawnCoin(x, y) {
+    coinCount++;
+    if (coinCount % 10 === 0) {
+      particles.push({ type: 'text', text: 'CURSED!', x, y: y - 8, t: 0, life: 80 });
+      SFX.crack();
+      player.shrink += 1;
+      if (player.shrink >= baseHeight() - 1) killMario('shrunk');
+      else updatePlayerSize();
+      return;
+    }
+    particles.push({ type: 'coin', x, y, t: 0, life: 30 });
+    coins++;
+    score += 200;
+    SFX.coin();
+  }
+
+  function bumpBlock(tx, ty) {
+    const t = getTile(tx, ty);
+    if (t === TILE.BRICK) {
+      if (player.powerLevel >= 1) {
+        setTile(tx, ty, TILE.AIR);
+        score += 50;
+        particles.push({ type: 'brick', x: tx * TW, y: ty * TH, t: 0, life: 20 });
+        SFX.brick();
+      } else {
+        SFX.bump();
+      }
+      return;
+    }
+    if (t === TILE.HIDDEN) {
+      const m = tileMeta[idx(tx, ty)];
+      if (m && !m.revealed) {
+        m.revealed = true;
+        setTile(tx, ty, TILE.USED);
+        spawnCoin(tx * TW + 4, ty * TH);
+      }
+      return;
+    }
+    if (t === TILE.Q_COIN) {
+      setTile(tx, ty, TILE.USED);
+      spawnCoin(tx * TW + 4, ty * TH);
+      return;
+    }
+    if (t === TILE.Q_MUSH) {
+      setTile(tx, ty, TILE.USED);
+      spawnMushroom(tx, ty);
+      SFX.bump();
+      return;
+    }
+    if (t === TILE.Q_MULTI) {
+      setTile(tx, ty, TILE.USED);
+      spawnCoin(tx * TW + 4, ty * TH);
+    }
+  }
+
+  function hurtMario(reason) {
+    if (player.dead || player.invincible > 0) return;
+    if (state !== 'play' && state !== 'pipe') return;
+    if (player.powerLevel > 0) {
+      player.powerLevel--;
+      updatePlayerSize();
+      player.invincible = 90;
+      SFX.bump();
+      particles.push({ type: 'text', text: 'OW! -1', x: player.x, y: player.y - 16, t: 0, life: 70 });
+      return;
+    }
+    killMario(reason);
+  }
+
+  function killMario(reason) {
+    if (player.dead || (state !== 'play' && state !== 'pipe')) return;
+    player.dead = true;
+    player.deadVy = -6;
+    player.vy = player.deadVy;
+    state = 'dead';
+    deadTimer = 120;
+    if (reason === 'backbreak') SFX.crack();
+    else if (reason === 'squish') SFX.squish();
+    else if (reason === 'piranha') SFX.piranha();
+    SFX.death();
+    if (reason === 'poison') {
+      particles.push({ type: 'text', text: 'POISON!', x: player.x, y: player.y - 20, t: 0, life: 90 });
+    }
+    if (reason === 'obesity') {
+      particles.push({ type: 'text', text: 'MORBID OBESITY!', x: player.x, y: player.y - 20, t: 0, life: 120 });
+    }
+    if (reason === 'backbreak') {
+      particles.push({ type: 'text', text: 'BACK BROKEN!', x: player.x, y: player.y - 20, t: 0, life: 120 });
+    }
+    if (reason === 'piranha') {
+      particles.push({ type: 'text', text: 'PIRANHA!', x: player.x, y: player.y - 20, t: 0, life: 120 });
+    }
+    if (reason === 'shrunk') {
+      particles.push({ type: 'text', text: 'POOF!', x: player.x, y: player.y - 20, t: 0, life: 120 });
+    }
+    if (reason === 'squish') {
+      particles.push({ type: 'text', text: 'SQUISHED!', x: player.x, y: player.y - 20, t: 0, life: 120 });
+    }
+  }
+
+  function updateClouds() {
+    const px = player.x + player.w / 2;
+    clouds.forEach(c => {
+      if (c.fallen) return;
+      if (!c.falling) {
+        if (c.deadly && px >= c.x && px <= c.x + c.w) { c.falling = true; SFX.cloud(); }
+      } else {
+        c.vy += 0.05;
+        if (c.vy > 1.2) c.vy = 1.2;
+        c.y += c.vy;
+        if (!player.dead && aabb(player, c)) hurtMario('squish');
+        if (c.y > VH + 40) c.fallen = true;
+      }
+    });
+  }
+
+  function enterFirstPipe() {
+    state = 'pipe';
+    pipeTimer = 0;
+    player.vx = 0;
+    player.vy = 0;
+    player.x = FIRST_PIPE_X * TW + TW - player.w / 2;
+    player.squatting = false;
+    SFX.bump();
+  }
+
+  function spawnPiranha() {
+    SFX.piranha();
+    entities.push({
+      type: 'piranha',
+      x: FIRST_PIPE_X * TW + 4,
+      y: 11 * TH,
+      w: 24,
+      h: 0,
+      maxH: 28,
+      growing: true,
+      bittenTimer: 0,
+    });
+  }
+
+  function aabb(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  function resolvePlayerTiles() {
+    player.onGround = false;
+    const wasY = player.y;
+
+    // vertical
+    player.y += player.vy;
+    for (const { tx, ty, t } of rectTile(player.x, player.y, player.w, player.h)) {
+      if (!isSolid(t)) continue;
+      const bx = tx * TW, by = ty * TH;
+      if (player.x + player.w > bx && player.x < bx + TW && player.y + player.h > by && player.y < by + TH) {
+        if (player.vy > 0 && wasY + player.h <= by + 1) {
+          player.y = by - player.h;
+          player.vy = 0;
+          player.onGround = true;
+        } else if (player.vy < 0 && wasY >= by + TH - 1) {
+          player.y = by + TH;
+          player.vy = 0;
+          bumpBlock(tx, ty);
+        }
+      }
+    }
+
+    const wasX = player.x;
+    player.x += player.vx;
+    for (const { tx, ty, t } of rectTile(player.x, player.y, player.w, player.h)) {
+      if (!isSolid(t)) continue;
+      const bx = tx * TW, by = ty * TH;
+      if (player.x + player.w > bx && player.x < bx + TW && player.y + player.h > by + 1 && player.y < by + TH - 1) {
+        if (player.vx > 0 && wasX + player.w <= bx + 1) {
+          player.x = bx - player.w;
+          player.vx = 0;
+        } else if (player.vx < 0 && wasX >= bx + TW - 1) {
+          player.x = bx + TW;
+          player.vx = 0;
+        }
+      }
+    }
+
+    if (player.y > VH + 32) killMario('fall');
+  }
+
+  function updatePlayer() {
+    if (player.dead) {
+      player.vy += 0.35;
+      player.y += player.vy;
+      return;
+    }
+
+    const left = keys['ArrowLeft'] || keys['KeyA'];
+    const right = keys['ArrowRight'] || keys['KeyD'];
+    const down = keys['ArrowDown'] || keys['KeyS'];
+    const downPressed = down && !prevDown;
+    const jumpKey = keys['Space'] || keys['KeyZ'] || keys['ArrowUp'] || keys['KeyW'];
+    const jump = jumpKey && !prevJump;
+
+    let { max: MAX_SPD, acc: ACC } = powerSpeed();
+    let FRICTION = 0.85;
+    if (isOnIce()) { FRICTION = 0.99; ACC *= 0.4; }
+    if (isOnSlime()) { FRICTION = 0.55; ACC *= 0.35; MAX_SPD *= 0.35; }
+
+    if (keys['KeyX'] || keys['KeyF']) shootFireball();
+    if (player.fireCooldown > 0) player.fireCooldown--;
+    if (player.invincible > 0) player.invincible--;
+
+    // Squat / pipe entry (only when on ground)
+    if (player.onGround && down) {
+      const centerX = player.x + player.w / 2;
+      const onFirstPipe = centerX >= FIRST_PIPE_X * TW &&
+                          centerX <= (FIRST_PIPE_X + 2) * TW &&
+                          player.y + player.h <= 11 * TH + 1;
+      if (onFirstPipe && downPressed) {
+        enterFirstPipe();
+        return;
+      }
+      if (!player.squatting && downPressed) {
+        player.squatting = true;
+        player.squatCount++;
+        SFX.squat();
+        if (player.squatCount >= SQUAT_LIMIT) {
+          killMario('backbreak');
+          return;
+        }
+      }
+    }
+    if (!down) player.squatting = false;
+    if (!player.onGround) player.squatting = false;
+
+    if (player.squatting) { MAX_SPD *= 0.3; ACC *= 0.3; }
+
+    if (left) { player.vx -= ACC; player.facing = -1; }
+    if (right) { player.vx += ACC; player.facing = 1; }
+    if (!left && !right) player.vx *= FRICTION;
+    player.vx = Math.max(-MAX_SPD, Math.min(MAX_SPD, player.vx));
+
+    if (jump && player.onGround && !player.squatting) {
+      player.vy = -7.2;
+      player.onGround = false;
+      player.shrink += 0.25;
+      SFX.jump();
+      if (player.shrink >= baseHeight() - 1) {
+        killMario('shrunk');
+      } else {
+        updatePlayerSize();
+      }
+    }
+
+    player.vy += 0.35;
+    if (player.vy > 6) player.vy = 6;
+
+    resolvePlayerTiles();
+
+    if (player.onGround) {
+      const feetTx = Math.floor((player.x + player.w / 2) / TW);
+      markCrumble(feetTx);
+    }
+
+    if (Math.abs(player.vx) > 0.2 && player.onGround) player.anim += 0.2;
+    else player.anim = 0;
+
+    // flag win
+    if (player.x + player.w > 166 * TW && !player.dead) {
+      state = 'win';
+      winTimer = 180;
+      score += 5000;
+    }
+
+    cameraX = Math.max(0, Math.min(player.x - VW * 0.35, LEVEL_W * TW - VW));
+  }
+
+  function updateEntities() {
+    entities.forEach(e => {
+      if (e.type === 'goomba') {
+        if (e.dead) { e.squish++; return; }
+        e.x += e.vx;
+        const gy = Math.floor((e.y + e.h - 1) / TH);
+        const gx = Math.floor((e.x + e.w / 2) / TW);
+        const ahead = getTile(gx + (e.vx < 0 ? -1 : 1), gy);
+        const below = getTile(gx, gy + 1);
+        if (!isSolid(below) || isSolid(ahead)) e.vx *= -1;
+
+        if (aabb(player, e) && !player.dead) {
+          if (player.vy > 0 && player.y + player.h < e.y + e.h * 0.5) {
+            e.dead = true;
+            player.vy = -4;
+            score += 100;
+            SFX.stomp();
+          } else if (player.invincible <= 0) {
+            applyPowerUp();
+            e.dead = true;
+            player.vx = player.x < e.x ? -2.5 : 2.5;
+            score += 50;
+          }
+        }
+      }
+
+      if (e.type === 'anvil') {
+        e.vy += 0.3;
+        if (e.vy > 6) e.vy = 6;
+        e.y += e.vy;
+        const cx = Math.floor((e.x + e.w / 2) / TW);
+        const cy = Math.floor((e.y + e.h) / TH);
+        if (isSolid(getTile(cx, cy))) {
+          e.dead = true;
+          SFX.brick();
+          particles.push({ type: 'crumble', x: e.x, y: e.y, t: 0, life: 25 });
+        }
+        if (!player.dead && aabb(player, e)) {
+          e.dead = true;
+          SFX.crack();
+          hurtMario('anvil');
+        }
+      }
+
+      if (e.type === 'fireball') {
+        e.x += e.vx;
+        e.life--;
+        if (e.life <= 0) e.dead = true;
+        const tx = Math.floor((e.x + e.w / 2) / TW);
+        const ty = Math.floor((e.y + e.h / 2) / TH);
+        if (isSolid(getTile(tx, ty))) e.dead = true;
+        entities.forEach(other => {
+          if (other.type === 'goomba' && !other.dead && aabb(e, other)) {
+            other.dead = true;
+            e.dead = true;
+            score += 200;
+          }
+        });
+      }
+
+      if (e.type === 'piranha') {
+        if (e.growing) {
+          e.h = Math.min(e.maxH, e.h + 1);
+          e.y = 11 * TH - e.h;
+          if (e.h >= e.maxH) e.growing = false;
+        }
+        e.bittenTimer++;
+        // Inside pipe Mario gets bitten very quickly
+        if (state === 'pipe' && e.bittenTimer > 30 && !player.dead) {
+          hurtMario('piranha');
+        }
+        // Above-ground touch also kills
+        if (state === 'play' && aabb(player, e) && !player.dead) {
+          hurtMario('piranha');
+        }
+      }
+
+      if (e.type === 'mushroom') {
+        if (!e.emerged) {
+          e.y -= 0.5;
+          if (e.y <= e.emergeY - 16) e.emerged = true;
+          return;
+        }
+        e.vy += 0.35;
+        e.y += e.vy;
+        e.x += e.vx;
+
+        const gy = Math.floor((e.y + e.h) / TH);
+        const gx = Math.floor((e.x + e.w / 2) / TW);
+        if (isSolid(getTile(gx, gy))) {
+          e.y = gy * TH - e.h;
+          e.vy = 0;
+        } else {
+          e.vy = 0;
+        }
+
+        const gx2 = Math.floor((e.x + (e.vx > 0 ? e.w : 0)) / TW);
+        if (isSolid(getTile(gx2, gy))) e.vx *= -1;
+
+        if (aabb(player, e) && !player.dead) {
+          hurtMario('poison');
+          e.dead = true;
+        }
+      }
+    });
+
+    entities = entities.filter(e => {
+      if (e.type === 'goomba' && e.dead) return e.squish <= 30;
+      return !e.dead;
+    });
+  }
+
+  function updateParticles() {
+    particles.forEach(p => { p.t++; p.y -= 0.5; });
+    particles = particles.filter(p => p.t < p.life);
+  }
+
+  function update() {
+    if (state === 'title') return;
+
+    frame++;
+    if (state === 'play' && frame % 60 === 0) {
+      timeLeft--;
+      if (timeLeft <= 0) { state = 'timeup'; deadTimer = 120; player.dead = true; }
+    }
+
+    if (state === 'play') {
+      updatePlayer();
+      updateEntities();
+      updateClouds();
+      updatePits();
+      updateBushes();
+      updateCrumbling();
+      maybeSpawnAnvil();
+      maybeSpawnSpike();
+      updateSpikes();
+    }
+    if (state === 'pipe') {
+      pipeTimer++;
+      // Mario descends into pipe over ~40 frames
+      if (pipeTimer <= 40) {
+        player.y += 0.6;
+      }
+      // 1 second (60 frames) after fully inside, piranha emerges
+      if (pipeTimer === 100) spawnPiranha();
+      updateEntities();
+    }
+    if (state === 'dead' || state === 'timeup') {
+      player.vy += 0.35;
+      player.y += player.vy;
+      deadTimer--;
+      if (deadTimer <= 0) {
+        lives--;
+        if (lives <= 0) {
+          SFX.gameover();
+          state = 'title';
+          overlay.classList.remove('hidden');
+          overlay.querySelector('h1').textContent = 'BO IS GONE';
+          overlay.querySelector('p').textContent = 'Score: ' + score + ' — Click to try again';
+        } else {
+          resetLevel();
+          state = 'play';
+        }
+      }
+    }
+    if (state === 'win') {
+      if (winTimer === 180) SFX.win();
+      winTimer--;
+      player.x += 1.5;
+      if (winTimer <= 0) {
+        if (currentLevel < MAX_LEVEL) {
+          currentLevel++;
+          resetLevel();
+          state = 'play';
+          particles.push({ type: 'text', text: 'LEVEL ' + currentLevel + '!', x: player.x, y: player.y - 24, t: 0, life: 90 });
+        } else {
+          state = 'title';
+          overlay.classList.remove('hidden');
+          overlay.querySelector('h1').textContent = 'BO BEAT POISON WORLD!';
+          overlay.querySelector('p').textContent = 'Score: ' + score + ' — All ' + MAX_LEVEL + ' levels survived!';
+        }
+      }
+    }
+
+    updateParticles();
+  }
+
+  // --- Drawing ---
+
+  function drawRect(x, y, w, h, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+  }
+
+  function drawTile(t, x, y) {
+    const px = x * TW - cameraX;
+    const py = y * TH;
+    if (px < -TW || px > VW) return;
+
+    switch (t) {
+      case TILE.SLIME:
+        drawRect(px, py, TW, TH, PAL.black);
+        drawRect(px + 2, py + 3, 2, 5, PAL.sky);
+        drawRect(px + 8, py + 2, 2, 6, PAL.sky);
+        drawRect(px + 13, py + 4, 2, 6, PAL.sky);
+        drawRect(px + 5, py + 10, 2, 4, PAL.sky);
+        drawRect(px + 11, py + 11, 2, 4, PAL.sky);
+        drawRect(px, py, TW, 1, PAL.sky);
+        drawRect(px + 3, py + 1, 2, 1, PAL.sky);
+        drawRect(px + 9, py + 1, 2, 1, PAL.sky);
+        break;
+      case TILE.GROUND:
+        if (y === 13 && iceTiles.has(x)) {
+          drawRect(px, py, TW, TH, '#ffffff');
+          drawRect(px, py, TW, 1, '#000000');
+          drawRect(px, py + TH - 1, TW, 1, '#000000');
+          drawRect(px, py, 1, TH, '#000000');
+          drawRect(px + TW - 1, py, 1, TH, '#000000');
+          drawRect(px + 4, py + 6, 2, 1, '#000000');
+          drawRect(px + 10, py + 10, 2, 1, '#000000');
+        } else {
+          drawRect(px, py, TW, TH, PAL.brown);
+          drawRect(px, py, TW, 4, PAL.brownDark);
+          drawRect(px + 2, py + 6, 4, 2, PAL.brownDark);
+          drawRect(px + 10, py + 10, 4, 2, PAL.brownDark);
+        }
+        break;
+      case TILE.BRICK:
+      case TILE.STAIR:
+        drawRect(px, py, TW, TH, PAL.brown);
+        drawRect(px, py, TW, 2, PAL.brownDark);
+        drawRect(px, py + 7, TW, 2, PAL.black);
+        drawRect(px + 7, py, 2, TH, PAL.black);
+        break;
+      case TILE.Q_COIN:
+      case TILE.Q_MUSH:
+      case TILE.Q_MULTI:
+        drawRect(px, py, TW, TH, '#ffffff');
+        drawRect(px, py, TW, 1, '#000000');
+        drawRect(px, py + TH - 1, TW, 1, '#000000');
+        drawRect(px, py, 1, TH, '#000000');
+        drawRect(px + TW - 1, py, 1, TH, '#000000');
+        ctx.fillStyle = '#000000';
+        ctx.font = '10px monospace';
+        ctx.fillText('?', px + 5, py + 12);
+        break;
+      case TILE.USED:
+        drawRect(px, py, TW, TH, PAL.brownDark);
+        drawRect(px + 2, py + 2, TW - 4, TH - 4, PAL.brown);
+        break;
+      case TILE.HIDDEN:
+        break;
+      case TILE.PIPE_TL:
+        drawRect(px, py, TW, TH, PAL.green);
+        drawRect(px, py, TW, 3, PAL.greenDark);
+        drawRect(px + TW - 2, py, 2, TH, PAL.greenDark);
+        break;
+      case TILE.PIPE_TR:
+        drawRect(px, py, TW, TH, PAL.green);
+        drawRect(px, py, TW, 3, PAL.greenDark);
+        drawRect(px, py, 2, TH, PAL.greenDark);
+        break;
+      case TILE.PIPE_BL:
+      case TILE.PIPE_BR:
+        drawRect(px, py, TW, TH, PAL.green);
+        drawRect(px + (t === TILE.PIPE_BR ? 0 : TW - 2), py, 2, TH, PAL.greenDark);
+        break;
+      case TILE.HARD:
+        drawRect(px, py, TW, TH, PAL.gray);
+        break;
+      case TILE.FLAG:
+        if (y === 3) {
+          drawRect(px + 6, py, 4, 4, PAL.green);
+          drawRect(px + 4, py + 4, 2, TH - 4, PAL.greenDark);
+        } else {
+          drawRect(px + 6, py, 4, TH, PAL.greenDark);
+        }
+        break;
+      case TILE.CASTLE:
+        drawRect(px, py, TW, TH, PAL.brownDark);
+        drawRect(px + 2, py + 2, TW - 4, TH - 4, PAL.brown);
+        break;
+    }
+  }
+
+  // Stick-figure Bo (16x16). '.' = transparent, 'r' draws as black.
+  const MARIO_IDLE = [
+    '................',
+    '.......rrr......',
+    '......r...r.....',
+    '......r...r.....',
+    '.......rrr......',
+    '........r.......',
+    '.....rrrrrrr....',
+    '........r.......',
+    '........r.......',
+    '........r.......',
+    '........r.......',
+    '........r.......',
+    '.......r.r......',
+    '......r...r.....',
+    '......r...r.....',
+    '.....r.....r....',
+  ];
+  const MARIO_RUN1 = [
+    '................',
+    '.......rrr......',
+    '......r...r.....',
+    '......r...r.....',
+    '.......rrr......',
+    '........r.......',
+    '......r.r.......',
+    '.....r..r..r....',
+    '........r..r....',
+    '........r.......',
+    '........r.......',
+    '.......rr.......',
+    '......r..r......',
+    '.....r....r.....',
+    '....r......r....',
+    '...r.......r....',
+  ];
+  const MARIO_RUN2 = [
+    '................',
+    '.......rrr......',
+    '......r...r.....',
+    '......r...r.....',
+    '.......rrr......',
+    '........r.......',
+    '.......r.r......',
+    'r..r......r.....',
+    '..r.....r.......',
+    '........r.......',
+    '........r.......',
+    '........rr......',
+    '......r..r......',
+    '.....r....r.....',
+    '....r......r....',
+    '....r.......r...',
+  ];
+  const MARIO_JUMP = [
+    '................',
+    '.......rrr......',
+    '......r...r.....',
+    '......r...r.....',
+    '.......rrr......',
+    '....r...r...r...',
+    '.....r..r..r....',
+    '......r.r.r.....',
+    '........r.......',
+    '........r.......',
+    '........r.......',
+    '.......r.r......',
+    '......r...r.....',
+    '.....r.....r....',
+    '....r.......r...',
+    '................',
+  ];
+
+  const SPRITE_COL = {
+    r: PAL.red, b: PAL.blue, g: PAL.orange, w: PAL.white, '.': null,
+  };
+
+  function drawSprite(sprite, dx, dy, flip, opts = {}) {
+    const sx = opts.scaleX || 1;
+    const sy = opts.scaleY || 1;
+    const fire = opts.fire;
+    for (let row = 0; row < sprite.length; row++) {
+      for (let col = 0; col < 16; col++) {
+        let c = flip ? sprite[row][15 - col] : sprite[row][col];
+        if (c === '.') continue;
+        let color = SPRITE_COL[c] || PAL.black;
+        if (fire && c === 'r' && row < 4) color = PAL.white;
+        drawRect(dx + col * sx, dy + row * sy, Math.ceil(sx), Math.ceil(sy), color);
+      }
+    }
+    if (opts.fat) {
+      drawRect(dx - 2, dy + 18 * sy, 6 * sx, 6 * sy, PAL.orange);
+      drawRect(dx + 12 * sx, dy + 18 * sy, 6 * sx, 6 * sy, PAL.orange);
+    }
+  }
+
+  function drawMario() {
+    if (player.invincible > 0 && Math.floor(player.invincible / 4) % 2 === 0) return;
+    const dx = player.x - cameraX - 2;
+    const dy = player.y - 2;
+    let sprite = MARIO_IDLE;
+    if (player.dead) sprite = MARIO_JUMP;
+    else if (!player.onGround) sprite = MARIO_JUMP;
+    else if (Math.abs(player.vx) > 0.2) sprite = Math.floor(player.anim) % 2 ? MARIO_RUN1 : MARIO_RUN2;
+
+    const opts = { scaleX: 1, scaleY: 1 };
+    if (player.powerLevel === 1) opts.scaleY = 2;
+    if (player.powerLevel === 2) { opts.scaleY = 2; opts.fire = true; }
+    if (player.powerLevel === 3) { opts.scaleX = 1.5; opts.scaleY = 2; opts.fat = true; }
+    if (player.squatting) { opts.scaleY *= 0.5; }
+    const shrinkRatio = player.h / baseHeight();
+    opts.scaleY *= shrinkRatio;
+
+    // Hide Mario once he's mostly inside the pipe
+    if (state === 'pipe' && pipeTimer > 40) return;
+
+    drawSprite(sprite, dx, player.squatting ? dy + 8 : dy, player.facing < 0, opts);
+  }
+
+  function drawPiranha(e) {
+    const px = e.x - cameraX;
+    const stemH = Math.max(0, e.h - 12);
+    drawRect(px + 8, e.y + 12, 8, stemH, PAL.greenDark);
+    if (e.h >= 12) {
+      // head
+      drawRect(px, e.y, e.w, 12, PAL.green);
+      drawRect(px + 2, e.y + 2, 4, 4, PAL.white);
+      drawRect(px + 18, e.y + 2, 4, 4, PAL.white);
+      drawRect(px + 3, e.y + 3, 2, 2, PAL.black);
+      drawRect(px + 19, e.y + 3, 2, 2, PAL.black);
+      // mouth
+      drawRect(px + 4, e.y + 7, 16, 4, PAL.red);
+      // teeth
+      drawRect(px + 5, e.y + 7, 2, 2, PAL.white);
+      drawRect(px + 9, e.y + 7, 2, 2, PAL.white);
+      drawRect(px + 13, e.y + 7, 2, 2, PAL.white);
+      drawRect(px + 17, e.y + 7, 2, 2, PAL.white);
+    }
+  }
+
+  function drawAnvil(e) {
+    const px = e.x - cameraX;
+    drawRect(px + 2, e.y, e.w - 4, 4, PAL.gray);
+    drawRect(px, e.y + 3, e.w, 6, PAL.black);
+    drawRect(px + 3, e.y + 9, e.w - 6, 3, PAL.gray);
+  }
+
+  function drawSpikes() {
+    spikes.forEach(s => {
+      const age = frame - s.born;
+      if (age < 20) return; // small warmup before visible
+      const px = s.tx * TW - cameraX;
+      const py = 13 * TH;
+      for (let i = 0; i < 4; i++) {
+        drawRect(px + i * 4, py - 6, 1, 6, PAL.white);
+        drawRect(px + i * 4 + 1, py - 4, 2, 4, PAL.gray);
+      }
+      drawRect(px, py - 1, TW, 1, PAL.gray);
+    });
+  }
+
+  function drawFireball(e) {
+    const px = e.x - cameraX;
+    drawRect(px, e.y, e.w, e.h, PAL.white);
+    drawRect(px + 2, e.y + 2, 4, 4, PAL.orange);
+  }
+
+  function drawGoomba(e) {
+    const px = e.x - cameraX;
+    const py = e.y;
+    if (e.dead) {
+      drawRect(px, py + 12, e.w, 4, PAL.brownDark);
+      return;
+    }
+    drawRect(px + 2, py + 4, 12, 10, PAL.brown);
+    drawRect(px, py + 10, 16, 6, PAL.brownDark);
+    drawRect(px + 3, py + 6, 3, 3, PAL.black);
+    drawRect(px + 10, py + 6, 3, 3, PAL.black);
+    drawRect(px + 1, py + 14, 4, 2, PAL.black);
+    drawRect(px + 11, py + 14, 4, 2, PAL.black);
+  }
+
+  function drawMushroom(e) {
+    const px = e.x - cameraX;
+    const py = e.y;
+    drawRect(px + 1, py + 8, 14, 8, PAL.orange);
+    drawRect(px, py, 16, 10, PAL.red);
+    drawRect(px + 2, py + 2, 4, 4, PAL.white);
+    drawRect(px + 10, py + 2, 4, 4, PAL.white);
+    drawRect(px + 6, py + 4, 4, 3, '#000000');
+  }
+
+  function drawHUD() {
+    ctx.fillStyle = PAL.white;
+    ctx.font = '8px "Courier New", monospace';
+    ctx.fillStyle = PAL.white;
+    ctx.fillText('BO', 16, 18);
+    ctx.fillText(String(score).padStart(6, '0'), 16, 28);
+    ctx.fillText('COINS', 96, 18);
+    ctx.fillText('×' + String(coins).padStart(2, '0'), 96, 28);
+    ctx.fillText('LEVEL', 180, 18);
+    ctx.fillText(String(currentLevel) + '/' + MAX_LEVEL, 188, 28);
+    ctx.fillText('TIME', 220, 18);
+    ctx.fillText(String(Math.max(0, timeLeft)), 228, 28);
+    ctx.fillStyle = PAL.white;
+    ctx.fillText('LIVES ×' + lives, 16, VH - 8);
+    const status = ['SMALL', 'SUPER', 'FIRE', 'FAT'][player.powerLevel] || '';
+    if (status && (state === 'play' || state === 'pipe')) ctx.fillText(status, 96, VH - 8);
+    if (state === 'play' || state === 'pipe') {
+      ctx.fillStyle = player.squatCount >= SQUAT_LIMIT - 2 ? PAL.red : PAL.white;
+      ctx.fillText('SQUATS ' + player.squatCount + '/' + SQUAT_LIMIT, 160, VH - 8);
+    }
+  }
+
+  function drawCloudShape(px, py) {
+    drawRect(px, py, 16, 8, PAL.white);
+    drawRect(px + 8, py - 4, 16, 8, PAL.white);
+    drawRect(px + 20, py, 12, 8, PAL.white);
+  }
+
+  function drawClouds() {
+    ctx.fillStyle = PAL.white;
+    clouds.forEach(c => {
+      if (c.fallen) return;
+      const px = c.x - cameraX;
+      if (px < -40 || px > VW + 40) return;
+      drawCloudShape(px, c.y);
+    });
+  }
+
+  // Hex outline (sci-fi grid cell, ~12px)
+  function drawFleur(cx, cy) {
+    drawRect(cx - 2, cy - 6, 5, 1, PAL.black);
+    drawRect(cx + 3, cy - 5, 1, 1, PAL.black);
+    drawRect(cx + 4, cy - 4, 1, 1, PAL.black);
+    drawRect(cx + 5, cy - 3, 1, 7, PAL.black);
+    drawRect(cx + 4, cy + 3, 1, 1, PAL.black);
+    drawRect(cx + 3, cy + 4, 1, 1, PAL.black);
+    drawRect(cx - 2, cy + 5, 5, 1, PAL.black);
+    drawRect(cx - 3, cy + 4, 1, 1, PAL.black);
+    drawRect(cx - 4, cy + 3, 1, 1, PAL.black);
+    drawRect(cx - 5, cy - 3, 1, 7, PAL.black);
+    drawRect(cx - 4, cy - 4, 1, 1, PAL.black);
+    drawRect(cx - 3, cy - 5, 1, 1, PAL.black);
+    // inner dot
+    drawRect(cx, cy, 1, 1, PAL.black);
+  }
+
+  // Crosshair / targeting reticle (~18px)
+  function drawScroll(cx, cy) {
+    // crosshair lines
+    drawRect(cx - 6, cy, 4, 1, PAL.black);
+    drawRect(cx + 3, cy, 4, 1, PAL.black);
+    drawRect(cx, cy - 6, 1, 4, PAL.black);
+    drawRect(cx, cy + 3, 1, 4, PAL.black);
+    // corner brackets
+    drawRect(cx - 8, cy - 6, 1, 3, PAL.black);
+    drawRect(cx - 8, cy - 6, 3, 1, PAL.black);
+    drawRect(cx + 6, cy - 6, 3, 1, PAL.black);
+    drawRect(cx + 8, cy - 6, 1, 3, PAL.black);
+    drawRect(cx - 8, cy + 4, 1, 3, PAL.black);
+    drawRect(cx - 8, cy + 6, 3, 1, PAL.black);
+    drawRect(cx + 6, cy + 6, 3, 1, PAL.black);
+    drawRect(cx + 8, cy + 4, 1, 3, PAL.black);
+  }
+
+  // Mod flower kept for evil bushes (now reused as a tiny rosette)
+  function drawModFlower(cx, cy, scale) {
+    drawFleur(cx, cy);
+  }
+
+  const BG_DECOR = [
+    { type: 'fleur',  x: 180, y: 80 },
+    { type: 'scroll', x: 320, y: 60 },
+    { type: 'fleur',  x: 480, y: 70 },
+    { type: 'scroll', x: 640, y: 50 },
+    { type: 'fleur',  x: 820, y: 80 },
+    { type: 'scroll', x: 980, y: 60 },
+    { type: 'fleur',  x: 1180, y: 70 },
+    { type: 'scroll', x: 1340, y: 50 },
+    { type: 'fleur',  x: 1500, y: 80 },
+    { type: 'scroll', x: 1680, y: 60 },
+    { type: 'fleur',  x: 1860, y: 70 },
+    { type: 'scroll', x: 2040, y: 50 },
+    { type: 'fleur',  x: 2220, y: 80 },
+    { type: 'scroll', x: 2400, y: 60 },
+    { type: 'fleur',  x: 2580, y: 70 },
+    { type: 'scroll', x: 2760, y: 50 },
+  ];
+
+  function drawBackgroundDecor() {
+    BG_DECOR.forEach(d => {
+      const px = d.x - cameraX * 0.3;
+      if (px < -24 || px > VW + 24) return;
+      if (d.type === 'fleur') drawFleur(px, d.y);
+      else drawScroll(px, d.y);
+    });
+  }
+
+  function drawStripeBand() {
+    // Op-art horizontal stripes near the bottom of the level (above ground)
+    for (let x = 0; x < VW; x += 8) {
+      const worldX = x + cameraX;
+      const phase = Math.floor(worldX / 8) % 2;
+      drawRect(x, 11 * TH + 14, 8, 1, phase ? PAL.black : PAL.sky);
+    }
+  }
+
+  // Satellite / antenna terminal (sci-fi shrub replacement) ~40px wide
+  function drawTopiary(px, by) {
+    // signal blip on top
+    drawRect(px + 19, by - 3, 2, 3, PAL.black);
+    drawRect(px + 18, by - 5, 4, 2, PAL.black);
+    // dish curve
+    drawRect(px + 8, by + 2, 24, 2, PAL.black);
+    drawRect(px + 6, by + 4, 4, 2, PAL.black);
+    drawRect(px + 30, by + 4, 4, 2, PAL.black);
+    drawRect(px + 10, by + 4, 20, 2, PAL.black);
+    // inner cavity (white = empty)
+    drawRect(px + 12, by + 6, 16, 2, PAL.sky);
+    // central pole
+    drawRect(px + 19, by + 6, 2, 8, PAL.black);
+    // support strut
+    drawRect(px + 17, by + 14, 6, 2, PAL.black);
+    drawRect(px + 13, by + 16, 14, 2, PAL.black);
+    // base panel with light dots
+    drawRect(px + 11, by + 18, 18, 2, PAL.black);
+    drawRect(px + 14, by + 19, 2, 1, PAL.sky);
+    drawRect(px + 19, by + 19, 2, 1, PAL.sky);
+    drawRect(px + 24, by + 19, 2, 1, PAL.sky);
+  }
+
+  function drawBushes() {
+    bushes.forEach(b => {
+      if (b.awake) return;
+      const px = b.x - cameraX;
+      if (px < -48 || px > VW + 48) return;
+      drawTopiary(px, b.y - 4);
+      if (b.evil) {
+        // tall warning mast + crossbar on hostile uplinks
+        drawRect(px + 19, b.y - 14, 2, 8, PAL.black);
+        drawRect(px + 14, b.y - 12, 12, 1, PAL.black);
+        drawRect(px + 16, b.y - 16, 8, 2, PAL.black);
+      }
+    });
+  }
+
+  function render() {
+    ctx.save();
+    ctx.scale(SCALE, SCALE);
+    ctx.fillStyle = PAL.sky;
+    ctx.fillRect(0, 0, VW, VH);
+
+    drawBackgroundDecor();
+    drawClouds();
+    drawBushes();
+
+    for (let y = 0; y < ROWS; y++)
+      for (let x = 0; x < LEVEL_W; x++)
+        drawTile(getTile(x, y), x, y);
+
+    entities.forEach(e => {
+      if (e.type === 'goomba') drawGoomba(e);
+      if (e.type === 'mushroom') drawMushroom(e);
+      if (e.type === 'fireball') drawFireball(e);
+      if (e.type === 'piranha') drawPiranha(e);
+      if (e.type === 'anvil') drawAnvil(e);
+    });
+    drawSpikes();
+
+    drawMario();
+
+    particles.forEach(p => {
+      if (p.type === 'coin') {
+        drawRect(p.x - cameraX, p.y, 8, 8, PAL.coin);
+      } else if (p.type === 'crumble') {
+        const px = p.x - cameraX;
+        const off = p.t * 0.5;
+        drawRect(px, p.y + off, 4, 4, PAL.brownDark);
+        drawRect(px + 12, p.y + off, 4, 4, PAL.brownDark);
+        drawRect(px + 4, p.y + 4 + off, 4, 4, PAL.brown);
+      } else if (p.type === 'text') {
+        ctx.fillStyle = '#000000';
+        ctx.font = '8px monospace';
+        ctx.fillText(p.text, p.x - cameraX, p.y);
+      }
+    });
+
+    drawHUD();
+
+    if (state === 'timeup') {
+      ctx.fillStyle = PAL.black;
+      ctx.font = '12px monospace';
+      ctx.fillText('TIME UP', VW / 2 - 30, VH / 2);
+    }
+
+    ctx.restore();
+  }
+
+  function loop() {
+    update();
+    render();
+    prevJump = keys['Space'] || keys['KeyZ'] || keys['ArrowUp'] || keys['KeyW'];
+    prevDown = keys['ArrowDown'] || keys['KeyS'];
+    requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+    if ((state === 'title') && (e.code === 'Enter' || e.code === 'Space')) startGame();
+  });
+  document.addEventListener('keyup', e => { keys[e.code] = false; });
+  overlay.addEventListener('click', () => { if (state === 'title') startGame(); });
+  shopBtn.addEventListener('click', e => { e.stopPropagation(); buyFromShop(); shopBtn.blur(); });
+
+  buildLevel(currentLevel);
+  spawnGoombas();
+  initClouds();
+  initPits();
+  initBushes();
+  initIce();
+  player.y = 13 * TH - player.h;
+  loop();
+  </script>
+</body>
+</html>

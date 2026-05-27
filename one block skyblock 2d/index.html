@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>One Block Skyblock 2D</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #6cb8ff; font-family: "Courier New", monospace; overflow: hidden; user-select: none; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; image-rendering: pixelated; cursor: crosshair; background: linear-gradient(#7ecbff, #c8e8ff); }
+  #help { position: fixed; top: 8px; right: 10px; color: #fff; text-shadow: 2px 2px 0 #000; font-size: 12px; text-align: right; line-height: 1.4; pointer-events: none; }
+  #toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; text-shadow: 3px 3px 0 #000; font-size: 32px; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+  #inv { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+  .slot { width: 52px; height: 64px; background: rgba(0,0,0,0.45); border: 2px solid #333; color: #fff; text-shadow: 1px 1px 0 #000; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+  .slot.sel { border-color: #fff; transform: scale(1.08); }
+  .slot .sw { width: 28px; height: 28px; margin-bottom: 4px; border: 1px solid #000; }
+  .slot .num { font-size: 9px; color: #ffd; }
+</style>
+</head>
+<body>
+<canvas id="c" width="900" height="600"></canvas>
+<div id="help">A/D move &middot; W or SPACE jump<br>L-CLICK mine / attack &middot; R-CLICK place<br>1-9 pick block from bar</div>
+<div id="toast"></div>
+<div id="inv"></div>
+<script>
+/* PLAN
+   one block skyblock 2d
+   - ONE magic block floats in the sky. mine it -> drops a block in your bag.
+   - the magic block instantly comes back as a NEW type (cycles through 9).
+   - place blocks (right-click) to build out from the magic block.
+   - mobs spawn now and then. left-click them when close to attack.
+   - fall in the void = respawn on the magic block, lose half your stuff.
+   controls: A/D move, W or SPACE jump, L-click mine/attack, R-click place, 1-9 pick block.
+*/
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const TS = 32;
+
+const world = new Map();
+const key = (x, y) => x + ',' + y;
+
+const BLOCKS = [
+  { id: 1, name: 'grass',   c: '#5cbf3e', dark: '#357a1f', top: '#7adb56' },
+  { id: 2, name: 'dirt',    c: '#9b6234', dark: '#5d3a18' },
+  { id: 3, name: 'wood',    c: '#b97a3c', dark: '#6f441b', rings: true },
+  { id: 4, name: 'leaves',  c: '#3aa54a', dark: '#1f6a2a' },
+  { id: 5, name: 'stone',   c: '#a8a8a8', dark: '#5e5e5e', speck: '#777' },
+  { id: 6, name: 'coal',    c: '#3a3a3a', dark: '#101010', speck: '#000' },
+  { id: 7, name: 'iron',    c: '#e0c9a8', dark: '#8e7a5f', speck: '#b7a17e' },
+  { id: 8, name: 'gold',    c: '#ffd83a', dark: '#a78900', speck: '#fff39a' },
+  { id: 9, name: 'diamond', c: '#7ef0e0', dark: '#3aa9a0', speck: '#caffff' },
+];
+const B = id => BLOCKS.find(b => b.id === id);
+const nextType = t => BLOCKS[(BLOCKS.findIndex(b => b.id === t) + 1) % BLOCKS.length].id;
+
+const SRC = { x: 0, y: 0, type: 1 };
+world.set(key(SRC.x, SRC.y), SRC.type);
+
+const player = {
+  x: SRC.x * TS + TS / 2,
+  y: SRC.y * TS - 2,
+  vx: 0, vy: 0,
+  w: 18, h: 26,
+  onGround: false,
+  hp: 10, maxHp: 10,
+  facing: 1,
+  attackT: 0,
+  hurtT: 0,
+};
+
+const inv = new Map();
+let selected = 0;
+let invDirty = true;
+
+const mobs = [];
+let mobTimer = 8;
+
+const cam = { x: SRC.x * TS - W / 2 + TS / 2, y: SRC.y * TS - H * 0.6 };
+
+const keys = {};
+const mouse = { x: W / 2, y: H / 2, down: false, justDown: false, rightJustDown: false };
+
+addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.code === 'Space') { keys[' '] = true; e.preventDefault(); }
+  if (e.key >= '1' && e.key <= '9') {
+    const n = +e.key;
+    const arr = [...inv.keys()];
+    if (arr[n - 1] !== undefined) { selected = arr[n - 1]; invDirty = true; }
+  }
+});
+addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+  if (e.code === 'Space') keys[' '] = false;
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouse.x = (e.clientX - r.left) * (canvas.width / r.width);
+  mouse.y = (e.clientY - r.top) * (canvas.height / r.height);
+});
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 0) { mouse.justDown = true; mouse.down = true; }
+  if (e.button === 2) { mouse.rightJustDown = true; }
+});
+canvas.addEventListener('mouseup', e => { if (e.button === 0) mouse.down = false; });
+
+function solidAt(tx, ty) { return world.has(key(tx, ty)); }
+function tileAt(tx, ty) { return world.get(key(tx, ty)); }
+
+function moveEntity(e, dt) {
+  e.x += e.vx * dt;
+  resolveAxis(e, 'x');
+  e.y += e.vy * dt;
+  e.onGround = false;
+  resolveAxis(e, 'y');
+}
+function resolveAxis(e, axis) {
+  const left = e.x - e.w / 2, right = e.x + e.w / 2;
+  const top = e.y - e.h, bot = e.y;
+  const tx0 = Math.floor(left / TS), tx1 = Math.floor((right - 0.01) / TS);
+  const ty0 = Math.floor(top / TS), ty1 = Math.floor((bot - 0.01) / TS);
+  for (let tx = tx0; tx <= tx1; tx++) {
+    for (let ty = ty0; ty <= ty1; ty++) {
+      if (!solidAt(tx, ty)) continue;
+      const bx = tx * TS, by = ty * TS;
+      if (axis === 'x') {
+        if (e.vx > 0) e.x = bx - e.w / 2 - 0.001;
+        else if (e.vx < 0) e.x = bx + TS + e.w / 2 + 0.001;
+        e.vx = 0;
+      } else {
+        if (e.vy > 0) { e.y = by - 0.001; e.vy = 0; e.onGround = true; }
+        else if (e.vy < 0) { e.y = by + TS + e.h + 0.001; e.vy = 0; }
+      }
+    }
+  }
+}
+
+function mouseWorldTile() {
+  const wx = mouse.x + cam.x;
+  const wy = mouse.y + cam.y;
+  return { tx: Math.floor(wx / TS), ty: Math.floor(wy / TS), wx, wy };
+}
+function distToTile(tx, ty) {
+  const cx = tx * TS + TS / 2, cy = ty * TS + TS / 2;
+  const px = player.x, py = player.y - player.h / 2;
+  return Math.hypot(cx - px, cy - py);
+}
+
+function addInv(id, n = 1) {
+  inv.set(id, (inv.get(id) || 0) + n);
+  if (!selected) selected = id;
+  invDirty = true;
+}
+function takeInv(id, n = 1) {
+  const c = inv.get(id) || 0;
+  if (c < n) return false;
+  if (c === n) inv.delete(id); else inv.set(id, c - n);
+  if (selected === id && !inv.has(id)) {
+    selected = [...inv.keys()][0] || 0;
+  }
+  invDirty = true;
+  return true;
+}
+
+function spawnMob() {
+  const side = Math.random() < 0.5 ? -1 : 1;
+  mobs.push({
+    x: player.x + side * (TS * 7),
+    y: player.y - 80,
+    vx: 0, vy: 0,
+    w: 22, h: 28,
+    hp: 3, maxHp: 3,
+    onGround: false,
+    attackT: 0,
+    flash: 0,
+  });
+}
+
+let toastT = 0;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = 1;
+  toastT = 1.4;
+}
+
+function update(dt) {
+  const left = keys['a'] || keys['arrowleft'];
+  const right = keys['d'] || keys['arrowright'];
+  const jump = keys['w'] || keys['arrowup'] || keys[' '];
+  const speed = 180;
+  if (left) { player.vx = -speed; player.facing = -1; }
+  else if (right) { player.vx = speed; player.facing = 1; }
+  else player.vx = 0;
+  if (jump && player.onGround) { player.vy = -380; player.onGround = false; }
+  player.vy += 1100 * dt;
+  if (player.vy > 700) player.vy = 700;
+  moveEntity(player, dt);
+
+  if (player.attackT > 0) player.attackT -= dt;
+  if (player.hurtT > 0) player.hurtT -= dt;
+
+  if (player.y > 800) {
+    player.x = SRC.x * TS + TS / 2;
+    player.y = SRC.y * TS - 2;
+    player.vx = 0; player.vy = 0;
+    player.hp -= 3;
+    for (const [id, c] of [...inv]) {
+      const lose = Math.ceil(c / 2);
+      if (lose >= c) inv.delete(id); else inv.set(id, c - lose);
+    }
+    if (!inv.has(selected)) selected = [...inv.keys()][0] || 0;
+    invDirty = true;
+    toast('OUCH! the void!');
+  }
+  if (player.hp <= 0) {
+    player.hp = player.maxHp;
+    inv.clear();
+    selected = 0;
+    player.x = SRC.x * TS + TS / 2;
+    player.y = SRC.y * TS - 2;
+    invDirty = true;
+    toast('YOU DIED');
+  }
+
+  if (mouse.justDown) {
+    mouse.justDown = false;
+    const wx = mouse.x + cam.x, wy = mouse.y + cam.y;
+    let hit = false;
+    for (const m of mobs) {
+      if (wx >= m.x - m.w / 2 && wx <= m.x + m.w / 2 && wy >= m.y - m.h && wy <= m.y) {
+        const d = Math.hypot(m.x - player.x, m.y - (player.y - player.h / 2));
+        if (d < TS * 2.4) {
+          m.hp -= 1; m.flash = 0.2;
+          m.vx += (m.x > player.x ? 1 : -1) * 150;
+          m.vy = -180;
+          player.attackT = 0.18;
+          hit = true;
+        }
+      }
+    }
+    if (!hit) {
+      const { tx, ty } = mouseWorldTile();
+      if (solidAt(tx, ty) && distToTile(tx, ty) <= TS * 4) {
+        const t = tileAt(tx, ty);
+        if (tx === SRC.x && ty === SRC.y) {
+          addInv(t, 1);
+          SRC.type = nextType(SRC.type);
+          world.set(key(SRC.x, SRC.y), SRC.type);
+          spawnBreakParticles(tx, ty, t);
+        } else {
+          addInv(t, 1);
+          world.delete(key(tx, ty));
+          spawnBreakParticles(tx, ty, t);
+        }
+        player.attackT = 0.18;
+      }
+    }
+  }
+  if (mouse.rightJustDown) {
+    mouse.rightJustDown = false;
+    if (selected && inv.has(selected)) {
+      const { tx, ty } = mouseWorldTile();
+      if (!solidAt(tx, ty) && distToTile(tx, ty) <= TS * 4) {
+        const pleft = player.x - player.w / 2, pright = player.x + player.w / 2;
+        const ptop = player.y - player.h, pbot = player.y;
+        const bx = tx * TS, by = ty * TS;
+        const overlap = !(bx + TS <= pleft || bx >= pright || by + TS <= ptop || by >= pbot);
+        if (!overlap) {
+          world.set(key(tx, ty), selected);
+          takeInv(selected, 1);
+        }
+      }
+    }
+  }
+
+  mobTimer -= dt;
+  if (mobTimer <= 0 && mobs.length < 4) {
+    spawnMob();
+    mobTimer = 10 + Math.random() * 10;
+  }
+  for (let i = mobs.length - 1; i >= 0; i--) {
+    const m = mobs[i];
+    const dir = player.x < m.x ? -1 : 1;
+    if (Math.abs(m.x - player.x) > 4) m.vx = dir * 90;
+    else m.vx = 0;
+    if (m.onGround) {
+      const front = Math.floor((m.x + dir * (m.w / 2 + 4)) / TS);
+      const feet = Math.floor((m.y - 1) / TS);
+      if (solidAt(front, feet)) m.vy = -340;
+    }
+    m.vy += 1100 * dt;
+    moveEntity(m, dt);
+    if (m.flash > 0) m.flash -= dt;
+    m.attackT -= dt;
+    const overlap = Math.abs(m.x - player.x) < (m.w / 2 + player.w / 2) &&
+                    m.y > player.y - player.h && m.y - m.h < player.y;
+    if (overlap && m.attackT <= 0 && player.hurtT <= 0) {
+      player.hp -= 1;
+      player.hurtT = 0.6;
+      m.attackT = 0.8;
+      player.vx = (m.x < player.x ? 1 : -1) * 220;
+      player.vy = -240;
+    }
+    if (m.hp <= 0) { spawnBreakParticles(Math.floor(m.x / TS), Math.floor((m.y - m.h / 2) / TS), 2); mobs.splice(i, 1); continue; }
+    if (m.y > 1000) { mobs.splice(i, 1); continue; }
+  }
+
+  updateParticles(dt);
+
+  const camTargetX = player.x - W / 2;
+  const camTargetY = player.y - H * 0.6;
+  cam.x += (camTargetX - cam.x) * Math.min(1, dt * 5);
+  cam.y += (camTargetY - cam.y) * Math.min(1, dt * 5);
+
+  if (toastT > 0) {
+    toastT -= dt;
+    if (toastT <= 0) document.getElementById('toast').style.opacity = 0;
+  }
+}
+
+const particles = [];
+function spawnBreakParticles(tx, ty, type) {
+  const b = B(type) || { c: '#aaa', dark: '#444' };
+  for (let i = 0; i < 8; i++) {
+    particles.push({
+      x: tx * TS + TS / 2 + (Math.random() - 0.5) * TS,
+      y: ty * TS + TS / 2 + (Math.random() - 0.5) * TS,
+      vx: (Math.random() - 0.5) * 180,
+      vy: -Math.random() * 220 - 40,
+      life: 0.6 + Math.random() * 0.4,
+      size: 3 + Math.random() * 3,
+      c: b.c,
+    });
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.vy += 700 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawBlock(b, sx, sy) {
+  ctx.fillStyle = b.c;
+  ctx.fillRect(sx, sy, TS, TS);
+  ctx.fillStyle = b.dark;
+  ctx.fillRect(sx, sy + TS - 4, TS, 4);
+  ctx.fillRect(sx + TS - 4, sy, 4, TS);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fillRect(sx, sy, TS, 3);
+  ctx.fillRect(sx, sy, 3, TS);
+  if (b.speck) {
+    ctx.fillStyle = b.speck;
+    ctx.fillRect(sx + 6, sy + 8, 4, 3);
+    ctx.fillRect(sx + 20, sy + 18, 5, 3);
+    ctx.fillRect(sx + 12, sy + 22, 3, 3);
+  }
+  if (b.top) {
+    ctx.fillStyle = b.top;
+    ctx.fillRect(sx, sy, TS, 5);
+    ctx.fillStyle = b.c;
+    ctx.fillRect(sx + 4, sy + 4, 3, 2);
+    ctx.fillRect(sx + 18, sy + 3, 3, 2);
+  }
+  if (b.rings) {
+    ctx.strokeStyle = b.dark;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(sx + TS / 2, sy + TS / 2, 8, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(sx + TS / 2, sy + TS / 2, 4, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+function drawClouds() {
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  const t = performance.now() * 0.00002;
+  for (let i = 0; i < 5; i++) {
+    const cx = (((i * 230 + t * 1000) % (W + 250)) + (W + 250)) % (W + 250) - 125;
+    const cy = 50 + (i * 47) % 200;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 55, 18, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 25, cy - 6, 32, 14, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  drawClouds();
+
+  const tx0 = Math.floor(cam.x / TS) - 1;
+  const ty0 = Math.floor(cam.y / TS) - 1;
+  const tx1 = Math.ceil((cam.x + W) / TS) + 1;
+  const ty1 = Math.ceil((cam.y + H) / TS) + 1;
+  for (let ty = ty0; ty <= ty1; ty++) {
+    for (let tx = tx0; tx <= tx1; tx++) {
+      const t = tileAt(tx, ty);
+      if (!t) continue;
+      const sx = tx * TS - cam.x, sy = ty * TS - cam.y;
+      drawBlock(B(t), sx, sy);
+      if (tx === SRC.x && ty === SRC.y) {
+        const a = 0.4 + 0.4 * Math.sin(performance.now() * 0.005);
+        ctx.strokeStyle = 'rgba(255,255,255,' + a + ')';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx + 1, sy + 1, TS - 2, TS - 2);
+      }
+    }
+  }
+
+  const { tx, ty } = mouseWorldTile();
+  if (distToTile(tx, ty) <= TS * 4) {
+    const sx = tx * TS - cam.x, sy = ty * TS - cam.y;
+    ctx.strokeStyle = solidAt(tx, ty) ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx, sy, TS, TS);
+  }
+
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2));
+    ctx.fillStyle = p.c;
+    ctx.fillRect(p.x - cam.x, p.y - cam.y, p.size, p.size);
+    ctx.globalAlpha = 1;
+  }
+
+  for (const m of mobs) {
+    const sx = m.x - cam.x, sy = m.y - cam.y;
+    ctx.fillStyle = m.flash > 0 ? '#fff' : '#5a3b1a';
+    ctx.fillRect(sx - m.w / 2, sy - m.h, m.w, m.h);
+    ctx.fillStyle = '#3a2410';
+    ctx.fillRect(sx - m.w / 2, sy - 6, m.w, 6);
+    ctx.fillStyle = '#ff3838';
+    ctx.fillRect(sx - 6, sy - m.h + 7, 4, 4);
+    ctx.fillRect(sx + 2, sy - m.h + 7, 4, 4);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(sx - 5, sy - m.h + 8, 1, 1);
+    ctx.fillRect(sx + 3, sy - m.h + 8, 1, 1);
+    if (m.hp < m.maxHp) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(sx - m.w / 2, sy - m.h - 7, m.w, 4);
+      ctx.fillStyle = '#ff4040';
+      ctx.fillRect(sx - m.w / 2, sy - m.h - 7, m.w * (m.hp / m.maxHp), 4);
+    }
+  }
+
+  const psx = player.x - cam.x, psy = player.y - cam.y;
+  ctx.fillStyle = player.hurtT > 0 ? '#fff' : '#3aa6ff';
+  ctx.fillRect(psx - player.w / 2, psy - player.h, player.w, player.h);
+  ctx.fillStyle = '#1976d2';
+  ctx.fillRect(psx - player.w / 2, psy - 8, player.w, 8);
+  const eyeOff = player.facing > 0 ? 2 : -2;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(psx - 6 + eyeOff, psy - player.h + 6, 4, 4);
+  ctx.fillRect(psx + 2 + eyeOff, psy - player.h + 6, 4, 4);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(psx - 5 + eyeOff, psy - player.h + 7, 2, 2);
+  ctx.fillRect(psx + 3 + eyeOff, psy - player.h + 7, 2, 2);
+  if (player.attackT > 0) {
+    ctx.fillStyle = '#ffd';
+    const ax = psx + player.facing * (player.w / 2 + 1);
+    ctx.fillRect(ax, psy - player.h + 14, 9, 5);
+  }
+
+  for (let i = 0; i < player.maxHp; i++) {
+    const hx = 10 + i * 16, hy = 10;
+    ctx.fillStyle = i < player.hp ? '#e53935' : 'rgba(0,0,0,0.45)';
+    ctx.fillRect(hx, hy, 13, 13);
+    ctx.fillStyle = i < player.hp ? '#ff7e7e' : 'rgba(255,255,255,0.2)';
+    ctx.fillRect(hx + 2, hy + 2, 3, 3);
+  }
+}
+
+function renderInv() {
+  if (!invDirty) return;
+  invDirty = false;
+  const el = document.getElementById('inv');
+  el.innerHTML = '';
+  const arr = [...inv.entries()];
+  if (arr.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'slot';
+    d.style.width = '160px';
+    d.style.color = '#ffd';
+    d.innerHTML = 'mine the<br>shiny block!';
+    el.appendChild(d);
+    return;
+  }
+  arr.forEach(([id, c], i) => {
+    const b = B(id);
+    const d = document.createElement('div');
+    d.className = 'slot' + (id === selected ? ' sel' : '');
+    d.innerHTML = `<div class="num">${i + 1}</div><div class="sw" style="background:${b.c};border-color:${b.dark}"></div><div>${b.name}</div><div>x${c}</div>`;
+    d.addEventListener('mousedown', e => { e.preventDefault(); selected = id; invDirty = true; });
+    el.appendChild(d);
+  });
+}
+
+let last = 0;
+function frame(t) {
+  const dt = Math.min((t - last) / 1000, 0.05);
+  last = t;
+  update(dt);
+  render();
+  renderInv();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

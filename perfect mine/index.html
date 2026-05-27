@@ -7,13 +7,17 @@
   <title>Perfect Mine</title>
   <style>
     :root {
-      --bg: #120e0b;
-      --panel: #251a14;
-      --text: #f6e7d5;
-      --muted: #c8aa8a;
+      --bg: #2a1810;
+      --panel: #3a2414;
+      --text: #fff4dc;
+      --muted: #d4b890;
       --good: #79f08e;
       --bad: #ff7373;
       --warn: #ffd56b;
+      --wood-dark: #2a180a;
+      --wood-mid: #5a3820;
+      --wood-light: #8b5a2b;
+      --wood-hi: #b8854a;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -23,14 +27,29 @@
     }
     body {
       font-family: Verdana, sans-serif;
-      background: radial-gradient(circle at top, #3d2a1e 0%, #21150f 45%, var(--bg) 100%);
       color: var(--text);
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0,
+          transparent 70px,
+          rgba(0, 0, 0, 0.55) 70px,
+          rgba(0, 0, 0, 0.55) 72px
+        ),
+        repeating-linear-gradient(180deg,
+          rgba(255, 220, 170, 0.04) 0,
+          rgba(255, 220, 170, 0.04) 2px,
+          transparent 2px,
+          transparent 7px,
+          rgba(0, 0, 0, 0.18) 7px,
+          rgba(0, 0, 0, 0.18) 8px
+        ),
+        linear-gradient(180deg, #6b4423 0%, #4a2c18 100%);
     }
     .app {
       width: 100%;
       height: 100vh;
       max-width: none;
-      background: var(--panel);
+      background: transparent;
       border: none;
       border-radius: 0;
       padding: 8px;
@@ -46,6 +65,20 @@
       justify-content: center;
       flex-shrink: 0;
       position: relative;
+    }
+    .dur-warn {
+      margin-left: 16px;
+      color: #ff5252;
+      font-weight: bold;
+      font-size: 1.05rem;
+      text-shadow: 0 0 6px rgba(255, 60, 60, 0.7);
+      display: none;
+      animation: durpulse 0.7s ease-in-out infinite alternate;
+    }
+    .dur-warn.show { display: inline; }
+    @keyframes durpulse {
+      from { opacity: 0.6; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.08); }
     }
     .main-layout {
       flex: 1;
@@ -71,10 +104,83 @@
       font-size: 0.78rem;
       z-index: 5;
     }
+    #oresBtn {
+      position: absolute;
+      right: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 5px 9px;
+      font-size: 0.78rem;
+      z-index: 5;
+    }
+    .ore-legend {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1e140f;
+      border: 3px solid #b8852b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-height: 78vh;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+      min-width: 260px;
+    }
+    .ore-legend.show { display: block; }
+    .ore-legend h2 {
+      margin: 0 0 10px 0;
+      color: #ffd56b;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+    .ore-legend .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 4px;
+      border-bottom: 1px solid #3a2a1c;
+      font-size: 0.85rem;
+    }
+    .ore-legend .row:last-child { border-bottom: none; }
+    .ore-legend .sw {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #000;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .ore-legend .name { flex: 1; font-weight: bold; }
+    .ore-legend .val { color: #79f08e; }
+    .ore-legend .hard { color: #c8aa8a; font-size: 0.75rem; margin-left: 8px; }
+    .ore-legend .close {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .ore-legend .backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: -1;
+    }
     h1 {
       margin: 0;
       text-align: center;
-      font-size: 1.35rem;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      color: #ffe8b8;
+      text-shadow:
+        2px 2px 0 #2a180a,
+        0 0 10px rgba(0, 0, 0, 0.7);
+      font-family: Verdana, sans-serif;
     }
     .hud {
       display: flex;
@@ -82,23 +188,64 @@
       gap: 8px;
     }
     .card {
-      border: 2px solid #7c5638;
-      border-radius: 10px;
-      padding: 7px 9px;
-      background: #1e140f;
+      border: 3px solid var(--wood-dark);
+      border-radius: 6px;
+      padding: 9px 12px;
       font-size: 0.86rem;
+      background:
+        repeating-linear-gradient(180deg,
+          rgba(255, 220, 170, 0.07) 0,
+          rgba(255, 220, 170, 0.07) 2px,
+          transparent 2px,
+          transparent 7px,
+          rgba(0, 0, 0, 0.25) 7px,
+          rgba(0, 0, 0, 0.25) 8px
+        ),
+        linear-gradient(180deg, #7a4f2a 0%, #4a2c18 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.3),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.4),
+        0 3px 6px rgba(0, 0, 0, 0.5);
+      position: relative;
+      color: var(--text);
+      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
     }
+    .card::before, .card::after {
+      content: "";
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #6b4423, #1a0c04 75%);
+      box-shadow:
+        inset 0 0 2px rgba(0, 0, 0, 0.9),
+        0 1px 1px rgba(255, 220, 170, 0.2);
+      pointer-events: none;
+    }
+    .card::before { top: 5px; left: 5px; }
+    .card::after { top: 5px; right: 5px; }
     .muted { color: var(--muted); }
     .game {
       flex: 1;
       min-width: 0;
       min-height: 0;
-      border: 3px solid #7a5637;
-      border-radius: 10px;
+      border: 10px solid transparent;
+      border-radius: 8px;
       overflow: hidden;
-      background: #0e0b09;
+      background:
+        linear-gradient(#0e0b09, #0e0b09) padding-box,
+        repeating-linear-gradient(90deg,
+          #7a4f2a 0px,
+          #5a3820 14px,
+          #3a2614 22px,
+          #6b4423 36px
+        ) border-box;
       position: relative;
       display: flex;
+      box-shadow:
+        inset 0 0 0 2px var(--wood-dark),
+        0 0 0 3px var(--wood-dark),
+        0 6px 14px rgba(0, 0, 0, 0.6);
     }
     canvas {
       width: 100%;
@@ -110,27 +257,259 @@
     .bar {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      gap: 7px;
       align-items: stretch;
     }
     .bar button { width: 100%; }
     #msg {
       grid-column: 1 / -1;
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
     }
     button {
-      border: 2px solid #8d6545;
-      background: #2a1c15;
+      border: 2px solid var(--wood-dark);
       color: var(--text);
-      border-radius: 8px;
-      padding: 6px 10px;
+      border-radius: 5px;
+      padding: 7px 11px;
       cursor: pointer;
       font-weight: 700;
       font-size: 0.82rem;
+      font-family: Verdana, sans-serif;
+      background:
+        repeating-linear-gradient(180deg,
+          rgba(255, 220, 170, 0.10) 0,
+          rgba(255, 220, 170, 0.10) 2px,
+          transparent 2px,
+          transparent 6px,
+          rgba(0, 0, 0, 0.20) 6px,
+          rgba(0, 0, 0, 0.20) 7px
+        ),
+        linear-gradient(180deg, #a06838 0%, #6b4423 50%, #4a2c18 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.4),
+        inset 0 -3px 4px rgba(0, 0, 0, 0.35),
+        0 2px 3px rgba(0, 0, 0, 0.5);
+      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+      transition: transform 0.08s, box-shadow 0.12s, filter 0.12s;
     }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:hover:not(:disabled) {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.5),
+        inset 0 -3px 4px rgba(0, 0, 0, 0.35),
+        0 3px 5px rgba(0, 0, 0, 0.55);
+    }
+    button:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        inset 0 -1px 0 rgba(255, 220, 170, 0.15),
+        0 1px 1px rgba(0, 0, 0, 0.4);
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.4); }
     #msg { min-height: 1.2em; color: var(--warn); font-weight: 700; }
+    .newspaper-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .newspaper-modal.show { display: flex; }
+    .newspaper {
+      background: #f4ecd2;
+      background-image:
+        radial-gradient(ellipse 60px 30px at 15% 20%, rgba(120, 80, 40, 0.12), transparent),
+        radial-gradient(ellipse 90px 40px at 80% 60%, rgba(120, 80, 40, 0.10), transparent),
+        radial-gradient(ellipse 50px 30px at 30% 85%, rgba(140, 100, 50, 0.10), transparent),
+        radial-gradient(ellipse 70px 35px at 70% 10%, rgba(120, 80, 40, 0.08), transparent),
+        linear-gradient(180deg, #f6eed6 0%, #ede3c2 100%);
+      color: #2a1810;
+      max-width: 920px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 28px 36px 24px;
+      border: 2px solid #5a3820;
+      box-shadow:
+        0 0 0 4px #f4ecd2,
+        0 0 0 6px #2a1810,
+        0 20px 50px rgba(0, 0, 0, 0.7);
+      font-family: "Georgia", "Times New Roman", serif;
+      position: relative;
+    }
+    .newspaper-masthead {
+      text-align: center;
+      border-bottom: 4px double #2a1810;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .masthead-flair {
+      font-size: 0.75rem;
+      letter-spacing: 4px;
+      color: #5a3820;
+      margin-bottom: 4px;
+    }
+    .masthead-title {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      font-family: "Georgia", "Times New Roman", serif;
+      line-height: 1;
+      margin: 4px 0;
+      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+    }
+    .masthead-info {
+      display: flex;
+      justify-content: space-between;
+      font-style: italic;
+      font-size: 0.78rem;
+      color: #3a2618;
+      border-top: 1px solid #2a1810;
+      padding-top: 6px;
+      margin-top: 6px;
+    }
+    .newspaper-headline {
+      font-size: 2.3rem;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 1px;
+      line-height: 1.05;
+      margin: 8px 0 6px;
+      text-transform: uppercase;
+      font-family: "Georgia", "Times New Roman", serif;
+    }
+    .newspaper-subhead {
+      text-align: center;
+      font-style: italic;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #2a1810;
+      color: #3a2618;
+      line-height: 1.4;
+    }
+    .newspaper-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+      column-rule: 1px solid #5a3820;
+      text-align: justify;
+    }
+    .newspaper-col {
+      font-size: 0.84rem;
+      line-height: 1.45;
+      border-right: 1px solid #8a6a3a;
+      padding-right: 18px;
+    }
+    .newspaper-col:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+    .newspaper-col h3 {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin: 10px 0 6px;
+      text-align: center;
+      border-bottom: 1px solid #2a1810;
+      padding-bottom: 3px;
+    }
+    .newspaper-col h3:first-child { margin-top: 0; }
+    .newspaper-col p { margin: 0 0 8px; }
+    .newspaper-col ul {
+      margin: 0 0 10px;
+      padding-left: 18px;
+    }
+    .newspaper-col li { margin-bottom: 3px; }
+    .newspaper-col .dropcap::first-letter {
+      font-size: 2.4em;
+      font-weight: 900;
+      float: left;
+      line-height: 0.85;
+      margin: 4px 6px 0 0;
+      font-family: "Georgia", serif;
+    }
+    .newspaper-col .signed {
+      text-align: right;
+      font-style: italic;
+      font-size: 0.78rem;
+    }
+    .newspaper-footer {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 4px double #2a1810;
+      text-align: center;
+      font-style: italic;
+    }
+    .newspaper-footer p {
+      margin: 0 0 12px;
+      color: #3a2618;
+    }
+    .newspaper-small {
+      font-size: 0.72rem !important;
+      color: #6a4a2a !important;
+      font-style: italic;
+    }
+    .newspaper-version {
+      font-size: 0.85rem !important;
+      color: #5a3820 !important;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      margin-top: 8px !important;
+    }
+    .newspaper-version-buttons {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .version-btn {
+      background: linear-gradient(180deg, #6b4423 0%, #3a2410 100%);
+      color: #f4ecd2;
+      border: 2px solid #2a1810;
+      padding: 12px 22px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: "Georgia", serif;
+      letter-spacing: 0.5px;
+      line-height: 1.3;
+      min-width: 180px;
+    }
+    .version-btn:hover {
+      filter: brightness(1.2);
+    }
+    .version-tag {
+      font-size: 0.75rem;
+      font-weight: normal;
+      font-style: italic;
+      color: #e8d5a8;
+    }
+    @media (max-width: 720px) {
+      .newspaper { padding: 16px 18px; }
+      .masthead-title { font-size: 2rem; }
+      .newspaper-headline { font-size: 1.5rem; }
+      .newspaper-columns { grid-template-columns: 1fr; }
+      .newspaper-col {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid #8a6a3a;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+      }
+      .newspaper-col:last-child { border-bottom: none; }
+    }
+
     .respawn-modal {
       display: none;
       position: fixed;
@@ -206,8 +585,15 @@
   <main class="app">
     <header class="app-header">
       <h1>Perfect Mine</h1>
+      <span id="durabilityWarning" class="dur-warn"></span>
+      <button id="oresBtn">Ores</button>
       <button id="tipsBtn">Tips</button>
     </header>
+    <div id="oreLegend" class="ore-legend">
+      <button class="close" id="oreLegendClose">&times;</button>
+      <h2>Ore Guide</h2>
+      <div id="oreLegendList"></div>
+    </div>
 
     <div class="main-layout">
       <aside class="sidebar">
@@ -226,6 +612,7 @@
             <div><strong>Inventory Value:</strong> $<span id="bag">0</span></div>
             <div><strong>Workers:</strong> <span id="workerCount">0</span></div>
             <div><strong>Water Buckets:</strong> <span id="bucketCount">0</span></div>
+            <div><strong>Candles:</strong> <span id="candleCount">0</span> <span class="muted">(press C to place)</span></div>
             <div><strong>Pending Worker X:</strong> <span id="workerLane">-</span></div>
             <div class="muted" id="shopHint">Go to the shop (top 3 rows, center) to bank and buy.</div>
           </div>
@@ -233,16 +620,18 @@
 
         <div class="bar">
           <button id="upgradeBtn">Upgrade Pickaxe ($40)</button>
+          <button id="buyQuadBtn">Buy Quad Pick ($2000)</button>
+          <button id="buyOctoBtn">Buy Octo Pick ($5000)</button>
+          <button id="buyAutoBtn">Buy Auto Digger ($10000)</button>
           <button id="healBtn">Heal 25 HP ($20)</button>
-          <button id="repairBtn">Repair Pickaxe ($0)</button>
-          <button id="workerLaneLeftBtn">-</button>
-          <button id="workerLaneRightBtn">+</button>
           <button id="workerBtn">Buy Worker ($0)</button>
           <button id="heavyWorkerBtn">Buy Mega Worker ($0)</button>
           <button id="buyBucketBtn">Buy Water Bucket ($500)</button>
           <button id="useBucketBtn">Use Water Bucket</button>
+          <button id="buyCandleBtn">Buy Candle ($5)</button>
           <button id="equipWorkerBtn">Equip Worker</button>
           <button id="hireBtn">Hire</button>
+          <button id="tpTopBtn">Teleport to Top</button>
           <span id="msg"></span>
         </div>
       </aside>
@@ -289,6 +678,146 @@
     </div>
   </div>
 
+  <div id="homelessModal" class="respawn-modal">
+    <div class="respawn-panel">
+      <p><strong>"Hey, can you give me some food?"</strong></p>
+      <p class="muted-small">Puck, a scruffy miner in a hole, looks up at you with hungry eyes.<br>Cost: $500</p>
+      <div class="respawn-actions">
+        <button id="homelessYesBtn">Yes</button>
+        <button id="homelessNoBtn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="newspaperModal" class="newspaper-modal">
+    <div class="newspaper">
+      <div class="newspaper-masthead">
+        <div class="masthead-flair">★&nbsp;&nbsp;&nbsp;EST. 1849&nbsp;&nbsp;&nbsp;★</div>
+        <div class="masthead-title">THE DAILY PICKAXE</div>
+        <div class="masthead-info">
+          <span>Vol. CXII &mdash; No. 47</span>
+          <span>"All The News That's Fit To Mine"</span>
+          <span>Price: One Copper</span>
+        </div>
+      </div>
+
+      <div class="newspaper-headline">HERO NEEDED TO KILL THE MINER KING</div>
+      <div class="newspaper-subhead">
+        Brave Volunteer Sought to Descend Into the Cursed Mine and End the Tyranny of the Purple Beast Below
+      </div>
+
+      <div class="newspaper-columns">
+        <div class="newspaper-col">
+          <h3>TOWN IN PERIL</h3>
+          <p class="dropcap">For seven long years the cursed mine outside our humble village has been ruled by a horrible monster known only as the MINER KING. No miner who has ventured into his domain has ever returned, and our once-rich tunnels lie silent and abandoned.</p>
+          <p>Gold, silver, ruby, emerald, diamond, sapphire, obsidian, mythril, titanium, uranium, plasma &mdash; all of it remains untouched in the deep layers, just waiting for a brave soul to claim it.</p>
+          <p>Local elders say the King first appeared after the great cave-in of '42. None know where he came from, but all agree: he must be stopped.</p>
+          <p>The town of Pebblebrook, once the proudest mining settlement in the kingdom, now languishes in poverty. The market square stands empty. The forge has gone cold. The famous Pickaxe Festival has been cancelled for the seventh year running. Children grow up never having seen a single ruby, much less held one.</p>
+          <h3>THE LAYOUT, AS WE KNOW IT</h3>
+          <p>Above ground stands SHOP STREET, where the kindly Shopkeeper sells pickaxes, healing tonics, water buckets, and hires loyal workers.</p>
+          <p>Below the surface is the rich ORE LAYER, with shallow dirt giving way to deeper, more valuable veins. Beware: streams of LAVA have been spotted in the deepest tunnels!</p>
+          <p>Further down lies the dreaded MAZE, a twisting labyrinth of stone passages. Get through it, and you reach THE CHAMBER &mdash; the throne room of the Miner King himself.</p>
+          <p>Beyond the chamber, the wise say, there are even deeper levels where the rarest ores glow with otherworldly light. None have ever returned to confirm this. But our scribes have collected dozens of fragmented maps, and they all point to the same conclusion: there is MORE BELOW.</p>
+          <h3>A BRIEF HISTORY OF THE MINE</h3>
+          <p>The mine was first dug in the year 1607 by the famous explorer Jebediah Dustpan. In its golden age (1742&ndash;1842) it produced more diamonds than any other mine in the known world. Three monarchs were crowned with jewels from these very tunnels.</p>
+          <p>Then came the Great Quake. Then came the King.</p>
+          <h3>OUR ORE GLOSSARY</h3>
+          <p><strong>Dirt</strong> &mdash; worthless. Use it to fill holes.<br>
+          <strong>Coal</strong> &mdash; cheap, plentiful. Powers the forges.<br>
+          <strong>Iron</strong> &mdash; backbone of every pickaxe.<br>
+          <strong>Silver</strong> &mdash; pretty AND useful.<br>
+          <strong>Gold</strong> &mdash; everyone's favorite.<br>
+          <strong>Ruby</strong> &mdash; red and rich.<br>
+          <strong>Diamond</strong> &mdash; sparkly!<br>
+          <strong>Sapphire</strong> &mdash; bluer than the sky.<br>
+          <strong>Emerald</strong> &mdash; green and serene.<br>
+          <strong>Obsidian</strong> &mdash; sharp and shadowy.<br>
+          <strong>Mythril, Titanium, Uranium, Plasma</strong> &mdash; legendary metals from the deepest depths. Some glow in the dark!</p>
+        </div>
+
+        <div class="newspaper-col">
+          <h3>REWARD &amp; GLORY</h3>
+          <p>The Mayor has authorized a TWENTY-FIVE THOUSAND COPPER reward for the slayer of the Miner King. Furthermore, the hero shall be granted:</p>
+          <ul>
+            <li>The Legendary Sword (found inside the Chamber Chest)</li>
+            <li>Eternal renown across the seven kingdoms</li>
+            <li>A statue in the town square</li>
+            <li>Free pickaxe repairs for life</li>
+            <li>One year of free water buckets</li>
+            <li>A parade led by the Marching Pickaxe Band</li>
+            <li>The hand of the Shopkeeper's niece (if applicable)</li>
+            <li>A confetti party with the whole town</li>
+          </ul>
+          <h3>WANTED: PICKAXES</h3>
+          <p>The Shopkeeper has stocked NORMAL pickaxes ($40 to upgrade) all the way up to the new QUAD PICK ($2,000), OCTO PICK ($5,000), and the unbelievable AUTO DIGGER ($10,000) that mines as you walk!</p>
+          <p>Heavy MEGA WORKERS may also be hired to clear away the rubble while the hero faces the King.</p>
+          <p>Why dig alone when a small army of loyal workers can dig for you?</p>
+          <h3>WEATHER &amp; HAZARDS</h3>
+          <p><strong>Surface:</strong> Mild &amp; sunny. Crowd expected on Victory Day.</p>
+          <p><strong>Shallow Layer:</strong> Dry. Occasional dust clouds.</p>
+          <p><strong>Mid Layer:</strong> Cooler. Rocks may fall. Wear your helmet.</p>
+          <p><strong>Deep Layer:</strong> Cloudy with a chance of falling rocks. Lava advisory in effect below 1,200m.</p>
+          <p><strong>The Chamber:</strong> Foreboding. Hostile. Bring bombs.</p>
+          <h3>SPORTS</h3>
+          <p>The annual ROCK-PUNCHING tournament was cancelled this year due to lack of rocks. The town's only undefeated puncher, "Granite" Greg, has retired to take up knitting.</p>
+          <p>Pickaxe-throwing competition reschedule TBD.</p>
+          <h3>SOCIETY PAGE</h3>
+          <p>Mrs. Henrietta Bellows hosted her famous Tuesday Tea Tuesday, though attendance was low. Several guests reportedly slipped away to look for the hero before dessert was served.</p>
+          <p>The Pebblebrook Knitting Circle has knitted a banner that says "GO HERO GO" in case anyone needs it.</p>
+        </div>
+
+        <div class="newspaper-col">
+          <h3>EYEWITNESS ACCOUNTS</h3>
+          <p>"He's purple. He's huge. He swung at me with claws the size of pickaxe heads. I dropped my lantern and ran." &mdash; <em>Old Pete, retired miner</em></p>
+          <p>"My cousin's friend's brother went down there and never came back. They found his hat. Just the hat." &mdash; <em>Eliza, local seamstress</em></p>
+          <p>"The bombs inside the chest are the only thing that can stun him. Three seconds. Use them well." &mdash; <em>The Shopkeeper</em></p>
+          <p>"I once saw the Miner King from far away. He had a crown of jagged crystals and eyes that glowed RED. I shall have nightmares forever." &mdash; <em>Wilhelmina, mapmaker's apprentice</em></p>
+          <h3>A WORD FROM THE MAYOR</h3>
+          <p>"Citizens of our fair town &mdash; the time has come. The mine must reopen. Our families must eat. The ores must flow. Whoever you are, brave miner reading this paper, KNOW THAT THE FATE OF US ALL RESTS UPON YOUR SHOULDERS. Go forth. Dig deep. Strike true."</p>
+          <p class="signed">&mdash; Mayor Cornelius Pebblestone III</p>
+          <h3>LETTERS TO THE EDITOR</h3>
+          <p><em>"Dear Editor &mdash; I just want to say I once dug a really big hole and it was very fun. If the hero is reading this, hello!"</em><br>&mdash; Jimmy, age 8</p>
+          <p><em>"Dear Editor &mdash; my dog has gone missing. Last seen carrying a small shiny rock. If anyone in the mine sees Buster please send him home."</em><br>&mdash; Mrs. Tugg</p>
+          <p><em>"Dear Editor &mdash; the hero better hurry. My garden needs fertilizer and they say the King has plenty."</em><br>&mdash; A Concerned Farmer</p>
+          <h3>OBITUARIES</h3>
+          <p>This week we mourn the following brave miners last seen entering the mine: Phineas Quartz, Rosie Boulder, "Lefty" McDig, and the entire Crumble-Bottom family. May their spirits find peace among the deep stones.</p>
+          <h3>CLASSIFIED ADS</h3>
+          <p><strong>LOST</strong> &mdash; one canary, yellow. Last seen entering the mine. Reward: 5 copper.</p>
+          <p><strong>FOR SALE</strong> &mdash; helmet with built-in headlamp. Slightly dented. Make offer.</p>
+          <p><strong>WANTED</strong> &mdash; lava-resistant boots, men's size 11. Apply within.</p>
+          <p><strong>FREE</strong> &mdash; 47 unused mining lanterns, all slightly used by miners who didn't come back. Pick up behind the smithy.</p>
+          <p><strong>SERVICES</strong> &mdash; "Boulder Bob" will move your large rocks. Affordable rates. References available.</p>
+          <h3>DAILY HOROSCOPE</h3>
+          <p><strong>Aries:</strong> Today is a great day for adventure. Avoid lava.<br>
+          <strong>Taurus:</strong> Wealth is in your future. Possibly underground.<br>
+          <strong>Gemini:</strong> Two heads are better than one. Hire workers.<br>
+          <strong>Leo:</strong> A king will fall. Could be a literal one.<br>
+          <strong>Scorpio:</strong> Watch out for falling things from above.<br>
+          <strong>Capricorn:</strong> Buy a sword. Don't ask why.</p>
+          <h3>WORD JUMBLE</h3>
+          <p>Unscramble these mining words:<br>
+          1) CIKPXAEA<br>
+          2) DAOIMNDS<br>
+          3) RENMI GIKN<br>
+          4) BOMSB<br>
+          5) MEAZ<br>
+          <em>(Answers on page 47)</em></p>
+        </div>
+      </div>
+
+      <div class="newspaper-footer">
+        <p>"The deeper you dig, the brighter the rewards." &mdash; ancient miner proverb</p>
+        <p class="newspaper-small">&copy; The Daily Pickaxe Publishing Co. &mdash; Printed on recycled stone tablets &mdash; All headlines fact-checked by the Mayor's nephew</p>
+        <p class="newspaper-small">(Click anywhere on the paper to start the music!)</p>
+        <p class="newspaper-version">Choose your version:</p>
+        <div class="newspaper-version-buttons">
+          <button id="playV001Btn" class="version-btn">Play v0.01<br><span class="version-tag">(3 pickaxes, no boss, no maze)</span></button>
+          <button id="playV010Btn" class="version-btn">Play v0.10<br><span class="version-tag">(full adventure)</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const canvas = document.getElementById("view");
     const ctx = canvas.getContext("2d");
@@ -329,7 +858,7 @@
     const MAZE_TEST_MODE = false; // true = straight tunnel through maze (cheat)
     const GAME_TEST_MODE = false; // true = max gear + auto boss for testing
     const CHAMBER_SIZE = 48;
-    const MAZE_HEIGHT = 120;
+    const MAZE_HEIGHT = 75;
     const MAZE_Y_START = 2500;
     const MAZE_Y_END = MAZE_Y_START + MAZE_HEIGHT - 1;
     const CHAMBER_Y_START = MAZE_Y_END + 1;
@@ -345,6 +874,42 @@
     const PLAYER_MIN_Y = SURFACE_Y_MAX; // First sky row acts like cave; above is blocked.
     const TUNNEL_X = Math.floor(WORLD_W / 2);
     const CHAMBER_CHEST_X = TUNNEL_X;
+
+    const HOMELESS_DEPTH = 500;
+    const HOMELESS_HOLE_X_MIN = TUNNEL_X - 2;
+    const HOMELESS_HOLE_X_MAX = TUNNEL_X + 1;
+    const HOMELESS_HOLE_Y_MIN = HOMELESS_DEPTH;
+    const HOMELESS_HOLE_Y_MAX = HOMELESS_DEPTH + 3;
+    const HOMELESS_COST = 500;
+    function isHomelessHole(x, y) {
+      return x >= HOMELESS_HOLE_X_MIN && x <= HOMELESS_HOLE_X_MAX &&
+             y >= HOMELESS_HOLE_Y_MIN && y <= HOMELESS_HOLE_Y_MAX;
+    }
+
+    // Mrs. Tugg quest items hidden in alcoves down the mine.
+    const TUGG_ITEMS = [
+      { id: "dog",    label: "Buster",        depth: 100, dx:  3, reward: 1500 },
+      { id: "canary", label: "Yellow Canary", depth: 200, dx: -3, reward: 800 },
+      { id: "helmet", label: "Headlamp Helmet", depth: 200, dx:  3, reward: 600 },
+    ];
+    function tuggItemPos(item) {
+      return { x: TUNNEL_X + item.dx, y: item.depth };
+    }
+    function isTuggAlcove(x, y) {
+      for (const item of TUGG_ITEMS) {
+        const p = tuggItemPos(item);
+        if (Math.abs(x - p.x) <= 1 && Math.abs(y - p.y) <= 1) return true;
+      }
+      return false;
+    }
+
+    // Mrs. Tugg's house on the surface, well clear of the shop.
+    const HOUSE_X = Math.floor(WORLD_W / 2) + 4;
+    const HOUSE_HALF_WIDTH = 2;
+    const MRS_TUGG_X = HOUSE_X + 3;
+    function isHouseColumn(x) {
+      return Math.abs(x - HOUSE_X) <= HOUSE_HALF_WIDTH;
+    }
     const CHAMBER_CHEST_Y = CHAMBER_Y_END - 1;
     const BOSS_WIN_REWARD = 25000;
     const BOSS_MAX_HP = 1000;
@@ -395,8 +960,10 @@
       phoenixite:{ color: "#ff8f42", value: 8400, hard: 23 },
       godcore:  { color: "#fff2a8", value: 10500, hard: 24 },
       lava:     { color: "#ff5a1f", value: 0, hard: 999 },
-      bedrock:  { color: "#141414", value: 0, hard: 999 }
+      bedrock:  { color: "#141414", value: 0, hard: 999 },
+      candle:   { color: "#3a2410", value: 0, hard: 0 }
     };
+    const CANDLE_COST = 5;
 
     let activeTiles = new Map();
     let savedEdits = new Map();
@@ -584,46 +1151,290 @@
 
     const sfx = {
       mine() {
-        playTone(220, 0.06, "square", 0.05, 0);
-        playTone(180, 0.05, "square", 0.035, 0.045);
+        playTone(220, 0.08, "sine", 0.08, 0);
+        playTone(180, 0.06, "sine", 0.06, 0.05);
       },
       blocked() {
-        playTone(120, 0.08, "sawtooth", 0.04, 0);
+        playTone(120, 0.10, "sine", 0.07, 0);
       },
       cash() {
-        playTone(660, 0.05, "triangle", 0.045, 0);
-        playTone(880, 0.07, "triangle", 0.045, 0.05);
+        playTone(660, 0.06, "sine", 0.07, 0);
+        playTone(880, 0.08, "sine", 0.07, 0.05);
       },
       upgrade() {
-        playTone(330, 0.06, "triangle", 0.05, 0);
-        playTone(440, 0.06, "triangle", 0.05, 0.06);
-        playTone(550, 0.08, "triangle", 0.05, 0.12);
+        playTone(330, 0.07, "sine", 0.08, 0);
+        playTone(440, 0.07, "sine", 0.08, 0.06);
+        playTone(550, 0.10, "sine", 0.08, 0.12);
       },
       hurt() {
-        playTone(160, 0.14, "sawtooth", 0.055, 0);
+        playTone(160, 0.16, "sine", 0.09, 0);
       },
       pickBreak() {
-        playTone(260, 0.06, "square", 0.05, 0);
-        playTone(180, 0.08, "sawtooth", 0.055, 0.05);
-        playTone(120, 0.12, "sawtooth", 0.06, 0.11);
+        playTone(260, 0.07, "sine", 0.08, 0);
+        playTone(180, 0.09, "sine", 0.09, 0.05);
+        playTone(120, 0.14, "sine", 0.09, 0.12);
       },
       gameOver() {
-        playTone(220, 0.14, "sawtooth", 0.05, 0);
-        playTone(170, 0.16, "sawtooth", 0.05, 0.12);
-        playTone(130, 0.2, "sawtooth", 0.05, 0.24);
+        playTone(220, 0.16, "sine", 0.08, 0);
+        playTone(170, 0.18, "sine", 0.08, 0.13);
+        playTone(130, 0.22, "sine", 0.08, 0.26);
       },
       place() {
-        playTone(500, 0.06, "square", 0.035, 0);
+        playTone(500, 0.07, "sine", 0.06, 0);
       },
       hire() {
-        playTone(260, 0.05, "square", 0.04, 0);
-        playTone(390, 0.07, "square", 0.04, 0.05);
+        playTone(260, 0.06, "sine", 0.07, 0);
+        playTone(390, 0.08, "sine", 0.07, 0.05);
       },
       water() {
-        playTone(700, 0.05, "triangle", 0.04, 0);
-        playTone(520, 0.09, "triangle", 0.04, 0.05);
+        playTone(700, 0.06, "sine", 0.06, 0);
+        playTone(520, 0.10, "sine", 0.06, 0.05);
+      },
+      paperOpen() {
+        playTone(880, 0.05, "sine", 0.05, 0);
+        playTone(1100, 0.05, "sine", 0.05, 0.06);
+        playTone(740, 0.06, "sine", 0.05, 0.12);
+        playTone(990, 0.08, "sine", 0.05, 0.20);
+      },
+      paperClose() {
+        playTone(990, 0.05, "sine", 0.05, 0);
+        playTone(740, 0.05, "sine", 0.05, 0.06);
+        playTone(560, 0.08, "sine", 0.05, 0.12);
       }
     };
+
+    // ─── MUSIC SYSTEM ──────────────────────────────────────────────────────
+    // All notes are sine waves. Each track is a melody + bass loop.
+    // Frequencies in Hz. Durations in beats.
+    const MUSIC = {
+      surface: {
+        bpm: 100,
+        lead: [
+          [523.25, 1], [659.25, 1], [783.99, 1], [659.25, 1],
+          [587.33, 1], [659.25, 1], [523.25, 2],
+          [659.25, 1], [783.99, 1], [880, 1], [783.99, 1],
+          [659.25, 1], [587.33, 1], [523.25, 2],
+        ],
+        bass: [
+          [130.81, 4], [196, 4], [174.61, 4], [130.81, 4],
+        ],
+      },
+      mine: {
+        bpm: 96,
+        lead: [
+          [261.63, 1], [311.13, 1], [392, 1], [311.13, 1],
+          [349.23, 1], [311.13, 1], [261.63, 2],
+          [233.08, 1], [277.18, 1], [349.23, 1], [277.18, 1],
+          [311.13, 1], [277.18, 1], [233.08, 2],
+        ],
+        bass: [
+          [98, 4], [87.31, 4], [82.41, 4], [73.42, 4],
+        ],
+      },
+      deep: {
+        bpm: 64,
+        volume: 2.6,
+        lead: [
+          [392, 2], [466.16, 2], [523.25, 2], [466.16, 2],
+          [349.23, 2], [415.30, 2], [523.25, 2], [415.30, 2],
+        ],
+        bass: [
+          [110, 4], [98, 4], [116.54, 4], [98, 4],
+        ],
+      },
+      boss: {
+        bpm: 144,
+        lead: [
+          [261.63, 0.5], [311.13, 0.5], [261.63, 0.5], [311.13, 0.5],
+          [277.18, 0.5], [349.23, 0.5], [277.18, 0.5], [349.23, 0.5],
+          [233.08, 0.5], [293.66, 0.5], [233.08, 0.5], [293.66, 0.5],
+          [246.94, 0.5], [311.13, 0.5], [246.94, 0.5], [311.13, 0.5],
+        ],
+        bass: [
+          [65.41, 1], [65.41, 1], [69.30, 1], [69.30, 1],
+          [58.27, 1], [58.27, 1], [61.74, 1], [61.74, 1],
+        ],
+      },
+      celebrate: {
+        bpm: 56,
+        volume: 1.1,
+        lead: [
+          [440, 2], [523.25, 2], [392, 4],
+          [349.23, 2], [415.30, 2], [349.23, 4],
+          [329.63, 2], [392, 2], [293.66, 4],
+          [261.63, 3], [293.66, 1], [220, 4],
+        ],
+        bass: [
+          [110, 4], [87.31, 4], [82.41, 4], [110, 4],
+        ],
+      },
+      shop: {
+        bpm: 92,
+        volume: 1.0,
+        lead: [
+          [523.25, 0.5], [659.25, 0.5], [783.99, 1],
+          [659.25, 0.5], [523.25, 0.5], [587.33, 1],
+          [659.25, 0.5], [783.99, 0.5], [880, 1],
+          [783.99, 0.5], [659.25, 0.5], [523.25, 1],
+          [587.33, 0.5], [523.25, 0.5], [493.88, 1],
+          [523.25, 0.5], [659.25, 0.5], [783.99, 1],
+          [880, 1], [783.99, 1],
+          [659.25, 2],
+        ],
+        bass: [
+          [130.81, 2], [196, 2], [174.61, 2], [196, 2],
+          [130.81, 2], [196, 2], [174.61, 2], [196, 2],
+        ],
+      },
+      maze: {
+        bpm: 80,
+        volume: 2.4,
+        lead: [
+          [440, 1.5], [523.25, 0.5], [466.16, 1], [440, 1],
+          [392, 1.5], [440, 0.5], [466.16, 1], [392, 1],
+          [349.23, 1.5], [392, 0.5], [440, 1], [392, 1],
+          [466.16, 1.5], [523.25, 0.5], [587.33, 1], [523.25, 1],
+        ],
+        bass: [
+          [110, 4], [98, 4], [116.54, 4], [110, 4],
+        ],
+      },
+      newspaper: {
+        bpm: 108,
+        volume: 1.9,
+        lead: [
+          [440, 2], [523.25, 1], [659.25, 1],
+          [349.23, 2], [440, 1], [523.25, 1],
+          [523.25, 2], [659.25, 1], [783.99, 1],
+          [392, 2], [493.88, 1], [587.33, 1],
+
+          [880, 1], [783.99, 1], [659.25, 2],
+          [698.46, 1], [659.25, 1], [523.25, 2],
+          [659.25, 1], [783.99, 1], [880, 2],
+          [987.77, 2], [880, 2],
+        ],
+        bass: [
+          [110, 1], [110, 1], [110, 1], [110, 1],
+          [87.31, 1], [87.31, 1], [87.31, 1], [87.31, 1],
+          [65.41, 1], [65.41, 1], [65.41, 1], [65.41, 1],
+          [98, 1], [98, 1], [98, 1], [98, 1],
+
+          [110, 1], [110, 1], [82.41, 1], [82.41, 1],
+          [87.31, 1], [87.31, 1], [65.41, 1], [65.41, 1],
+          [110, 1], [110, 1], [98, 1], [98, 1],
+          [82.41, 2], [110, 2],
+        ],
+      },
+    };
+
+    let musicOscs = [];
+    let musicTrack = null;
+    let musicSchedulerTimer = null;
+    let musicLeadTime = 0;
+    let musicBassTime = 0;
+    let musicLeadIdx = 0;
+    let musicBassIdx = 0;
+    const MUSIC_VOLUME = 0.18;
+
+    function playMusicNoteAt(freq, duration, volume, atTime) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, atTime);
+      gain.gain.setValueAtTime(0.0001, atTime);
+      gain.gain.exponentialRampToValueAtTime(volume, atTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, atTime + Math.max(0.06, duration - 0.03));
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(atTime);
+      osc.stop(atTime + duration + 0.08);
+      musicOscs.push(osc);
+      const cleanupMs = (atTime + duration + 0.2 - audioCtx.currentTime) * 1000;
+      setTimeout(() => {
+        const idx = musicOscs.indexOf(osc);
+        if (idx >= 0) musicOscs.splice(idx, 1);
+      }, Math.max(50, cleanupMs));
+    }
+
+    function scheduleMusic() {
+      if (!musicTrack || !audioCtx) return;
+      const track = MUSIC[musicTrack];
+      if (!track) return;
+      const beat = 60 / track.bpm;
+      const trackVol = MUSIC_VOLUME * (track.volume || 1);
+      const horizon = audioCtx.currentTime + 0.5;
+
+      while (musicLeadTime < horizon) {
+        const note = track.lead[musicLeadIdx % track.lead.length];
+        const dur = note[1] * beat;
+        playMusicNoteAt(note[0], dur * 0.9, trackVol, musicLeadTime);
+        musicLeadTime += dur;
+        musicLeadIdx++;
+      }
+      while (musicBassTime < horizon) {
+        const note = track.bass[musicBassIdx % track.bass.length];
+        const dur = note[1] * beat;
+        playMusicNoteAt(note[0], dur * 0.92, trackVol * 0.55, musicBassTime);
+        musicBassTime += dur;
+        musicBassIdx++;
+      }
+    }
+
+    function startMusic(trackName) {
+      if (musicTrack === trackName) return;
+      stopMusic();
+      if (!ensureAudioReady()) return;
+      musicTrack = trackName;
+      musicLeadIdx = 0;
+      musicBassIdx = 0;
+      musicLeadTime = audioCtx.currentTime + 0.08;
+      musicBassTime = audioCtx.currentTime + 0.08;
+      scheduleMusic();
+      musicSchedulerTimer = setInterval(scheduleMusic, 200);
+    }
+
+    function stopMusic() {
+      if (musicSchedulerTimer) {
+        clearInterval(musicSchedulerTimer);
+        musicSchedulerTimer = null;
+      }
+      if (audioCtx) {
+        for (const osc of musicOscs) {
+          try { osc.stop(audioCtx.currentTime + 0.05); } catch (e) {}
+        }
+      }
+      musicOscs = [];
+      musicTrack = null;
+    }
+
+    function updateMusic() {
+      if (!audioCtx) return;
+      if (newspaperModal && newspaperModal.classList.contains("show")) {
+        if (newspaperMusicStarted && musicTrack !== "newspaper") {
+          startMusic("newspaper");
+        }
+        return;
+      }
+      if (state.dead) { stopMusic(); return; }
+      let track;
+      if (state.bossDefeated && (state.cutscene || isAtSurface())) {
+        track = "celebrate";
+      } else if (state.bossFight && !state.bossDefeated) {
+        track = "boss";
+      } else if (isInShop()) {
+        track = "shop";
+      } else if (player.y <= SURFACE_Y_MAX) {
+        track = "surface";
+      } else if (isInMazeRegion(player.y)) {
+        track = "maze";
+      } else if (player.y > 200) {
+        track = "deep";
+      } else {
+        track = "mine";
+      }
+      if (track !== musicTrack) startMusic(track);
+    }
 
     function getMaxDurability(level) {
       return 40 + level * 20;
@@ -634,7 +1445,8 @@
     }
 
     function getPickaxeName(level) {
-      if (level >= PICK_AUTO) return "Auto Digger";
+      if (level > PICK_AUTO) return `Auto Digger Lv ${level}`;
+      if (level === PICK_AUTO) return "Auto Digger";
       if (level >= PICK_OCTO) return "Octo Pick (8 blocks)";
       if (level >= PICK_QUAD) return "Quad Pick (4 blocks)";
       return `Lv ${level}`;
@@ -645,10 +1457,9 @@
     }
 
     function getUpgradePickCost(level) {
-      if (level >= MAX_PICK) return null;
-      if (level === PICK_NORMAL_MAX) return 75000;
-      if (level === PICK_QUAD) return 180000;
-      if (level === PICK_OCTO) return 350000;
+      const next = level + 1;
+      if (state.classicMode && next > 3) return null;
+      if (next === PICK_QUAD || next === PICK_OCTO || next === PICK_AUTO) return null;
       return Math.floor(level * level * 28);
     }
 
@@ -672,13 +1483,19 @@
       if (dx !== 0) {
         for (let step = 1; step <= depth; step++) {
           const mx = player.x + dx * step;
-          for (let i = 0; i < width; i++) {
-            add(mx, player.y - Math.floor(width / 2) + i);
+          if (width === 1) {
+            add(mx, player.y);
+            add(mx, player.y - 1);
+          } else {
+            for (let i = 0; i < width; i++) {
+              add(mx, player.y - Math.floor(width / 2) + i);
+            }
           }
         }
       } else {
+        const baseY = dy < 0 ? player.y - 1 : player.y;
         for (let step = 1; step <= depth; step++) {
-          const my = player.y + dy * step;
+          const my = baseY + dy * step;
           for (let i = 0; i < width; i++) {
             add(player.x - Math.floor(width / 2) + i, my);
           }
@@ -691,6 +1508,7 @@
       const tile = getTile(tx, ty);
       if (tile === "air") return null;
       if (tile === "lava") return null;
+      if (tile === "candle") return null;
       if (isMazeProtectedBlock(tx, ty, tile)) return null;
       const def = oreDefs[tile];
       if (!def || tile === "bedrock") return null;
@@ -828,6 +1646,7 @@
     }
 
     function getWorldYMax() {
+      if (state.classicMode) return CHAMBER_Y_END + CONTINUE_SHAFT_DEPTH;
       return state.bossDefeated ? CHAMBER_Y_END + CONTINUE_SHAFT_DEPTH : CHAMBER_Y_END;
     }
 
@@ -957,6 +1776,25 @@
 
     function tileForDepth(y, r) {
       if (y < 2) return "dirt";
+      if (state.classicMode && y < 8) {
+        if (r < 0.55) return "dirt";
+        if (r < 0.80) return "stone";
+        return "coal";
+      }
+      if (state.classicMode && y < 20) {
+        if (r < 0.30) return "dirt";
+        if (r < 0.65) return "stone";
+        if (r < 0.90) return "coal";
+        return "iron";
+      }
+      if (state.classicMode && y < 60) {
+        if (r < 0.15) return "dirt";
+        if (r < 0.55) return "stone";
+        if (r < 0.75) return "coal";
+        if (r < 0.92) return "iron";
+        return "silver";
+      }
+      if (state.classicMode && r < 0.08) return "dirt";
       if (y < 20) {
         if (r < 0.70) return "stone";
         if (r < 0.93) return "coal";
@@ -1163,9 +2001,7 @@
     }
 
     function isEscapeTunnel(x, y) {
-      if (!state.doorsOpen) return false;
-      if (Math.abs(x - TUNNEL_X) > 1) return false;
-      return y >= GROUND_Y && y <= CHAMBER_Y_END;
+      return false;
     }
 
     function carveEscapeTunnel() {
@@ -1184,8 +2020,7 @@
         setTile(x, MAZE_Y_END, "air");
         setTile(x, MAZE_Y_START, "air");
       }
-      carveEscapeTunnel();
-      showMessage("Doors opened! Straight tunnel back to the surface!", "var(--good)");
+      showMessage("Doors opened! You can travel back through the maze.", "var(--good)");
     }
 
     function ensureCelebrationCrowd() {
@@ -1498,14 +2333,13 @@
       state.cutscene = null;
       state.gamePaused = false;
       state.continueUnlocked = true;
-      openChamberBottom();
       openAllDoors();
       player.x = SHOP_X;
       player.y = CHAMBER_SHOP_Y1;
       player.dirX = 0;
       player.dirY = -1;
       ensureLoadedAroundPlayer();
-      showMessage(`Chamber shop open! Mine ${CONTINUE_SHAFT_DEPTH} levels deeper below!`, "var(--good)", 280);
+      showMessage(`Chamber shop open! Mine through the floor for more levels!`, "var(--good)", 280);
       updateHud();
       draw();
     }
@@ -1668,9 +2502,12 @@
       mazeBuilt = true;
       mazeAirTiles = new Set();
 
+      // 2-tall openings at top and bottom so the player can fit through.
       for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
         addMazeAir(x, MAZE_Y_START);
+        addMazeAir(x, MAZE_Y_START + 1);
         addMazeAir(x, MAZE_Y_END);
+        addMazeAir(x, MAZE_Y_END - 1);
       }
 
       if (MAZE_TEST_MODE) {
@@ -1681,27 +2518,30 @@
         }
       }
 
+      // Each cell is 1 wide x 2 tall (opens rows cy and cy-1).
+      // Cells are at odd x, vertical step 3, horizontal step 2.
       const startX = TUNNEL_X % 2 === 1 ? TUNNEL_X : TUNNEL_X - 1;
-      const startY = MAZE_Y_START + 1;
+      const startY = MAZE_Y_START + 2;
       const stack = [[startX, startY]];
       const visited = new Set([mazeKey(startX, startY)]);
       addMazeAir(startX, startY);
+      addMazeAir(startX, startY - 1);
 
       while (stack.length > 0) {
         const [cx, cy] = stack[stack.length - 1];
         const neighbors = [
           [cx + 2, cy],
           [cx - 2, cy],
-          [cx, cy + 2],
-          [cx, cy - 2]
+          [cx, cy + 3],
+          [cx, cy - 3]
         ].filter(([nx, ny]) => {
           return (
             nx > MAZE_X_MIN &&
             nx < MAZE_X_MAX &&
-            ny > MAZE_Y_START &&
+            ny - 1 > MAZE_Y_START &&
             ny < MAZE_Y_END &&
             nx % 2 === 1 &&
-            ny % 2 === 1 &&
+            ((ny - (MAZE_Y_START + 2)) % 3 === 0) &&
             !visited.has(mazeKey(nx, ny))
           );
         });
@@ -1715,8 +2555,48 @@
         const [nx, ny] = neighbors[pickIdx];
         visited.add(mazeKey(nx, ny));
         addMazeAir(nx, ny);
-        addMazeAir(cx + (nx - cx) / 2, cy + (ny - cy) / 2);
+        addMazeAir(nx, ny - 1);
+        if (nx === cx) {
+          if (ny > cy) addMazeAir(cx, cy + 1);
+          else addMazeAir(cx, cy - 2);
+        } else {
+          const midX = (cx + nx) / 2;
+          addMazeAir(midX, cy);
+          addMazeAir(midX, cy - 1);
+        }
         stack.push([nx, ny]);
+      }
+
+      // The bottom entrance row may not align with the maze cell grid (cells step by 3).
+      // Dig a 3-wide connector from the bottom entrance upward at TUNNEL_X ± 1
+      // until we hit existing maze air, so the player can always exit.
+      for (let y = MAZE_Y_END - 2; y >= MAZE_Y_START + 2; y--) {
+        if (
+          mazeAirTiles.has(mazeKey(startX, y)) ||
+          mazeAirTiles.has(mazeKey(TUNNEL_X, y))
+        ) break;
+        for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+          addMazeAir(x, y);
+        }
+      }
+
+      // Easier maze: knock out ~30% of remaining walls between cells to create
+      // multiple paths and shortcuts.
+      for (let cy = MAZE_Y_START + 2; cy < MAZE_Y_END - 1; cy += 3) {
+        for (let cx = MAZE_X_MIN + 1; cx < MAZE_X_MAX; cx += 2) {
+          if (!mazeAirTiles.has(mazeKey(cx, cy))) continue;
+          if (cx + 2 < MAZE_X_MAX && mazeAirTiles.has(mazeKey(cx + 2, cy))) {
+            if (hash2d(cx * 7 + 3, cy * 11 + 5) < 0.30) {
+              addMazeAir(cx + 1, cy);
+              addMazeAir(cx + 1, cy - 1);
+            }
+          }
+          if (cy + 3 < MAZE_Y_END && mazeAirTiles.has(mazeKey(cx, cy + 3))) {
+            if (hash2d(cx * 13 + 9, cy * 17 + 21) < 0.30) {
+              addMazeAir(cx, cy + 1);
+            }
+          }
+        }
       }
     }
 
@@ -1770,6 +2650,13 @@
       if (x === 0 || x === WORLD_W - 1) return "bedrock";
       if (x === Math.floor(WORLD_W / 2) && y < 4) return "air";
       if (isBelowWorld(y)) return "bedrock";
+      if (isHomelessHole(x, y)) return "air";
+      if (isTuggAlcove(x, y)) return "air";
+      if (state.classicMode) {
+        const layerDepth = getLayerDepth(y);
+        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
+        return tileForDepth(layerDepth, hash2d(x, y));
+      }
       if (isEscapeTunnel(x, y)) return "air";
       if (isInChamberRegion(y)) {
         if (isChamberBreakableFloor(x, y)) return "stone";
@@ -1846,52 +2733,31 @@
 
     function applyGameTestLoad() {
       state.money = 99999999;
-      state.bagValue = 99999;
-      state.pickaxe = MAX_PICK;
-      state.pickDurability = getMaxDurability(MAX_PICK);
+      state.bagValue = 0;
+      state.pickaxe = PICK_QUAD - 1;
+      state.pickDurability = getMaxDurability(PICK_QUAD - 1);
       state.hp = 100;
       state.waterBuckets = 99;
-      state.hasSword = true;
-      state.chamberChestOpened = true;
-      state.respawnMode = true;
-      state.respawnPromptShown = true;
+      state.candles = 99;
+      state.hasSword = false;
+      state.chamberChestOpened = false;
+      state.respawnMode = false;
+      state.respawnPromptShown = false;
       state.dead = false;
       state.gamePaused = false;
       state.cutscene = null;
       state.pendingWorker = null;
-      state.workersBought = 10;
-      state.heavyWorkersBought = 10;
+      state.workersBought = 0;
+      state.heavyWorkersBought = 0;
       state.bossDefeated = false;
       state.continueUnlocked = false;
-      state.doorsOpen = true;
-      state.chamberSealed = true;
+      state.doorsOpen = false;
+      state.chamberSealed = false;
       state.celebrationShown = false;
-      openAllDoors();
-      startBossFight();
-      state.workers = [
-        {
-          x: 8,
-          y: PLAYER_MIN_Y,
-          type: "normal",
-          width: 1,
-          height: 1,
-          hasWaterBucket: true,
-          infiniteWaterBucket: true,
-          dead: false
-        },
-        {
-          x: 36,
-          y: CHAMBER_WORKER_SPAWN_Y,
-          type: "heavy",
-          width: 2,
-          height: 2,
-          hasWaterBucket: true,
-          infiniteWaterBucket: true,
-          dead: false
-        }
-      ];
-      player.x = CHAMBER_CHEST_X;
-      player.y = CHAMBER_CHEST_Y - 2;
+      state.workers = [];
+      const startPos = getSurfaceSpawn();
+      player.x = startPos.x;
+      player.y = MAZE_Y_START - 5;
       player.dirX = 0;
       player.dirY = 1;
       player.deathAnimStart = null;
@@ -1899,11 +2765,19 @@
       hideVictoryMenu();
       hideRespawnPrompt();
       ensureLoadedAroundPlayer();
-      showMessage("TEST MODE: max gear! Miner King fight started — go get him!", "var(--good)", 280);
+      setTile(player.x, player.y, "air");
+      setTile(player.x, player.y - 1, "air");
+      for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -1; dy <= 0; dy++) {
+          if (getTile(player.x + dx, player.y + dy) === "lava") setTile(player.x + dx, player.y + dy, "stone");
+        }
+      }
+      showMessage("CHEAT MODE: max gear, 99 candles, spawned deep above maze!", "var(--good)", 280);
       updateHud();
     }
 
     function resetGame() {
+      const prevClassicMode = state && state.classicMode;
       activeTiles = new Map();
       savedEdits = new Map();
       mazeBuilt = false;
@@ -1947,11 +2821,25 @@
         respawnMode: false,
         respawnPromptShown: false,
         gamePaused: false,
+        classicMode: false,
+        candles: 0,
+        tuggFound: {},
+        tuggDelivered: {},
+        mrsTuggGreeted: false,
+        homeless: {
+          x: TUNNEL_X - 1,
+          y: HOMELESS_HOLE_Y_MAX,
+          state: "waiting",
+          lastMoveAt: 0,
+          lastMineAt: 0,
+          promptShown: false,
+        },
         chamberBombs: null,
         cutscene: null,
         cutsceneStart: 0,
         continueUnlocked: false
       };
+      state.classicMode = !!prevClassicMode;
       hideVictoryMenu();
       player.deathAnimStart = null;
       lastLavaSpreadAt = performance.now();
@@ -1976,22 +2864,46 @@
     }
 
     function isAir(x, y) {
-      return inBounds(x, y) && getTile(x, y) === "air";
+      if (!inBounds(x, y)) return false;
+      const t = getTile(x, y);
+      return t === "air" || t === "candle";
+    }
+
+    function placeCandleAtPlayer() {
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+      if (state.candles <= 0) {
+        showMessage("No candles. Buy some at the shop ($5 each).");
+        return;
+      }
+      const px = player.x;
+      const py = player.y;
+      const cur = getTile(px, py);
+      if (cur !== "air") {
+        showMessage("Can't place candle here.");
+        return;
+      }
+      setTile(px, py, "candle");
+      state.candles--;
+      sfx.place();
+      showMessage("Placed a candle. It lights up the dark!", "var(--good)");
+      updateHud();
+      draw();
     }
 
     function movePlayer(dx, dy) {
       if (state.dead || state.gamePaused || isInCutscene()) return;
       const nx = player.x + dx;
       const ny = player.y + dy;
+      const nhy = ny - 1;
       player.dirX = dx;
       player.dirY = dy;
 
-      if (canPlayerOccupy(nx, ny) && getTile(nx, ny) === "lava") {
+      if (canPlayerOccupy(nx, ny) && (getTile(nx, ny) === "lava" || getTile(nx, nhy) === "lava")) {
         killPlayer("You ran into lava!", "lava");
         return;
       }
 
-      if (bossOccupies(nx, ny)) {
+      if (bossOccupies(nx, ny) || bossOccupies(nx, nhy)) {
         showMessage("The boss is in the way!");
         sfx.blocked();
         updateHud();
@@ -1999,32 +2911,76 @@
       }
 
       if (hasAutoMine() && (dx !== 0 || dy !== 0) && canPlayerOccupy(nx, ny)) {
-        const blockTile = getTile(nx, ny);
-        if (blockTile !== "air" && blockTile !== "lava" && !bossOccupies(nx, ny)) {
+        const feetTile = getTile(nx, ny);
+        const headTile = getTile(nx, nhy);
+        const feetBlocked = feetTile !== "air" && feetTile !== "lava" && feetTile !== "candle";
+        const headBlocked = headTile !== "air" && headTile !== "lava" && headTile !== "candle";
+        if ((feetBlocked || headBlocked) && !bossOccupies(nx, ny) && !bossOccupies(nx, nhy)) {
           tryMineInDirection(dx, dy, { quiet: true, auto: true });
         }
       }
 
-      if (canPlayerOccupy(nx, ny) && isAir(nx, ny)) {
+      if (canPlayerOccupy(nx, ny) && isAir(nx, ny) && isAir(nx, nhy)) {
         player.x = nx;
         player.y = ny;
         ensureLoadedAroundPlayer();
         despawnFarTiles();
-        if (isInShop() && state.bagValue > 0) {
-          state.money += state.bagValue;
-          showMessage(`Sold loot for $${state.bagValue}!`, "var(--good)");
-          sfx.cash();
-          state.bagValue = 0;
+        if (isInShop()) {
+          if (state.bagValue > 0) {
+            state.money += state.bagValue;
+            showMessage(`Sold loot for $${state.bagValue}!`, "var(--good)");
+            sfx.cash();
+            state.bagValue = 0;
+          }
+          state.pickDurability = getMaxDurability(state.pickaxe);
         }
         checkChamberEntry();
         checkSurfaceCelebration();
+        checkTuggPickup();
+        checkMrsTuggDelivery();
       }
       updateHud();
     }
 
+    function checkTuggPickup() {
+      for (const item of TUGG_ITEMS) {
+        if (state.tuggFound[item.id]) continue;
+        const p = tuggItemPos(item);
+        if ((player.x === p.x && (player.y === p.y || player.y - 1 === p.y))) {
+          state.tuggFound[item.id] = true;
+          showMessage(`You found Mrs. Tugg's ${item.label}! Bring it home for a reward.`, "var(--good)");
+          sfx.cash();
+        }
+      }
+    }
+
+    function checkMrsTuggDelivery() {
+      if (!isAtSurface()) return;
+      if (Math.abs(player.x - MRS_TUGG_X) > 1) return;
+      let total = 0;
+      const delivered = [];
+      for (const item of TUGG_ITEMS) {
+        if (state.tuggFound[item.id] && !state.tuggDelivered[item.id]) {
+          state.tuggDelivered[item.id] = true;
+          total += item.reward;
+          delivered.push(item.label);
+        }
+      }
+      if (total > 0) {
+        state.money += total;
+        sfx.cash();
+        showMessage(`Mrs. Tugg: "Oh thank you for my ${delivered.join(", ")}!" +$${total}`, "var(--good)");
+        return;
+      }
+      if (!state.mrsTuggGreeted) {
+        state.mrsTuggGreeted = true;
+        showMessage(`Mrs. Tugg: "I lost my dog Buster, my canary, and my husband's helmet down the mine. Please find them!"`, "var(--good)");
+      }
+    }
+
     function checkPlayerLavaDeath() {
       if (state.dead) return;
-      if (getTile(player.x, player.y) === "lava") {
+      if (getTile(player.x, player.y) === "lava" || getTile(player.x, player.y - 1) === "lava") {
         killPlayer("Lava engulfed you!", "lava");
       }
     }
@@ -2048,11 +3004,22 @@
         for (let y = player.y - 1; y >= 1; y--) {
           const cell = getTile(x, y);
           if (cell !== "air") {
+            if (
+              cell === "bedrock" ||
+              isMazeProtectedBlock(x, y, cell) ||
+              isInMazeRegion(y) ||
+              isInMazeRegion(y + 1) ||
+              isInChamberRegion(y) ||
+              isInChamberRegion(y + 1) ||
+              isHomelessHole(x, y + 1) ||
+              isTuggAlcove(x, y + 1)
+            ) {
+              break;
+            }
             setTile(x, y + 1, cell);
             setTile(x, y, "air");
-            if (x === player.x && y + 1 === player.y) {
-              const dmg = 10 + Math.floor(player.y / 18);
-              totalDamage += dmg;
+            if (x === player.x && (y + 1 === player.y || y + 1 === player.y - 1)) {
+              totalDamage += 10;
             }
             break;
           }
@@ -2072,6 +3039,86 @@
         killPlayer("You were crushed!", "crushed");
       }
       updateHud();
+    }
+
+    function updateHomeless(now) {
+      if (!state.homeless) return;
+      const h = state.homeless;
+
+      if (h.state === "waiting") {
+        const dx = Math.abs(player.x - h.x);
+        const dy = Math.abs(player.y - h.y);
+        if (dx > 3 || dy > 3) h.promptShown = false;
+        if (dx <= 1 && dy <= 1 && !h.promptShown && !state.gamePaused && !state.dead) {
+          showHomelessPrompt();
+        }
+        return;
+      }
+
+      if (h.state === "following" && !state.dead) {
+        if (now - h.lastMoveAt > 600) {
+          h.lastMoveAt = now;
+          const tooFar = Math.abs(player.x - h.x) > 1 || Math.abs(player.y - h.y) > 1;
+          if (tooFar) {
+            const dirX = Math.sign(player.x - h.x);
+            const dirY = Math.sign(player.y - h.y);
+            const tryHorizontal = Math.abs(player.x - h.x) >= Math.abs(player.y - h.y);
+            const moves = tryHorizontal
+              ? [[dirX, 0], [0, dirY], [0, -1]]
+              : [[0, dirY], [dirX, 0], [0, -1]];
+            for (const [mx, my] of moves) {
+              if (mx === 0 && my === 0) continue;
+              const nx = h.x + mx;
+              const ny = h.y + my;
+              if (inBounds(nx, ny) && getTile(nx, ny) === "air") {
+                h.x = nx;
+                h.y = ny;
+                break;
+              }
+            }
+          }
+        }
+
+        if (now - h.lastMineAt > 1000) {
+          h.lastMineAt = now;
+          if (Math.random() < 0.5) {
+            const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+            for (let i = dirs.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
+            }
+            for (const [mdx, mdy] of dirs) {
+              const tx = h.x + mdx;
+              const ty = h.y + mdy;
+              if (!inBounds(tx, ty)) continue;
+              const tile = getTile(tx, ty);
+              if (tile === "air" || tile === "lava" || tile === "bedrock" || tile === "candle") continue;
+              const def = oreDefs[tile];
+              if (!def) continue;
+              setTile(tx, ty, "air");
+              spawnMineFx(tx, ty, def.color);
+              if (def.value > 0) {
+                state.money += def.value;
+                showMessage(`Puck found ${tile}! +$${def.value}`, "var(--good)", 60);
+                updateHud();
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    function showHomelessPrompt() {
+      if (!state.homeless) return;
+      state.homeless.promptShown = true;
+      state.gamePaused = true;
+      document.getElementById("homelessModal").style.display = "flex";
+    }
+
+    function hideHomelessPrompt() {
+      state.gamePaused = false;
+      document.getElementById("homelessModal").style.display = "none";
     }
 
     function checkStuckGameOver() {
@@ -2112,13 +3159,12 @@
       const el = document.getElementById("gameControlsHint");
       if (!el) return;
       const base = "Move: WASD/Arrows | Space: mine, sword, arm bombs";
-      const testNote = GAME_TEST_MODE ? " | T = test refill" : "";
       if (state.bossFight && !state.bossDefeated) {
-        el.textContent = `${base} | Beat Miner King, use bombs to stun him!${testNote}`;
+        el.textContent = `${base} | Beat Miner King, use bombs to stun him!`;
       } else if (state.bossDefeated && !state.continueUnlocked) {
-        el.textContent = `${base} | Mine the chamber floor (down) to go deeper!${testNote}`;
+        el.textContent = `${base} | Mine the chamber floor (down) to go deeper!`;
       } else {
-        el.textContent = `${base}${testNote}`;
+        el.textContent = base;
       }
     }
 
@@ -2132,9 +3178,22 @@
       document.getElementById("pickStr").textContent = getPickStrength(state.pickaxe);
       document.getElementById("bag").textContent = state.bagValue;
       document.getElementById("pickDur").textContent = state.pickDurability;
-      document.getElementById("pickDurMax").textContent = getMaxDurability(state.pickaxe);
+      const maxDur = getMaxDurability(state.pickaxe);
+      document.getElementById("pickDurMax").textContent = maxDur;
+      const durWarn = document.getElementById("durabilityWarning");
+      if (
+        maxDur > 0 &&
+        state.pickDurability > 0 &&
+        state.pickDurability <= 10
+      ) {
+        durWarn.textContent = "DURABILITY LOW!";
+        durWarn.classList.add("show");
+      } else {
+        durWarn.classList.remove("show");
+      }
       document.getElementById("workerCount").textContent = state.workers.filter((w) => !w.dead).length;
       document.getElementById("bucketCount").textContent = state.waterBuckets;
+      document.getElementById("candleCount").textContent = state.candles;
       const shopHint = document.getElementById("shopHint");
       if (state.continueUnlocked) {
         shopHint.textContent = "Shop on surface OR in the chamber (center, near top).";
@@ -2151,7 +3210,13 @@
       const upgradeCost = getUpgradePickCost(state.pickaxe);
       const upBtn = document.getElementById("upgradeBtn");
       if (upgradeCost === null) {
-        upBtn.textContent = "Pickaxe MAX";
+        if (state.classicMode && state.pickaxe >= 3) {
+          upBtn.textContent = "Max pickaxe (v0.01)";
+        } else {
+          const next = state.pickaxe + 1;
+          const which = next === PICK_QUAD ? "Quad" : next === PICK_OCTO ? "Octo" : "Auto";
+          upBtn.textContent = `Use Buy ${which} Pick button`;
+        }
         upBtn.disabled = true;
       } else {
         const nextName = getPickaxeName(state.pickaxe + 1);
@@ -2159,13 +3224,24 @@
         upBtn.disabled = state.money < upgradeCost || !isInShop();
       }
 
+      const buyQuadBtn = document.getElementById("buyQuadBtn");
+      const buyOctoBtn = document.getElementById("buyOctoBtn");
+      const buyAutoBtn = document.getElementById("buyAutoBtn");
+      if (state.classicMode) {
+        buyQuadBtn.style.display = "none";
+        buyOctoBtn.style.display = "none";
+        buyAutoBtn.style.display = "none";
+      } else {
+        buyQuadBtn.style.display = "";
+        buyOctoBtn.style.display = "";
+        buyAutoBtn.style.display = "";
+        buyQuadBtn.disabled = !isInShop() || state.pickaxe >= PICK_QUAD || state.money < 2000;
+        buyOctoBtn.disabled = !isInShop() || state.pickaxe >= PICK_OCTO || state.money < 5000;
+        buyAutoBtn.disabled = !isInShop() || state.pickaxe >= PICK_AUTO || state.money < 10000;
+      }
+
       const healBtn = document.getElementById("healBtn");
       healBtn.disabled = state.money < 20 || state.hp >= 100 || !isInShop();
-
-      const repairCost = getRepairCost();
-      const repairBtn = document.getElementById("repairBtn");
-      repairBtn.textContent = `Repair Pickaxe ($${repairCost})`;
-      repairBtn.disabled = !isInShop() || repairCost <= 0 || state.money < repairCost;
 
       const workerCost = getWorkerCost();
       const workerBtn = document.getElementById("workerBtn");
@@ -2184,14 +3260,12 @@
       const useBucketBtn = document.getElementById("useBucketBtn");
       useBucketBtn.disabled = state.waterBuckets <= 0 || state.dead;
 
+      const buyCandleBtn = document.getElementById("buyCandleBtn");
+      buyCandleBtn.textContent = `Buy Candle ($${CANDLE_COST})`;
+      buyCandleBtn.disabled = !isInShop() || state.money < CANDLE_COST || state.dead;
+
       const equipWorkerBtn = document.getElementById("equipWorkerBtn");
       equipWorkerBtn.disabled = state.waterBuckets <= 0 || getNearbyWorkerIndexForEquip() === -1 || state.dead;
-
-      const laneLeftBtn = document.getElementById("workerLaneLeftBtn");
-      const laneRightBtn = document.getElementById("workerLaneRightBtn");
-      laneLeftBtn.disabled = !state.pendingWorker || state.pendingWorker.x <= 1 || state.dead;
-      const maxPendingX = state.pendingWorker ? WORLD_W - state.pendingWorker.width - 1 : WORLD_W - 2;
-      laneRightBtn.disabled = !state.pendingWorker || state.pendingWorker.x >= maxPendingX || state.dead;
 
       const hireBtn = document.getElementById("hireBtn");
       hireBtn.disabled =
@@ -2222,19 +3296,36 @@
     }
 
     function drawPickaxeSwing(cx, cy, dirX, dirY, t) {
-      const angle = Math.atan2(dirY, dirX || 0.01) + t * 1.5 - 0.7;
-      const dist = 8 + t * 10;
-      const px = cx + Math.cos(angle) * dist;
-      const py = cy + Math.sin(angle) * dist;
+      const facing = dirX < 0 ? -1 : 1;
+      const handX = cx + facing * 9;
+      const handY = cy;
+
+      const eased = t * t;
+      const startA = -Math.PI * 0.75;
+      const endA = Math.PI * 0.20;
+      let angle = startA + (endA - startA) * eased;
+      if (facing < 0) angle = Math.PI - angle;
+
       ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(angle + Math.PI / 2);
+      ctx.translate(handX, handY);
+      ctx.rotate(angle);
+
       ctx.fillStyle = "#6b4423";
-      ctx.fillRect(-2, 0, 4, 12);
+      ctx.fillRect(-2, -2, 18, 4);
+      ctx.fillStyle = "#4a2d14";
+      ctx.fillRect(-2, 1, 18, 1);
+      ctx.fillStyle = "#8a5a30";
+      ctx.fillRect(-2, -2, 18, 1);
+
       ctx.fillStyle = "#b8c0cc";
-      ctx.fillRect(-5, 10, 10, 3);
+      ctx.fillRect(13, -8, 5, 16);
       ctx.fillStyle = "#9aa0a8";
-      ctx.fillRect(-1, -10, 2, 12);
+      ctx.fillRect(17, -10, 3, 4);
+      ctx.fillRect(17, 6, 3, 4);
+      ctx.fillRect(16, -7, 1, 14);
+      ctx.fillStyle = "#e6ecf2";
+      ctx.fillRect(13, -8, 5, 2);
+
       ctx.restore();
     }
 
@@ -2254,6 +3345,120 @@
       ctx.restore();
     }
 
+    function drawPerson(opts) {
+      const o = opts || {};
+      const shirt = o.shirt || "#3aa6ff";
+      const pants = o.pants || "#15294a";
+      const hat = o.hat || "none";
+      const hair = o.hair || "#5a3b1a";
+      const skin = o.skin || "#ffd0a0";
+      const armUp = o.armUp || 0;
+
+      ctx.fillStyle = skin;
+      ctx.fillRect(-7, -26, 14, 14);
+
+      if (hat === "miner") {
+        ctx.fillStyle = "#ffd54a";
+        ctx.fillRect(-7, -30, 14, 4);
+        ctx.fillStyle = "#e8a82a";
+        ctx.fillRect(-9, -26, 18, 2);
+      } else {
+        ctx.fillStyle = hair;
+        ctx.fillRect(-7, -30, 14, 6);
+      }
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-4, -22, 2, 2);
+      ctx.fillRect(2, -22, 2, 2);
+
+      const armRaise = armUp * 8;
+
+      ctx.fillStyle = shirt;
+      ctx.fillRect(-8, -12, 16, 12);
+
+      ctx.fillStyle = shirt;
+      ctx.fillRect(-10, -12 - armRaise, 2, 6);
+      ctx.fillRect(8, -12 - armRaise, 2, 6);
+      ctx.fillStyle = skin;
+      ctx.fillRect(-10, -6 - armRaise, 2, 4);
+      ctx.fillRect(8, -6 - armRaise, 2, 4);
+
+      ctx.fillStyle = pants;
+      ctx.fillRect(-8, 0, 7, 12);
+      ctx.fillRect(1, 0, 7, 12);
+    }
+
+    function drawHomelessRags() {
+      ctx.fillStyle = "#2a2014";
+      ctx.fillRect(-7, -8, 3, 1);
+      ctx.fillRect(5, -3, 2, 1);
+      ctx.fillRect(-3, -1, 4, 1);
+      ctx.fillStyle = "#1a1408";
+      ctx.fillRect(-6, 5, 5, 1);
+      ctx.fillRect(3, 8, 4, 1);
+      ctx.fillStyle = "#5a3a20";
+      ctx.fillRect(-7, -29, 14, 2);
+    }
+
+    function drawPlayerDamage(damage) {
+      if (damage >= 0.25) {
+        ctx.fillStyle = "#e8d09a";
+        ctx.fillRect(-5, -25, 4, 1);
+        ctx.fillRect(-5, -24, 4, 1);
+      }
+      if (damage >= 0.4) {
+        ctx.fillStyle = "#5a1818";
+        ctx.fillRect(3, -19, 2, 1);
+        ctx.fillRect(4, -18, 1, 1);
+      }
+      if (damage >= 0.5) {
+        ctx.fillStyle = "#1a0a1a";
+        ctx.fillRect(-5, -23, 3, 2);
+      }
+      if (damage >= 0.55) {
+        ctx.fillStyle = "#7a3a3a";
+        ctx.fillRect(-6, -8, 4, 1);
+        ctx.fillRect(4, -10, 3, 1);
+      }
+      if (damage >= 0.65) {
+        ctx.fillStyle = "#3a2a14";
+        ctx.fillRect(-8, -4, 3, 1);
+        ctx.fillRect(2, -2, 4, 1);
+        ctx.fillRect(-3, -7, 2, 1);
+      }
+      if (damage >= 0.7) {
+        const skinTorn = "#ffd0a0";
+        ctx.fillStyle = skinTorn;
+        ctx.fillRect(-8, -10, 1, 2);
+        ctx.fillRect(7, -8, 1, 2);
+        ctx.fillStyle = "#7a1a1a";
+        ctx.fillRect(-8, -9, 1, 1);
+      }
+      if (damage >= 0.8) {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(-5, -22, 3, 2);
+        ctx.fillStyle = "#3a1414";
+        ctx.fillRect(2, -19, 2, 1);
+      }
+      if (damage >= 0.85) {
+        ctx.fillStyle = "#3a2a14";
+        ctx.fillRect(-7, 4, 5, 1);
+        ctx.fillRect(2, 6, 4, 1);
+        ctx.fillStyle = "#1a1408";
+        ctx.fillRect(-6, 9, 4, 1);
+      }
+      if (damage >= 0.9) {
+        ctx.strokeStyle = "#3a0808";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-3, -19);
+        ctx.lineTo(-2, -16);
+        ctx.moveTo(-2, -16);
+        ctx.lineTo(-3, -14);
+        ctx.stroke();
+      }
+    }
+
     function drawLivingPlayer(px, py) {
       const { kind, t } = getPlayerAnimProgress();
       const mineT = kind === "mine" ? t : 0;
@@ -2271,16 +3476,21 @@
       ctx.translate(cx + leanX, cy + leanY);
       if (swingT > 0) ctx.rotate((dx || 1) * swingT * 0.4);
 
-      ctx.fillStyle = "#7af0a1";
-      ctx.fillRect(-8, -8, 16, 16);
-      ctx.fillStyle = "#203f2d";
-      if (buyT > 0) {
-        const armUp = Math.sin(buyT * Math.PI) * 6;
-        ctx.fillRect(-11, -10 - armUp, 4, 8);
-        ctx.fillRect(7, -10 - armUp, 4, 8);
-      }
-      ctx.fillRect(-4, -2, 4, 4);
-      ctx.fillRect(2, -2, 4, 4);
+      const damage = Math.max(0, 1 - (state.hp || 0) / 100);
+      const wobble = damage > 0.6 ? Math.sin(performance.now() / 90) * damage * 1.5 : 0;
+      if (wobble) ctx.rotate(wobble * 0.06);
+
+      drawPerson({
+        shirt: "#3aa6ff",
+        shirtDark: "#1976d2",
+        pants: "#15294a",
+        pantsDark: "#0a1426",
+        hat: "miner",
+        armUp: buyT > 0 ? Math.sin(buyT * Math.PI) : 0,
+      });
+
+      if (damage > 0) drawPlayerDamage(damage);
+
       ctx.restore();
 
       if (mineT > 0) drawPickaxeSwing(cx + leanX, cy + leanY, dx, dy, mineT);
@@ -2323,43 +3533,58 @@
         state.bossDefeated && (isAtSurface() || state.cutscene === "celebrate");
       const t = performance.now() / 1000;
       const bounce = celebrate ? Math.sin(t * 8) * 4 : 0;
-      const y = sy - bounce;
+      const cx = sx + TILE / 2;
+      const cy = sy + TILE / 2;
+      const counterTopY = cy + 2;
 
-      ctx.fillStyle = "#8845d9";
-      ctx.fillRect(sx + 5, y + 4, TILE - 10, TILE - 8);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cx - 14, cy - 60, 28, counterTopY - (cy - 60));
+      ctx.clip();
+      ctx.translate(cx, cy - bounce);
+      drawPerson({
+        shirt: "#8845d9",
+        shirtDark: "#5e2da8",
+        pants: "#3a2255",
+        pantsDark: "#1d1130",
+        hat: "none",
+        hair: "#3a1f5a",
+        armUp: celebrate ? (0.6 + 0.4 * Math.sin(t * 8)) : 0,
+      });
+      ctx.restore();
+
+      ctx.fillStyle = "#7b4f2d";
+      ctx.fillRect(sx, counterTopY, TILE, sy + TILE - counterTopY);
+      ctx.fillStyle = "rgba(255, 240, 200, 0.55)";
+      ctx.fillRect(sx, counterTopY, TILE, 1);
+      ctx.fillStyle = "rgba(255, 220, 180, 0.22)";
+      ctx.fillRect(sx + 1, counterTopY + 3, TILE - 2, 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.fillRect(sx, sy + TILE - 2, TILE, 2);
+
       if (celebrate) {
-        ctx.fillStyle = "#8845d9";
-        ctx.fillRect(sx + 2, y + 1, 4, 10);
-        ctx.fillRect(sx + TILE - 6, y + 1, 4, 10);
-        ctx.fillStyle = "#f3e7ff";
-        ctx.fillRect(sx + 8, y + 9, 3, 2);
-        ctx.fillRect(sx + 13, y + 9, 3, 2);
-        ctx.fillStyle = "#ffe77a";
-        ctx.fillRect(sx + 9, y + 13, 6, 2);
         ctx.fillStyle = "#ffd56b";
         for (let i = 0; i < 6; i++) {
           const fx = sx + 4 + i * 3;
-          const fy = y - 4 - ((t * 40 + i * 7) % 12);
+          const fy = sy - bounce - 4 - ((t * 40 + i * 7) % 14);
           ctx.fillRect(fx, fy, 3, 3);
         }
-      } else {
-        ctx.fillStyle = "#f3e7ff";
-        ctx.fillRect(sx + 8, y + 8, 3, 3);
-        ctx.fillRect(sx + 13, y + 8, 3, 3);
       }
     }
 
-    function drawMiniPerson(sx, sy, skin, armUp) {
-      ctx.fillStyle = skin;
-      ctx.fillRect(sx + 5, sy + 6, TILE - 10, TILE - 10);
-      ctx.fillStyle = "#203f2d";
-      ctx.fillRect(sx + 8, sy + 10, 3, 3);
-      ctx.fillRect(sx + 13, sy + 10, 3, 3);
-      if (armUp) {
-        ctx.fillStyle = skin;
-        ctx.fillRect(sx + 2, sy + 2, 4, 8);
-        ctx.fillRect(sx + TILE - 6, sy + 2, 4, 8);
-      }
+    function drawMiniPerson(sx, sy, shirt, armUp) {
+      ctx.save();
+      ctx.translate(sx + TILE / 2, sy + TILE / 2);
+      drawPerson({
+        shirt: shirt,
+        shirtDark: "#222",
+        pants: "#15294a",
+        pantsDark: "#0a1426",
+        hat: "none",
+        hair: "#4a2a14",
+        armUp: armUp ? 1 : 0,
+      });
+      ctx.restore();
     }
 
     function drawCelebration(camX, camY) {
@@ -2508,8 +3733,19 @@
         ctx.textAlign = "start";
       }
 
-      const wobbleX = stunned ? Math.sin(t * 16) * 6 : 0;
-      const wobbleY = stunned ? Math.cos(t * 13) * 5 : 0;
+      if (!stunned) {
+        for (let i = 0; i < 10; i++) {
+          const angle = (i / 10) * Math.PI * 2 + t * 0.8;
+          const r = 42 + Math.sin(t * 4 + i) * 4;
+          const ax = centerX + Math.cos(angle) * r;
+          const ay = centerY + Math.sin(angle) * r;
+          ctx.fillStyle = `rgba(255, 80, 220, ${0.4 + 0.3 * Math.sin(t * 5 + i)})`;
+          ctx.fillRect(ax - 2, ay - 2, 4, 4);
+        }
+      }
+
+      const wobbleX = stunned ? Math.sin(t * 16) * 6 : Math.sin(t * 2) * 1.5;
+      const wobbleY = stunned ? Math.cos(t * 13) * 5 : Math.sin(t * 3) * 1;
       const spin = stunned ? Math.sin(t * 10) * 0.22 : 0;
 
       ctx.save();
@@ -2517,33 +3753,118 @@
       ctx.rotate(spin);
       ctx.translate(-bw / 2, -bh / 2);
 
-      ctx.fillStyle = stunned ? "#7a7a9a" : "#4a154b";
-      ctx.fillRect(2, 2, bw - 4, bh - 4);
-      ctx.fillStyle = stunned ? "#b08fd9" : "#9b2dcf";
-      ctx.fillRect(6, 8, bw - 12, bh - 14);
-      if (stunned) {
+      const bodyMain = stunned ? "#7a7a9a" : "#9b2dcf";
+      const bodyLight = stunned ? "#9ea0c0" : "#b94de8";
+      const bodyDark = stunned ? "#48485a" : "#5a1880";
+      const bodyDeep = stunned ? "#2a2a36" : "#2a0840";
+      const accent = stunned ? "#6a6a86" : "#ff3bea";
+
+      ctx.fillStyle = bodyDark;
+      ctx.fillRect(bw / 2 - 3, 0, 6, 14);
+      ctx.fillRect(bw / 2 - 5, 4, 10, 10);
+      ctx.fillRect(bw / 2 - 7, 8, 14, 6);
+      ctx.fillRect(8, 4, 5, 10);
+      ctx.fillRect(6, 8, 9, 6);
+      ctx.fillRect(bw - 13, 4, 5, 10);
+      ctx.fillRect(bw - 15, 8, 9, 6);
+      ctx.fillStyle = accent;
+      ctx.fillRect(bw / 2 - 2, 1, 4, 4);
+      ctx.fillRect(9, 5, 3, 3);
+      ctx.fillRect(bw - 12, 5, 3, 3);
+
+      ctx.fillStyle = bodyMain;
+      ctx.fillRect(8, 12, bw - 16, 30);
+      ctx.fillRect(6, 16, bw - 12, 22);
+      ctx.fillStyle = bodyLight;
+      ctx.fillRect(8, 12, bw - 16, 3);
+      ctx.fillStyle = bodyDark;
+      ctx.fillRect(8, 38, bw - 16, 4);
+
+      ctx.fillStyle = stunned ? "#9a9aae" : "#ffffff";
+      ctx.fillRect(14, 20, 12, 8);
+      ctx.fillRect(bw - 26, 20, 12, 8);
+      if (!stunned) {
+        ctx.fillStyle = "#ff3b3b";
+        ctx.fillRect(17, 22, 7, 5);
+        ctx.fillRect(bw - 23, 22, 7, 5);
+        ctx.fillStyle = "#ffaa00";
+        ctx.fillRect(19, 23, 3, 2);
+        ctx.fillRect(bw - 21, 23, 3, 2);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(20, 23, 1, 1);
+        ctx.fillRect(bw - 20, 23, 1, 1);
+        ctx.fillStyle = bodyDeep;
+        ctx.fillRect(12, 16, 4, 2);
+        ctx.fillRect(16, 17, 4, 2);
+        ctx.fillRect(20, 18, 5, 2);
+        ctx.fillRect(bw - 17, 16, 4, 2);
+        ctx.fillRect(bw - 21, 17, 4, 2);
+        ctx.fillRect(bw - 26, 18, 5, 2);
+      } else {
         ctx.strokeStyle = "#203f2d";
         ctx.lineWidth = 2;
-        const eyeY = 16;
+        const eyeY = 24;
         ctx.beginPath();
-        ctx.moveTo(10, eyeY - 3);
-        ctx.lineTo(14, eyeY + 3);
-        ctx.moveTo(14, eyeY - 3);
-        ctx.lineTo(10, eyeY + 3);
-        ctx.moveTo(bw - 14, eyeY - 3);
-        ctx.lineTo(bw - 10, eyeY + 3);
-        ctx.moveTo(bw - 10, eyeY - 3);
-        ctx.lineTo(bw - 14, eyeY + 3);
+        ctx.moveTo(15, eyeY - 3);
+        ctx.lineTo(24, eyeY + 3);
+        ctx.moveTo(24, eyeY - 3);
+        ctx.lineTo(15, eyeY + 3);
+        ctx.moveTo(bw - 25, eyeY - 3);
+        ctx.lineTo(bw - 16, eyeY + 3);
+        ctx.moveTo(bw - 16, eyeY - 3);
+        ctx.lineTo(bw - 25, eyeY + 3);
         ctx.stroke();
-        ctx.fillStyle = "#9eeaff";
-        ctx.fillRect(bw / 2 - 5, bh - 10, 10, 3);
-      } else {
-        ctx.fillStyle = "#ff3b5c";
-        ctx.fillRect(10, 14, 8, 8);
-        ctx.fillRect(bw - 18, 14, 8, 8);
-        ctx.fillStyle = "#ffe77a";
-        ctx.fillRect(Math.floor(bw / 2) - 4, 4, 8, 4);
       }
+
+      if (!stunned) {
+        ctx.fillStyle = bodyDeep;
+        ctx.fillRect(20, 30, bw - 40, 7);
+        ctx.fillStyle = "#fff";
+        for (let i = 0; i < 5; i++) {
+          const fx = 22 + i * 6;
+          ctx.fillRect(fx, 30, 3, 4);
+          ctx.fillRect(fx + 1, 34, 1, 1);
+        }
+      } else {
+        ctx.fillStyle = "#9eeaff";
+        ctx.fillRect(bw / 2 - 4, 32, 8, 5);
+        ctx.fillRect(bw / 2 - 2, 36, 4, 2);
+      }
+
+      ctx.fillStyle = bodyDark;
+      ctx.fillRect(8, 39, bw - 16, 3);
+      for (let i = 0; i < 4; i++) {
+        const sx = 10 + i * 13;
+        ctx.fillRect(sx, 40, 4, 4);
+      }
+
+      ctx.fillStyle = bodyDeep;
+      ctx.fillRect(2, 42, bw - 4, 22);
+      ctx.fillStyle = bodyDark;
+      ctx.fillRect(4, 44, bw - 8, 18);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(4, 40, 4, 6);
+      ctx.fillRect(bw - 8, 40, 4, 6);
+      ctx.fillRect(6, 38, 2, 4);
+      ctx.fillRect(bw - 8, 38, 2, 4);
+
+      ctx.fillStyle = accent;
+      ctx.fillRect(bw / 2 - 6, 48, 12, 12);
+      ctx.fillStyle = bodyDeep;
+      ctx.fillRect(bw / 2 - 4, 50, 8, 8);
+      ctx.fillStyle = accent;
+      ctx.fillRect(bw / 2 - 2, 52, 4, 4);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 50, 4, 3);
+      ctx.fillRect(0, 56, 4, 3);
+      ctx.fillRect(bw - 4, 50, 4, 3);
+      ctx.fillRect(bw - 4, 56, 4, 3);
+
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillRect(4, bh - 4, bw - 8, 3);
+
       ctx.restore();
     }
 
@@ -2569,6 +3890,10 @@
 
     function drawTile(x, y, tile, sx, sy) {
       if (tile === "air") return;
+      if (tile === "candle") {
+        drawCandleSprite(sx, sy);
+        return;
+      }
       const def = oreDefs[tile];
       ctx.fillStyle = def ? def.color : "#999";
       ctx.fillRect(sx, sy, TILE, TILE);
@@ -2587,6 +3912,188 @@
       }
     }
 
+    function drawHouseTile(wx, wy, sx, sy) {
+      const dx = wx - HOUSE_X;
+      if (wy === 0) {
+        ctx.fillStyle = "#7ec7ff";
+        ctx.fillRect(sx, sy, TILE, TILE);
+        ctx.fillStyle = "#a83a2a";
+        const slope = Math.abs(dx);
+        const roofTop = Math.floor(TILE * (slope / (HOUSE_HALF_WIDTH + 1)));
+        ctx.fillRect(sx, sy + roofTop, TILE, TILE - roofTop);
+        ctx.fillStyle = "#7a2418";
+        ctx.fillRect(sx, sy + TILE - 3, TILE, 3);
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.fillRect(sx + 1, sy + roofTop + 1, TILE - 2, 2);
+        return;
+      }
+      ctx.fillStyle = "#c08a5a";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      for (let i = 0; i < TILE; i += 4) ctx.fillRect(sx, sy + i, TILE, 1);
+      for (let i = 0; i < TILE; i += 6) ctx.fillRect(sx + i, sy, 1, TILE);
+      if (wy === 1 && dx === 0) {
+        ctx.fillStyle = "#8ec5ff";
+        ctx.fillRect(sx + 4, sy + 4, TILE - 8, TILE - 8);
+        ctx.fillStyle = "#4a2a14";
+        ctx.fillRect(sx + Math.floor(TILE / 2) - 1, sy + 4, 2, TILE - 8);
+        ctx.fillRect(sx + 4, sy + Math.floor(TILE / 2) - 1, TILE - 8, 2);
+      }
+      if (wy === SURFACE_Y_MAX && dx === -1) {
+        ctx.fillStyle = "#5a3018";
+        ctx.fillRect(sx + 3, sy + 2, TILE - 6, TILE - 2);
+        ctx.fillStyle = "#3a1f10";
+        ctx.fillRect(sx + 3, sy + 2, 2, TILE - 2);
+        ctx.fillStyle = "#ffd56b";
+        ctx.fillRect(sx + TILE - 7, sy + Math.floor(TILE / 2), 2, 2);
+      }
+    }
+
+    function drawMrsTugg(sx, sy) {
+      const t = performance.now() / 1000;
+      const bob = Math.sin(t * 1.6) * 1.2;
+      ctx.save();
+      ctx.translate(sx + TILE / 2, sy + TILE / 2 - bob);
+      drawPerson({
+        shirt: "#d8528a",
+        shirtDark: "#992c5c",
+        pants: "#5a3458",
+        pantsDark: "#311a30",
+        hat: "none",
+        hair: "#caa15a",
+        armUp: 0,
+      });
+      ctx.fillStyle = "#ffd0a0";
+      ctx.fillRect(-4, -22, 2, 2);
+      ctx.fillRect(2, -22, 2, 2);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-3, -22, 1, 1);
+      ctx.fillRect(3, -22, 1, 1);
+      ctx.fillStyle = "rgba(232, 120, 140, 0.55)";
+      ctx.fillRect(-6, -18, 2, 2);
+      ctx.fillRect(4, -18, 2, 2);
+      ctx.fillStyle = "#c8506a";
+      ctx.fillRect(-2, -16, 1, 1);
+      ctx.fillRect(1, -16, 1, 1);
+      ctx.fillRect(-1, -15, 2, 1);
+      ctx.fillStyle = "#caa15a";
+      ctx.fillRect(-9, -28, 3, 8);
+      ctx.fillRect(6, -28, 3, 8);
+      ctx.restore();
+
+      if (!state.tuggFound || !state.tuggFound.dog) return;
+      const msg = "Thank you, hero!";
+      ctx.save();
+      ctx.font = "bold 11px Verdana";
+      const padX = 6, padY = 4;
+      const textW = ctx.measureText(msg).width;
+      const bubbleW = textW + padX * 2;
+      const bubbleH = 16;
+      const bx = sx + TILE / 2 - bubbleW / 2;
+      const by = sy - TILE - 8 - bob;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.strokeStyle = "#5a3018";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bubbleW, bubbleH, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx + TILE / 2 - 3, by + bubbleH);
+      ctx.lineTo(sx + TILE / 2 + 3, by + bubbleH);
+      ctx.lineTo(sx + TILE / 2, by + bubbleH + 5);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.fill();
+      ctx.strokeStyle = "#5a3018";
+      ctx.stroke();
+      ctx.fillStyle = "#5a3018";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(msg, sx + TILE / 2, by + bubbleH / 2 + 1);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+      ctx.restore();
+    }
+
+    function drawDog(sx, sy) {
+      const t = performance.now() / 1000;
+      const wag = Math.sin(t * 6) * 2;
+      const cx = sx + TILE / 2;
+      const cy = sy + TILE - 6;
+      ctx.fillStyle = "#8a5a2b";
+      ctx.fillRect(cx - 8, cy - 4, 14, 6);
+      ctx.fillRect(cx - 8, cy, 3, 4);
+      ctx.fillRect(cx + 2, cy, 3, 4);
+      ctx.fillStyle = "#6a3f1a";
+      ctx.fillRect(cx + 4, cy - 7, 5, 6);
+      ctx.fillStyle = "#3a1f10";
+      ctx.fillRect(cx + 7, cy - 6, 2, 2);
+      ctx.fillStyle = "#caa17a";
+      ctx.fillRect(cx + 6, cy - 4, 3, 2);
+      ctx.fillStyle = "#8a5a2b";
+      ctx.fillRect(cx - 10 + wag, cy - 6, 4, 2);
+    }
+
+    function drawCanaryBird(sx, sy) {
+      const t = performance.now() / 1000;
+      const hop = Math.abs(Math.sin(t * 3)) * 2;
+      const cx = sx + TILE / 2;
+      const cy = sy + TILE - 8 - hop;
+      ctx.fillStyle = "#ffd826";
+      ctx.fillRect(cx - 5, cy - 4, 10, 8);
+      ctx.fillStyle = "#ffeb6b";
+      ctx.fillRect(cx - 4, cy - 3, 8, 3);
+      ctx.fillStyle = "#ffa324";
+      ctx.fillRect(cx + 5, cy, 2, 1);
+      ctx.fillStyle = "#222";
+      ctx.fillRect(cx + 3, cy - 2, 1, 1);
+      ctx.fillStyle = "#caa117";
+      ctx.fillRect(cx - 2, cy + 4, 1, 2);
+      ctx.fillRect(cx + 1, cy + 4, 1, 2);
+    }
+
+    function drawHelmetItem(sx, sy) {
+      const t = performance.now() / 1000;
+      const cx = sx + TILE / 2;
+      const cy = sy + TILE - 8;
+      ctx.fillStyle = "#3a3a3a";
+      ctx.fillRect(cx - 8, cy - 4, 16, 5);
+      ctx.fillStyle = "#5a5a5a";
+      ctx.fillRect(cx - 7, cy - 8, 14, 6);
+      ctx.fillStyle = "#7a7a7a";
+      ctx.fillRect(cx - 6, cy - 7, 12, 2);
+      const glow = 0.7 + Math.sin(t * 4) * 0.3;
+      ctx.fillStyle = `rgba(255, 240, 120, ${glow})`;
+      ctx.fillRect(cx - 2, cy - 6, 4, 3);
+      ctx.fillStyle = `rgba(255, 255, 200, ${glow})`;
+      ctx.fillRect(cx - 1, cy - 5, 2, 1);
+    }
+
+    function drawTuggItem(item, sx, sy) {
+      if (item.id === "dog") drawDog(sx, sy);
+      else if (item.id === "canary") drawCanaryBird(sx, sy);
+      else if (item.id === "helmet") drawHelmetItem(sx, sy);
+    }
+
+    function drawCandleSprite(sx, sy) {
+      const t = performance.now() / 200;
+      const flicker = Math.sin(t) * 0.5 + Math.sin(t * 2.3) * 0.3;
+      const cx = sx + TILE / 2;
+      ctx.fillStyle = "#3a2410";
+      ctx.fillRect(cx - 3, sy + TILE - 8, 6, 6);
+      ctx.fillStyle = "#5a3a18";
+      ctx.fillRect(cx - 3, sy + TILE - 8, 6, 2);
+      ctx.fillStyle = "#f4ecd2";
+      ctx.fillRect(cx - 1, sy + TILE - 14, 2, 6);
+      ctx.fillStyle = "#fff48a";
+      ctx.fillRect(cx - 1, sy + TILE - 17, 2, 3);
+      ctx.fillStyle = `rgba(255, 200, 80, ${0.85 + flicker * 0.15})`;
+      ctx.fillRect(cx - 2, sy + TILE - 16 + Math.floor(flicker), 4, 4);
+      ctx.fillStyle = `rgba(255, 255, 220, 0.95)`;
+      ctx.fillRect(cx - 1, sy + TILE - 15 + Math.floor(flicker), 2, 2);
+    }
+
     function draw() {
       resizeGameCanvas();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2603,6 +4110,7 @@
 
           if (wy <= SURFACE_Y_MAX) {
             const inShopCol = Math.abs(wx - SHOP_X) <= SHOP_HALF_WIDTH;
+            const inHouseCol = isHouseColumn(wx);
             ctx.fillStyle = "#7ec7ff";
             ctx.fillRect(sx, sy, TILE, TILE);
             if (inShopCol) {
@@ -2621,6 +4129,10 @@
                   ctx.fillRect(sx + Math.floor(TILE / 2) - 2, sy, 4, TILE);
                 }
               }
+            } else if (inHouseCol) {
+              drawHouseTile(wx, wy, sx, sy);
+            } else if (wx === MRS_TUGG_X && wy === SURFACE_Y_MAX) {
+              drawMrsTugg(sx, sy);
             }
             continue;
           }
@@ -2652,6 +4164,17 @@
           if (isChamberCarpet(wx, wy)) drawCarpet(sx, sy);
           if (isChamberChestPos(wx, wy)) drawChest(sx, sy, state.chamberChestOpened);
         }
+      }
+
+      // Draw Mrs. Tugg's lost items in their underground alcoves.
+      for (const item of TUGG_ITEMS) {
+        if (state.tuggFound[item.id]) continue;
+        const p = tuggItemPos(item);
+        if (p.x < camX || p.x >= camX + VIEW_W) continue;
+        if (p.y < camY || p.y >= camY + VIEW_H) continue;
+        const sx = (p.x - camX) * TILE;
+        const sy = (p.y - camY) * TILE;
+        drawTuggItem(item, sx, sy);
       }
 
       drawChamberBombs(camX, camY);
@@ -2698,41 +4221,54 @@
         const elapsed = player.deathAnimStart ? (performance.now() - player.deathAnimStart) / 1000 : 0;
         const t = Math.min(1.5, elapsed);
         const isStuckDeath = player.deathReason === "stuck";
-        const impact = Math.max(0, 1 - t * 3.2); // Strong at start then fades.
+        const isLavaDeath = player.deathReason === "lava";
+        const impact = Math.max(0, 1 - t * 3.2);
         const shakeX = (Math.sin(elapsed * 90) * 4 + Math.cos(elapsed * 66) * 2) * impact;
         const shakeY = Math.sin(elapsed * 72) * 2 * impact;
-        const bodyScale = isStuckDeath ? Math.max(0.34, 1 - t * 0.42) : Math.max(0.22, 1 - t * 0.62);
-        const fallOffset = isStuckDeath ? Math.min(6, t * 4) : Math.min(13, t * 11);
-        const alpha = Math.max(0.20, 1 - t * 0.62);
-        const bodyW = (TILE - 8) * bodyScale * (isStuckDeath ? 1.5 : 1);
-        const bodyH = (TILE - 8) * bodyScale * (isStuckDeath ? 0.62 : 1);
+        const fallOffset = isStuckDeath ? Math.min(6, t * 4) : Math.min(14, t * 11);
+        const alpha = Math.max(0.25, 1 - t * 0.55);
         const centerX = px + TILE / 2 + shakeX;
         const centerY = py + TILE / 2 + fallOffset + shakeY;
-        const rot = isStuckDeath ? Math.min(0.4, t * 0.35) : Math.min(0.9, t * 0.95);
-        const spinDir = player.deathReason === "lava" ? -1 : 1;
+        const spinDir = isLavaDeath ? -1 : 1;
+        const rot = isStuckDeath ? Math.min(0.4, t * 0.35) : Math.min(Math.PI / 2, t * 1.6) * spinDir;
 
         ctx.save();
+        ctx.globalAlpha = alpha;
         ctx.translate(centerX, centerY);
-        ctx.rotate(rot * spinDir);
-        ctx.fillStyle = `rgba(166, 166, 166, ${alpha})`;
-        ctx.fillRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH);
-        ctx.strokeStyle = `rgba(55, 55, 55, ${alpha})`;
+        ctx.rotate(rot);
+        drawPerson({
+          shirt: isLavaDeath ? "#7a2a18" : "#3aa6ff",
+          pants: isLavaDeath ? "#3a1408" : "#15294a",
+          skin: isLavaDeath ? "#caa088" : "#ffd0a0",
+          hat: "miner",
+          armUp: Math.sin(elapsed * 14) * 0.5 + 0.3,
+        });
+
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = "#000";
         ctx.lineWidth = 2;
-        // X eyes.
-        const eyeY = -bodyH * 0.15;
-        const eyeDX = bodyW * 0.22;
-        const eyeSize = Math.max(2, bodyW * 0.10);
         ctx.beginPath();
-        ctx.moveTo(-eyeDX - eyeSize, eyeY - eyeSize);
-        ctx.lineTo(-eyeDX + eyeSize, eyeY + eyeSize);
-        ctx.moveTo(-eyeDX + eyeSize, eyeY - eyeSize);
-        ctx.lineTo(-eyeDX - eyeSize, eyeY + eyeSize);
-        ctx.moveTo(eyeDX - eyeSize, eyeY - eyeSize);
-        ctx.lineTo(eyeDX + eyeSize, eyeY + eyeSize);
-        ctx.moveTo(eyeDX + eyeSize, eyeY - eyeSize);
-        ctx.lineTo(eyeDX - eyeSize, eyeY + eyeSize);
+        ctx.moveTo(-5, -23);
+        ctx.lineTo(-2, -20);
+        ctx.moveTo(-2, -23);
+        ctx.lineTo(-5, -20);
+        ctx.moveTo(2, -23);
+        ctx.lineTo(5, -20);
+        ctx.moveTo(5, -23);
+        ctx.lineTo(2, -20);
         ctx.stroke();
         ctx.restore();
+
+        ctx.globalAlpha = 1;
+
+        if (isLavaDeath) {
+          for (let i = 0; i < 6; i++) {
+            const ang = (i / 6) * Math.PI * 2 + elapsed * 2;
+            const r = 10 + t * 14;
+            ctx.fillStyle = `rgba(255, ${120 + Math.floor(Math.sin(elapsed * 20 + i) * 60)}, 40, ${alpha * 0.85})`;
+            ctx.fillRect(centerX + Math.cos(ang) * r - 2, centerY + Math.sin(ang) * r - 2, 4, 4);
+          }
+        }
 
         const overlayAlpha = Math.min(0.52, 0.12 + t * 0.30);
         ctx.fillStyle = `rgba(0, 0, 0, ${overlayAlpha})`;
@@ -2762,23 +4298,72 @@
         const workerH = worker.height * TILE;
         if (wx < -workerW || wy < -workerH || wx > canvas.width || wy > canvas.height) continue;
         if (worker.type === "heavy") {
-          ctx.fillStyle = "#d84c4c";
-          ctx.fillRect(wx + 3, wy + 3, workerW - 6, workerH - 6);
-          ctx.fillStyle = "#6e1a1a";
-          ctx.fillRect(wx + Math.floor(workerW * 0.3), wy + 8, 5, 5);
-          ctx.fillRect(wx + Math.floor(workerW * 0.65), wy + 8, 5, 5);
+          ctx.save();
+          ctx.translate(wx + workerW / 2, wy + workerH - TILE / 2 - 2);
+          ctx.scale(1.15, 1.15);
+          drawPerson({
+            shirt: "#d84c4c",
+            shirtDark: "#8a2828",
+            pants: "#3a1010",
+            pantsDark: "#1a0606",
+            hat: "none",
+            hair: "#3a1818",
+          });
+          ctx.restore();
         } else {
-          ctx.fillStyle = "#5ea6ff";
-          ctx.fillRect(wx + 4, wy + 4, TILE - 8, TILE - 8);
-          ctx.fillStyle = "#173766";
-          ctx.fillRect(wx + 8, wy + 8, 4, 4);
-          ctx.fillRect(wx + 14, wy + 8, 4, 4);
+          ctx.save();
+          ctx.translate(wx + TILE / 2, wy + TILE / 2);
+          drawPerson({
+            shirt: "#5ea6ff",
+            shirtDark: "#2a5a99",
+            pants: "#15294a",
+            pantsDark: "#0a1426",
+            hat: "none",
+            hair: "#3a3a3a",
+          });
+          ctx.restore();
         }
         if (worker.hasWaterBucket) {
           ctx.fillStyle = "#62f0ff";
           ctx.fillRect(wx + workerW - 10, wy + 2, 7, 7);
           ctx.fillStyle = "#173766";
           ctx.fillRect(wx + workerW - 8, wy + 4, 3, 3);
+        }
+      }
+
+      // Draw homeless guy.
+      if (state.homeless) {
+        const h = state.homeless;
+        const hx = (h.x - camX) * TILE;
+        const hy = (h.y - camY) * TILE;
+        if (hx >= -TILE * 2 && hx <= canvas.width + TILE && hy >= -TILE * 2 && hy <= canvas.height + TILE) {
+          ctx.save();
+          ctx.translate(hx + TILE / 2, hy + TILE / 2);
+          drawPerson({
+            shirt: "#7a6850",
+            shirtDark: "#3a3024",
+            pants: "#4a3a28",
+            pantsDark: "#1a1408",
+            hat: "none",
+            hair: "#3a2a18",
+            skin: "#d4a880",
+          });
+          drawHomelessRags();
+          ctx.restore();
+
+          if (h.state === "waiting") {
+            const bob = Math.sin(performance.now() / 280) * 2;
+            ctx.save();
+            ctx.fillStyle = "#ffd56b";
+            ctx.font = "bold 18px Verdana";
+            ctx.textAlign = "center";
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = 6;
+            ctx.fillText("?", hx + TILE / 2, hy - 14 + bob);
+            ctx.shadowBlur = 0;
+            ctx.textAlign = "start";
+            ctx.restore();
+          }
         }
       }
 
@@ -2789,19 +4374,31 @@
         const hologramW = state.pendingWorker.width * TILE;
         const hologramH = state.pendingWorker.height * TILE;
         if (hx >= -hologramW && hx <= canvas.width && hy >= -hologramH && hy <= canvas.height) {
+          ctx.save();
+          ctx.globalAlpha = 0.5;
           if (state.pendingWorker.type === "heavy") {
-            ctx.fillStyle = "rgba(255, 105, 105, 0.42)";
-            ctx.fillRect(hx + 3, hy + 3, hologramW - 6, hologramH - 6);
-            ctx.fillStyle = "rgba(100, 20, 20, 0.55)";
-            ctx.fillRect(hx + Math.floor(hologramW * 0.3), hy + 8, 5, 5);
-            ctx.fillRect(hx + Math.floor(hologramW * 0.65), hy + 8, 5, 5);
+            ctx.translate(hx + hologramW / 2, hy + hologramH - TILE / 2 - 2);
+            ctx.scale(1.15, 1.15);
+            drawPerson({
+              shirt: "#ff8a8a",
+              shirtDark: "#a04040",
+              pants: "#5a2a2a",
+              pantsDark: "#2a1010",
+              hat: "none",
+              hair: "#4a2828",
+            });
           } else {
-            ctx.fillStyle = "rgba(110, 180, 255, 0.45)";
-            ctx.fillRect(hx + 4, hy + 4, TILE - 8, TILE - 8);
-            ctx.fillStyle = "rgba(25, 60, 120, 0.55)";
-            ctx.fillRect(hx + 8, hy + 8, 4, 4);
-            ctx.fillRect(hx + 14, hy + 8, 4, 4);
+            ctx.translate(hx + TILE / 2, hy + TILE / 2);
+            drawPerson({
+              shirt: "#9ec8ff",
+              shirtDark: "#4a78b8",
+              pants: "#2a4a78",
+              pantsDark: "#152848",
+              hat: "none",
+              hair: "#5a5a5a",
+            });
           }
+          ctx.restore();
         }
       }
 
@@ -2813,6 +4410,126 @@
       }
 
       drawCelebration(camX, camY);
+      drawLavaGlow(camX, camY);
+      drawDarkness(camX, camY);
+    }
+
+    function drawLavaGlow(camX, camY) {
+      const darkness = Math.max(
+        getDarknessAtDepth(camY),
+        getDarknessAtDepth(camY + VIEW_H)
+      );
+      if (darkness <= 0) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const t = performance.now() / 300;
+      for (let vy = 0; vy < VIEW_H; vy++) {
+        for (let vx = 0; vx < VIEW_W; vx++) {
+          const wx = camX + vx;
+          const wy = camY + vy;
+          if (getTile(wx, wy) !== "lava") continue;
+          const flicker = 0.85 + Math.sin(t + wx * 0.7 + wy * 0.3) * 0.15;
+          const cx = vx * TILE + TILE / 2;
+          const cy = vy * TILE + TILE / 2;
+          const r = TILE * 4 * flicker;
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          g.addColorStop(0, `rgba(255, 120, 30, ${0.55 * flicker * darkness})`);
+          g.addColorStop(0.5, `rgba(255, 60, 0, ${0.25 * flicker * darkness})`);
+          g.addColorStop(1, "rgba(255, 0, 0, 0)");
+          ctx.fillStyle = g;
+          ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+        }
+      }
+      ctx.restore();
+    }
+
+    let darknessCanvas = null;
+    let darknessCtx = null;
+    function getDarknessAtDepth(worldY) {
+      const depth = worldY - SURFACE_Y_MAX;
+      if (depth <= 5) return 0;
+      return Math.min(0.95, (depth - 5) / 220);
+    }
+    function drawLightOnDark(dctx, cx, cy, radius, strength = 1) {
+      const g = dctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      g.addColorStop(0, `rgba(0,0,0,${strength})`);
+      g.addColorStop(0.55, `rgba(0,0,0,${strength * 0.55})`);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      dctx.fillStyle = g;
+      dctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    }
+    function drawDarkness(camX, camY) {
+      const topWorldY = camY;
+      const bottomWorldY = camY + VIEW_H;
+      const topDark = getDarknessAtDepth(topWorldY);
+      const bottomDark = getDarknessAtDepth(bottomWorldY);
+      if (topDark <= 0 && bottomDark <= 0) return;
+      if (!darknessCanvas || darknessCanvas.width !== canvas.width || darknessCanvas.height !== canvas.height) {
+        darknessCanvas = document.createElement("canvas");
+        darknessCanvas.width = canvas.width;
+        darknessCanvas.height = canvas.height;
+        darknessCtx = darknessCanvas.getContext("2d");
+      }
+      const dctx = darknessCtx;
+      dctx.globalCompositeOperation = "source-over";
+      dctx.clearRect(0, 0, darknessCanvas.width, darknessCanvas.height);
+      const grad = dctx.createLinearGradient(0, 0, 0, darknessCanvas.height);
+      grad.addColorStop(0, `rgba(0, 0, 0, ${topDark})`);
+      grad.addColorStop(1, `rgba(0, 0, 0, ${bottomDark})`);
+      dctx.fillStyle = grad;
+      dctx.fillRect(0, 0, darknessCanvas.width, darknessCanvas.height);
+
+      dctx.globalCompositeOperation = "destination-out";
+      const px = (player.x - camX) * TILE + TILE / 2;
+      const py = (player.y - camY) * TILE;
+      drawLightOnDark(dctx, px, py, TILE * 3, 1);
+
+      for (let vy = 0; vy < VIEW_H; vy++) {
+        for (let vx = 0; vx < VIEW_W; vx++) {
+          const wx = camX + vx;
+          const wy = camY + vy;
+          const tile = getTile(wx, wy);
+          if (tile === "candle") {
+            const t = performance.now() / 200;
+            const flicker = 1 + Math.sin(t + wx + wy) * 0.06;
+            const cx = vx * TILE + TILE / 2;
+            const cy = vy * TILE + TILE / 2;
+            const r = TILE * 8 * flicker;
+            const g = dctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            g.addColorStop(0, "rgba(0,0,0,1)");
+            g.addColorStop(0.35, "rgba(0,0,0,1)");
+            g.addColorStop(0.75, "rgba(0,0,0,0.45)");
+            g.addColorStop(1, "rgba(0,0,0,0)");
+            dctx.fillStyle = g;
+            dctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+          } else if (tile === "lava") {
+            const t = performance.now() / 300;
+            const flicker = 1 + Math.sin(t + wx * 0.7 + wy * 0.3) * 0.07;
+            const cx = vx * TILE + TILE / 2;
+            const cy = vy * TILE + TILE / 2;
+            const r = TILE * 5 * flicker;
+            const g = dctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            g.addColorStop(0, "rgba(0,0,0,1)");
+            g.addColorStop(0.4, "rgba(0,0,0,0.7)");
+            g.addColorStop(1, "rgba(0,0,0,0)");
+            dctx.fillStyle = g;
+            dctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+          }
+        }
+      }
+
+      // After the chest is opened the boss lair lights up — clear darkness from
+      // the chamber region.
+      if (state.chamberChestOpened) {
+        const chamberTopPx = (CHAMBER_Y_START - camY) * TILE;
+        const chamberBottomPx = (CHAMBER_Y_END + 1 - camY) * TILE;
+        if (chamberBottomPx > 0 && chamberTopPx < darknessCanvas.height) {
+          dctx.fillStyle = "rgba(0, 0, 0, 1)";
+          dctx.fillRect(0, chamberTopPx, darknessCanvas.width, chamberBottomPx - chamberTopPx);
+        }
+      }
+
+      ctx.drawImage(darknessCanvas, 0, 0);
     }
 
     function tick() {
@@ -2824,6 +4541,7 @@
       }
       if (isInCutscene()) {
         updateFxParticles();
+        updateMusic();
         draw();
         requestAnimationFrame(tick);
         return;
@@ -2834,9 +4552,11 @@
       updateChamberBombs(now);
       updateBossFight();
       updateWorkers();
+      updateHomeless(now);
       checkStuckGameOver();
       ensureLoadedAroundPlayer();
       despawnFarTiles();
+      updateMusic();
       draw();
       requestAnimationFrame(tick);
     }
@@ -2989,14 +4709,24 @@
         if (isGameKey && document.activeElement instanceof HTMLButtonElement) {
           document.activeElement.blur();
         }
-        if (k === "arrowleft" || k === "a") movePlayer(-1, 0);
-        else if (k === "arrowright" || k === "d") movePlayer(1, 0);
+        if (k === "arrowleft" || k === "a") {
+          if (state.pendingWorker) nudgePendingWorker(-1);
+          else movePlayer(-1, 0);
+        }
+        else if (k === "arrowright" || k === "d") {
+          if (state.pendingWorker) nudgePendingWorker(1);
+          else movePlayer(1, 0);
+        }
         else if (k === "arrowup" || k === "w") movePlayer(0, -1);
         else if (k === "arrowdown" || k === "s") movePlayer(0, 1);
         else if (k === " ") {
           // Stop Space from also "clicking" a focused button (e.g. Use Water Bucket).
           e.preventDefault();
           mineTile();
+        }
+        else if (k === "c") {
+          e.preventDefault();
+          placeCandleAtPlayer();
         }
       },
       { capture: true }
@@ -3007,8 +4737,11 @@
         showMessage("Go to the shop to upgrade.");
         return;
       }
-      if (state.pickaxe >= MAX_PICK) return;
       const cost = getUpgradePickCost(state.pickaxe);
+      if (cost === null) {
+        showMessage("Use the Buy Quad/Octo/Auto button instead.");
+        return;
+      }
       if (state.money < cost) {
         showMessage("Not enough money.");
         return;
@@ -3022,6 +4755,38 @@
       updateHud();
     });
 
+    function buyPickJump(targetLevel, cost, label) {
+      if (!isInShop()) {
+        showMessage("Go to the shop to buy.");
+        return;
+      }
+      if (state.pickaxe >= targetLevel) {
+        showMessage(`You already have the ${label}.`);
+        return;
+      }
+      if (state.money < cost) {
+        showMessage("Not enough money.");
+        return;
+      }
+      state.money -= cost;
+      state.pickaxe = targetLevel;
+      state.pickDurability = getMaxDurability(state.pickaxe);
+      playShopBuyAnim();
+      showMessage(`You got the ${getPickaxeName(state.pickaxe)}!`, "var(--good)");
+      sfx.upgrade();
+      updateHud();
+    }
+
+    document.getElementById("buyQuadBtn").addEventListener("click", () => {
+      buyPickJump(PICK_QUAD, 2000, "Quad Pick");
+    });
+    document.getElementById("buyOctoBtn").addEventListener("click", () => {
+      buyPickJump(PICK_OCTO, 5000, "Octo Pick");
+    });
+    document.getElementById("buyAutoBtn").addEventListener("click", () => {
+      buyPickJump(PICK_AUTO, 10000, "Auto Digger");
+    });
+
     document.getElementById("healBtn").addEventListener("click", () => {
       if (!isInShop()) {
         showMessage("Go to the shop to heal.");
@@ -3033,29 +4798,6 @@
       playShopBuyAnim();
       showMessage("You feel better.", "var(--good)");
       playTone(420, 0.08, "triangle", 0.04);
-      updateHud();
-    });
-
-    document.getElementById("repairBtn").addEventListener("click", () => {
-      if (!isInShop()) {
-        showMessage("Go to the shop to repair.");
-        return;
-      }
-      const repairCost = getRepairCost();
-      if (repairCost <= 0) {
-        showMessage("Your pickaxe is already fully repaired.");
-        return;
-      }
-      if (state.money < repairCost) {
-        showMessage("Not enough money to repair.");
-        return;
-      }
-      state.money -= repairCost;
-      state.pickDurability = getMaxDurability(state.pickaxe);
-      playShopBuyAnim();
-      showMessage("Pickaxe repaired!", "var(--good)");
-      playTone(300, 0.07, "triangle", 0.04);
-      playTone(520, 0.08, "triangle", 0.04, 0.07);
       updateHud();
     });
 
@@ -3090,8 +4832,8 @@
       };
       showMessage(
         state.pendingWorker.spawnInChamber
-          ? "Chamber hologram ready! +/- then Hire — mines down!"
-          : "Hologram ready! Move it with +/- then press Hire.",
+          ? "Chamber hologram ready! Arrows then Hire — mines down!"
+          : "Hologram ready! Move it with ← → arrows then press Hire.",
         "var(--good)"
       );
       sfx.place();
@@ -3132,8 +4874,8 @@
       }
       showMessage(
         state.pendingWorker.spawnInChamber
-          ? "Chamber mega hologram ready! +/- then Hire!"
-          : "Red mega hologram ready! Move it with +/- then press Hire.",
+          ? "Chamber mega hologram ready! Arrows then Hire!"
+          : "Red mega hologram ready! Move it with ← → arrows then press Hire.",
         "var(--good)"
       );
       sfx.place();
@@ -3154,6 +4896,23 @@
       playShopBuyAnim();
       showMessage("Bought a Water Bucket!", "var(--good)");
       sfx.water();
+      updateHud();
+    });
+
+    document.getElementById("buyCandleBtn").addEventListener("click", () => {
+      if (!isInShop()) {
+        showMessage("Go to the shop to buy candles.");
+        return;
+      }
+      if (state.money < CANDLE_COST) {
+        showMessage("Not enough money for a candle.");
+        return;
+      }
+      state.money -= CANDLE_COST;
+      state.candles++;
+      playShopBuyAnim();
+      showMessage("Bought a Candle! Press C to place it.", "var(--good)");
+      sfx.place();
       updateHud();
     });
 
@@ -3227,31 +4986,51 @@
       updateHud();
     });
 
-    document.getElementById("workerLaneLeftBtn").addEventListener("click", () => {
-      if (!state.pendingWorker) {
-        showMessage("Buy a worker first.");
-        return;
+    function nudgePendingWorker(dir) {
+      if (!state.pendingWorker) return;
+      if (dir < 0) {
+        state.pendingWorker.x = Math.max(1, state.pendingWorker.x - 1);
+        playTone(340, 0.04, "square", 0.025);
+      } else {
+        const maxPendingX = WORLD_W - state.pendingWorker.width - 1;
+        state.pendingWorker.x = Math.min(maxPendingX, state.pendingWorker.x + 1);
+        playTone(380, 0.04, "square", 0.025);
       }
-      state.pendingWorker.x = Math.max(1, state.pendingWorker.x - 1);
-      playTone(340, 0.04, "square", 0.025);
       updateHud();
-    });
-
-    document.getElementById("workerLaneRightBtn").addEventListener("click", () => {
-      if (!state.pendingWorker) {
-        showMessage("Buy a worker first.");
-        return;
-      }
-      const maxPendingX = WORLD_W - state.pendingWorker.width - 1;
-      state.pendingWorker.x = Math.min(maxPendingX, state.pendingWorker.x + 1);
-      playTone(380, 0.04, "square", 0.025);
-      updateHud();
-    });
+    }
 
     document.getElementById("tipsBtn").addEventListener("click", () => {
       const tip = strategyTips[tipIndex % strategyTips.length];
       tipIndex++;
       showMessage(`Tip: ${tip}`, "var(--good)", 360);
+    });
+
+    function buildOreLegend() {
+      const list = document.getElementById("oreLegendList");
+      list.innerHTML = "";
+      const skip = new Set(["lava", "bedrock"]);
+      const entries = Object.entries(oreDefs)
+        .filter(([k]) => !skip.has(k))
+        .sort((a, b) => a[1].hard - b[1].hard);
+      for (const [name, def] of entries) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML =
+          '<div class="sw" style="background:' + def.color + '"></div>' +
+          '<div class="name">' + name + '</div>' +
+          '<div class="val">$' + def.value + '</div>' +
+          '<div class="hard">Lv ' + def.hard + '+</div>';
+        list.appendChild(row);
+      }
+    }
+    buildOreLegend();
+
+    const oreLegendEl = document.getElementById("oreLegend");
+    document.getElementById("oresBtn").addEventListener("click", () => {
+      oreLegendEl.classList.toggle("show");
+    });
+    document.getElementById("oreLegendClose").addEventListener("click", () => {
+      oreLegendEl.classList.remove("show");
     });
 
     document.getElementById("respawnYesBtn").addEventListener("click", () => {
@@ -3266,8 +5045,84 @@
       showMessage("No respawns. If you die, that's it!", "var(--bad)", 200);
     });
 
+    document.getElementById("homelessYesBtn").addEventListener("click", () => {
+      if (!state.homeless) return;
+      if (state.money < HOMELESS_COST) {
+        hideHomelessPrompt();
+        showMessage(`Not enough money! You need $${HOMELESS_COST}.`, "var(--bad)");
+        return;
+      }
+      state.money -= HOMELESS_COST;
+      state.homeless.state = "following";
+      state.homeless.lastMoveAt = performance.now();
+      state.homeless.lastMineAt = performance.now();
+      hideHomelessPrompt();
+      sfx.cash();
+      showMessage("\"Thanks! I'm Puck. I'll tag along and help you mine.\"", "var(--good)", 200);
+      updateHud();
+    });
+
+    document.getElementById("homelessNoBtn").addEventListener("click", () => {
+      if (!state.homeless) return;
+      hideHomelessPrompt();
+      showMessage("\"Sigh... maybe next time.\"", "var(--muted)", 150);
+    });
+
     document.getElementById("playAgainBtn").addEventListener("click", onVictoryPlayAgain);
     document.getElementById("continueBtn").addEventListener("click", onVictoryContinue);
+
+    document.getElementById("tpTopBtn").addEventListener("click", () => {
+      if (state.dead) return;
+      const spawn = getSurfaceSpawn();
+      player.x = spawn.x;
+      player.y = spawn.y;
+      player.dirX = 0;
+      player.dirY = 1;
+      ensureLoadedAroundPlayer();
+      if (state.homeless && state.homeless.state === "following") {
+        state.homeless.x = spawn.x - 1;
+        state.homeless.y = spawn.y;
+        showMessage("Teleported to the top! Puck tagged along.", "var(--good)");
+      } else {
+        showMessage("Teleported to the top!", "var(--good)");
+      }
+      updateHud();
+      draw();
+    });
+
+    const newspaperModal = document.getElementById("newspaperModal");
+    let newspaperMusicStarted = false;
+    function showNewspaper() {
+      newspaperModal.classList.add("show");
+      state.gamePaused = true;
+      newspaperMusicStarted = false;
+      sfx.paperOpen();
+    }
+    function startNewspaperMusic() {
+      if (newspaperMusicStarted) return;
+      if (!ensureAudioReady()) return;
+      newspaperMusicStarted = true;
+      startMusic("newspaper");
+    }
+    function hideNewspaper() {
+      newspaperModal.classList.remove("show");
+      state.gamePaused = false;
+      ensureAudioReady();
+      stopMusic();
+      sfx.paperClose();
+      newspaperMusicStarted = false;
+    }
+    newspaperModal.addEventListener("click", startNewspaperMusic);
+    document.getElementById("playV001Btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      state.classicMode = true;
+      hideNewspaper();
+    });
+    document.getElementById("playV010Btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      state.classicMode = false;
+      hideNewspaper();
+    });
 
     window.addEventListener("resize", () => {
       resizeGameCanvas();
@@ -3276,6 +5131,7 @@
 
     resizeGameCanvas();
     resetGame();
+    showNewspaper();
     tick();
   </script>
 </body>
