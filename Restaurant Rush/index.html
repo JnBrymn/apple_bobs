@@ -1,0 +1,190 @@
+<!--
+Restaurant Rush
+- Goal: satisfy a never-ending line of customers (coming later)
+- Six white test screens in a 2×3 grid; arrow buttons move between neighbors
+- Layout:
+    1 — 2 — 3
+    |   |   |
+    4 — 5 — 6
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Rush</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      color: #333;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .corner-num {
+      position: absolute;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #999;
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .corner-num.tl { top: 12px; left: 16px; }
+    .corner-num.tr { top: 12px; right: 16px; }
+    .corner-num.bl { bottom: 12px; left: 16px; }
+    .corner-num.br { bottom: 12px; right: 16px; }
+
+    .screen-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      font-weight: 700;
+      color: #ddd;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .nav-arrow {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      background: #f5f5f5;
+      color: #444;
+      font-size: 1.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .nav-arrow:hover {
+      background: #e8e8e8;
+      border-color: #999;
+    }
+
+    .nav-arrow:active {
+      background: #ddd;
+    }
+
+    .nav-arrow .dest {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .nav-arrow.left  { left: 12px;  top: 50%; transform: translateY(-50%); flex-direction: column; }
+    .nav-arrow.right { right: 12px; top: 50%; transform: translateY(-50%); flex-direction: column; }
+    .nav-arrow.up    { top: 12px;    left: 50%; transform: translateX(-50%); flex-direction: column; }
+    .nav-arrow.down  { bottom: 12px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+  </style>
+</head>
+<body>
+
+  <!-- Screen 1: top-left -->
+  <section class="screen active" id="screen-1" data-screen="1">
+    <span class="corner-num tl">1</span>
+    <span class="corner-num tr">1</span>
+    <span class="corner-num bl">1</span>
+    <span class="corner-num br">1</span>
+    <span class="screen-label">1</span>
+    <button type="button" class="nav-arrow right" data-go="2" aria-label="Go to screen 2">→<span class="dest">2</span></button>
+    <button type="button" class="nav-arrow down" data-go="4" aria-label="Go to screen 4">↓<span class="dest">4</span></button>
+  </section>
+
+  <!-- Screen 2: top-center -->
+  <section class="screen" id="screen-2" data-screen="2">
+    <span class="corner-num tl">2</span>
+    <span class="corner-num tr">2</span>
+    <span class="corner-num bl">2</span>
+    <span class="corner-num br">2</span>
+    <span class="screen-label">2</span>
+    <button type="button" class="nav-arrow left" data-go="1" aria-label="Go to screen 1">←<span class="dest">1</span></button>
+    <button type="button" class="nav-arrow right" data-go="3" aria-label="Go to screen 3">→<span class="dest">3</span></button>
+    <button type="button" class="nav-arrow down" data-go="5" aria-label="Go to screen 5">↓<span class="dest">5</span></button>
+  </section>
+
+  <!-- Screen 3: top-right -->
+  <section class="screen" id="screen-3" data-screen="3">
+    <span class="corner-num tl">3</span>
+    <span class="corner-num tr">3</span>
+    <span class="corner-num bl">3</span>
+    <span class="corner-num br">3</span>
+    <span class="screen-label">3</span>
+    <button type="button" class="nav-arrow left" data-go="2" aria-label="Go to screen 2">←<span class="dest">2</span></button>
+    <button type="button" class="nav-arrow down" data-go="6" aria-label="Go to screen 6">↓<span class="dest">6</span></button>
+  </section>
+
+  <!-- Screen 4: bottom-left -->
+  <section class="screen" id="screen-4" data-screen="4">
+    <span class="corner-num tl">4</span>
+    <span class="corner-num tr">4</span>
+    <span class="corner-num bl">4</span>
+    <span class="corner-num br">4</span>
+    <span class="screen-label">4</span>
+    <button type="button" class="nav-arrow up" data-go="1" aria-label="Go to screen 1">↑<span class="dest">1</span></button>
+    <button type="button" class="nav-arrow right" data-go="5" aria-label="Go to screen 5">→<span class="dest">5</span></button>
+  </section>
+
+  <!-- Screen 5: bottom-center -->
+  <section class="screen" id="screen-5" data-screen="5">
+    <span class="corner-num tl">5</span>
+    <span class="corner-num tr">5</span>
+    <span class="corner-num bl">5</span>
+    <span class="corner-num br">5</span>
+    <span class="screen-label">5</span>
+    <button type="button" class="nav-arrow up" data-go="2" aria-label="Go to screen 2">↑<span class="dest">2</span></button>
+    <button type="button" class="nav-arrow left" data-go="4" aria-label="Go to screen 4">←<span class="dest">4</span></button>
+    <button type="button" class="nav-arrow right" data-go="6" aria-label="Go to screen 6">→<span class="dest">6</span></button>
+  </section>
+
+  <!-- Screen 6: bottom-right -->
+  <section class="screen" id="screen-6" data-screen="6">
+    <span class="corner-num tl">6</span>
+    <span class="corner-num tr">6</span>
+    <span class="corner-num bl">6</span>
+    <span class="corner-num br">6</span>
+    <span class="screen-label">6</span>
+    <button type="button" class="nav-arrow up" data-go="3" aria-label="Go to screen 3">↑<span class="dest">3</span></button>
+    <button type="button" class="nav-arrow left" data-go="5" aria-label="Go to screen 5">←<span class="dest">5</span></button>
+  </section>
+
+  <script>
+    const screens = document.querySelectorAll(".screen");
+
+    function showScreen(num) {
+      screens.forEach((s) => s.classList.remove("active"));
+      const el = document.getElementById("screen-" + num);
+      if (el) el.classList.add("active");
+    }
+
+    document.querySelectorAll(".nav-arrow[data-go]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        showScreen(Number(btn.dataset.go));
+      });
+    });
+  </script>
+</body>
+</html>
