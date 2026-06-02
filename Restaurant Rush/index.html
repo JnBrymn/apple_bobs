@@ -6,17 +6,19 @@ Restaurant Rush
 - Cup ↔ cooler / fridge / trash / blender fruit juice only (drinks — never washed in sink)
 - Soup pot ↔ fridge / trash / dishwasher / blender veggie puree (not wheat, not juice)
 - Bowl ↔ fridge / trash / dishwasher / blender wheat flour
-- Counter spots (screens 2–3): set down plate / cup / pot / bowl on empty pads — stays on that spot until you pick it up
+- Tray: set on counter (screens 2–3), then Place food → close-up with soup / drink / food / extra slots; extra holds any clean item (not raw); drag from carriers
+- Counter spots (screens 2–3): set down plate / cup / pot / bowl / tray on empty pads — stays on that spot until you pick it up
 - Counter combos: put a second item on a spot that already has one (e.g. bowl of flour + cup of water → dough in the bowl)
 - Cutting board (screen 3): washed apples, pineapple, carrots, cucumbers, tomatoes, potatoes → 3s → cut
-- Oven (screen 3): dough (bowl) or washed/cut fruit & veggies on plate → bake ~4s → browned; take out on plate only (dough → bread, apple → baked apple, etc.)
+- Oven (screen 3): dough (bowl) or washed/cut fruit & veggies on plate → bake ~4s → browned; pineapple must be chopped first; take out on plate only (dough → bread, apple → baked apple, etc.)
 - Blender (screen 3): grapes/apples/pineapple → juice (cup); carrots/cukes/potatoes/tomatoes → cold soup (pot); wheat → flour (bowl)
-- Microwave (screen 3): cold veggie soup in pot → heat ~3s → hot soup (pot only to take out)
+- Microwave (screen 3): cold soup in pot → Kitchen 1 salt + pepper on counter first → heat ~3s → hot soup (all soup recipes)
 - Sink: wash one raw item — 3s timer, then sparkle; becomes plate-only forever
 - Plate / cup / pot / bowl: throw away contents → dirty; load in dishwasher (screen 2) before reusing
-- Screen 2: kitchen (sink, dishwasher, fridge, trash)
+- Screen 2: kitchen (sink, dishwasher, fridge, trash, salt & pepper on counter)
 - Screen 3: kitchen (microwave, cutting board, cooler, oven, blender, trash — click to open)
-- Screens 4–6: white test screens in a 2×3 grid; arrow buttons move between neighbors
+- Screens: Garden, Kitchen 1, Kitchen 2, Storefront, Cashier, Cafeteria (2×3 grid; arrows show destination name)
+- Recipes button (top-left, all screens): list + how-to steps for bread, baked foods, chopped fruit/veg
 - Layout:
     1 — 2 — 3
     |   |   |
@@ -52,12 +54,18 @@ Restaurant Rush
 
     .corner-num {
       position: absolute;
-      font-size: 2rem;
+      font-size: clamp(0.7rem, 1.4vw, 1.1rem);
       font-weight: 700;
       color: #999;
-      line-height: 1;
+      line-height: 1.15;
       user-select: none;
       pointer-events: none;
+      max-width: min(120px, 28vw);
+    }
+
+    .corner-num.tr,
+    .corner-num.br {
+      text-align: right;
     }
 
     .corner-num.tl { top: 12px; left: 16px; }
@@ -70,17 +78,23 @@ Restaurant Rush
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 4rem;
+      font-size: clamp(1.75rem, 6vw, 3.5rem);
       font-weight: 700;
       color: #ddd;
       user-select: none;
       pointer-events: none;
+      text-align: center;
+      max-width: 90%;
+      line-height: 1.1;
     }
 
     .nav-arrow {
       position: absolute;
-      width: 72px;
+      width: auto;
+      min-width: 72px;
+      max-width: 104px;
       height: 72px;
+      padding: 0 6px;
       border: 2px solid #ccc;
       border-radius: 12px;
       background: #f5f5f5;
@@ -104,10 +118,14 @@ Restaurant Rush
     }
 
     .nav-arrow .dest {
-      font-size: 0.65rem;
+      font-size: 0.5rem;
       font-weight: 600;
       color: #888;
       margin-top: 2px;
+      line-height: 1.1;
+      text-align: center;
+      max-width: 72px;
+      white-space: normal;
     }
 
     .nav-arrow.left  { left: 12px;  top: 50%; transform: translateY(-50%); flex-direction: column; }
@@ -118,6 +136,124 @@ Restaurant Rush
     .nav-arrow,
     .corner-num {
       z-index: 10;
+    }
+
+    /* Recipe book — all screens */
+    .recipe-book {
+      position: fixed;
+      top: 52px;
+      left: 12px;
+      z-index: 35;
+      font-family: inherit;
+      max-width: min(280px, calc(100vw - 100px));
+    }
+
+    .recipe-book-toggle {
+      padding: 6px 12px;
+      border: 2px solid #c9a227;
+      border-radius: 8px;
+      background: linear-gradient(to bottom, #fff8e1, #ffe082);
+      color: #5d4037;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .recipe-book-toggle:hover {
+      background: linear-gradient(to bottom, #fff9c4, #ffd54f);
+    }
+
+    .recipe-book-panel {
+      display: none;
+      margin-top: 6px;
+      padding: 8px;
+      border: 2px solid #c9a227;
+      border-radius: 10px;
+      background: rgba(255, 253, 245, 0.97);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      max-height: min(52vh, 360px);
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    .recipe-book.open .recipe-book-panel {
+      display: flex;
+    }
+
+    .recipe-book.open .recipe-book-toggle {
+      border-color: #8d6e63;
+      background: linear-gradient(to bottom, #efebe9, #d7ccc8);
+    }
+
+    .recipe-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .recipe-list-item {
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid #e0d5c0;
+      border-radius: 6px;
+      background: #fff;
+      color: #4e342e;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .recipe-list-item:hover {
+      background: #fff8e1;
+      border-color: #c9a227;
+    }
+
+    .recipe-detail {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+    }
+
+    .recipe-book.show-detail .recipe-list {
+      display: none;
+    }
+
+    .recipe-book.show-detail .recipe-detail {
+      display: flex;
+    }
+
+    .recipe-back {
+      align-self: flex-start;
+      padding: 4px 8px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      background: #f5f5f5;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .recipe-back:hover {
+      background: #eee;
+    }
+
+    .recipe-detail-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #5d4037;
+    }
+
+    .recipe-detail-steps {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: #4e342e;
+      white-space: pre-line;
     }
 
     /* Screen 1 — outside */
@@ -1031,14 +1167,8 @@ Restaurant Rush
     }
 
     .basket-item .food-shape,
-    .plate-item .food-shape,
-    .sink-item .food-shape {
+    .plate-item .food-shape {
       transform: scale(1.05);
-    }
-
-    .fridge-slot-item .food-shape,
-    .blender-fruit .food-shape {
-      transform: scale(0.95);
     }
 
     .food-apples .food-shape {
@@ -1233,13 +1363,8 @@ Restaurant Rush
 
     .plate-item .food-slices,
     .basket-item .food-slices,
-    .sink-item .food-slices {
+    .plate-item .food-slices {
       transform: scale(1.1);
-    }
-
-    .fridge-slot-item .food-slices,
-    .cutting-board-food .food-slices {
-      transform: scale(0.9);
     }
 
     .food-slices-apples .slice,
@@ -1540,6 +1665,97 @@ Restaurant Rush
 
     .fridge-slot-item.slot-icon-wrap {
       gap: 1px;
+    }
+
+    /* Icons inside appliances & stations — readable, not microscopic */
+    .microwave-pot {
+      transform: translate(-50%, -50%);
+    }
+
+    .microwave-pot .mini-pot {
+      width: 50px;
+      height: 54px;
+      margin-top: 0;
+      border-width: 2px;
+    }
+
+    .microwave-pot .mini-pot::before {
+      top: -4px;
+      height: 6px;
+    }
+
+    .microwave-pot .mini-pot::after {
+      right: -8px;
+      width: 8px;
+      height: 4px;
+    }
+
+    .microwave-pot .mini-pot-soup {
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      height: 65%;
+    }
+
+    .microwave-pot .item-label {
+      display: none;
+    }
+
+    .oven-food {
+      transform: translate(-50%, -50%);
+    }
+
+    .oven-food .food-shape {
+      transform: scale(2.15);
+    }
+
+    .oven-dough-ball {
+      width: 34px;
+      height: 18px;
+    }
+
+    .cutting-board-food .food-shape,
+    .cutting-board-food .food-slices {
+      transform: scale(2);
+    }
+
+    .blender-fruit {
+      width: 26px;
+      height: 26px;
+    }
+
+    .blender-fruit .food-shape,
+    .blender-fruit .food-slices {
+      transform: scale(2.35);
+    }
+
+    .sink-item .food-shape,
+    .sink-item .food-slices {
+      transform: scale(1.9);
+    }
+
+    .fridge-slot-item .mini-cup {
+      width: 16px;
+      height: 19px;
+    }
+
+    .fridge-slot-item .mini-pot {
+      width: 18px;
+      height: 20px;
+    }
+
+    .fridge-slot-item .mini-pot-soup {
+      height: 62%;
+    }
+
+    .fridge-slot-item .mini-bowl {
+      width: 18px;
+      height: 12px;
+    }
+
+    .fridge-slot-item .food-shape,
+    .fridge-slot-item .food-slices {
+      transform: scale(1.35);
     }
 
     .icon-dish-plate {
@@ -2210,6 +2426,465 @@ Restaurant Rush
       box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.25);
     }
 
+    /* Serving tray */
+    .tray-home {
+      position: fixed;
+      bottom: 52px;
+      left: 380px;
+      width: 72px;
+      height: 56px;
+      z-index: 20;
+    }
+
+    .tray-home.is-empty {
+      cursor: pointer;
+    }
+
+    .tray-home.is-empty .tray-home-ring {
+      opacity: 0.85;
+      border-color: rgba(96, 125, 139, 0.75);
+      background: rgba(255, 255, 255, 0.25);
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .tray-home.is-empty:hover .tray-home-ring {
+      opacity: 1;
+      border-color: rgba(55, 71, 79, 0.9);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .tray-home-ring {
+      position: absolute;
+      inset: 0;
+      border: 2px dashed rgba(96, 125, 139, 0.55);
+      border-radius: 8px;
+      pointer-events: none;
+      transition: opacity 0.15s, border-color 0.15s;
+    }
+
+    .tray {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 72px;
+      height: 56px;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: grab;
+      z-index: 12;
+    }
+
+    .tray:active {
+      cursor: grabbing;
+    }
+
+    .tray.following {
+      position: fixed;
+      cursor: grabbing;
+      z-index: 100;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+    }
+
+    .tray-body {
+      position: absolute;
+      inset: 6px 4px 4px;
+      background: linear-gradient(180deg, #cfd8dc 0%, #b0bec5 55%, #90a4ae 100%);
+      border: 2px solid #78909c;
+      border-radius: 6px;
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+    }
+
+    .tray-rim {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 2px;
+      height: 5px;
+      background: #eceff1;
+      border-radius: 4px 4px 0 0;
+      border: 1px solid #b0bec5;
+    }
+
+    .tray-loads {
+      position: absolute;
+      inset: 10px 6px 6px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 2px;
+      pointer-events: none;
+    }
+
+    .tray-load {
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .tray.has-load .tray-load.filled {
+      opacity: 1;
+      overflow: visible;
+    }
+
+    /* Tray UI icons — sized to fit each container (not fridge-tiny) */
+    .tray-load .slot-icon-wrap,
+    .tray-slot-drop .slot-icon-wrap,
+    .tray-source-preview .slot-icon-wrap,
+    .tray-drag-ghost .slot-icon-wrap {
+      transform: none;
+    }
+
+    .tray-load .mini-cup {
+      width: 17px;
+      height: 20px;
+    }
+
+    .tray-load .mini-pot {
+      width: 22px;
+      height: 24px;
+      margin-top: 0;
+    }
+
+    .tray-load .mini-pot::before {
+      top: -3px;
+      height: 4px;
+    }
+
+    .tray-load .mini-pot::after {
+      right: -5px;
+      width: 5px;
+      height: 3px;
+    }
+
+    .tray-load .mini-pot-soup {
+      height: 62%;
+    }
+
+    .tray-load .mini-bowl {
+      width: 20px;
+      height: 13px;
+    }
+
+    .tray-load .food-icon .food-shape {
+      transform: scale(1.35);
+    }
+
+    .tray-closeup .tray-slot-drop .mini-cup,
+    .tray-drag-ghost .mini-cup {
+      width: 50px;
+      height: 58px;
+    }
+
+    .tray-closeup .tray-slot-drop .mini-pot,
+    .tray-drag-ghost .mini-pot {
+      width: 52px;
+      height: 56px;
+      margin-top: 0;
+      border-width: 2px;
+      border-radius: 3px 3px 10px 10px;
+    }
+
+    .tray-closeup .tray-slot-drop .mini-pot::before,
+    .tray-drag-ghost .mini-pot::before {
+      top: -4px;
+      height: 6px;
+    }
+
+    .tray-closeup .tray-slot-drop .mini-pot::after,
+    .tray-drag-ghost .mini-pot::after {
+      right: -8px;
+      width: 8px;
+      height: 4px;
+    }
+
+    .tray-closeup .tray-slot-drop .mini-pot-soup,
+    .tray-drag-ghost .mini-pot-soup {
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      height: 65%;
+      border-radius: 0 0 6px 6px;
+    }
+
+    .tray-closeup .tray-slot-drop .mini-bowl,
+    .tray-drag-ghost .mini-bowl {
+      width: 52px;
+      height: 34px;
+    }
+
+    .tray-closeup .tray-slot-drop .food-icon .food-shape,
+    .tray-drag-ghost .food-icon .food-shape {
+      transform: scale(3);
+    }
+
+    .tray-closeup .tray-slot-drop .slot-icon-wrap {
+      gap: 0;
+    }
+
+    .tray-source-preview .mini-cup {
+      width: 26px;
+      height: 30px;
+    }
+
+    .tray-source-preview .mini-pot {
+      width: 30px;
+      height: 32px;
+      margin-top: 0;
+    }
+
+    .tray-source-preview .mini-pot::before {
+      top: -3px;
+      height: 5px;
+    }
+
+    .tray-source-preview .mini-pot::after {
+      right: -6px;
+      width: 6px;
+      height: 3px;
+    }
+
+    .tray-source-preview .mini-pot-soup {
+      height: 62%;
+    }
+
+    .tray-source-preview .mini-bowl {
+      width: 28px;
+      height: 18px;
+    }
+
+    .tray-source-preview .food-icon .food-shape {
+      transform: scale(1.85);
+    }
+
+    .tray-load .item-label,
+    .tray-slot-drop .item-label,
+    .tray-source-preview .item-label,
+    .tray-drag-ghost .item-label {
+      display: none;
+    }
+
+    .tray-slot-drop .tray-extra-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #455a64;
+      text-align: center;
+      padding: 4px;
+      line-height: 1.2;
+    }
+
+    .tray-action-menu {
+      position: fixed;
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transform: translate(-50%, -100%);
+      margin-top: -6px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s, visibility 0.12s;
+    }
+
+    .tray-action-menu.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .tray-action-menu button {
+      padding: 8px 14px;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: 2px solid #78909c;
+      border-radius: 10px;
+      background: #fff;
+      color: #37474f;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+      white-space: nowrap;
+    }
+
+    .tray-action-menu button:hover {
+      background: #eceff1;
+    }
+
+    .tray-closeup {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(38, 50, 56, 0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .tray-closeup.is-open {
+      display: flex;
+    }
+
+    .tray-closeup[hidden] {
+      display: none !important;
+    }
+
+    .tray-closeup-inner {
+      width: min(640px, 100%);
+      background: #fafafa;
+      border-radius: 16px;
+      padding: 20px 20px 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      position: relative;
+    }
+
+    .tray-closeup-title {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #37474f;
+      text-align: center;
+    }
+
+    .tray-slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .tray-slot {
+      border: 3px dashed #90a4ae;
+      border-radius: 12px;
+      min-height: 100px;
+      padding: 8px;
+      background: #eceff1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .tray-slot-label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #546e7a;
+      margin-bottom: 6px;
+    }
+
+    .tray-slot-drop {
+      flex: 1;
+      width: 100%;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    .tray-slot.drag-over {
+      border-color: #43a047;
+      background: #e8f5e9;
+    }
+
+    .tray-slot.filled .tray-slot-drop {
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .tray-closeup-sources {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px;
+      padding: 12px 8px 8px;
+      border-top: 2px dashed #b0bec5;
+    }
+
+    .tray-source {
+      width: 72px;
+      text-align: center;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .tray-source:active {
+      cursor: grabbing;
+    }
+
+    .tray-source-ring {
+      width: 72px;
+      height: 64px;
+      border: 2px dashed rgba(70, 90, 120, 0.55);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 4px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .tray-source.bowl-source .tray-source-ring {
+      border-radius: 10px;
+    }
+
+    .tray-source-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #546e7a;
+    }
+
+    .tray-source-preview {
+      pointer-events: none;
+    }
+
+    .tray-source.unavailable {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .tray-source.tray-source-in-hand .tray-source-ring {
+      border-color: rgba(255, 167, 38, 0.9);
+      background: rgba(255, 243, 224, 0.85);
+      box-shadow: 0 0 0 2px rgba(255, 167, 38, 0.35);
+    }
+
+    .tray-closeup-done {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 8px 16px;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 800;
+      border: 2px solid #546e7a;
+      border-radius: 10px;
+      background: #fff;
+      color: #37474f;
+      cursor: pointer;
+    }
+
+    .tray-closeup-done:hover {
+      background: #eceff1;
+    }
+
+    .tray-drag-ghost {
+      position: fixed;
+      z-index: 250;
+      pointer-events: none;
+      opacity: 0.92;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+      transform: translate(-50%, -50%);
+    }
+
     .bowl {
       position: absolute;
       left: 0;
@@ -2403,6 +3078,26 @@ Restaurant Rush
       height: 5px;
       border-radius: 50%;
       background: #d7ccc8;
+    }
+
+    .dishwasher-item.icon-dish-plate {
+      width: 34px;
+      height: 34px;
+    }
+
+    .dishwasher-item.icon-dish-cup {
+      width: 22px;
+      height: 28px;
+    }
+
+    .dishwasher-item.icon-dish-pot {
+      width: 34px;
+      height: 22px;
+    }
+
+    .dishwasher-item.icon-dish-bowl {
+      width: 36px;
+      height: 20px;
     }
 
     .mini-bowl {
@@ -2673,6 +3368,9 @@ Restaurant Rush
     #screen-2 .counter-rest-spot[data-spot="s2-c"] {
       left: calc(50% + var(--appliance-w) + 22px);
     }
+    #screen-2 .counter-rest-spot[data-spot="s2-d"] {
+      left: clamp(calc(50% + var(--appliance-w) * 2 + 28px), 78%, calc(100% - 24px));
+    }
 
     #screen-3 .counter-rest-spot[data-spot="s3-a"] {
       left: clamp(172px, 22%, calc(50% - var(--appliance-w) * 2 - 28px));
@@ -2690,7 +3388,8 @@ Restaurant Rush
     .plate.on-counter,
     .cup.on-counter,
     .pot.on-counter,
-    .bowl.on-counter {
+    .bowl.on-counter,
+    .tray.on-counter {
       position: fixed;
       z-index: 25;
       cursor: grab;
@@ -2703,7 +3402,8 @@ Restaurant Rush
     .plate.counter-rest-away,
     .cup.counter-rest-away,
     .pot.counter-rest-away,
-    .bowl.counter-rest-away {
+    .bowl.counter-rest-away,
+    .tray.counter-rest-away {
       visibility: hidden;
       pointer-events: none;
     }
@@ -3260,23 +3960,122 @@ Restaurant Rush
       box-shadow: -8px 0 0 rgba(0, 0, 0, 0.08), 8px 0 0 rgba(0, 0, 0, 0.08);
     }
 
-    .kitchen-spices {
+    .shaker-dock {
       position: absolute;
-      top: -20px;
-      left: 6px;
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
-      z-index: 8;
+      top: -30px;
+      width: 30px;
+      height: 38px;
+      z-index: 9;
+    }
+
+    .shaker-dock-salt {
+      left: 4px;
+    }
+
+    .shaker-dock-pepper {
+      left: 32px;
+    }
+
+    .shaker-home-ring {
+      position: absolute;
+      inset: 0;
+      border: 2px dashed rgba(120, 90, 60, 0.5);
+      border-radius: 8px;
       pointer-events: none;
+      transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .shaker-dock.is-empty {
+      cursor: pointer;
+    }
+
+    .shaker-dock.is-empty .shaker-home-ring {
+      pointer-events: auto;
+      cursor: pointer;
+      opacity: 0.9;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .shaker-dock.is-empty:hover .shaker-home-ring {
+      border-color: rgba(120, 90, 60, 0.85);
+      background: rgba(255, 255, 255, 0.35);
     }
 
     .shaker {
-      position: relative;
+      position: absolute;
+      left: 50%;
+      bottom: 2px;
+      transform: translateX(-50%);
       width: 17px;
       height: 28px;
-      flex-shrink: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: grab;
       filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+      z-index: 2;
+    }
+
+    .shaker:active {
+      cursor: grabbing;
+    }
+
+    .shaker.following {
+      position: fixed;
+      z-index: 26;
+      cursor: grabbing;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(1.15);
+    }
+
+    .shaker.shaking {
+      animation: shakerShake 0.12s ease-in-out 6;
+    }
+
+    @keyframes shakerShake {
+      0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1.15); }
+      25% { transform: translate(-50%, -50%) rotate(-22deg) scale(1.15); }
+      75% { transform: translate(-50%, -50%) rotate(22deg) scale(1.15); }
+    }
+
+    .shaker-dock .shaker:not(.following) {
+      transform: translateX(-50%);
+    }
+
+    .counter-rest-spot.can-season::before {
+      border-color: rgba(180, 130, 50, 0.95);
+      border-style: solid;
+      background: rgba(255, 248, 220, 0.5);
+      box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.35);
+    }
+
+    .plate.season-flash::after,
+    .cup.season-flash::after,
+    .pot.season-flash::after,
+    .bowl.season-flash::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 4;
+      animation: seasonFlash 0.45s ease-out;
+    }
+
+    .plate.season-flash.season-salt::after,
+    .bowl.season-flash.season-salt::after {
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, transparent 65%);
+    }
+
+    .plate.season-flash.season-pepper::after,
+    .pot.season-flash.season-pepper::after {
+      background: radial-gradient(circle, rgba(60, 40, 20, 0.45) 0%, transparent 65%);
+    }
+
+    @keyframes seasonFlash {
+      0% { opacity: 0; transform: scale(0.85); }
+      40% { opacity: 1; transform: scale(1.05); }
+      100% { opacity: 0; transform: scale(1.15); }
     }
 
     .shaker-cap {
@@ -3431,6 +4230,11 @@ Restaurant Rush
       background: rgba(255, 220, 140, 0.45);
     }
 
+    .kitchen-fridge.open .fridge-slot.blocked-take {
+      outline: 2px dashed rgba(180, 120, 120, 0.45);
+      outline-offset: -2px;
+    }
+
     .fridge-slot-item {
       font-size: 0;
       line-height: 0;
@@ -3465,6 +4269,17 @@ Restaurant Rush
     .kitchen-fridge.opening .fridge-door {
       transform: perspective(900px) rotateY(-78deg);
       pointer-events: none;
+    }
+
+    .kitchen-fridge.closing .fridge-door {
+      pointer-events: none;
+    }
+
+    .kitchen-fridge.open .fridge-slot,
+    .kitchen-fridge.opening .fridge-slot,
+    .kitchen-fridge.closing .fridge-slot {
+      z-index: 8;
+      pointer-events: auto;
     }
 
     .kitchen-fridge.opening .fridge-door.freezer {
@@ -3653,7 +4468,6 @@ Restaurant Rush
       position: absolute;
       left: 50%;
       top: 50%;
-      transform: translate(-50%, -42%) scale(0.85);
       z-index: 3;
       opacity: 0;
       pointer-events: none;
@@ -4495,7 +5309,6 @@ Restaurant Rush
       position: absolute;
       left: 50%;
       top: 54%;
-      transform: translate(-50%, -50%) scale(0.92);
       z-index: 3;
       opacity: 0;
       transition: opacity 0.25s ease;
@@ -4549,7 +5362,7 @@ Restaurant Rush
 </head>
 <body>
 
-  <!-- Screen 1: outside -->
+  <!-- Screen 1: Garden -->
   <section class="screen screen-outside active" id="screen-1" data-screen="1">
     <div class="outside" aria-hidden="true">
       <div class="outside-sky">
@@ -4731,7 +5544,7 @@ Restaurant Rush
     <button type="button" class="nav-arrow down" data-go="4" aria-label="Go to screen 4">↓<span class="dest">4</span></button>
   </section>
 
-  <!-- Screen 2: kitchen -->
+  <!-- Screen 2: Kitchen 1 -->
   <section class="screen screen-kitchen" id="screen-2" data-screen="2">
     <div class="kitchen" aria-hidden="true">
       <div class="kitchen-ceiling"></div>
@@ -4771,21 +5584,26 @@ Restaurant Rush
         </div>
         <div class="counter-section">
           <div class="counter-top"></div>
-          <div class="kitchen-spices" aria-hidden="true">
-            <div class="shaker shaker-salt">
+          <div class="shaker-dock shaker-dock-salt" id="saltShakerDock">
+            <div class="shaker-home-ring" aria-hidden="true"></div>
+            <button type="button" class="shaker shaker-salt" id="saltShaker" aria-label="Pick up salt">
               <div class="shaker-cap"></div>
               <div class="shaker-body"></div>
-            </div>
-            <div class="shaker shaker-pepper">
+            </button>
+          </div>
+          <div class="shaker-dock shaker-dock-pepper" id="pepperShakerDock">
+            <div class="shaker-home-ring" aria-hidden="true"></div>
+            <button type="button" class="shaker shaker-pepper" id="pepperShaker" aria-label="Pick up pepper">
               <div class="shaker-cap"></div>
               <div class="shaker-body"></div>
-            </div>
+            </button>
           </div>
           <div class="counter-base"></div>
           <div class="counter-rest-spots" aria-hidden="true">
             <button type="button" class="counter-rest-spot" data-spot="s2-a" aria-label="Counter spot"></button>
             <button type="button" class="counter-rest-spot" data-spot="s2-b" aria-label="Counter spot"></button>
             <button type="button" class="counter-rest-spot" data-spot="s2-c" aria-label="Counter spot"></button>
+            <button type="button" class="counter-rest-spot" data-spot="s2-d" aria-label="Counter spot"></button>
           </div>
           <div class="counter-appliances">
             <div class="kitchen-sink" id="kitchenSink">
@@ -4844,7 +5662,7 @@ Restaurant Rush
     <button type="button" class="nav-arrow down" data-go="5" aria-label="Go to screen 5">↓<span class="dest">5</span></button>
   </section>
 
-  <!-- Screen 3: kitchen (microwave, cooler, oven) -->
+  <!-- Screen 3: Kitchen 2 -->
   <section class="screen screen-kitchen" id="screen-3" data-screen="3">
     <div class="kitchen" aria-hidden="true">
       <div class="kitchen-ceiling"></div>
@@ -4993,7 +5811,7 @@ Restaurant Rush
     <button type="button" class="nav-arrow down" data-go="6" aria-label="Go to screen 6">↓<span class="dest">6</span></button>
   </section>
 
-  <!-- Screen 4: bottom-left -->
+  <!-- Screen 4: Storefront -->
   <section class="screen" id="screen-4" data-screen="4">
     <span class="corner-num tl">4</span>
     <span class="corner-num tr">4</span>
@@ -5004,7 +5822,7 @@ Restaurant Rush
     <button type="button" class="nav-arrow right" data-go="5" aria-label="Go to screen 5">→<span class="dest">5</span></button>
   </section>
 
-  <!-- Screen 5: bottom-center -->
+  <!-- Screen 5: Cashier -->
   <section class="screen" id="screen-5" data-screen="5">
     <span class="corner-num tl">5</span>
     <span class="corner-num tr">5</span>
@@ -5016,7 +5834,7 @@ Restaurant Rush
     <button type="button" class="nav-arrow right" data-go="6" aria-label="Go to screen 6">→<span class="dest">6</span></button>
   </section>
 
-  <!-- Screen 6: bottom-right -->
+  <!-- Screen 6: Cafeteria -->
   <section class="screen" id="screen-6" data-screen="6">
     <span class="corner-num tl">6</span>
     <span class="corner-num tr">6</span>
@@ -5078,14 +5896,105 @@ Restaurant Rush
     </button>
   </div>
 
+  <div class="tray-home" id="trayHome">
+    <div class="tray-home-ring" aria-hidden="true"></div>
+    <button type="button" class="tray" id="tray" aria-label="Pick up tray">
+      <div class="tray-rim" aria-hidden="true"></div>
+      <div class="tray-body" aria-hidden="true"></div>
+      <div class="tray-loads" aria-hidden="true">
+        <div class="tray-load soup" data-slot="soup"></div>
+        <div class="tray-load drink" data-slot="drink"></div>
+        <div class="tray-load food" data-slot="food"></div>
+        <div class="tray-load extra" data-slot="extra"></div>
+      </div>
+    </button>
+  </div>
+
+  <div class="tray-action-menu" id="trayActionMenu" hidden>
+    <button type="button" id="trayMenuPickUp">Pick up?</button>
+    <button type="button" id="trayMenuPlaceFood">Place food?</button>
+  </div>
+
+  <div class="tray-closeup" id="trayCloseup" hidden>
+    <div class="tray-closeup-inner">
+      <button type="button" class="tray-closeup-done" id="trayCloseupDone">Done</button>
+      <h2 class="tray-closeup-title">Load the tray</h2>
+      <div class="tray-slots" id="trayCloseupSlots">
+        <div class="tray-slot" data-slot="soup">
+          <span class="tray-slot-label">Soup</span>
+          <div class="tray-slot-drop"></div>
+        </div>
+        <div class="tray-slot" data-slot="drink">
+          <span class="tray-slot-label">Drinks</span>
+          <div class="tray-slot-drop"></div>
+        </div>
+        <div class="tray-slot" data-slot="food">
+          <span class="tray-slot-label">Food</span>
+          <div class="tray-slot-drop"></div>
+        </div>
+        <div class="tray-slot" data-slot="extra">
+          <span class="tray-slot-label">Extra</span>
+          <div class="tray-slot-drop"></div>
+        </div>
+      </div>
+      <div class="tray-closeup-sources" id="trayCloseupSources" aria-label="Drag food from here"></div>
+    </div>
+  </div>
+
+  <div class="recipe-book" id="recipeBook">
+    <button type="button" class="recipe-book-toggle" id="recipeBookToggle" aria-expanded="false">
+      Recipes
+    </button>
+    <div class="recipe-book-panel" id="recipeBookPanel">
+      <div class="recipe-list" id="recipeList"></div>
+      <div class="recipe-detail" id="recipeDetail">
+        <button type="button" class="recipe-back" id="recipeBack">← Back</button>
+        <h3 class="recipe-detail-title" id="recipeDetailTitle"></h3>
+        <p class="recipe-detail-steps" id="recipeDetailSteps"></p>
+      </div>
+    </div>
+  </div>
+
   <script>
     const screens = document.querySelectorAll(".screen");
+
+    const SCREEN_NAMES = {
+      1: "Garden",
+      2: "Kitchen 1",
+      3: "Kitchen 2",
+      4: "Storefront",
+      5: "Cashier",
+      6: "Cafeteria",
+    };
+
+    function getScreenName(num) {
+      return SCREEN_NAMES[num] || "Screen " + num;
+    }
+
+    function applyScreenLabels() {
+      document.querySelectorAll(".screen[data-screen]").forEach((section) => {
+        const name = getScreenName(Number(section.dataset.screen));
+        section.querySelectorAll(".corner-num").forEach((el) => {
+          el.textContent = name;
+        });
+        const center = section.querySelector(".screen-label");
+        if (center) center.textContent = name;
+      });
+      document.querySelectorAll(".nav-arrow[data-go]").forEach((btn) => {
+        const name = getScreenName(Number(btn.dataset.go));
+        btn.setAttribute("aria-label", "Go to " + name);
+        const destEl = btn.querySelector(".dest");
+        if (destEl) destEl.textContent = name;
+      });
+    }
 
     function showScreen(num) {
       screens.forEach((s) => s.classList.remove("active"));
       const el = document.getElementById("screen-" + num);
       if (el) el.classList.add("active");
     }
+
+    applyScreenLabels();
 
     document.querySelectorAll(".nav-arrow[data-go]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -5106,6 +6015,15 @@ Restaurant Rush
     const potHome = document.getElementById("potHome");
     const bowl = document.getElementById("bowl");
     const bowlHome = document.getElementById("bowlHome");
+    const tray = document.getElementById("tray");
+    const trayHome = document.getElementById("trayHome");
+    const trayActionMenu = document.getElementById("trayActionMenu");
+    const trayMenuPickUp = document.getElementById("trayMenuPickUp");
+    const trayMenuPlaceFood = document.getElementById("trayMenuPlaceFood");
+    const trayCloseup = document.getElementById("trayCloseup");
+    const trayCloseupDone = document.getElementById("trayCloseupDone");
+    const trayCloseupSources = document.getElementById("trayCloseupSources");
+    const trayCloseupSlots = document.getElementById("trayCloseupSlots");
     const kitchenCuttingBoard = document.getElementById("kitchenCuttingBoard");
     const cuttingBoardZone = document.getElementById("cuttingBoardZone");
     const cuttingBoardFood = document.getElementById("cuttingBoardFood");
@@ -5145,7 +6063,22 @@ Restaurant Rush
     let cupRestSpotId = null;
     let potRestSpotId = null;
     let bowlRestSpotId = null;
+    let trayFollowing = false;
+    let trayRestSpotId = null;
+    let suppressTrayClickUntil = 0;
+    let trayContents = { soup: null, drink: null, food: null, extra: null };
+    let saltFollowing = false;
+    let pepperFollowing = false;
     const counterSpotOccupants = new Map();
+    const TRAY_SLOTS = ["soup", "drink", "food", "extra"];
+
+    /** Counter food + shaker → which seasonings apply (see getSeasoningTargetKey) */
+    const FOOD_SEASONING = {
+      "pot:carrots:cold": { salt: true, pepper: true },
+      "pot:cucumbers:cold": { salt: true, pepper: true },
+      "pot:potato-soup-prep": { salt: true, pepper: true },
+      "pot:tomato-soup-prep": { salt: true, pepper: true },
+    };
     let sinkContents = null;
     let sinkWashing = false;
     let sinkTimerInterval = null;
@@ -5193,6 +6126,103 @@ Restaurant Rush
       "cucumbers",
       "beans",
     ]);
+
+    const RECIPE_BOOK = [
+      {
+        id: "bread",
+        name: "Bread",
+        steps: "Wheat + Blender + Water + Oven",
+      },
+      {
+        id: "baked-apples",
+        name: "Baked apple",
+        steps: "Apples + Oven",
+      },
+      {
+        id: "baked-grapes",
+        name: "Baked grapes",
+        steps: "Grapes + Oven",
+      },
+      {
+        id: "baked-pineapple",
+        name: "Baked pineapple",
+        steps: "Pineapple + Cutting board + Oven",
+      },
+      {
+        id: "baked-tomatoes",
+        name: "Baked tomato",
+        steps: "Tomatoes + Oven",
+      },
+      {
+        id: "baked-carrots",
+        name: "Baked carrot",
+        steps: "Carrots + Oven",
+      },
+      {
+        id: "baked-potatoes",
+        name: "Baked potato",
+        steps: "Potatoes + Oven",
+      },
+      {
+        id: "baked-cucumbers",
+        name: "Baked cucumber",
+        steps: "Cucumbers + Oven",
+      },
+      {
+        id: "baked-beans",
+        name: "Baked beans",
+        steps: "Beans + Oven",
+      },
+      {
+        id: "cut-apples",
+        name: "Chopped apples",
+        steps: "Apples + Cutting board",
+      },
+      {
+        id: "cut-pineapple",
+        name: "Chopped pineapple",
+        steps: "Pineapple + Cutting board",
+      },
+      {
+        id: "cut-carrots",
+        name: "Chopped carrots",
+        steps: "Carrots + Cutting board",
+      },
+      {
+        id: "cut-cucumbers",
+        name: "Chopped cucumbers",
+        steps: "Cucumbers + Cutting board",
+      },
+      {
+        id: "cut-tomatoes",
+        name: "Chopped tomatoes",
+        steps: "Tomatoes + Cutting board",
+      },
+      {
+        id: "carrot-soup",
+        name: "Carrot Soup",
+        steps:
+          "1) Carrots + Blender → cold soup in pot\n2) Kitchen 1: set pot on counter, add Salt then Pepper (before microwave!)\n3) Kitchen 2: Microwave → hot Carrot Soup",
+      },
+      {
+        id: "cucumber-soup",
+        name: "Cucumber Soup",
+        steps:
+          "1) Cucumbers + Blender → cold soup in pot\n2) Kitchen 1: Salt + Pepper on counter (before microwave!)\n3) Kitchen 2: Microwave → hot Cucumber Soup",
+      },
+      {
+        id: "potato-soup",
+        name: "Potato Soup",
+        steps:
+          "1) Potatoes + Blender → cold potato soup in pot\n2) Chopped carrots (Carrots + Cutting board) + combine on counter\n3) Kitchen 1: Salt + Pepper (before microwave!)\n4) Kitchen 2: Microwave → hot Potato Soup",
+      },
+      {
+        id: "tomato-soup",
+        name: "Tomato Soup",
+        steps:
+          "1) Tomatoes + Blender → cold tomato soup in pot\n2) Chopped tomatoes (Tomatoes + Cutting board) + combine on counter\n3) Kitchen 1: Salt + Pepper (before microwave!)\n4) Kitchen 2: Microwave → hot Tomato Soup",
+      },
+    ];
 
     const DRINK_LABELS = {
       water: "Water",
@@ -5245,6 +6275,11 @@ Restaurant Rush
     const kitchenCooler = document.getElementById("kitchenCooler");
     const coolerDrinks = kitchenCooler.querySelectorAll(".cooler-drink[data-drink]");
     const kitchenOven = document.getElementById("kitchenOven");
+    const saltShaker = document.getElementById("saltShaker");
+    const pepperShaker = document.getElementById("pepperShaker");
+    const saltShakerDock = document.getElementById("saltShakerDock");
+    const pepperShakerDock = document.getElementById("pepperShakerDock");
+    const screen2 = document.getElementById("screen-2");
     const kitchenBlender = document.getElementById("kitchenBlender");
     const blenderZone = document.getElementById("blenderZone");
     const blenderJar = document.getElementById("blenderJar");
@@ -5273,12 +6308,14 @@ Restaurant Rush
       );
     }
 
+    function needsPineappleChopForOven(food) {
+      return !!food && food.crop === "pineapple" && food.state === "washed";
+    }
+
     function isOvenPlateInput(food) {
-      return (
-        !!food &&
-        (food.state === "washed" || food.state === "cut") &&
-        OVEN_CROPS.has(food.crop)
-      );
+      if (!food || !OVEN_CROPS.has(food.crop)) return false;
+      if (food.crop === "pineapple") return food.state === "cut";
+      return food.state === "washed" || food.state === "cut";
     }
 
     function isBakedFood(food) {
@@ -5343,7 +6380,11 @@ Restaurant Rush
 
     function makePotSoup(crop, cold = false) {
       const item = { soup: crop };
-      if (cold) item.cold = true;
+      if (cold) {
+        item.cold = true;
+        item.salted = false;
+        item.peppered = false;
+      }
       return item;
     }
 
@@ -5352,16 +6393,67 @@ Restaurant Rush
     }
 
     function isPotSoupCold(item) {
-      return isPotSoup(item) && !!item.cold && !item.stew;
+      return isPotSoup(item) && !!item.cold && !item.complete;
+    }
+
+    function makePotSoupMix(baseSoup, mixCrop) {
+      return {
+        soup: baseSoup,
+        stew: true,
+        mix: mixCrop,
+        cold: true,
+        salted: false,
+        peppered: false,
+      };
+    }
+
+    function isFinishedSoupPrep(item) {
+      if (!isPotSoup(item) || !item.stew || !item.cold || item.complete) return false;
+      return (
+        (item.soup === "potatoes" && item.mix === "carrots") ||
+        (item.soup === "tomatoes" && item.mix === "tomatoes")
+      );
+    }
+
+    function isPotSoupSeasonedForMicrowave(item) {
+      if (!isPotSoupCold(item)) return false;
+      return !!item.salted && !!item.peppered;
+    }
+
+    function isPotSoupReadyForMicrowave(item) {
+      if (!isPotSoupSeasonedForMicrowave(item)) return false;
+      if (item.soup === "potatoes" || item.soup === "tomatoes") {
+        return isFinishedSoupPrep(item);
+      }
+      return true;
+    }
+
+    function isFinishedSoupComplete(item) {
+      return isPotSoup(item) && !!item.complete;
     }
 
     function heatPotSoup(item) {
-      if (!isPotSoup(item) || item.stew) return item;
-      return { soup: item.soup };
+      if (!isPotSoup(item) || !isPotSoupCold(item)) return item;
+      if (!item.salted || !item.peppered) return item;
+      const hot = {
+        soup: item.soup,
+        complete: true,
+        salted: true,
+        peppered: true,
+      };
+      if (item.stew) hot.stew = true;
+      if (item.mix) hot.mix = item.mix;
+      return hot;
     }
 
     function soupLabel(soupItem) {
       if (!soupItem) return "Soup";
+      if (isFinishedSoupComplete(soupItem)) {
+        if (soupItem.soup === "potatoes" && soupItem.mix === "carrots") return "Potato Soup";
+        if (soupItem.soup === "tomatoes" && soupItem.mix === "tomatoes") return "Tomato Soup";
+        const name = SOUP_LABELS[soupItem.soup] || soupItem.soup;
+        return name + " Soup";
+      }
       if (isPotStew(soupItem)) return STEW_LABELS[soupItem.soup] || "Stew";
       const base = SOUP_LABELS[soupItem.soup] || soupItem.soup;
       if (isPotSoupCold(soupItem)) return "Cold " + base;
@@ -5529,8 +6621,8 @@ Restaurant Rush
         on: "pot",
         onMatch: (p) => isPotSoup(p) && !p.stew && p.soup === "potatoes",
         with: "plate",
-        withMatch: (p) => isPlateCut(p) && p.crop === "potatoes",
-        result: () => makePotStew("potatoes"),
+        withMatch: (p) => isPlateCut(p) && p.crop === "carrots",
+        result: () => makePotSoupMix("potatoes", "carrots"),
         dirtyWith: true,
       },
       {
@@ -5538,7 +6630,7 @@ Restaurant Rush
         onMatch: (p) => isPotSoup(p) && !p.stew && p.soup === "tomatoes",
         with: "plate",
         withMatch: (p) => isPlateCut(p) && p.crop === "tomatoes",
-        result: () => makePotStew("tomatoes"),
+        result: () => makePotSoupMix("tomatoes", "tomatoes"),
         dirtyWith: true,
       },
       {
@@ -5631,6 +6723,7 @@ Restaurant Rush
       else if (carrier === "cup") cupFollowing = false;
       else if (carrier === "pot") potFollowing = false;
       else if (carrier === "bowl") bowlFollowing = false;
+      else if (carrier === "tray") trayFollowing = false;
       el.classList.remove("following");
       el.setAttribute("aria-label", "Pick up from counter");
       home.classList.add("is-empty");
@@ -5735,6 +6828,175 @@ Restaurant Rush
       });
     }
 
+    function isScreen2Active() {
+      const active = document.querySelector(".screen.active");
+      return active === screen2;
+    }
+
+    function getActiveShaker() {
+      if (saltFollowing) return "salt";
+      if (pepperFollowing) return "pepper";
+      return null;
+    }
+
+    function getSeasoningTargetKey(carrier, payload) {
+      if (!payload) return null;
+      if (carrier === "plate" && payload.crop && payload.state) {
+        return "plate:" + payload.crop + ":" + payload.state;
+      }
+      if (carrier === "bowl") {
+        if (payload.flour) return "bowl:flour";
+        if (payload.dough) return "bowl:dough";
+        if (payload.batter) return "bowl:batter";
+        if (payload.mix) return "bowl:mix-" + payload.mix;
+      }
+      if (carrier === "pot" && payload.soup) {
+        if (isFinishedSoupPrep(payload)) {
+          if (payload.soup === "potatoes" && payload.mix === "carrots") {
+            return "pot:potato-soup-prep";
+          }
+          if (payload.soup === "tomatoes" && payload.mix === "tomatoes") {
+            return "pot:tomato-soup-prep";
+          }
+        }
+        if (payload.stew) return "pot:" + payload.soup + ":stew";
+        if (payload.cold) return "pot:" + payload.soup + ":cold";
+        return "pot:" + payload.soup + ":hot";
+      }
+      if (carrier === "cup" && payload.drink) return "cup:" + payload.drink;
+      return null;
+    }
+
+    function canApplySeasoning(carrier, payload, seasoning) {
+      const key = getSeasoningTargetKey(carrier, payload);
+      if (!key) return false;
+      const rules = FOOD_SEASONING[key];
+      if (!rules || !rules[seasoning]) return false;
+      if (seasoning === "salt" && payload.salted) return false;
+      if (seasoning === "pepper" && payload.peppered) return false;
+      return true;
+    }
+
+    function applySeasoningToCarrier(carrier, seasoning) {
+      if (carrier !== "pot" || !potContents) return;
+      const next = { ...potContents };
+      if (seasoning === "salt") next.salted = true;
+      if (seasoning === "pepper") next.peppered = true;
+      setPotSoup(next);
+    }
+
+    function moveShakerWithCursor(shakerEl, clientX, clientY) {
+      shakerEl.style.left = clientX + "px";
+      shakerEl.style.top = clientY + "px";
+    }
+
+    function returnSaltShaker() {
+      if (!saltFollowing) return;
+      saltFollowing = false;
+      saltShaker.classList.remove("following");
+      saltShaker.style.left = "";
+      saltShaker.style.top = "";
+      saltShakerDock.classList.remove("is-empty");
+      saltShaker.setAttribute("aria-label", "Pick up salt");
+      updateCounterRestSpots();
+    }
+
+    function returnPepperShaker() {
+      if (!pepperFollowing) return;
+      pepperFollowing = false;
+      pepperShaker.classList.remove("following");
+      pepperShaker.style.left = "";
+      pepperShaker.style.top = "";
+      pepperShakerDock.classList.remove("is-empty");
+      pepperShaker.setAttribute("aria-label", "Pick up pepper");
+      updateCounterRestSpots();
+    }
+
+    function putDownShakers(except) {
+      if (except !== "salt" && saltFollowing) returnSaltShaker();
+      if (except !== "pepper" && pepperFollowing) returnPepperShaker();
+    }
+
+    function returnShakersIfNotOnScreen2() {
+      if (!isScreen2Active()) putDownShakers();
+    }
+
+    function pickUpSalt() {
+      if (!isScreen2Active() || saltFollowing) return;
+      putDownShakers("salt");
+      putDownOtherCarriers("salt");
+      saltFollowing = true;
+      saltShaker.classList.add("following");
+      saltShakerDock.classList.add("is-empty");
+      saltShaker.setAttribute("aria-label", "Salt — click dock to put down, or shake on counter food");
+      moveShakerWithCursor(
+        saltShaker,
+        saltShaker.getBoundingClientRect().left,
+        saltShaker.getBoundingClientRect().top
+      );
+      updateCounterRestSpots();
+    }
+
+    function pickUpPepper() {
+      if (!isScreen2Active() || pepperFollowing) return;
+      putDownShakers("pepper");
+      putDownOtherCarriers("pepper");
+      pepperFollowing = true;
+      pepperShaker.classList.add("following");
+      pepperShakerDock.classList.add("is-empty");
+      pepperShaker.setAttribute("aria-label", "Pepper — click dock to put down, or shake on counter food");
+      moveShakerWithCursor(
+        pepperShaker,
+        pepperShaker.getBoundingClientRect().left,
+        pepperShaker.getBoundingClientRect().top
+      );
+      updateCounterRestSpots();
+    }
+
+    function playShakerShake(shakerEl) {
+      shakerEl.classList.remove("shaking");
+      void shakerEl.offsetWidth;
+      shakerEl.classList.add("shaking");
+      setTimeout(() => shakerEl.classList.remove("shaking"), 800);
+    }
+
+    function flashSeasoningOnCarrier(carrierEl, seasoning) {
+      carrierEl.classList.remove("season-flash", "season-salt", "season-pepper");
+      void carrierEl.offsetWidth;
+      carrierEl.classList.add("season-flash", "season-" + seasoning);
+      setTimeout(() => {
+        carrierEl.classList.remove("season-flash", "season-salt", "season-pepper");
+      }, 500);
+    }
+
+    function trySeasonCounterSpot(spotEl) {
+      const seasoning = getActiveShaker();
+      if (!seasoning || !isScreen2Active()) return false;
+      if (!spotEl.dataset.spot.startsWith("s2-")) return false;
+      const carrier = counterSpotOccupants.get(spotEl.dataset.spot);
+      if (!carrier) return false;
+      const payload = getCarrierPayload(carrier);
+      if (!canApplySeasoning(carrier, payload, seasoning)) return false;
+      const shakerEl = seasoning === "salt" ? saltShaker : pepperShaker;
+      const carrierEl = getCarrierEl(carrier);
+      playShakerShake(shakerEl);
+      flashSeasoningOnCarrier(carrierEl, seasoning);
+      applySeasoningToCarrier(carrier, seasoning);
+      return true;
+    }
+
+    function trySeasonOnCounterCarrier(counterCarrier) {
+      const seasoning = getActiveShaker();
+      if (!seasoning || !isScreen2Active()) return false;
+      const spotId = getCarrierRestSpotId(counterCarrier);
+      if (!spotId || !spotId.startsWith("s2-")) return false;
+      const payload = getCarrierPayload(counterCarrier);
+      if (!canApplySeasoning(counterCarrier, payload, seasoning)) return false;
+      const spotEl = getCounterSpotInActiveScreen(spotId);
+      if (!spotEl) return false;
+      return trySeasonCounterSpot(spotEl);
+    }
+
     function updateCarrierUI() {
       updateFridgeSlots();
       updateTrashCan();
@@ -5747,6 +7009,8 @@ Restaurant Rush
       updateBlenderUI();
       updateCounterRestSpots();
       updateDirtyCarrierVisuals();
+      updateTrayVisual();
+      returnShakersIfNotOnScreen2();
     }
 
     function getCarrierRestSpotId(carrier) {
@@ -5754,6 +7018,7 @@ Restaurant Rush
       if (carrier === "cup") return cupRestSpotId;
       if (carrier === "pot") return potRestSpotId;
       if (carrier === "bowl") return bowlRestSpotId;
+      if (carrier === "tray") return trayRestSpotId;
       return null;
     }
 
@@ -5762,6 +7027,7 @@ Restaurant Rush
       else if (carrier === "cup") cupRestSpotId = spotId;
       else if (carrier === "pot") potRestSpotId = spotId;
       else if (carrier === "bowl") bowlRestSpotId = spotId;
+      else if (carrier === "tray") trayRestSpotId = spotId;
     }
 
     function getCarrierEl(carrier) {
@@ -5769,6 +7035,7 @@ Restaurant Rush
       if (carrier === "cup") return cup;
       if (carrier === "pot") return pot;
       if (carrier === "bowl") return bowl;
+      if (carrier === "tray") return tray;
       return null;
     }
 
@@ -5777,6 +7044,7 @@ Restaurant Rush
       if (carrier === "cup") return cupHome;
       if (carrier === "pot") return potHome;
       if (carrier === "bowl") return bowlHome;
+      if (carrier === "tray") return trayHome;
       return null;
     }
 
@@ -5785,6 +7053,7 @@ Restaurant Rush
       if (carrier === "cup") return cupFollowing;
       if (carrier === "pot") return potFollowing;
       if (carrier === "bowl") return bowlFollowing;
+      if (carrier === "tray") return trayFollowing;
       return false;
     }
 
@@ -5808,9 +7077,25 @@ Restaurant Rush
       }
     }
 
+    function carrierNeedsCounterReposition(carrier, spotEl) {
+      const el = getCarrierEl(carrier);
+      if (!el || !spotEl || !el.classList.contains("on-counter") || el.style.position !== "fixed") {
+        return true;
+      }
+      const r = spotEl.getBoundingClientRect();
+      const expectedLeft = r.left + r.width / 2 - el.offsetWidth / 2;
+      const expectedTop = r.top + r.height / 2 - el.offsetHeight / 2;
+      const left = parseFloat(el.style.left);
+      const top = parseFloat(el.style.top);
+      if (Number.isNaN(left) || Number.isNaN(top)) return true;
+      const drift = 3;
+      return Math.abs(left - expectedLeft) > drift || Math.abs(top - expectedTop) > drift;
+    }
+
     function positionCarrierOnCounterSpot(carrier, spotEl) {
       const el = getCarrierEl(carrier);
       if (!el || !spotEl) return;
+      if (!carrierNeedsCounterReposition(carrier, spotEl)) return;
       const r = spotEl.getBoundingClientRect();
       el.classList.add("on-counter");
       el.style.position = "fixed";
@@ -5824,20 +7109,21 @@ Restaurant Rush
       if (cupFollowing && !cupRestSpotId) return "cup";
       if (potFollowing && !potRestSpotId) return "pot";
       if (bowlFollowing && !bowlRestSpotId) return "bowl";
+      if (trayFollowing && !trayRestSpotId) return "tray";
       return null;
     }
 
     function syncCounterRestForActiveScreen() {
       const active = document.querySelector(".screen.active");
-      ["plate", "cup", "pot", "bowl"].forEach((carrier) => {
+      ["plate", "cup", "pot", "bowl", "tray"].forEach((carrier) => {
         const el = getCarrierEl(carrier);
         const spotId = getCarrierRestSpotId(carrier);
         if (!spotId || isCarrierFollowing(carrier) || dishwasherLoad === carrier) {
           el.classList.remove("counter-rest-away");
           return;
         }
-        const spotEl = document.querySelector('[data-spot="' + spotId + '"]');
-        if (spotEl && active && active.contains(spotEl)) {
+        const spotEl = getCounterSpotInActiveScreen(spotId);
+        if (spotEl) {
           el.classList.remove("counter-rest-away");
           positionCarrierOnCounterSpot(carrier, spotEl);
         } else {
@@ -5848,25 +7134,45 @@ Restaurant Rush
 
     function updateCounterRestSpots() {
       const canPlace = getFollowingRestCarrier();
+      const activeShaker = getActiveShaker();
       document.querySelectorAll(".counter-rest-spot").forEach((spot) => {
         const spotId = spot.dataset.spot;
         const occupied = counterSpotOccupants.has(spotId);
         const canCombine = canCounterCombineAtSpot(spotId);
+        const onCarrier = occupied ? counterSpotOccupants.get(spotId) : null;
+        const canSeason =
+          !!activeShaker &&
+          isScreen2Active() &&
+          spotId.startsWith("s2-") &&
+          occupied &&
+          canApplySeasoning(onCarrier, getCarrierPayload(onCarrier), activeShaker);
         spot.classList.toggle("occupied", occupied);
         spot.classList.toggle("can-place", !!canPlace && !occupied);
         spot.classList.toggle("can-combine", canCombine);
+        spot.classList.toggle("can-season", canSeason);
         spot.setAttribute(
           "aria-label",
-          canCombine
-            ? "Combine items here"
-            : occupied
-              ? "Counter spot (in use)"
-              : canPlace
-                ? "Set item on counter"
-                : "Counter spot"
+          canSeason
+            ? "Shake " + activeShaker + " on food here"
+            : canCombine
+              ? "Combine items here"
+              : occupied
+                ? "Counter spot (in use)"
+                : canPlace
+                  ? "Set item on counter"
+                  : "Counter spot"
         );
       });
       syncCounterRestForActiveScreen();
+    }
+
+    function tryCombineOnCounterCarrier(counterCarrier) {
+      const spotId = getCarrierRestSpotId(counterCarrier);
+      if (!spotId || !getFollowingRestCarrier()) return false;
+      if (!canCounterCombineAtSpot(spotId)) return false;
+      const spotEl = getCounterSpotInActiveScreen(spotId);
+      if (!spotEl) return false;
+      return tryCounterCombine(spotEl);
     }
 
     function tryCounterCombine(spotEl) {
@@ -5897,6 +7203,10 @@ Restaurant Rush
       const resultCarrier = recipeResultCarrier(recipe, onCarrier, withCarrier);
       const otherCarrier = resultCarrier === onCarrier ? withCarrier : onCarrier;
       const prevOnSpot = counterSpotOccupants.get(spotId);
+      const resultStaysOnSpot =
+        resultCarrier === prevOnSpot &&
+        getCarrierRestSpotId(resultCarrier) === spotId &&
+        getCarrierEl(resultCarrier).classList.contains("on-counter");
 
       applyCarrierPayload(resultCarrier, recipe.result());
       clearCarrierPayload(otherCarrier);
@@ -5908,19 +7218,23 @@ Restaurant Rush
 
       stopCarrierFollowing(incoming);
 
-      if (resultCarrier !== prevOnSpot) {
+      if (prevOnSpot && prevOnSpot !== resultCarrier) {
         setCarrierRestSpotId(prevOnSpot, null);
-        counterSpotOccupants.set(spotId, resultCarrier);
-        setCarrierRestSpotId(resultCarrier, spotId);
       }
+      counterSpotOccupants.set(spotId, resultCarrier);
+      setCarrierRestSpotId(resultCarrier, spotId);
 
       returnCarrierToHomeDock(otherCarrier);
-      positionCarrierOnCounterSpot(resultCarrier, spotEl);
-      flashCounterCombo(spotEl);
-      requestAnimationFrame(() => {
+
+      const resultEl = getCarrierEl(resultCarrier);
+      resultEl.classList.remove("following");
+      getCarrierHome(resultCarrier).classList.add("is-empty");
+      resultEl.setAttribute("aria-label", "Pick up from counter");
+      if (!resultStaysOnSpot) {
         positionCarrierOnCounterSpot(resultCarrier, spotEl);
-        updateCarrierUI();
-      });
+      }
+
+      flashCounterCombo(spotEl);
       updateCarrierUI();
       return true;
     }
@@ -5941,10 +7255,16 @@ Restaurant Rush
       else if (carrier === "cup") cupFollowing = false;
       else if (carrier === "pot") potFollowing = false;
       else if (carrier === "bowl") bowlFollowing = false;
+      else if (carrier === "tray") trayFollowing = false;
 
       positionCarrierOnCounterSpot(carrier, spotEl);
       home.classList.add("is-empty");
-      el.setAttribute("aria-label", "Pick up from counter");
+      el.setAttribute(
+        "aria-label",
+        carrier === "tray"
+          ? "Tray on counter — click for options"
+          : "Pick up from counter"
+      );
       requestAnimationFrame(() => {
         positionCarrierOnCounterSpot(carrier, spotEl);
         updateCarrierUI();
@@ -5955,6 +7275,7 @@ Restaurant Rush
       const carrier = getFollowingRestCarrier();
       if (!carrier) return;
       if (counterSpotOccupants.has(spotEl.dataset.spot)) {
+        if (counterSpotOccupants.get(spotEl.dataset.spot) === "tray") return;
         tryCounterCombine(spotEl);
         return;
       }
@@ -5978,6 +7299,393 @@ Restaurant Rush
       if (!getCarrierRestSpotId(carrier)) return;
       liftCarrierFromCounterIfNeeded(carrier);
       returnCarrierToHomeDock(carrier);
+    }
+
+    function cloneTrayData(data) {
+      return JSON.parse(JSON.stringify(data));
+    }
+
+    function isUnwashedTrayPayload(payload) {
+      return !!payload && !!payload.crop && payload.state === "raw";
+    }
+
+    function isValidTrayPayload(payload) {
+      if (!payload || isUnwashedTrayPayload(payload)) return false;
+      if (isPotSoup(payload)) return true;
+      if (isCupDrink(payload)) return true;
+      if (isPlateFood(payload)) return true;
+      if (isBowlItem(payload)) return true;
+      return false;
+    }
+
+    function getTrayPreferredSlot(carrier) {
+      const payload = getCarrierPayload(carrier);
+      if (!payload || getCarrierDirty(carrier) || !isValidTrayPayload(payload)) return null;
+      if (carrier === "pot" && isPotSoup(payload)) return "soup";
+      if (carrier === "cup" && isCupDrink(payload)) return "drink";
+      if (carrier === "plate" && isPlateFood(payload)) return "food";
+      if (carrier === "bowl" && isBowlItem(payload)) return "extra";
+      return null;
+    }
+
+    function canPlaceOnTraySlot(slot, carrier) {
+      const payload = getCarrierPayload(carrier);
+      if (!payload || getCarrierDirty(carrier) || !isValidTrayPayload(payload)) return false;
+      if (slot === "extra") return true;
+      return getTrayPreferredSlot(carrier) === slot;
+    }
+
+    function carrierHasTrayFood(carrier) {
+      if (carrier === "tray" || dishwasherLoad === carrier) return false;
+      return getTrayPreferredSlot(carrier) !== null;
+    }
+
+    function carrierShowsInTrayCloseup(carrier) {
+      return carrierHasTrayFood(carrier);
+    }
+
+    function hideTrayActionMenu() {
+      trayActionMenu.classList.remove("open");
+      trayActionMenu.hidden = true;
+    }
+
+    function getCounterSpotInActiveScreen(spotId) {
+      if (!spotId) return null;
+      const active = document.querySelector(".screen.active");
+      if (!active) return null;
+      return active.querySelector('[data-spot="' + spotId + '"]');
+    }
+
+    function syncTrayCounterSpotIfNeeded() {
+      if (trayRestSpotId) return;
+      for (const [spotId, carrier] of counterSpotOccupants.entries()) {
+        if (carrier === "tray") {
+          trayRestSpotId = spotId;
+          return;
+        }
+      }
+    }
+
+    function isTrayCloseupOpen() {
+      return trayCloseup.classList.contains("is-open");
+    }
+
+    function isTrayOnCounter() {
+      syncTrayCounterSpotIfNeeded();
+      if (trayFollowing) return false;
+      if (trayRestSpotId) return true;
+      return tray.classList.contains("on-counter");
+    }
+
+    function showTrayActionMenu() {
+      const r = tray.getBoundingClientRect();
+      trayActionMenu.style.left = r.left + r.width / 2 + "px";
+      trayActionMenu.style.top = r.top + "px";
+      trayActionMenu.hidden = false;
+      trayActionMenu.classList.add("open");
+    }
+
+    function renderTrayEntryIcon(el, entry) {
+      if (!entry) {
+        el.className = "tray-slot-drop";
+        el.innerHTML = "";
+        return;
+      }
+      const data = entry.data;
+      el.className = "tray-slot-drop";
+      el.innerHTML = "";
+      const icon = document.createElement("div");
+      if (isPotSoup(data)) setSoupIcon(icon, "tray-slot-item", data);
+      else if (isCupDrink(data)) setDrinkIcon(icon, "tray-slot-item", data);
+      else if (isPlateFood(data)) setFoodIcon(icon, "tray-slot-item", data);
+      else if (isBowlItem(data)) setBowlIcon(icon, "tray-slot-item", data);
+      else {
+        el.className = "tray-slot-drop tray-extra-label";
+        el.textContent = foodLabel(data) || bowlLabel(data) || "Item";
+        return;
+      }
+      el.appendChild(icon);
+    }
+
+    function renderTraySlotIcon(el, slot, entry) {
+      renderTrayEntryIcon(el, entry);
+    }
+
+    function updateTrayVisual() {
+      let hasLoad = false;
+      TRAY_SLOTS.forEach((slot) => {
+        const loadEl = tray.querySelector('.tray-load[data-slot="' + slot + '"]');
+        const entry = trayContents[slot];
+        loadEl.classList.toggle("filled", !!entry);
+        loadEl.innerHTML = "";
+        if (entry) {
+          hasLoad = true;
+          const drop = document.createElement("div");
+          renderTraySlotIcon(drop, slot, entry);
+          loadEl.appendChild(drop);
+        }
+      });
+      tray.classList.toggle("has-load", hasLoad);
+    }
+
+    function dockCarrierAfterTrayPlace(carrier) {
+      if (isCarrierFollowing(carrier)) {
+        if (carrier === "plate") putDownPlate();
+        else if (carrier === "cup") putDownCup();
+        else if (carrier === "pot") putDownPot();
+        else if (carrier === "bowl") putDownBowl();
+      } else if (getCarrierRestSpotId(carrier)) {
+        liftCarrierFromCounterIfNeeded(carrier);
+        returnCarrierToHomeDock(carrier);
+        getCarrierHome(carrier).classList.remove("is-empty");
+        getCarrierEl(carrier).setAttribute(
+          "aria-label",
+          carrier === "plate"
+            ? "Pick up plate"
+            : carrier === "cup"
+              ? "Pick up cup"
+              : carrier === "pot"
+                ? "Pick up soup pot"
+                : "Pick up bowl"
+        );
+      }
+    }
+
+    function placeOnTraySlot(slot, carrier) {
+      if (!canPlaceOnTraySlot(slot, carrier)) return false;
+      const payload = getCarrierPayload(carrier);
+      if (!payload) return false;
+      trayContents[slot] = { carrier, data: cloneTrayData(payload) };
+      clearCarrierPayload(carrier);
+      dockCarrierAfterTrayPlace(carrier);
+      updateTrayVisual();
+      return true;
+    }
+
+    function putDownCarriersNotInTrayCloseup() {
+      if (basketFollowing) putDownBasket();
+      if (plateFollowing && !carrierShowsInTrayCloseup("plate")) putDownPlate();
+      if (cupFollowing && !carrierShowsInTrayCloseup("cup")) putDownCup();
+      if (potFollowing && !carrierShowsInTrayCloseup("pot")) putDownPot();
+      if (bowlFollowing && !carrierShowsInTrayCloseup("bowl")) putDownBowl();
+      putDownShakers();
+    }
+
+    function buildTrayCloseupSources() {
+      trayCloseupSources.innerHTML = "";
+      ["pot", "cup", "plate", "bowl"].forEach((carrier) => {
+        const preferred = getTrayPreferredSlot(carrier);
+        const available = carrierShowsInTrayCloseup(carrier);
+        const inHand = isCarrierFollowing(carrier);
+        const wrap = document.createElement("div");
+        wrap.className =
+          "tray-source" +
+          (carrier === "bowl" ? " bowl-source" : "") +
+          (inHand ? " tray-source-in-hand" : "") +
+          (available ? "" : " unavailable");
+        wrap.dataset.carrier = carrier;
+        const ring = document.createElement("div");
+        ring.className = "tray-source-ring";
+        const preview = document.createElement("div");
+        preview.className = "tray-source-preview";
+        if (available && preferred) {
+          const payload = getCarrierPayload(carrier);
+          if (payload) {
+            const fake = document.createElement("div");
+            renderTrayEntryIcon(fake, {
+              carrier,
+              data: cloneTrayData(payload),
+            });
+            preview.appendChild(fake);
+          }
+        }
+        ring.appendChild(preview);
+        const label = document.createElement("div");
+        label.className = "tray-source-label";
+        const names = { pot: "Soup pot", cup: "Cup", plate: "Plate", bowl: "Bowl" };
+        label.textContent = names[carrier] + (inHand ? " (in hand)" : "");
+        wrap.appendChild(ring);
+        wrap.appendChild(label);
+        if (available) {
+          wrap.addEventListener("pointerdown", (e) => startTrayDragFromSource(carrier, e));
+        }
+        trayCloseupSources.appendChild(wrap);
+      });
+    }
+
+    function renderTrayCloseupSlots() {
+      trayCloseupSlots.querySelectorAll(".tray-slot").forEach((slotEl) => {
+        const slot = slotEl.dataset.slot;
+        const drop = slotEl.querySelector(".tray-slot-drop");
+        const entry = trayContents[slot];
+        slotEl.classList.toggle("filled", !!entry);
+        renderTraySlotIcon(drop, slot, entry);
+      });
+    }
+
+    let trayDragState = null;
+    let trayDragGhost = null;
+
+    function ensureTrayDragGhost() {
+      if (trayDragGhost) return trayDragGhost;
+      trayDragGhost = document.createElement("div");
+      trayDragGhost.className = "tray-drag-ghost";
+      trayDragGhost.hidden = true;
+      document.body.appendChild(trayDragGhost);
+      return trayDragGhost;
+    }
+
+    function moveTrayDragGhost(clientX, clientY) {
+      if (!trayDragGhost) return;
+      trayDragGhost.style.left = clientX + "px";
+      trayDragGhost.style.top = clientY + "px";
+    }
+
+    function clearTrayDragHighlight() {
+      trayCloseupSlots.querySelectorAll(".tray-slot").forEach((el) => {
+        el.classList.remove("drag-over");
+      });
+    }
+
+    function traySlotAtPoint(clientX, clientY) {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return null;
+      const slotEl = el.closest(".tray-slot");
+      return slotEl ? slotEl.dataset.slot : null;
+    }
+
+    function startTrayDragFromSource(carrier, e) {
+      if (!carrierShowsInTrayCloseup(carrier)) return;
+      const preferred = getTrayPreferredSlot(carrier);
+      if (!preferred) return;
+      e.preventDefault();
+      const ghost = ensureTrayDragGhost();
+      ghost.innerHTML = "";
+      const inner = document.createElement("div");
+      renderTrayEntryIcon(inner, {
+        carrier,
+        data: cloneTrayData(getCarrierPayload(carrier)),
+      });
+      ghost.appendChild(inner);
+      ghost.hidden = false;
+      moveTrayDragGhost(e.clientX, e.clientY);
+      trayDragState = { from: "source", carrier, preferred };
+      window.addEventListener("pointermove", onTrayDragMove);
+      window.addEventListener("pointerup", endTrayDrag);
+      window.addEventListener("pointercancel", endTrayDrag);
+    }
+
+    function onTrayDragMove(e) {
+      if (!trayDragState || !isTrayCloseupOpen()) return;
+      moveTrayDragGhost(e.clientX, e.clientY);
+      clearTrayDragHighlight();
+      const over = traySlotAtPoint(e.clientX, e.clientY);
+      if (
+        over &&
+        trayDragState.from === "source" &&
+        canPlaceOnTraySlot(over, trayDragState.carrier)
+      ) {
+        const slotEl = trayCloseupSlots.querySelector('[data-slot="' + over + '"]');
+        if (slotEl) slotEl.classList.add("drag-over");
+      }
+    }
+
+    function endTrayDrag(e) {
+      if (!trayDragState || !isTrayCloseupOpen()) return;
+      const over = traySlotAtPoint(e.clientX, e.clientY);
+      if (
+        over &&
+        trayDragState.from === "source" &&
+        canPlaceOnTraySlot(over, trayDragState.carrier)
+      ) {
+        placeOnTraySlot(over, trayDragState.carrier);
+        renderTrayCloseupSlots();
+        buildTrayCloseupSources();
+      }
+      trayDragState = null;
+      if (trayDragGhost) {
+        trayDragGhost.hidden = true;
+        trayDragGhost.innerHTML = "";
+      }
+      clearTrayDragHighlight();
+      updateCarrierUI();
+      window.removeEventListener("pointermove", onTrayDragMove);
+      window.removeEventListener("pointerup", endTrayDrag);
+      window.removeEventListener("pointercancel", endTrayDrag);
+    }
+
+    function openTrayCloseup() {
+      syncTrayCounterSpotIfNeeded();
+      if (trayFollowing || !isTrayOnCounter()) return;
+      hideTrayActionMenu();
+      putDownCarriersNotInTrayCloseup();
+      trayCloseup.classList.add("is-open");
+      trayCloseup.hidden = false;
+      trayCloseup.removeAttribute("hidden");
+      trayCloseup.setAttribute("aria-hidden", "false");
+      try {
+        buildTrayCloseupSources();
+        renderTrayCloseupSlots();
+      } catch (err) {
+        console.error("tray closeup", err);
+      }
+    }
+
+    function handleTrayPlaceFood(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      suppressTrayClickUntil = performance.now() + 500;
+      openTrayCloseup();
+    }
+
+    function closeTrayCloseup() {
+      if (!isTrayCloseupOpen()) return;
+      trayCloseup.classList.remove("is-open");
+      trayCloseup.hidden = true;
+      trayCloseup.setAttribute("aria-hidden", "true");
+      trayDragState = null;
+      window.removeEventListener("pointermove", onTrayDragMove);
+      window.removeEventListener("pointerup", endTrayDrag);
+      window.removeEventListener("pointercancel", endTrayDrag);
+      if (trayDragGhost) {
+        trayDragGhost.hidden = true;
+        trayDragGhost.innerHTML = "";
+      }
+      clearTrayDragHighlight();
+      updateTrayVisual();
+      updateCarrierUI();
+    }
+
+    function moveTrayWithCursor(clientX, clientY) {
+      tray.style.left = clientX + 10 + "px";
+      tray.style.top = clientY + 10 + "px";
+    }
+
+    function pickUpTray() {
+      hideTrayActionMenu();
+      closeTrayCloseup();
+      liftCarrierFromCounterIfNeeded("tray");
+      putDownOtherCarriers("tray");
+      trayFollowing = true;
+      tray.classList.add("following");
+      trayHome.classList.add("is-empty");
+      tray.setAttribute(
+        "aria-label",
+        "Serving tray — click counter spot to set down, or click home ring"
+      );
+      moveTrayWithCursor(tray.getBoundingClientRect().left, tray.getBoundingClientRect().top);
+      updateCarrierUI();
+    }
+
+    function putDownTray() {
+      if (trayRestSpotId) return;
+      hideTrayActionMenu();
+      trayFollowing = false;
+      tray.classList.remove("following");
+      returnCarrierToHomeDock("tray");
+      tray.setAttribute("aria-label", "Pick up tray");
+      updateCarrierUI();
     }
 
     function updateDirtyCarrierVisuals() {
@@ -6079,12 +7787,14 @@ Restaurant Rush
 
     function updateMicrowaveUI() {
       const mwOpen = kitchenMicrowave.classList.contains("open");
+      const canMicrowavePot =
+        isPotSoupCold(potContents) && isPotSoupReadyForMicrowave(potContents);
       const canDrop =
         mwOpen &&
         !microwaveHeating &&
         !microwaveResult &&
         potFollowing &&
-        isPotSoupCold(potContents) &&
+        canMicrowavePot &&
         !potDirty;
       const canTake =
         mwOpen &&
@@ -6100,8 +7810,12 @@ Restaurant Rush
       microwaveZone.setAttribute(
         "aria-label",
         canDrop
-          ? "Put cold soup pot in microwave"
-          : canTake
+          ? "Put seasoned cold soup pot in microwave"
+          : potFollowing && isPotSoupCold(potContents) && !isPotSoupReadyForMicrowave(potContents)
+            ? isFinishedSoupPrep(potContents) && !isPotSoupSeasonedForMicrowave(potContents)
+              ? "Microwave — add salt and pepper on Kitchen 1 counter first"
+              : "Microwave — potato/tomato soup needs chopped veggies combined on counter first"
+            : canTake
             ? "Take hot soup pot out"
             : microwaveHeating
               ? "Heating soup…"
@@ -6134,13 +7848,20 @@ Restaurant Rush
         "aria-label",
         canDrop
           ? "Put food in oven"
-          : canTake
-            ? "Take baked food on plate"
-            : ovenBaking
-              ? "Baking…"
-              : ovenResult
-                ? "Oven — use an empty plate"
-                : "Oven"
+          : ovenOpen &&
+              !ovenBaking &&
+              !ovenResult &&
+              plateFollowing &&
+              needsPineappleChopForOven(plateContents) &&
+              !plateDirty
+            ? "Oven — chop pineapple on cutting board first"
+            : canTake
+              ? "Take baked food on plate"
+              : ovenBaking
+                ? "Baking…"
+                : ovenResult
+                  ? "Oven — use an empty plate"
+                  : "Oven"
       );
     }
 
@@ -6262,6 +7983,8 @@ Restaurant Rush
       if (except !== "cup" && cupFollowing) putDownCup();
       if (except !== "pot" && potFollowing) putDownPot();
       if (except !== "bowl" && bowlFollowing) putDownBowl();
+      if (except !== "tray" && trayFollowing) putDownTray();
+      putDownShakers(except);
     }
 
     function pickUpBasket() {
@@ -6305,11 +8028,13 @@ Restaurant Rush
         plate.setAttribute(
           "aria-label",
           plateContents
-            ? isBakedFood(plateContents)
-              ? "Plate with " +
-                foodLabel(plateContents) +
-                " — fridge / trash only (already baked)"
-              : "Plate — click again to put down, or use sink / fridge / trash / cutting board / blender / oven"
+            ? needsPineappleChopForOven(plateContents)
+              ? "Plate with washed pineapple — chop on cutting board before oven, or blender / sink / fridge / trash"
+              : isBakedFood(plateContents)
+                ? "Plate with " +
+                  foodLabel(plateContents) +
+                  " — fridge / trash only (already baked)"
+                : "Plate — click again to put down, or use sink / fridge / trash / cutting board / blender / oven"
             : "Plate — click again to put down, or take clean food from sink, or take baked food from oven"
         );
       }
@@ -6420,9 +8145,17 @@ Restaurant Rush
           "aria-label",
           potContents
             ? isPotSoupCold(potContents)
-              ? "Soup pot with cold " +
-                (SOUP_LABELS[potContents.soup] || potContents.soup).toLowerCase() +
-                " — heat in microwave, or fridge / trash"
+              ? isPotSoupReadyForMicrowave(potContents)
+                ? "Soup pot with seasoned cold " +
+                  (SOUP_LABELS[potContents.soup] || potContents.soup).toLowerCase() +
+                  " — microwave in Kitchen 2, or fridge / trash"
+                : isFinishedSoupPrep(potContents)
+                  ? "Soup pot — Kitchen 1: salt + pepper on counter, then microwave"
+                  : (potContents.soup === "potatoes" || potContents.soup === "tomatoes")
+                    ? "Soup pot — add chopped veggies on counter, then salt + pepper, then microwave"
+                    : "Soup pot with cold " +
+                      (SOUP_LABELS[potContents.soup] || potContents.soup).toLowerCase() +
+                      " — Kitchen 1: salt + pepper on counter first, then microwave"
               : "Soup pot — click again to put down, or use fridge / trash / blender"
             : "Soup pot — click again to put down, or scoop blended veggies"
         );
@@ -6929,6 +8662,7 @@ Restaurant Rush
       if (!kitchenMicrowave.classList.contains("open")) return;
       if (microwaveHeating || microwaveResult) return;
       if (!potFollowing || !isPotSoupCold(potContents) || potDirty) return;
+      if (!isPotSoupReadyForMicrowave(potContents)) return;
       microwaveHeatingSoup = { ...potContents };
       clearPot();
       microwaveHeating = true;
@@ -7113,45 +8847,73 @@ Restaurant Rush
       return true;
     }
 
+    function getFridgeItemKind(item) {
+      if (!item) return null;
+      if (isBasketFood(item)) return "basket";
+      if (isPlateFood(item)) return "plate";
+      if (isCupDrink(item)) return "cup";
+      if (isPotSoup(item)) return "pot";
+      if (isBowlItem(item)) return "bowl";
+      return null;
+    }
+
+    /** Can this shelf item be picked up? Only the matching carrier must be free. */
+    function canTakeItemFromFridge(item) {
+      const kind = getFridgeItemKind(item);
+      if (!kind) return false;
+      if (kind === "basket") return !basketContents;
+      if (kind === "plate") return !plateContents && !plateDirty;
+      if (kind === "cup") return !cupContents && !cupDirty;
+      if (kind === "pot") return !potContents && !potDirty;
+      if (kind === "bowl") return canTakeBowlItemFromFridge();
+      return false;
+    }
+
+    function isFridgeShelfInteractive() {
+      return (
+        kitchenFridge.classList.contains("open") &&
+        !kitchenFridge.classList.contains("closing")
+      );
+    }
+
     function updateFridgeSlots() {
       const fridgeOpen = kitchenFridge.classList.contains("open");
-      const handsEmpty =
-        !basketContents &&
-        !plateContents &&
-        !cupContents &&
-        !potContents &&
-        !bowlContents;
       fridgeSlots.forEach((slot, i) => {
         const item = fridgeShelves[i];
-        const canDropBasket =
-          fridgeOpen && basketContents && isBasketFood(basketContents) && !item;
-        const canTakeBasket =
-          fridgeOpen && handsEmpty && item && isBasketFood(item);
-        const canDropPlate =
-          fridgeOpen && plateContents && isPlateFood(plateContents) && !item && !plateDirty;
-        const canTakePlate =
-          fridgeOpen && handsEmpty && item && isPlateFood(item) && !plateDirty;
-        const canDropCup =
-          fridgeOpen && cupContents && isCupDrink(cupContents) && !item && !cupDirty;
-        const canTakeCup =
-          fridgeOpen && handsEmpty && item && isCupDrink(item) && !cupDirty;
-        const canDropPot =
-          fridgeOpen && potContents && isPotSoup(potContents) && !item && !potDirty;
-        const canTakePot =
-          fridgeOpen && handsEmpty && item && isPotSoup(item) && !potDirty;
-        const canDropBowl =
-          fridgeOpen && bowlContents && isBowlItem(bowlContents) && !item && !bowlDirty;
-        const canTakeBowl =
-          fridgeOpen && item && isBowlItem(item) && canTakeBowlItemFromFridge();
-        slot.classList.toggle(
-          "can-drop",
-          canDropBasket || canDropPlate || canDropCup || canDropPot || canDropBowl
-        );
-        slot.classList.toggle(
-          "can-take",
-          canTakeBasket || canTakePlate || canTakeCup || canTakePot || canTakeBowl
-        );
+        const heldBasket = basketContents && basketFollowing;
+        const heldPlate = plateContents && plateFollowing;
+        const heldCup = cupContents && cupFollowing;
+        const heldPot = potContents && potFollowing;
+        const heldBowl = bowlContents && bowlFollowing;
+        const canDrop =
+          fridgeOpen &&
+          !item &&
+          ((heldBasket && isBasketFood(basketContents)) ||
+            (heldPlate && isPlateFood(plateContents) && !plateDirty) ||
+            (heldCup && isCupDrink(cupContents) && !cupDirty) ||
+            (heldPot && isPotSoup(potContents) && !potDirty) ||
+            (heldBowl && isBowlItem(bowlContents) && !bowlDirty));
+        const canTake = fridgeOpen && item && canTakeItemFromFridge(item);
+        const blockedTake = fridgeOpen && item && !canTake;
+        slot.classList.toggle("can-drop", canDrop);
+        slot.classList.toggle("can-take", canTake);
+        slot.classList.toggle("blocked-take", blockedTake);
         slot.classList.toggle("filled", !!item);
+        slot.setAttribute(
+          "aria-label",
+          canTake
+            ? "Take " + foodLabel(item) + " from shelf"
+            : blockedTake
+              ? "Can't take — " +
+                (basketContents && getFridgeItemKind(item) === "basket"
+                  ? "basket already has food"
+                  : "hands full or need a clean dish")
+              : canDrop
+                ? "Put food on shelf"
+                : item
+                  ? "Shelf with food"
+                  : "Empty shelf"
+        );
       });
     }
 
@@ -7166,11 +8928,12 @@ Restaurant Rush
 
     function takeFromShelf(index) {
       const item = fridgeShelves[index];
-      if (!item || !isBasketFood(item)) return;
+      if (!item || !canTakeItemFromFridge(item)) return;
       setBasketFood({ ...item });
       fridgeShelves[index] = null;
       setFoodIcon(fridgeSlots[index].querySelector(".fridge-slot-item"), "fridge-slot-item", null);
       fridgeSlots[index].classList.remove("filled");
+      if (!basketFollowing) pickUpBasket();
       updateFridgeSlots();
     }
 
@@ -7185,11 +8948,17 @@ Restaurant Rush
 
     function takeFromShelfPlate(index) {
       const item = fridgeShelves[index];
-      if (!item || !isPlateFood(item)) return;
+      if (!item || !canTakeItemFromFridge(item)) return;
+      dockCarrierIfOnCounter("plate");
+      if (plateDirty) {
+        plateDirty = false;
+        plate.classList.remove("dirty");
+      }
       setPlateFood({ ...item });
       fridgeShelves[index] = null;
       setFoodIcon(fridgeSlots[index].querySelector(".fridge-slot-item"), "fridge-slot-item", null);
       fridgeSlots[index].classList.remove("filled");
+      if (!plateFollowing) pickUpPlate();
       updateFridgeSlots();
     }
 
@@ -7204,11 +8973,17 @@ Restaurant Rush
 
     function takeFromShelfCup(index) {
       const item = fridgeShelves[index];
-      if (!item || !isCupDrink(item)) return;
+      if (!item || !canTakeItemFromFridge(item)) return;
+      dockCarrierIfOnCounter("cup");
+      if (cupDirty) {
+        cupDirty = false;
+        cup.classList.remove("dirty");
+      }
       setCupDrink({ ...item });
       fridgeShelves[index] = null;
       setDrinkIcon(fridgeSlots[index].querySelector(".fridge-slot-item"), "fridge-slot-item", null);
       fridgeSlots[index].classList.remove("filled");
+      if (!cupFollowing) pickUpCup();
       updateFridgeSlots();
     }
 
@@ -7223,11 +8998,17 @@ Restaurant Rush
 
     function takeFromShelfPot(index) {
       const item = fridgeShelves[index];
-      if (!item || !isPotSoup(item)) return;
+      if (!item || !canTakeItemFromFridge(item)) return;
+      dockCarrierIfOnCounter("pot");
+      if (potDirty) {
+        potDirty = false;
+        pot.classList.remove("dirty");
+      }
       setPotSoup({ ...item });
       fridgeShelves[index] = null;
       setSoupIcon(fridgeSlots[index].querySelector(".fridge-slot-item"), "fridge-slot-item", null);
       fridgeSlots[index].classList.remove("filled");
+      if (!potFollowing) pickUpPot();
       updateFridgeSlots();
     }
 
@@ -7268,6 +9049,8 @@ Restaurant Rush
 
     plate.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (tryCombineOnCounterCarrier("plate")) return;
+      if (trySeasonOnCounterCarrier("plate")) return;
       if (plateRestSpotId || !plateFollowing) {
         pickUpPlate();
       }
@@ -7275,6 +9058,8 @@ Restaurant Rush
 
     cup.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (tryCombineOnCounterCarrier("cup")) return;
+      if (trySeasonOnCounterCarrier("cup")) return;
       if (cupRestSpotId || !cupFollowing) {
         pickUpCup();
       }
@@ -7282,6 +9067,8 @@ Restaurant Rush
 
     pot.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (tryCombineOnCounterCarrier("pot")) return;
+      if (trySeasonOnCounterCarrier("pot")) return;
       if (potRestSpotId || !potFollowing) {
         pickUpPot();
       }
@@ -7289,9 +9076,65 @@ Restaurant Rush
 
     bowl.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (tryCombineOnCounterCarrier("bowl")) return;
+      if (trySeasonOnCounterCarrier("bowl")) return;
       if (bowlRestSpotId || !bowlFollowing) {
         pickUpBowl();
       }
+    });
+
+    tray.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (performance.now() < suppressTrayClickUntil) return;
+      if (isTrayCloseupOpen()) return;
+      if (isTrayOnCounter()) {
+        if (trayActionMenu.classList.contains("open")) {
+          hideTrayActionMenu();
+        } else {
+          showTrayActionMenu();
+        }
+        return;
+      }
+      if (!trayFollowing) {
+        pickUpTray();
+      }
+    });
+
+    trayHome.addEventListener("click", (e) => {
+      if (!trayFollowing) return;
+      if (e.target.closest("#tray")) return;
+      putDownTray();
+    });
+
+    trayMenuPickUp.addEventListener("click", (e) => {
+      e.stopPropagation();
+      pickUpTray();
+    });
+
+    trayMenuPlaceFood.addEventListener("pointerdown", handleTrayPlaceFood, true);
+    trayMenuPlaceFood.addEventListener("click", handleTrayPlaceFood, true);
+
+    trayCloseupDone.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeTrayCloseup();
+    });
+
+    trayCloseup.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!trayActionMenu.classList.contains("open")) return;
+      if (
+        e.target.closest("#trayActionMenu") ||
+        e.target.closest("#trayMenuPlaceFood") ||
+        e.target.closest("#trayMenuPickUp") ||
+        e.target.closest("#tray") ||
+        e.target.closest("#trayCloseup")
+      ) {
+        return;
+      }
+      hideTrayActionMenu();
     });
 
     basketHome.addEventListener("click", (e) => {
@@ -7324,12 +9167,41 @@ Restaurant Rush
       putDownBowl();
     });
 
+    saltShaker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!isScreen2Active()) return;
+      if (saltFollowing) return;
+      pickUpSalt();
+    });
+
+    pepperShaker.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!isScreen2Active()) return;
+      if (pepperFollowing) return;
+      pickUpPepper();
+    });
+
+    saltShakerDock.addEventListener("click", (e) => {
+      if (!isScreen2Active() || !saltFollowing) return;
+      if (e.target.closest("#saltShaker")) return;
+      returnSaltShaker();
+    });
+
+    pepperShakerDock.addEventListener("click", (e) => {
+      if (!isScreen2Active() || !pepperFollowing) return;
+      if (e.target.closest("#pepperShaker")) return;
+      returnPepperShaker();
+    });
+
     document.addEventListener("mousemove", (e) => {
       if (basketFollowing) moveBasketWithCursor(e.clientX, e.clientY);
       if (plateFollowing) movePlateWithCursor(e.clientX, e.clientY);
       if (cupFollowing) moveCupWithCursor(e.clientX, e.clientY);
       if (potFollowing) movePotWithCursor(e.clientX, e.clientY);
       if (bowlFollowing) moveBowlWithCursor(e.clientX, e.clientY);
+      if (trayFollowing) moveTrayWithCursor(e.clientX, e.clientY);
+      if (saltFollowing && isScreen2Active()) moveShakerWithCursor(saltShaker, e.clientX, e.clientY);
+      if (pepperFollowing && isScreen2Active()) moveShakerWithCursor(pepperShaker, e.clientX, e.clientY);
     });
 
     sinkBasin.addEventListener("click", (e) => {
@@ -7403,39 +9275,50 @@ Restaurant Rush
       });
     });
 
-    fridgeSlots.forEach((slot) => {
-      slot.addEventListener("click", (e) => {
+    function handleFridgeShelfClick(index, e) {
+      if (!isFridgeShelfInteractive()) return false;
+      const slot = fridgeSlots[index];
+      const item = fridgeShelves[index];
+      if (item && canTakeItemFromFridge(item)) {
         e.stopPropagation();
-        const index = Number(slot.dataset.shelf);
-        if (!kitchenFridge.classList.contains("open")) return;
-        const item = fridgeShelves[index];
-        if (item) {
-          if (isBasketFood(item)) {
-            if (basketContents || plateContents || cupContents || potContents || bowlContents) return;
-            takeFromShelf(index);
-          } else if (isPlateFood(item)) {
-            if (basketContents || plateContents || cupContents || potContents || bowlContents) return;
-            takeFromShelfPlate(index);
-          } else if (isCupDrink(item)) {
-            if (basketContents || plateContents || cupContents || potContents || bowlContents) return;
-            takeFromShelfCup(index);
-          } else if (isPotSoup(item)) {
-            if (basketContents || plateContents || cupContents || potContents || bowlContents) return;
-            takeFromShelfPot(index);
-          } else if (isBowlItem(item)) {
-            takeFromShelfBowl(index);
-          }
-        } else if (basketContents && isBasketFood(basketContents)) {
+        const kind = getFridgeItemKind(item);
+        if (kind === "basket") takeFromShelf(index);
+        else if (kind === "plate") takeFromShelfPlate(index);
+        else if (kind === "cup") takeFromShelfCup(index);
+        else if (kind === "pot") takeFromShelfPot(index);
+        else if (kind === "bowl") takeFromShelfBowl(index);
+        return true;
+      }
+      if (!item && slot.classList.contains("can-drop")) {
+        e.stopPropagation();
+        if (basketFollowing && basketContents && isBasketFood(basketContents)) {
           placeOnShelf(index);
-        } else if (plateContents && isPlateFood(plateContents)) {
+        } else if (plateFollowing && plateContents && isPlateFood(plateContents)) {
           placeOnShelfPlate(index);
-        } else if (cupContents && isCupDrink(cupContents)) {
+        } else if (cupFollowing && cupContents && isCupDrink(cupContents)) {
           placeOnShelfCup(index);
-        } else if (potContents && isPotSoup(potContents)) {
+        } else if (potFollowing && potContents && isPotSoup(potContents)) {
           placeOnShelfPot(index);
-        } else if (bowlContents && isBowlItem(bowlContents)) {
+        } else if (bowlFollowing && bowlContents && isBowlItem(bowlContents)) {
           placeOnShelfBowl(index);
         }
+        return true;
+      }
+      return false;
+    }
+
+    fridgeSlots.forEach((slot) => {
+      slot.addEventListener("click", (e) => {
+        if (handleFridgeShelfClick(Number(slot.dataset.shelf), e)) return;
+        if (!kitchenFridge.classList.contains("open")) return;
+        if (
+          kitchenFridge.classList.contains("opening") ||
+          kitchenFridge.classList.contains("closing")
+        ) {
+          return;
+        }
+        e.stopPropagation();
+        toggleFridge();
       });
     });
 
@@ -7449,6 +9332,7 @@ Restaurant Rush
     document.querySelectorAll(".counter-rest-spot").forEach((spot) => {
       spot.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (trySeasonCounterSpot(spot)) return;
         if (spot.classList.contains("can-combine") || spot.classList.contains("can-place")) {
           tryPlaceOnCounterSpot(spot);
         }
@@ -7467,7 +9351,6 @@ Restaurant Rush
       if (kitchenFridge.classList.contains("opening") || kitchenFridge.classList.contains("closing")) {
         return;
       }
-
       toggleFridge();
     });
 
@@ -7595,10 +9478,58 @@ Restaurant Rush
       const active = document.querySelector(".screen.active");
       if (active && Number(active.dataset.screen) !== num) {
         closeAllAppliancesInstant();
+        hideTrayActionMenu();
+        closeTrayCloseup();
       }
       goToScreen(num);
       updateCarrierUI();
     };
+
+    const recipeBook = document.getElementById("recipeBook");
+    const recipeBookToggle = document.getElementById("recipeBookToggle");
+    const recipeList = document.getElementById("recipeList");
+    const recipeDetail = document.getElementById("recipeDetail");
+    const recipeDetailTitle = document.getElementById("recipeDetailTitle");
+    const recipeDetailSteps = document.getElementById("recipeDetailSteps");
+    const recipeBack = document.getElementById("recipeBack");
+
+    function showRecipeList() {
+      recipeBook.classList.remove("show-detail");
+    }
+
+    function showRecipeDetail(recipe) {
+      recipeDetailTitle.textContent = recipe.name;
+      recipeDetailSteps.textContent = recipe.steps;
+      recipeBook.classList.add("show-detail");
+    }
+
+    RECIPE_BOOK.forEach((recipe) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "recipe-list-item";
+      btn.textContent = recipe.name;
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showRecipeDetail(recipe);
+      });
+      recipeList.appendChild(btn);
+    });
+
+    recipeBookToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = recipeBook.classList.toggle("open");
+      recipeBookToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      if (!open) showRecipeList();
+    });
+
+    recipeBack.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showRecipeList();
+    });
+
+    recipeBook.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
   </script>
 </body>
 </html>
