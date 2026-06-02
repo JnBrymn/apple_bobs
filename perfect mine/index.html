@@ -104,6 +104,15 @@
       font-size: 0.78rem;
       z-index: 5;
     }
+    #settingsBtn {
+      position: absolute;
+      right: 118px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 5px 9px;
+      font-size: 0.78rem;
+      z-index: 5;
+    }
     #oresBtn {
       position: absolute;
       right: 60px;
@@ -246,6 +255,10 @@
         inset 0 0 0 2px var(--wood-dark),
         0 0 0 3px var(--wood-dark),
         0 6px 14px rgba(0, 0, 0, 0.6);
+    }
+    canvas:focus {
+      outline: 2px solid var(--wood-hi);
+      outline-offset: 2px;
     }
     canvas {
       width: 100%;
@@ -579,6 +592,95 @@
       line-height: 1.35;
       padding: 0 4px 4px;
     }
+
+    .pm-settings-panel {
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .pm-settings-panel h3 {
+      margin: 14px 0 8px;
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--wood-mid);
+      padding-bottom: 4px;
+    }
+    .pm-setting-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+    .pm-setting-row label { flex: 1; min-width: 160px; }
+    .pm-setting-row input[type="range"] { width: 130px; }
+    .pm-setting-row select { min-width: 140px; padding: 4px; }
+
+    html[data-pm-theme="bad"] body {
+      font-family: "Comic Sans MS", cursive;
+      background: #ff00ff repeating-linear-gradient(45deg, #ffff00 0, #ffff00 14px, #0f0 14px, #0f0 28px);
+      color: #000080;
+    }
+    html[data-pm-theme="bad"] .card,
+    html[data-pm-theme="bad"] .hud .card {
+      background: #c0c0c0 !important;
+      border: 4px ridge #808080 !important;
+      color: #000;
+    }
+    html[data-pm-theme="bad"] button {
+      background: #0ff !important;
+      color: #f0f !important;
+      border: 3px outset #fff !important;
+    }
+    html[data-pm-theme="bad"] h1 {
+      color: #f00;
+      text-shadow: 2px 2px #ff0;
+    }
+
+    html[data-pm-theme="dark"] {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --wood-dark: #0d1117;
+      --wood-mid: #21262d;
+      --wood-light: #30363d;
+      --wood-hi: #484f58;
+    }
+    html[data-pm-theme="dark"] body {
+      background: linear-gradient(180deg, #0d1117, #010409);
+    }
+
+    html[data-pm-theme="neon"] {
+      --bg: #0a0014;
+      --panel: #120020;
+      --text: #0ff;
+      --muted: #8af;
+      --wood-mid: #301050;
+      --wood-light: #502080;
+    }
+    html[data-pm-theme="neon"] body {
+      background: #050010;
+    }
+    html[data-pm-theme="neon"] .game {
+      box-shadow: 0 0 20px #f0f, inset 0 0 30px rgba(0, 255, 255, 0.15);
+    }
+    html[data-pm-theme="neon"] button {
+      box-shadow: 0 0 8px #0ff;
+    }
+
+    html[data-pm-theme="lava"] {
+      --bg: #2a0a00;
+      --panel: #4a1808;
+      --text: #ffe4c4;
+      --wood-mid: #6b2210;
+      --wood-light: #9a3a18;
+    }
+    html[data-pm-theme="lava"] body {
+      background: linear-gradient(180deg, #4a1208, #1a0500);
+    }
   </style>
 </head>
 <body>
@@ -586,6 +688,7 @@
     <header class="app-header">
       <h1>Perfect Mine</h1>
       <span id="durabilityWarning" class="dur-warn"></span>
+      <button id="settingsBtn" type="button">Settings</button>
       <button id="oresBtn">Ores</button>
       <button id="tipsBtn">Tips</button>
     </header>
@@ -604,6 +707,7 @@
           </div>
           <div class="card">
             <div><strong>Health:</strong> <span id="health">100</span>/100</div>
+            <div id="puckHealthRow" style="display: none;"><strong>Puck:</strong> <span id="puckHealth">100</span>/100</div>
             <div><strong>Pickaxe:</strong> Lv <span id="pickLvl">1</span></div>
             <div><strong>Strength:</strong> <span id="pickStr">1</span></div>
             <div><strong>Durability:</strong> <span id="pickDur">60</span>/<span id="pickDurMax">60</span></div>
@@ -637,11 +741,11 @@
       </aside>
 
       <section class="game">
-        <canvas id="view" width="640" height="320"></canvas>
+        <canvas id="view" width="640" height="320" tabindex="0" title="Click to mine toward cursor"></canvas>
       </section>
     </div>
 
-    <div class="controls" id="gameControlsHint">Move: WASD/Arrows | Space: mine, sword, arm bombs | Late pickaxes: 4 or 8 blocks, then Auto Digger</div>
+    <div class="controls" id="gameControlsHint">Move: WASD/Arrows | Space/Enter or click game: mine | Late pickaxes: 4 or 8 blocks, then Auto Digger</div>
   </main>
 
   <div id="cutsceneOverlay"></div>
@@ -685,6 +789,131 @@
       <div class="respawn-actions">
         <button id="homelessYesBtn">Yes</button>
         <button id="homelessNoBtn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="puckGraveModal" class="respawn-modal" style="z-index: 26;">
+    <div class="respawn-panel" style="max-width: 360px;">
+      <p style="font-size: 1.05rem; letter-spacing: 0.04em;"><strong>R.I.P in the memory of puck.</strong></p>
+      <p class="muted-small" style="font-style: italic; line-height: 1.5;">&ldquo;It was nice to be friends.&rdquo;</p>
+      <div class="respawn-actions">
+        <button id="puckGraveCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mrsTuggModal" class="respawn-modal">
+    <div class="respawn-panel" style="max-width: 420px; text-align: left;">
+      <p><strong>Mrs. Tugg — Job Board</strong></p>
+      <p class="muted-small">Press E at her house for jobs. The boss, Puck, and shop are separate!</p>
+      <div id="mrsTuggTaskList" style="margin: 12px 0; max-height: 340px; overflow-y: auto;"></div>
+      <div class="respawn-actions">
+        <button id="mrsTuggCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pmSettingsModal" class="respawn-modal">
+    <div class="respawn-panel pm-settings-panel">
+      <p><strong>Perfect Mine — Settings</strong></p>
+      <p class="muted-small">Saved in your browser. Esc to close.</p>
+
+      <h3>Look &amp; style</h3>
+      <div class="pm-setting-row">
+        <label for="pmTheme">UI theme</label>
+        <select id="pmTheme">
+          <option value="wood">Wood (default)</option>
+          <option value="bad">Bad / silly</option>
+          <option value="dark">Dark</option>
+          <option value="neon">Neon</option>
+          <option value="lava">Lava</option>
+        </select>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmBrightness">Brightness <span id="pmBrightVal">100</span>%</label>
+        <input type="range" id="pmBrightness" min="40" max="150" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmShowHints">Show control hints</label>
+        <input type="checkbox" id="pmShowHints" checked>
+      </div>
+
+      <h3>How you move</h3>
+      <div class="pm-setting-row">
+        <label for="pmKeys">Movement keys</label>
+        <select id="pmKeys">
+          <option value="both">WASD + Arrow keys</option>
+          <option value="wasd">WASD only</option>
+          <option value="arrows">Arrow keys only</option>
+        </select>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmMineKey">Mine / attack key</label>
+        <select id="pmMineKey">
+          <option value="space">Space</option>
+          <option value="enter">Enter</option>
+        </select>
+      </div>
+
+      <h3>Sound</h3>
+      <div class="pm-setting-row">
+        <label for="pmMusic">Background music</label>
+        <input type="checkbox" id="pmMusic" checked>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmMusicVol">Music volume <span id="pmMusicVolVal">100</span>%</label>
+        <input type="range" id="pmMusicVol" min="0" max="100" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmSfx">Sound effects</label>
+        <input type="checkbox" id="pmSfx" checked>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmSfxVol">SFX volume <span id="pmSfxVolVal">100</span>%</label>
+        <input type="range" id="pmSfxVol" min="0" max="100" value="100">
+      </div>
+
+      <h3>Cave &amp; lighting</h3>
+      <div class="pm-setting-row">
+        <label for="pmDark">Cave darkness</label>
+        <input type="checkbox" id="pmDark" checked>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmDarkStr">Darkness strength <span id="pmDarkStrVal">100</span>%</label>
+        <input type="range" id="pmDarkStr" min="0" max="100" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmPlayerLight">Your light radius <span id="pmPlayerLightVal">100</span>%</label>
+        <input type="range" id="pmPlayerLight" min="50" max="200" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmCandleLight">Candle light <span id="pmCandleLightVal">100</span>%</label>
+        <input type="range" id="pmCandleLight" min="50" max="200" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmLavaGlow">Lava glow in dark</label>
+        <input type="checkbox" id="pmLavaGlow" checked>
+      </div>
+
+      <h3>Gameplay</h3>
+      <div class="pm-setting-row">
+        <label for="pmRockFall">Falling rock chance <span id="pmRockFallVal">100</span>%</label>
+        <input type="range" id="pmRockFall" min="0" max="200" value="100">
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmLavaSpread">Lava spreads over time</label>
+        <input type="checkbox" id="pmLavaSpread" checked>
+      </div>
+      <div class="pm-setting-row">
+        <label for="pmRockDmg">Falling rock damage <span id="pmRockDmgVal">10</span></label>
+        <input type="range" id="pmRockDmg" min="1" max="30" value="10">
+      </div>
+
+      <div class="respawn-actions">
+        <button type="button" id="pmSettingsSaveBtn">Save &amp; apply</button>
+        <button type="button" id="pmSettingsResetBtn">Reset defaults</button>
+        <button type="button" id="pmSettingsCloseBtn">Close</button>
       </div>
     </div>
   </div>
@@ -777,7 +1006,7 @@
           <p class="signed">&mdash; Mayor Cornelius Pebblestone III</p>
           <h3>LETTERS TO THE EDITOR</h3>
           <p><em>"Dear Editor &mdash; I just want to say I once dug a really big hole and it was very fun. If the hero is reading this, hello!"</em><br>&mdash; Jimmy, age 8</p>
-          <p><em>"Dear Editor &mdash; my dog has gone missing. Last seen carrying a small shiny rock. If anyone in the mine sees Buster please send him home."</em><br>&mdash; Mrs. Tugg</p>
+          <p><em>"Dear Editor &mdash; my dog Buster is missing. I also post paid jobs at my house by the shop. Miners welcome!"</em><br>&mdash; Mrs. Tugg</p>
           <p><em>"Dear Editor &mdash; the hero better hurry. My garden needs fertilizer and they say the King has plenty."</em><br>&mdash; A Concerned Farmer</p>
           <h3>OBITUARIES</h3>
           <p>This week we mourn the following brave miners last seen entering the mine: Phineas Quartz, Rosie Boulder, "Lefty" McDig, and the entire Crumble-Bottom family. May their spirits find peace among the deep stones.</p>
@@ -856,7 +1085,7 @@
     const REVERSED_LAYER_TEST_MODE = false;
     const REVERSED_LAYER_DEPTH_MAX = 5200;
     const MAZE_TEST_MODE = false; // true = straight tunnel through maze (cheat)
-    const GAME_TEST_MODE = false; // true = max gear + auto boss for testing
+    const GAME_TEST_MODE = true; // true = money + max pick durability + Puck (press T)
     const CHAMBER_SIZE = 48;
     const MAZE_HEIGHT = 75;
     const MAZE_Y_START = 2500;
@@ -872,7 +1101,17 @@
     const SURFACE_Y_MAX = 2;
     const GROUND_Y = SURFACE_Y_MAX + 1;
     const PLAYER_MIN_Y = SURFACE_Y_MAX; // First sky row acts like cave; above is blocked.
+    function getPlayerDepthMeters() {
+      return player.y <= SURFACE_Y_MAX ? 0 : player.y;
+    }
     const TUNNEL_X = Math.floor(WORLD_W / 2);
+    const PUCK_MAX_HP = 100;
+    const PUCK_HEAL_COST = 30;
+    const PUCK_HEAL_PLEASE_HP = 25;
+    const PUCK_BURIAL_X = TUNNEL_X - 4;
+    const PUCK_BURIAL_Y = PLAYER_MIN_Y;
+    const MONSTER_MIN_DEPTH = 500;
+    const MONSTER_SPAWN_CHANCE = 0.05;
     const CHAMBER_CHEST_X = TUNNEL_X;
 
     const HOMELESS_DEPTH = 500;
@@ -881,26 +1120,135 @@
     const HOMELESS_HOLE_Y_MIN = HOMELESS_DEPTH;
     const HOMELESS_HOLE_Y_MAX = HOMELESS_DEPTH + 3;
     const HOMELESS_COST = 500;
+    const PUCK_MOVE_MS = 50;
+    const PUCK_MINE_MS = 80;
+    const PUCK_MINE_CHANCE = 1;
+    const PUCK_BOSS_ATTACK_MS = 120;
+    const PUCK_BOSS_DAMAGE = 50;
+
+    // Lost things in the mine (newspaper ads / world — not all Mrs. Tugg's).
+    const LOST_ITEMS = [
+      { id: "dog",    questId: "dog",    label: "Buster the dog", depth: 100, dx:  3 },
+      { id: "canary", questId: "canary", label: "yellow canary",  depth: 200, dx: -3 },
+      { id: "helmet", questId: "helmet", label: "headlamp helmet", depth: 200, dx:  3 },
+      { id: "boot",   questId: "boot",   label: "rubber boot", depth: 320, dx:  4 },
+      { id: "lunch",  questId: "lunch",  label: "packed lunch", depth: 380, dx: -4 },
+      { id: "watch",  questId: "watch",  label: "gold pocket watch", depth: 550, dx:  2 },
+      { id: "ring",   questId: "ring",   label: "wedding ring", depth: 650, dx: -2 },
+    ];
+    function lostItemPos(item) {
+      return { x: TUNNEL_X + item.dx, y: item.depth };
+    }
+
+    // Mrs. Tugg pays for jobs (talk to her with E at her house).
+    const MRS_TUGG_TASKS = [
+      // —— Getting started ——
+      { id: "mine25", title: "Hard Labor", desc: "Mine 25 blocks (any ore or stone).", type: "mine_blocks", count: 25, reward: 400 },
+      { id: "candles2", title: "Light the Dark", desc: "Place 2 candles underground.", type: "place_candles", count: 2, reward: 200, after: "mine25" },
+      { id: "find_puck", title: "Find Puck", desc: "Find the scruffy miner Puck in a hole near 500m.", type: "find_puck", reward: 350, after: "mine25" },
+
+      // —— Digging deeper ——
+      { id: "mine50", title: "Keen Digger", desc: "Mine 50 blocks total.", type: "mine_blocks", count: 50, reward: 500, after: "mine25" },
+      { id: "mine100", title: "Tunnel Rat", desc: "Mine 100 blocks total.", type: "mine_blocks", count: 100, reward: 750, after: "mine50" },
+      { id: "mine250", title: "Gopher", desc: "Mine 250 blocks total.", type: "mine_blocks", count: 250, reward: 1200, after: "mine100" },
+      { id: "mine500", title: "Mole Person", desc: "Mine 500 blocks total.", type: "mine_blocks", count: 500, reward: 2500, after: "mine250" },
+      { id: "depth75", title: "Going Down", desc: "Reach 75m deep.", type: "depth", depth: 75, reward: 300, after: "mine25" },
+      { id: "depth150", title: "Deep Breath", desc: "Reach 150m deep.", type: "depth", depth: 150, reward: 600, after: "depth75" },
+      { id: "depth300", title: "Lower Still", desc: "Reach 300m deep.", type: "depth", depth: 300, reward: 1100, after: "depth150" },
+      { id: "depth500", title: "Half a Kilometer", desc: "Reach 500m deep.", type: "depth", depth: 500, reward: 1800, after: "depth300" },
+
+      // —— Shop & gear ——
+      { id: "sell300", title: "Shop Helper", desc: "Sell $300 of ore at the shop (total).", type: "sold_shop", amount: 300, reward: 350, after: "candles2" },
+      { id: "sell800", title: "Merchant Friend", desc: "Sell $800 of ore at the shop (total).", type: "sold_shop", amount: 800, reward: 700, after: "sell300" },
+      { id: "sell2000", title: "Big Seller", desc: "Sell $2000 of ore at the shop (total).", type: "sold_shop", amount: 2000, reward: 1500, after: "sell800" },
+      { id: "sell5000", title: "Ore Tycoon", desc: "Sell $5000 of ore at the shop (total).", type: "sold_shop", amount: 5000, reward: 3500, after: "sell2000" },
+      { id: "candles5", title: "Lantern Row", desc: "Place 5 candles underground.", type: "place_candles", count: 5, reward: 450, after: "candles2" },
+      { id: "candles10", title: "Festival Lights", desc: "Place 10 candles underground.", type: "place_candles", count: 10, reward: 900, after: "candles5" },
+      { id: "pick3", title: "Better Tools", desc: "Upgrade your pickaxe to level 3.", type: "pick_level", level: 3, reward: 250, after: "mine50" },
+      { id: "pick5", title: "Serious Miner", desc: "Upgrade your pickaxe to level 5.", type: "pick_level", level: 5, reward: 600, after: "pick3" },
+      { id: "pick8", title: "Master Digger", desc: "Upgrade your pickaxe to level 8.", type: "pick_level", level: 8, reward: 1400, after: "pick5" },
+      { id: "rich2k", title: "Nest Egg", desc: "Have $2000 cash on hand.", type: "money", amount: 2000, reward: 400, after: "sell800" },
+      { id: "rich10k", title: "Loaded", desc: "Have $10,000 cash on hand.", type: "money", amount: 10000, reward: 2000, after: "rich2k" },
+
+      // —— Ore collection ——
+      { id: "coal10", title: "Coal Collector", desc: "Mine 10 coal ore.", type: "mine_ore", ore: "coal", count: 10, reward: 350, after: "mine100" },
+      { id: "iron8", title: "Iron Works", desc: "Mine 8 iron ore.", type: "mine_ore", ore: "iron", count: 8, reward: 500, after: "coal10" },
+      { id: "silver5", title: "Silver Lining", desc: "Mine 5 silver ore.", type: "mine_ore", ore: "silver", count: 5, reward: 700, after: "iron8" },
+      { id: "gold5", title: "Gold Rush", desc: "Mine 5 gold ore.", type: "mine_ore", ore: "gold", count: 5, reward: 900, after: "silver5" },
+      { id: "ruby3", title: "Red Sparkle", desc: "Mine 3 ruby ore.", type: "mine_ore", ore: "ruby", count: 3, reward: 1100, after: "gold5" },
+      { id: "diamond2", title: "Ice Clear", desc: "Mine 2 diamond ore.", type: "mine_ore", ore: "diamond", count: 2, reward: 1500, after: "ruby3" },
+      { id: "emerald2", title: "Green Gem", desc: "Mine 2 emerald ore.", type: "mine_ore", ore: "emerald", count: 2, reward: 1800, after: "diamond2" },
+
+      // —— Puck ——
+      { id: "feed_puck", title: "Feed Puck", desc: "Give Puck food ($500) so he follows you.", type: "feed_puck", reward: 500, after: "find_puck" },
+      { id: "dog", title: "Find Buster", desc: "Find her dog near 100m.", type: "find_item", itemId: "dog", reward: 1500, after: "find_puck" },
+
+      // —— Lost & found ——
+      { id: "canary", title: "Canary Rescue", desc: "Find the yellow canary near 200m.", type: "find_item", itemId: "canary", reward: 800, after: "feed_puck" },
+      { id: "helmet", title: "Helmet Return", desc: "Find the headlamp helmet near 200m.", type: "find_item", itemId: "helmet", reward: 600, after: "canary" },
+      { id: "boot", title: "Lost Boot", desc: "Find the rubber boot near 320m.", type: "find_item", itemId: "boot", reward: 700, after: "helmet" },
+      { id: "lunch", title: "Lunch Break", desc: "Find the packed lunch near 380m.", type: "find_item", itemId: "lunch", reward: 850, after: "boot" },
+      { id: "watch", title: "Tick Tock", desc: "Find the gold pocket watch near 550m.", type: "find_item", itemId: "watch", reward: 1200, after: "lunch" },
+      { id: "ring", title: "Precious Ring", desc: "Find the wedding ring near 650m.", type: "find_item", itemId: "ring", reward: 2000, after: "watch" },
+
+      // —— Workers ——
+      { id: "hire1", title: "Help Wanted", desc: "Hire at least 1 worker (any kind).", type: "workers", count: 1, reward: 400, after: "sell2000" },
+      { id: "hire3", title: "Small Crew", desc: "Hire 3 workers total (blue + mega).", type: "workers", count: 3, reward: 1200, after: "hire1" },
+      { id: "hire5", title: "Mining Company", desc: "Hire 5 workers total.", type: "workers", count: 5, reward: 2500, after: "hire3" },
+
+      // —— Big finale jobs ——
+      { id: "depth800", title: "Deep Pioneer", desc: "Reach 800m deep.", type: "depth", depth: 800, reward: 4000, after: "depth500" },
+      { id: "mine1000", title: "Legend Digger", desc: "Mine 1000 blocks total.", type: "mine_blocks", count: 1000, reward: 5000, after: "mine500" },
+      { id: "sell15000", title: "Town Hero", desc: "Sell $15,000 of ore at the shop (total).", type: "sold_shop", amount: 15000, reward: 6000, after: "sell5000" },
+      { id: "all_lost", title: "Super Sleuth", desc: "Find every lost item for Mrs. Tugg.", type: "all_lost", reward: 5000, after: "ring" },
+    ];
+
+    function isMrsTuggQuestUnlocked(questId) {
+      const task = MRS_TUGG_TASKS.find((t) => t.id === questId);
+      if (!task) return false;
+      if (!task.after) return true;
+      return !!(state && state.tuggQuestDone && state.tuggQuestDone[task.after]);
+    }
+
     function isHomelessHole(x, y) {
+      if (!isMrsTuggQuestUnlocked("find_puck")) return false;
       return x >= HOMELESS_HOLE_X_MIN && x <= HOMELESS_HOLE_X_MAX &&
              y >= HOMELESS_HOLE_Y_MIN && y <= HOMELESS_HOLE_Y_MAX;
     }
 
-    // Mrs. Tugg quest items hidden in alcoves down the mine.
-    const TUGG_ITEMS = [
-      { id: "dog",    label: "Buster",        depth: 100, dx:  3, reward: 1500 },
-      { id: "canary", label: "Yellow Canary", depth: 200, dx: -3, reward: 800 },
-      { id: "helmet", label: "Headlamp Helmet", depth: 200, dx:  3, reward: 600 },
-    ];
-    function tuggItemPos(item) {
-      return { x: TUNNEL_X + item.dx, y: item.depth };
-    }
-    function isTuggAlcove(x, y) {
-      for (const item of TUGG_ITEMS) {
-        const p = tuggItemPos(item);
+    function isLostItemAlcove(x, y) {
+      for (const item of LOST_ITEMS) {
+        if (!isMrsTuggQuestUnlocked(item.questId)) continue;
+        const p = lostItemPos(item);
         if (Math.abs(x - p.x) <= 1 && Math.abs(y - p.y) <= 1) return true;
       }
       return false;
+    }
+
+    function carvePuckHole() {
+      for (let y = HOMELESS_HOLE_Y_MIN; y <= HOMELESS_HOLE_Y_MAX; y++) {
+        for (let x = HOMELESS_HOLE_X_MIN; x <= HOMELESS_HOLE_X_MAX; x++) {
+          if (inBounds(x, y)) setTile(x, y, "air");
+        }
+      }
+    }
+
+    function carveLostItemAlcove(item) {
+      const p = lostItemPos(item);
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = p.x + dx;
+          const y = p.y + dy;
+          if (inBounds(x, y)) setTile(x, y, "air");
+        }
+      }
+    }
+
+    function refreshUnlockedQuestWorld() {
+      if (isMrsTuggQuestUnlocked("find_puck")) carvePuckHole();
+      for (const item of LOST_ITEMS) {
+        if (isMrsTuggQuestUnlocked(item.questId)) carveLostItemAlcove(item);
+      }
     }
 
     // Mrs. Tugg's house on the surface, well clear of the shop.
@@ -961,7 +1309,8 @@
       godcore:  { color: "#fff2a8", value: 10500, hard: 24 },
       lava:     { color: "#ff5a1f", value: 0, hard: 999 },
       bedrock:  { color: "#141414", value: 0, hard: 999 },
-      candle:   { color: "#3a2410", value: 0, hard: 0 }
+      candle:   { color: "#3a2410", value: 0, hard: 0 },
+      monster:  { color: "#5a2848", value: 15, hard: 2 },
     };
     const CANDLE_COST = 5;
 
@@ -974,7 +1323,274 @@
     let lastWorkerActionAt = 0;
     let audioCtx = null;
     let audioUnlocked = false;
-    const SFX_VOLUME_MULT = 3.4;
+    const SFX_VOLUME_BASE = 3.4;
+    const MUSIC_VOLUME_BASE = 0.18;
+
+    const PM_SETTINGS_KEY = "perfectMineSettings";
+    const PM_DEFAULT_SETTINGS = {
+      theme: "wood",
+      brightness: 100,
+      showHints: true,
+      keyScheme: "both",
+      mineKey: "space",
+      musicEnabled: true,
+      musicVolume: 1,
+      sfxEnabled: true,
+      sfxVolume: 1,
+      darknessEnabled: true,
+      darknessStrength: 100,
+      playerLight: 100,
+      candleLight: 100,
+      lavaGlow: true,
+      rockFallMult: 100,
+      rockDamage: 10,
+      lavaSpread: true,
+    };
+    let pmSettings = { ...PM_DEFAULT_SETTINGS };
+
+    function pmBool(v, def) {
+      if (v === true || v === false) return v;
+      if (v === "true") return true;
+      if (v === "false") return false;
+      return def;
+    }
+
+    function loadPmSettings() {
+      try {
+        const raw = localStorage.getItem(PM_SETTINGS_KEY);
+        if (raw) pmSettings = { ...PM_DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      } catch (e) {
+        pmSettings = { ...PM_DEFAULT_SETTINGS };
+      }
+      pmSettings.showHints = pmBool(pmSettings.showHints, true);
+      pmSettings.musicEnabled = pmBool(pmSettings.musicEnabled, true);
+      pmSettings.sfxEnabled = pmBool(pmSettings.sfxEnabled, true);
+      pmSettings.darknessEnabled = pmBool(pmSettings.darknessEnabled, true);
+      pmSettings.lavaGlow = pmBool(pmSettings.lavaGlow, true);
+      pmSettings.lavaSpread = pmBool(pmSettings.lavaSpread, true);
+      const n = (v, def, min, max) => {
+        const x = Number(v);
+        if (!Number.isFinite(x)) return def;
+        return Math.min(max, Math.max(min, x));
+      };
+      pmSettings.brightness = n(pmSettings.brightness, 100, 40, 150);
+      pmSettings.musicVolume = n(pmSettings.musicVolume, 1, 0, 1);
+      pmSettings.sfxVolume = n(pmSettings.sfxVolume, 1, 0, 1);
+      pmSettings.darknessStrength = n(pmSettings.darknessStrength, 100, 0, 100);
+      pmSettings.playerLight = n(pmSettings.playerLight, 100, 50, 200);
+      pmSettings.candleLight = n(pmSettings.candleLight, 100, 50, 200);
+      pmSettings.rockFallMult = n(pmSettings.rockFallMult, 100, 0, 200);
+      pmSettings.rockDamage = n(pmSettings.rockDamage, 10, 1, 30);
+      if (!["wood", "bad", "dark", "neon", "lava"].includes(pmSettings.theme)) pmSettings.theme = "wood";
+      if (!["both", "wasd", "arrows"].includes(pmSettings.keyScheme)) pmSettings.keyScheme = "both";
+      if (!["space", "enter"].includes(pmSettings.mineKey)) pmSettings.mineKey = "space";
+    }
+
+    function savePmSettings() {
+      localStorage.setItem(PM_SETTINGS_KEY, JSON.stringify(pmSettings));
+    }
+
+    function getSfxVolumeMult() {
+      return pmSettings.sfxEnabled ? pmSettings.sfxVolume * SFX_VOLUME_BASE : 0;
+    }
+
+    function getMusicVolumeMult() {
+      return pmSettings.musicEnabled ? pmSettings.musicVolume * MUSIC_VOLUME_BASE : 0;
+    }
+
+    function readPmSettingsFromForm() {
+      pmSettings.theme = document.getElementById("pmTheme").value;
+      pmSettings.brightness = Number(document.getElementById("pmBrightness").value);
+      pmSettings.showHints = document.getElementById("pmShowHints").checked;
+      pmSettings.keyScheme = document.getElementById("pmKeys").value;
+      pmSettings.mineKey = document.getElementById("pmMineKey").value;
+      pmSettings.musicEnabled = document.getElementById("pmMusic").checked;
+      pmSettings.musicVolume = Number(document.getElementById("pmMusicVol").value) / 100;
+      pmSettings.sfxEnabled = document.getElementById("pmSfx").checked;
+      pmSettings.sfxVolume = Number(document.getElementById("pmSfxVol").value) / 100;
+      pmSettings.darknessEnabled = document.getElementById("pmDark").checked;
+      pmSettings.darknessStrength = Number(document.getElementById("pmDarkStr").value);
+      pmSettings.playerLight = Number(document.getElementById("pmPlayerLight").value);
+      pmSettings.candleLight = Number(document.getElementById("pmCandleLight").value);
+      pmSettings.lavaGlow = document.getElementById("pmLavaGlow").checked;
+      pmSettings.rockFallMult = Number(document.getElementById("pmRockFall").value);
+      pmSettings.rockDamage = Number(document.getElementById("pmRockDmg").value);
+      pmSettings.lavaSpread = document.getElementById("pmLavaSpread").checked;
+    }
+
+    function fillPmSettingsForm() {
+      document.getElementById("pmTheme").value = pmSettings.theme;
+      document.getElementById("pmBrightness").value = pmSettings.brightness;
+      document.getElementById("pmBrightVal").textContent = pmSettings.brightness;
+      document.getElementById("pmShowHints").checked = pmSettings.showHints;
+      document.getElementById("pmKeys").value = pmSettings.keyScheme;
+      document.getElementById("pmMineKey").value = pmSettings.mineKey;
+      document.getElementById("pmMusic").checked = pmSettings.musicEnabled;
+      document.getElementById("pmMusicVol").value = Math.round(pmSettings.musicVolume * 100);
+      document.getElementById("pmMusicVolVal").textContent = Math.round(pmSettings.musicVolume * 100);
+      document.getElementById("pmSfx").checked = pmSettings.sfxEnabled;
+      document.getElementById("pmSfxVol").value = Math.round(pmSettings.sfxVolume * 100);
+      document.getElementById("pmSfxVolVal").textContent = Math.round(pmSettings.sfxVolume * 100);
+      document.getElementById("pmDark").checked = pmSettings.darknessEnabled;
+      document.getElementById("pmDarkStr").value = pmSettings.darknessStrength;
+      document.getElementById("pmDarkStrVal").textContent = pmSettings.darknessStrength;
+      document.getElementById("pmPlayerLight").value = pmSettings.playerLight;
+      document.getElementById("pmPlayerLightVal").textContent = pmSettings.playerLight;
+      document.getElementById("pmCandleLight").value = pmSettings.candleLight;
+      document.getElementById("pmCandleLightVal").textContent = pmSettings.candleLight;
+      document.getElementById("pmLavaGlow").checked = pmSettings.lavaGlow;
+      document.getElementById("pmRockFall").value = pmSettings.rockFallMult;
+      document.getElementById("pmRockFallVal").textContent = pmSettings.rockFallMult;
+      document.getElementById("pmRockDmg").value = pmSettings.rockDamage;
+      document.getElementById("pmRockDmgVal").textContent = pmSettings.rockDamage;
+      document.getElementById("pmLavaSpread").checked = pmSettings.lavaSpread;
+    }
+
+    function applyPmSettings() {
+      if (pmSettings.theme === "wood") {
+        delete document.documentElement.dataset.pmTheme;
+      } else {
+        document.documentElement.dataset.pmTheme = pmSettings.theme;
+      }
+      document.body.style.filter = "";
+      const appEl = document.querySelector(".app");
+      if (appEl) appEl.style.filter = `brightness(${pmSettings.brightness}%)`;
+      const hintEl = document.getElementById("gameControlsHint");
+      if (hintEl) hintEl.style.display = pmSettings.showHints ? "" : "none";
+      if (typeof state !== "undefined" && state && typeof state.hp === "number") {
+        if (!pmSettings.musicEnabled) stopMusic();
+        else updateMusic();
+        updateControlsHint();
+      }
+    }
+
+    function openPmSettings() {
+      fillPmSettingsForm();
+      document.getElementById("pmSettingsModal").style.display = "flex";
+    }
+
+    function closePmSettings() {
+      document.getElementById("pmSettingsModal").style.display = "none";
+    }
+
+    function pmKeyMatchesMove(key) {
+      const k = key.toLowerCase();
+      const arrows = ["arrowup", "arrowdown", "arrowleft", "arrowright"];
+      const wasd = ["w", "a", "s", "d"];
+      if (pmSettings.keyScheme === "arrows") return arrows.includes(k);
+      if (pmSettings.keyScheme === "wasd") return wasd.includes(k);
+      return arrows.includes(k) || wasd.includes(k);
+    }
+
+    function pmKeyMatchesMine(e) {
+      const isSpace = e.key === " " || e.key === "Space" || e.code === "Space";
+      const isEnter = e.key === "Enter" || e.code === "Enter" || e.code === "NumpadEnter";
+      if (pmSettings.mineKey === "enter") return isEnter || isSpace;
+      return isSpace || isEnter;
+    }
+
+    function focusGameCanvas() {
+      const el = document.getElementById("view");
+      if (el) el.focus({ preventScroll: true });
+    }
+
+    function isGameInputBlocked() {
+      const modalIds = [
+        "pmSettingsModal",
+        "respawnModal",
+        "homelessModal",
+        "puckGraveModal",
+        "mrsTuggModal",
+        "victoryMenuModal",
+      ];
+      for (const id of modalIds) {
+        const el = document.getElementById(id);
+        if (el && el.style.display === "flex") return true;
+      }
+      return document.getElementById("newspaperModal").classList.contains("show");
+    }
+
+    function getCamera() {
+      return {
+        x: Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - Math.floor(VIEW_W / 2))),
+        y: Math.max(0, player.y - Math.floor(VIEW_H / 2)),
+      };
+    }
+
+    function handlePmMoveKey(e) {
+      if (!pmKeyMatchesMove(e.key)) return false;
+      const k = e.key.toLowerCase();
+      if (k === "arrowleft" || k === "a") {
+        e.preventDefault();
+        if (state.pendingWorker) nudgePendingWorker(-1);
+        else movePlayer(-1, 0);
+        return true;
+      }
+      if (k === "arrowright" || k === "d") {
+        e.preventDefault();
+        if (state.pendingWorker) nudgePendingWorker(1);
+        else movePlayer(1, 0);
+        return true;
+      }
+      if (k === "arrowup" || k === "w") {
+        e.preventDefault();
+        movePlayer(0, -1);
+        return true;
+      }
+      if (k === "arrowdown" || k === "s") {
+        e.preventDefault();
+        movePlayer(0, 1);
+        return true;
+      }
+      return false;
+    }
+
+    function setupPmSettingsUI() {
+      loadPmSettings();
+      applyPmSettings();
+      fillPmSettingsForm();
+      closePmSettings();
+
+      document.getElementById("settingsBtn").addEventListener("click", openPmSettings);
+      document.getElementById("pmSettingsCloseBtn").addEventListener("click", closePmSettings);
+      document.getElementById("pmSettingsModal").addEventListener("click", (e) => {
+        if (e.target.id === "pmSettingsModal") closePmSettings();
+      });
+
+      const bindRange = (id, valId) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("input", () => {
+          const v = document.getElementById(valId);
+          if (v) v.textContent = el.value;
+        });
+      };
+      bindRange("pmBrightness", "pmBrightVal");
+      bindRange("pmMusicVol", "pmMusicVolVal");
+      bindRange("pmSfxVol", "pmSfxVolVal");
+      bindRange("pmDarkStr", "pmDarkStrVal");
+      bindRange("pmPlayerLight", "pmPlayerLightVal");
+      bindRange("pmCandleLight", "pmCandleLightVal");
+      bindRange("pmRockFall", "pmRockFallVal");
+      bindRange("pmRockDmg", "pmRockDmgVal");
+
+      document.getElementById("pmSettingsSaveBtn").addEventListener("click", () => {
+        readPmSettingsFromForm();
+        savePmSettings();
+        applyPmSettings();
+        closePmSettings();
+        showMessage("Settings saved!", "var(--good)");
+        sfx.cash();
+      });
+
+      document.getElementById("pmSettingsResetBtn").addEventListener("click", () => {
+        pmSettings = { ...PM_DEFAULT_SETTINGS };
+        fillPmSettingsForm();
+        savePmSettings();
+        applyPmSettings();
+        showMessage("Reset to defaults.", "var(--muted)");
+      });
+    }
     let tipIndex = 0;
     let mazeAirTiles = new Set();
     let mazeBuilt = false;
@@ -1114,6 +1730,7 @@
       player.dirX = 0;
       player.dirY = 1;
       ensureLoadedAroundPlayer();
+      syncPuckToChamber();
       showMessage(`${message} Respawn at chest — Miner King reset!`, "var(--warn)");
       playTone(440, 0.1, "triangle", 0.06);
       updateHud();
@@ -1132,12 +1749,13 @@
     }
 
     function playTone(freq, duration, type = "square", volume = 0.05, when = 0) {
+      if (!pmSettings.sfxEnabled || getSfxVolumeMult() <= 0) return;
       if (!ensureAudioReady()) return;
       const start = audioCtx.currentTime + when;
       const end = start + duration;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      const outVol = Math.min(0.45, volume * SFX_VOLUME_MULT);
+      const outVol = Math.min(0.45, volume * getSfxVolumeMult());
       osc.type = type;
       osc.frequency.setValueAtTime(freq, start);
       gain.gain.setValueAtTime(0.0001, start);
@@ -1299,6 +1917,20 @@
           [110, 4], [98, 4], [116.54, 4], [110, 4],
         ],
       },
+      puckMourn: {
+        bpm: 46,
+        volume: 1.35,
+        wave: "triangle",
+        lead: [
+          [220, 3], [207.65, 2], [196, 4],
+          [174.61, 3], [164.81, 3], [146.83, 5],
+          [164.81, 2], [174.61, 2], [196, 4],
+          [220, 3], [196, 3], [174.61, 6],
+        ],
+        bass: [
+          [55, 6], [49, 6], [43.65, 8], [49, 6],
+        ],
+      },
       newspaper: {
         bpm: 108,
         volume: 1.9,
@@ -1334,13 +1966,12 @@
     let musicBassTime = 0;
     let musicLeadIdx = 0;
     let musicBassIdx = 0;
-    const MUSIC_VOLUME = 0.18;
-
-    function playMusicNoteAt(freq, duration, volume, atTime) {
+    function playMusicNoteAt(freq, duration, volume, atTime, oscType = "sine") {
+      if (!pmSettings.musicEnabled || getMusicVolumeMult() <= 0) return;
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = "sine";
+      osc.type = oscType;
       osc.frequency.setValueAtTime(freq, atTime);
       gain.gain.setValueAtTime(0.0001, atTime);
       gain.gain.exponentialRampToValueAtTime(volume, atTime + 0.05);
@@ -1362,20 +1993,21 @@
       const track = MUSIC[musicTrack];
       if (!track) return;
       const beat = 60 / track.bpm;
-      const trackVol = MUSIC_VOLUME * (track.volume || 1);
+      const trackVol = getMusicVolumeMult() * (track.volume || 1);
+      const wave = track.wave || "sine";
       const horizon = audioCtx.currentTime + 0.5;
 
       while (musicLeadTime < horizon) {
         const note = track.lead[musicLeadIdx % track.lead.length];
         const dur = note[1] * beat;
-        playMusicNoteAt(note[0], dur * 0.9, trackVol, musicLeadTime);
+        playMusicNoteAt(note[0], dur * 0.9, trackVol, musicLeadTime, wave);
         musicLeadTime += dur;
         musicLeadIdx++;
       }
       while (musicBassTime < horizon) {
         const note = track.bass[musicBassIdx % track.bass.length];
         const dur = note[1] * beat;
-        playMusicNoteAt(note[0], dur * 0.92, trackVol * 0.55, musicBassTime);
+        playMusicNoteAt(note[0], dur * 0.92, trackVol * 0.55, musicBassTime, wave);
         musicBassTime += dur;
         musicBassIdx++;
       }
@@ -1410,15 +2042,24 @@
 
     function updateMusic() {
       if (!audioCtx) return;
-      if (newspaperModal && newspaperModal.classList.contains("show")) {
+      if (!pmSettings.musicEnabled) {
+        stopMusic();
+        return;
+      }
+      const paperEl = document.getElementById("newspaperModal");
+      if (paperEl && paperEl.classList.contains("show")) {
         if (newspaperMusicStarted && musicTrack !== "newspaper") {
           startMusic("newspaper");
         }
         return;
       }
       if (state.dead) { stopMusic(); return; }
+      const graveModalOpen =
+        document.getElementById("puckGraveModal")?.style.display === "flex";
       let track;
-      if (state.bossDefeated && (state.cutscene || isAtSurface())) {
+      if (isPuckDead() || isPuckBuried() || graveModalOpen) {
+        track = "puckMourn";
+      } else if (state.bossDefeated && (state.cutscene || isAtSurface())) {
         track = "celebrate";
       } else if (state.bossFight && !state.bossDefeated) {
         track = "boss";
@@ -1514,9 +2155,23 @@
       if (!def || tile === "bedrock") return null;
       if (getPickStrength(state.pickaxe) < def.hard) return null;
 
+      const wasMonster = tile === "monster";
       setTile(tx, ty, "air");
+      if (wasMonster) triggerMonsterAttack(tx, ty);
       const durabilityLoss = Math.max(1, Math.ceil(def.hard / getPickStrength(state.pickaxe)));
-      state.pickDurability = Math.max(0, state.pickDurability - durabilityLoss);
+      if (GAME_TEST_MODE) {
+        state.pickDurability = getMaxDurability(state.pickaxe);
+      } else {
+        state.pickDurability = Math.max(0, state.pickDurability - durabilityLoss);
+      }
+      if (state.questStats) {
+        state.questStats.blocksMined++;
+        if (tile === "gold") state.questStats.goldMined++;
+        else if (oreDefs[tile]) {
+          const oreKey = tile + "Mined";
+          state.questStats[oreKey] = (state.questStats[oreKey] || 0) + 1;
+        }
+      }
       return { tile, value: def.value, color: def.color };
     }
 
@@ -1552,6 +2207,7 @@
           const tile = getTile(tx, ty);
           if (tile === "air") showMessage("Nothing to mine there.");
           else if (tile === "lava") showMessage("Lava is too hot to mine!");
+          else if (tile === "monster") showMessage("Hit the monster block harder!");
           else if (isMazeProtectedBlock(tx, ty, tile)) showMessage("Maze walls are unbreakable.");
           else showMessage("Too hard to break or blocked.");
           sfx.blocked();
@@ -1567,8 +2223,9 @@
       }
 
       if (!quiet) {
-        const danger = Math.min(0.72, 0.06 + player.y * 0.004);
-        if (Math.random() < danger) {
+        const danger =
+          Math.min(0.72, 0.06 + player.y * 0.004) * (pmSettings.rockFallMult / 100);
+        if (danger > 0 && Math.random() < danger) {
           triggerRockFall();
         } else {
           showMessage(`Mined ${mined} block${mined > 1 ? "s" : ""} (+$${totalValue})!`, "var(--good)");
@@ -2081,6 +2738,212 @@
       );
     }
 
+    function isPuckNearBoss(h) {
+      if (!state.boss || !h) return false;
+      const b = state.boss;
+      return (
+        h.x >= b.x - 1 &&
+        h.x <= b.x + b.w &&
+        h.y >= b.y - 1 &&
+        h.y <= b.y + b.h
+      );
+    }
+
+    function tryMovePuck(h, tx, ty) {
+      if (h.x === tx && h.y === ty) return false;
+      const dirX = Math.sign(tx - h.x);
+      const dirY = Math.sign(ty - h.y);
+      const moves = [];
+      if (dirX !== 0) moves.push([dirX, 0]);
+      if (dirY !== 0) moves.push([0, dirY]);
+      if (Math.abs(tx - h.x) < Math.abs(ty - h.y)) moves.reverse();
+      for (const [mx, my] of moves) {
+        const nx = h.x + mx;
+        const ny = h.y + my;
+        if (!inBounds(nx, ny)) continue;
+        if (getTile(nx, ny) === "lava") {
+          killPuck("Puck ran into lava!");
+          return false;
+        }
+        if (getTile(nx, ny) !== "air") continue;
+        if (bossOccupies(nx, ny)) continue;
+        h.x = nx;
+        h.y = ny;
+        return true;
+      }
+      return false;
+    }
+
+    function syncPuckToChamber() {
+      if (!isPuckFollowing()) return;
+      const h = state.homeless;
+      const spots = [
+        [player.x - 1, player.y],
+        [player.x + 1, player.y],
+        [player.x, player.y - 1],
+        [player.x, player.y + 1],
+        [player.x - 1, player.y - 1],
+        [player.x + 1, player.y + 1],
+      ];
+      for (const [px, py] of spots) {
+        if (inBounds(px, py) && getTile(px, py) === "air" && !bossOccupies(px, py)) {
+          h.x = px;
+          h.y = py;
+          return;
+        }
+      }
+    }
+
+    function puckBossAttack(h, now) {
+      if (!state.bossFight || !state.boss || isBossStunned(now)) return;
+      if (!isPuckNearBoss(h)) return;
+      const last = h.lastBossAttackAt || 0;
+      if (now - last < PUCK_BOSS_ATTACK_MS) return;
+      h.lastBossAttackAt = now;
+      const dmg = getPuckBossDamage();
+      state.boss.hp -= dmg;
+      playTone(280, 0.06, "square", 0.05);
+      showMessage(`Puck bashes the Miner King! -${dmg}`, "var(--good)", 90);
+      updateHud();
+      if (state.boss.hp <= 0) defeatBoss();
+    }
+
+    function updatePuckBossFight(h, now) {
+      if (now - h.lastMoveAt > PUCK_MOVE_MS) {
+        h.lastMoveAt = now;
+        const b = state.boss;
+        if (!isPuckNearBoss(h)) {
+          tryMovePuck(h, b.x + Math.floor(b.w / 2), b.y + Math.floor(b.h / 2));
+        }
+      }
+      puckBossAttack(h, now);
+    }
+
+    function isPuckFollowing() {
+      return !!(state.homeless && state.homeless.state === "following");
+    }
+
+    function isPuckDead() {
+      return !!(state.homeless && state.homeless.state === "dead");
+    }
+
+    function isPuckBuried() {
+      return !!(state.homeless && state.homeless.state === "buried");
+    }
+
+    function getPuckHp() {
+      if (!state.homeless || state.homeless.state !== "following") return 0;
+      return typeof state.homeless.hp === "number" ? state.homeless.hp : PUCK_MAX_HP;
+    }
+
+    function hurtPuck(amount, message) {
+      const h = state.homeless;
+      if (!h || h.state !== "following") return;
+      h.hp = Math.max(0, getPuckHp() - amount);
+      if (message) showMessage(message, "var(--bad)", 70);
+      sfx.hurt();
+      updateHud();
+      if (h.hp <= 0) killPuck("Puck died!");
+    }
+
+    function playPuckMournMusic() {
+      ensureAudioReady();
+      audioUnlocked = true;
+      startMusic("puckMourn");
+    }
+
+    function killPuck(message) {
+      const h = state.homeless;
+      if (!h || h.state !== "following") return;
+      h.state = "dead";
+      h.deathX = h.x;
+      h.deathY = h.y;
+      h.deathAnimStart = performance.now();
+      h.hp = 0;
+      showMessage(message || "Puck died!", "var(--bad)", 220);
+      sfx.hurt();
+      playPuckMournMusic();
+      updateHud();
+    }
+
+    function checkPuckLavaDeath() {
+      const h = state.homeless;
+      if (!h || h.state !== "following") return;
+      if (getTile(h.x, h.y) === "lava") killPuck("Puck was swallowed by lava!");
+    }
+
+    function updatePuckHealPlease(now) {
+      const h = state.homeless;
+      if (!h || h.state !== "following" || h.hp > PUCK_HEAL_PLEASE_HP) return;
+      const last = h.lastHealPleaseAt || 0;
+      if (now - last < 4500) return;
+      h.lastHealPleaseAt = now;
+      showMessage('Puck: "Please heal me!"', "var(--warn)", 120);
+    }
+
+    function nearPuckBurialSite() {
+      return (
+        isAtSurface() &&
+        player.y === PUCK_BURIAL_Y &&
+        Math.abs(player.x - PUCK_BURIAL_X) <= 1
+      );
+    }
+
+    function nearPuckGrave() {
+      return isPuckBuried() && nearPuckBurialSite();
+    }
+
+    function nearLivingPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "following") return false;
+      return Math.abs(player.x - h.x) <= 1 && Math.abs(player.y - h.y) <= 1;
+    }
+
+    function tryHealPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "following" || h.hp >= PUCK_MAX_HP) return false;
+      if (!nearLivingPuck()) return false;
+      if (state.money < PUCK_HEAL_COST) {
+        showMessage(`Need $${PUCK_HEAL_COST} to heal Puck.`, "var(--bad)");
+        return true;
+      }
+      state.money -= PUCK_HEAL_COST;
+      h.hp = Math.min(PUCK_MAX_HP, h.hp + 40);
+      playTone(480, 0.1, "triangle", 0.05);
+      showMessage("Puck feels better!", "var(--good)");
+      updateHud();
+      return true;
+    }
+
+    function tryBuryPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "dead" || !nearPuckBurialSite()) return false;
+      h.state = "buried";
+      showMessage("You bury Puck on the hill. Rest in peace, friend.", "var(--good)", 260);
+      playTone(220, 0.2, "triangle", 0.05);
+      playPuckMournMusic();
+      showPuckGraveModal();
+      updateHud();
+      return true;
+    }
+
+    function showPuckGraveModal() {
+      state.gamePaused = true;
+      document.getElementById("puckGraveModal").style.display = "flex";
+    }
+
+    function hidePuckGraveModal() {
+      state.gamePaused = false;
+      document.getElementById("puckGraveModal").style.display = "none";
+      updateMusic();
+    }
+
+    function tryReadPuckGrave() {
+      if (!nearPuckGrave()) return false;
+      showPuckGraveModal();
+      return true;
+    }
+
     function getBossStartPos() {
       return {
         x: TUNNEL_X - 1,
@@ -2178,6 +3041,10 @@
           if (player.x === x && player.y === y && !state.dead) {
             killPlayer("You were caught in the explosion!", "bomb");
           }
+          const h = state.homeless;
+          if (h && h.state === "following" && h.x === x && h.y === y) {
+            hurtPuck(55, "Puck was caught in the explosion!");
+          }
         }
       }
       if (bossInBlast) hurtBossFromBomb(bomb, now);
@@ -2239,15 +3106,18 @@
       if (!state.bossFight || state.bossDefeated) return;
       spawnChamberBombs();
       state.boss = makeBoss();
+      syncPuckToChamber();
     }
 
     function startBossFight() {
       spawnChamberBombs();
       state.bossFight = true;
       state.boss = makeBoss();
+      syncPuckToChamber();
     }
 
     function defeatBoss() {
+      const puckHelped = isPuckFollowing();
       state.boss = null;
       state.bossFight = false;
       state.bossDefeated = true;
@@ -2256,15 +3126,21 @@
       unlockChamberFloor();
       sfx.cash();
       updateHud();
-      startVictoryCutscene();
+      startVictoryCutscene(puckHelped);
     }
 
-    function startVictoryCutscene() {
+    function startVictoryCutscene(puckHelped) {
       state.cutscene = "fadeOut";
       state.cutsceneStart = performance.now();
       state.gamePaused = true;
       document.getElementById("cutsceneOverlay").style.display = "block";
-      showMessage(`You beat the Miner King! +$${BOSS_WIN_REWARD}`, "var(--good)", 300);
+      showMessage(
+        puckHelped
+          ? `You and Puck beat the Miner King! +$${BOSS_WIN_REWARD}`
+          : `You beat the Miner King! +$${BOSS_WIN_REWARD}`,
+        "var(--good)",
+        300
+      );
     }
 
     function placePlayerForVictoryScene() {
@@ -2385,6 +3261,10 @@
       state.hp -= hitDamage;
       showMessage(`${b.name} slashes you for ${hitDamage}!`, "var(--bad)");
       sfx.hurt();
+      const h = state.homeless;
+      if (h && h.state === "following" && isPuckNearBoss(h)) {
+        hurtPuck(Math.ceil(hitDamage * 0.85), `${b.name} hits Puck too!`);
+      }
       updateHud();
       if (state.hp <= 0) killPlayer("The Miner King defeated you!", "boss");
     }
@@ -2410,6 +3290,10 @@
         state.hp -= BOSS_LUNGE_DAMAGE;
         showMessage(`${b.name} lunges and smashes you!`, "var(--bad)");
         sfx.hurt();
+        const h = state.homeless;
+        if (h && h.state === "following" && isPuckNearBoss(h)) {
+          hurtPuck(BOSS_LUNGE_DAMAGE, `${b.name} smashes Puck!`);
+        }
         updateHud();
         if (state.hp <= 0) killPlayer("The Miner King defeated you!", "boss");
       }
@@ -2431,10 +3315,11 @@
         sfx.blocked();
         return true;
       }
-      state.boss.hp -= SWORD_DAMAGE;
+      const dmg = getSwordDamage();
+      state.boss.hp -= dmg;
       startPlayerAnim("swing");
       playTone(320, 0.08, "sawtooth", 0.06);
-      showMessage(`Sword hit! Boss has ${Math.max(0, state.boss.hp)} HP left.`, "var(--good)");
+      showMessage(`Sword hit! -${dmg}. Boss has ${Math.max(0, state.boss.hp)} HP left.`, "var(--good)");
       if (state.boss.hp <= 0) defeatBoss();
       updateHud();
       return true;
@@ -2452,7 +3337,13 @@
       state.chamberChestOpened = true;
       state.hasSword = true;
       startBossFight();
-      showMessage("You got the Sword! Six bombs appeared! Miner King too!", "var(--good)");
+      const puckWithYou = isPuckFollowing();
+      showMessage(
+        puckWithYou
+          ? "You got the Sword! Puck yells: \"Let's get him!\" Bombs + Miner King!"
+          : "You got the Sword! Six bombs appeared! Miner King too!",
+        "var(--good)"
+      );
       playTone(520, 0.12, "triangle", 0.07);
       updateHud();
       return true;
@@ -2645,17 +3536,52 @@
       return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
     }
 
+    function canSpawnMonsterAt(x, y) {
+      if (y < MONSTER_MIN_DEPTH) return false;
+      if (isInMazeRegion(y) || isInChamberRegion(y)) return false;
+      if (isEscapeTunnel(x, y)) return false;
+      if (isHomelessHole(x, y) || isLostItemAlcove(x, y)) return false;
+      return true;
+    }
+
+    function maybeMonsterTile(x, y, baseTile) {
+      if (!canSpawnMonsterAt(x, y)) return baseTile;
+      if (baseTile === "air" || baseTile === "lava" || baseTile === "bedrock" || baseTile === "candle") {
+        return baseTile;
+      }
+      if (hash2d(x * 19 + 501, y * 31 + 907) >= MONSTER_SPAWN_CHANCE) return baseTile;
+      return "monster";
+    }
+
+    function triggerMonsterAttack(tx, ty) {
+      const dmg = 8 + Math.floor(hash2d(tx * 5 + 11, ty * 7 + 13) * 12);
+      state.hp -= dmg;
+      showMessage(`A cave monster leaps out! -${dmg} HP`, "var(--bad)");
+      sfx.hurt();
+      playTone(140, 0.1, "sawtooth", 0.06);
+      spawnMineFx(tx, ty, "#c03070");
+      const h = state.homeless;
+      if (h && h.state === "following") {
+        const near =
+          (h.x === tx && h.y === ty) ||
+          (Math.abs(h.x - tx) <= 1 && Math.abs(h.y - ty) <= 1);
+        if (near) hurtPuck(5 + Math.floor(dmg * 0.45), "The monster hurt Puck!");
+      }
+      updateHud();
+      if (state.hp <= 0) killPlayer("A cave monster got you!", "monster");
+    }
+
     function generateTileAt(x, y) {
       if (y <= SURFACE_Y_MAX) return "air";
       if (x === 0 || x === WORLD_W - 1) return "bedrock";
       if (x === Math.floor(WORLD_W / 2) && y < 4) return "air";
       if (isBelowWorld(y)) return "bedrock";
       if (isHomelessHole(x, y)) return "air";
-      if (isTuggAlcove(x, y)) return "air";
+      if (isLostItemAlcove(x, y)) return "air";
       if (state.classicMode) {
         const layerDepth = getLayerDepth(y);
         if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
-        return tileForDepth(layerDepth, hash2d(x, y));
+        return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
       }
       if (isEscapeTunnel(x, y)) return "air";
       if (isInChamberRegion(y)) {
@@ -2671,7 +3597,7 @@
         if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) {
           return "lava";
         }
-        return tileForDepth(layerDepth, hash2d(x, y));
+        return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
       }
       if (isInMazeRegion(y)) {
         buildMazeLayout();
@@ -2688,7 +3614,7 @@
       }
       const layerDepth = getLayerDepth(y);
       if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
-      return tileForDepth(layerDepth, hash2d(x, y));
+      return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
     }
 
     function getTile(x, y) {
@@ -2731,49 +3657,90 @@
       }
     }
 
-    function applyGameTestLoad() {
+    function getSwordDamage() {
+      return SWORD_DAMAGE;
+    }
+
+    function getPuckBossDamage() {
+      return PUCK_BOSS_DAMAGE;
+    }
+
+    function applyGameTestLoad(keepPosition) {
+      const savedX = player.x;
+      const savedY = player.y;
+      const savedPick = state.pickaxe;
+
       state.money = 99999999;
       state.bagValue = 0;
-      state.pickaxe = PICK_QUAD - 1;
-      state.pickDurability = getMaxDurability(PICK_QUAD - 1);
-      state.hp = 100;
-      state.waterBuckets = 99;
-      state.candles = 99;
-      state.hasSword = false;
-      state.chamberChestOpened = false;
-      state.respawnMode = false;
-      state.respawnPromptShown = false;
-      state.dead = false;
-      state.gamePaused = false;
-      state.cutscene = null;
-      state.pendingWorker = null;
+      state.pickaxe = savedPick;
+      state.pickDurability = getMaxDurability(savedPick);
+      state.workers = [];
       state.workersBought = 0;
       state.heavyWorkersBought = 0;
+      state.pendingWorker = null;
       state.bossDefeated = false;
-      state.continueUnlocked = false;
+      state.bossFight = false;
+      state.boss = null;
+      state.hasSword = false;
+      state.chamberChestOpened = false;
+      state.chamberBombs = null;
       state.doorsOpen = false;
       state.chamberSealed = false;
       state.celebrationShown = false;
-      state.workers = [];
-      const startPos = getSurfaceSpawn();
-      player.x = startPos.x;
-      player.y = MAZE_Y_START - 5;
-      player.dirX = 0;
-      player.dirY = 1;
+      state.continueUnlocked = false;
+      state.worldFound = {};
+      state.tuggQuestDone = {
+        mine25: true,
+        find_puck: true,
+        feed_puck: true,
+      };
+      state.questStats = {
+        blocksMined: 0,
+        candlesPlaced: 0,
+        soldAtShop: 0,
+        goldMined: 0,
+        metPuck: true,
+      };
+      state.dead = false;
+      state.gamePaused = false;
+      state.cutscene = null;
       player.deathAnimStart = null;
       player.deathReason = null;
       hideVictoryMenu();
       hideRespawnPrompt();
-      ensureLoadedAroundPlayer();
-      setTile(player.x, player.y, "air");
-      setTile(player.x, player.y - 1, "air");
-      for (let dx = -2; dx <= 2; dx++) {
-        for (let dy = -1; dy <= 0; dy++) {
-          if (getTile(player.x + dx, player.y + dy) === "lava") setTile(player.x + dx, player.y + dy, "stone");
-        }
+      hidePuckGraveModal();
+
+      if (keepPosition) {
+        player.x = savedX;
+        player.y = savedY;
+      } else {
+        const startPos = getSurfaceSpawn();
+        player.x = startPos.x;
+        player.y = startPos.y;
       }
-      showMessage("CHEAT MODE: max gear, 99 candles, spawned deep above maze!", "var(--good)", 280);
+      player.dirX = 0;
+      player.dirY = 1;
+
+      if (state.homeless) {
+        state.homeless.state = "following";
+        state.homeless.hp = PUCK_MAX_HP;
+        state.homeless.x = player.x - 1;
+        state.homeless.y = player.y;
+        state.homeless.lastMoveAt = performance.now();
+        state.homeless.lastMineAt = performance.now();
+        state.homeless.lastBossAttackAt = 0;
+        state.homeless.lastHealPleaseAt = 0;
+        state.homeless.deathAnimStart = 0;
+      }
+
+      ensureLoadedAroundPlayer();
+      showMessage(
+        "Cheat: max money, unbreakable pick (this level), Puck with you! Press T here to reload.",
+        "var(--good)",
+        280
+      );
       updateHud();
+      updateMusic();
     }
 
     function resetGame() {
@@ -2823,15 +3790,22 @@
         gamePaused: false,
         classicMode: false,
         candles: 0,
-        tuggFound: {},
-        tuggDelivered: {},
-        mrsTuggGreeted: false,
+        worldFound: {},
+        tuggQuestDone: {},
+        questStats: { blocksMined: 0, candlesPlaced: 0, soldAtShop: 0, goldMined: 0, metPuck: false },
+        mrsTuggMet: false,
         homeless: {
           x: TUNNEL_X - 1,
           y: HOMELESS_HOLE_Y_MAX,
           state: "waiting",
+          hp: PUCK_MAX_HP,
           lastMoveAt: 0,
           lastMineAt: 0,
+          lastBossAttackAt: 0,
+          lastHealPleaseAt: 0,
+          deathX: 0,
+          deathY: 0,
+          deathAnimStart: 0,
           promptShown: false,
         },
         chamberBombs: null,
@@ -2847,7 +3821,7 @@
       hideRespawnPrompt();
       ensureLoadedAroundPlayer();
       if (GAME_TEST_MODE) {
-        applyGameTestLoad();
+        applyGameTestLoad(false);
       } else {
         showMessage("You start at the top! Dig down to find the maze and the chamber.", "var(--good)");
       }
@@ -2884,6 +3858,7 @@
       }
       setTile(px, py, "candle");
       state.candles--;
+      if (player.y > SURFACE_Y_MAX && state.questStats) state.questStats.candlesPlaced++;
       sfx.place();
       showMessage("Placed a candle. It lights up the dark!", "var(--good)");
       updateHud();
@@ -2927,6 +3902,7 @@
         despawnFarTiles();
         if (isInShop()) {
           if (state.bagValue > 0) {
+            if (state.questStats) state.questStats.soldAtShop += state.bagValue;
             state.money += state.bagValue;
             showMessage(`Sold loot for $${state.bagValue}!`, "var(--good)");
             sfx.cash();
@@ -2936,46 +3912,173 @@
         }
         checkChamberEntry();
         checkSurfaceCelebration();
-        checkTuggPickup();
-        checkMrsTuggDelivery();
+        checkLostItemPickup();
       }
       updateHud();
     }
 
-    function checkTuggPickup() {
-      for (const item of TUGG_ITEMS) {
-        if (state.tuggFound[item.id]) continue;
-        const p = tuggItemPos(item);
-        if ((player.x === p.x && (player.y === p.y || player.y - 1 === p.y))) {
-          state.tuggFound[item.id] = true;
-          showMessage(`You found Mrs. Tugg's ${item.label}! Bring it home for a reward.`, "var(--good)");
+    function checkLostItemPickup() {
+      for (const item of LOST_ITEMS) {
+        if (!isMrsTuggQuestUnlocked(item.questId)) continue;
+        if (state.worldFound[item.id]) continue;
+        const p = lostItemPos(item);
+        if (player.x === p.x && (player.y === p.y || player.y - 1 === p.y)) {
+          state.worldFound[item.id] = true;
+          showMessage(`You found ${item.label}!`, "var(--good)");
           sfx.cash();
         }
       }
     }
 
-    function checkMrsTuggDelivery() {
-      if (!isAtSurface()) return;
-      if (Math.abs(player.x - MRS_TUGG_X) > 1) return;
-      let total = 0;
-      const delivered = [];
-      for (const item of TUGG_ITEMS) {
-        if (state.tuggFound[item.id] && !state.tuggDelivered[item.id]) {
-          state.tuggDelivered[item.id] = true;
-          total += item.reward;
-          delivered.push(item.label);
+    function isMrsTuggTaskUnlocked(task) {
+      return isMrsTuggQuestUnlocked(task.id);
+    }
+
+    function isMrsTuggTaskComplete(task) {
+      const qs = state.questStats || {};
+      switch (task.type) {
+        case "depth":
+          return player.y >= task.depth;
+        case "mine_blocks":
+          return qs.blocksMined >= task.count;
+        case "place_candles":
+          return qs.candlesPlaced >= task.count;
+        case "sold_shop":
+          return qs.soldAtShop >= task.amount;
+        case "mine_ore": {
+          const key = task.ore === "gold" ? "goldMined" : task.ore + "Mined";
+          return (qs[key] || 0) >= task.count;
         }
+        case "find_item":
+          return !!state.worldFound[task.itemId];
+        case "find_puck":
+          return !!(state.questStats && state.questStats.metPuck);
+        case "feed_puck":
+          return !!(state.homeless && state.homeless.state === "following");
+        case "pick_level":
+          return state.pickaxe >= task.level;
+        case "money":
+          return state.money >= task.amount;
+        case "workers":
+          return (state.workersBought || 0) + (state.heavyWorkersBought || 0) >= task.count;
+        case "all_lost":
+          return LOST_ITEMS.every((item) => !!state.worldFound[item.id]);
+        default:
+          return false;
       }
-      if (total > 0) {
-        state.money += total;
-        sfx.cash();
-        showMessage(`Mrs. Tugg: "Oh thank you for my ${delivered.join(", ")}!" +$${total}`, "var(--good)");
-        return;
+    }
+
+    function getMrsTuggTaskProgress(task) {
+      const qs = state.questStats || {};
+      switch (task.type) {
+        case "depth":
+          return `${Math.min(player.y, task.depth)}/${task.depth}m`;
+        case "mine_blocks":
+          return `${Math.min(qs.blocksMined, task.count)}/${task.count}`;
+        case "place_candles":
+          return `${Math.min(qs.candlesPlaced, task.count)}/${task.count}`;
+        case "sold_shop":
+          return `$${Math.min(qs.soldAtShop, task.amount)}/$${task.amount}`;
+        case "mine_ore": {
+          const key = task.ore === "gold" ? "goldMined" : task.ore + "Mined";
+          const n = qs[key] || 0;
+          return `${Math.min(n, task.count)}/${task.count} ${task.ore}`;
+        }
+        case "find_item":
+          return state.worldFound[task.itemId] ? "Found!" : "Not found";
+        case "find_puck":
+          return state.questStats && state.questStats.metPuck ? "Found Puck!" : "Look near 500m";
+        case "feed_puck":
+          return state.homeless && state.homeless.state === "following" ? "Fed!" : "Pay $500 at his hole";
+        case "pick_level":
+          return `Pick Lv ${state.pickaxe}/${task.level}`;
+        case "money":
+          return `$${Math.min(state.money, task.amount)}/$${task.amount}`;
+        case "workers": {
+          const w = (state.workersBought || 0) + (state.heavyWorkersBought || 0);
+          return `${Math.min(w, task.count)}/${task.count} hired`;
+        }
+        case "all_lost": {
+          const n = LOST_ITEMS.filter((item) => state.worldFound[item.id]).length;
+          return `${n}/${LOST_ITEMS.length} found`;
+        }
+        default:
+          return "";
       }
-      if (!state.mrsTuggGreeted) {
-        state.mrsTuggGreeted = true;
-        showMessage(`Mrs. Tugg: "I lost my dog Buster, my canary, and my husband's helmet down the mine. Please find them!"`, "var(--good)");
+    }
+
+    function claimMrsTuggTask(taskId) {
+      const task = MRS_TUGG_TASKS.find((t) => t.id === taskId);
+      if (!task || state.tuggQuestDone[taskId]) return false;
+      if (!isMrsTuggTaskUnlocked(task) || !isMrsTuggTaskComplete(task)) return false;
+      state.tuggQuestDone[taskId] = true;
+      state.money += task.reward;
+      sfx.cash();
+      showMessage(`Mrs. Tugg: "${task.title}" done! +$${task.reward}`, "var(--good)");
+      refreshUnlockedQuestWorld();
+      updateHud();
+      return true;
+    }
+
+    function nearMrsTugg() {
+      return isAtSurface() && Math.abs(player.x - MRS_TUGG_X) <= 1;
+    }
+
+    function renderMrsTuggTaskList() {
+      const list = document.getElementById("mrsTuggTaskList");
+      if (!list) return;
+      list.innerHTML = "";
+      for (const task of MRS_TUGG_TASKS) {
+        const row = document.createElement("div");
+        row.style.cssText = "padding: 8px 0; border-bottom: 1px solid rgba(90,48,24,0.25); font-size: 13px;";
+        const done = !!state.tuggQuestDone[task.id];
+        const unlocked = isMrsTuggTaskUnlocked(task);
+        const complete = isMrsTuggTaskComplete(task);
+        let status;
+        if (done) status = `<span style="color:var(--good)">Done ✓</span>`;
+        else if (!unlocked) status = `<span class="muted-small">Locked (finish earlier job)</span>`;
+        else if (complete) {
+          status = `<button type="button" data-claim="${task.id}">Claim $${task.reward}</button>`;
+        } else {
+          status = `<span class="muted-small">${getMrsTuggTaskProgress(task)}</span>`;
+        }
+        row.innerHTML = `<strong>${task.title}</strong> — ${task.desc}<br>Reward: $${task.reward}<br>${status}`;
+        list.appendChild(row);
       }
+      list.querySelectorAll("[data-claim]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (claimMrsTuggTask(btn.getAttribute("data-claim"))) renderMrsTuggTaskList();
+        });
+      });
+    }
+
+    function showMrsTuggModal() {
+      state.mrsTuggMet = true;
+      state.gamePaused = true;
+      renderMrsTuggTaskList();
+      document.getElementById("mrsTuggModal").style.display = "flex";
+    }
+
+    function hideMrsTuggModal() {
+      state.gamePaused = false;
+      document.getElementById("mrsTuggModal").style.display = "none";
+    }
+
+    function tryTalkMrsTugg() {
+      if (!nearMrsTugg() || state.dead || state.gamePaused) return;
+      showMrsTuggModal();
+    }
+
+    function getMrsTuggBubbleText() {
+      if (!state.mrsTuggMet && nearMrsTugg()) return "Press E for jobs!";
+      for (const task of MRS_TUGG_TASKS) {
+        if (state.tuggQuestDone[task.id]) continue;
+        if (!isMrsTuggTaskUnlocked(task)) continue;
+        if (isMrsTuggTaskComplete(task)) return "Claim your pay!";
+        return task.title + "?";
+      }
+      if (state.tuggQuestDone.dog) return "Thank you, hero!";
+      return null;
     }
 
     function checkPlayerLavaDeath() {
@@ -2983,6 +4086,22 @@
       if (getTile(player.x, player.y) === "lava" || getTile(player.x, player.y - 1) === "lava") {
         killPlayer("Lava engulfed you!", "lava");
       }
+    }
+
+    function mineTowardWorld(wx, wy) {
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+      if (tryActivateBomb()) return;
+      if (state.bossFight && state.hasSword && tryAttackBoss()) return;
+      if (tryOpenChest()) return;
+      let dx = Math.sign(wx - player.x);
+      let dy = Math.sign(wy - player.y);
+      if (dx === 0 && dy === 0) {
+        dx = 0;
+        dy = 1;
+      }
+      player.dirX = dx;
+      player.dirY = dy;
+      tryMineInDirection(dx, dy, { quiet: false });
     }
 
     function mineTile() {
@@ -3012,14 +4131,23 @@
               isInChamberRegion(y) ||
               isInChamberRegion(y + 1) ||
               isHomelessHole(x, y + 1) ||
-              isTuggAlcove(x, y + 1)
+              isLostItemAlcove(x, y + 1)
             ) {
               break;
             }
             setTile(x, y + 1, cell);
             setTile(x, y, "air");
             if (x === player.x && (y + 1 === player.y || y + 1 === player.y - 1)) {
-              totalDamage += 10;
+              totalDamage += pmSettings.rockDamage;
+            }
+            const ph = state.homeless;
+            if (
+              ph &&
+              ph.state === "following" &&
+              x === ph.x &&
+              (y + 1 === ph.y || y + 1 === ph.y - 1)
+            ) {
+              hurtPuck(pmSettings.rockDamage, "A rock hit Puck!");
             }
             break;
           }
@@ -3042,12 +4170,15 @@
     }
 
     function updateHomeless(now) {
-      if (!state.homeless) return;
+      if (!state.homeless || !isMrsTuggQuestUnlocked("find_puck")) return;
       const h = state.homeless;
+
+      if (h.state === "dead" || h.state === "buried") return;
 
       if (h.state === "waiting") {
         const dx = Math.abs(player.x - h.x);
         const dy = Math.abs(player.y - h.y);
+        if (dx <= 1 && dy <= 1 && state.questStats) state.questStats.metPuck = true;
         if (dx > 3 || dy > 3) h.promptShown = false;
         if (dx <= 1 && dy <= 1 && !h.promptShown && !state.gamePaused && !state.dead) {
           showHomelessPrompt();
@@ -3056,18 +4187,21 @@
       }
 
       if (h.state === "following" && !state.dead) {
-        if (now - h.lastMoveAt > 600) {
+        updatePuckHealPlease(now);
+        if (state.bossFight && state.boss) {
+          updatePuckBossFight(h, now);
+          return;
+        }
+        if (now - h.lastMoveAt > PUCK_MOVE_MS) {
           h.lastMoveAt = now;
           const tooFar = Math.abs(player.x - h.x) > 1 || Math.abs(player.y - h.y) > 1;
           if (tooFar) {
             const dirX = Math.sign(player.x - h.x);
             const dirY = Math.sign(player.y - h.y);
-            const tryHorizontal = Math.abs(player.x - h.x) >= Math.abs(player.y - h.y);
-            const moves = tryHorizontal
-              ? [[dirX, 0], [0, dirY], [0, -1]]
-              : [[0, dirY], [dirX, 0], [0, -1]];
+            const moves = [];
+            if (dirX !== 0) moves.push([dirX, 0]);
+            if (dirY !== 0) moves.push([0, dirY]);
             for (const [mx, my] of moves) {
-              if (mx === 0 && my === 0) continue;
               const nx = h.x + mx;
               const ny = h.y + my;
               if (inBounds(nx, ny) && getTile(nx, ny) === "air") {
@@ -3079,9 +4213,9 @@
           }
         }
 
-        if (now - h.lastMineAt > 1000) {
+        if (now - h.lastMineAt > PUCK_MINE_MS) {
           h.lastMineAt = now;
-          if (Math.random() < 0.5) {
+          if (Math.random() < PUCK_MINE_CHANCE) {
             const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
             for (let i = dirs.length - 1; i > 0; i--) {
               const j = Math.floor(Math.random() * (i + 1));
@@ -3095,9 +4229,12 @@
               if (tile === "air" || tile === "lava" || tile === "bedrock" || tile === "candle") continue;
               const def = oreDefs[tile];
               if (!def) continue;
+              const wasMonster = tile === "monster";
               setTile(tx, ty, "air");
               spawnMineFx(tx, ty, def.color);
-              if (def.value > 0) {
+              if (wasMonster) {
+                triggerMonsterAttack(tx, ty);
+              } else if (def.value > 0) {
                 state.money += def.value;
                 showMessage(`Puck found ${tile}! +$${def.value}`, "var(--good)", 60);
                 updateHud();
@@ -3157,12 +4294,33 @@
 
     function updateControlsHint() {
       const el = document.getElementById("gameControlsHint");
-      if (!el) return;
-      const base = "Move: WASD/Arrows | Space: mine, sword, arm bombs";
-      if (state.bossFight && !state.bossDefeated) {
-        el.textContent = `${base} | Beat Miner King, use bombs to stun him!`;
+      if (!el || typeof state === "undefined" || !state) return;
+      if (!pmSettings.showHints) {
+        el.style.display = "none";
+        return;
+      }
+      el.style.display = "";
+      const moveHint =
+        pmSettings.keyScheme === "wasd"
+          ? "WASD"
+          : pmSettings.keyScheme === "arrows"
+            ? "Arrows"
+            : "WASD/Arrows";
+      const mineHint = pmSettings.mineKey === "enter" ? "Enter" : "Space";
+      const base = `Move: ${moveHint} | ${mineHint}/Enter or click game: mine`;
+      if (isPuckDead() && !isPuckBuried() && nearPuckBurialSite()) {
+        el.textContent = `${base} | E: bury Puck on the hill`;
+      } else if (nearPuckGrave()) {
+        el.textContent = `${base} | E: read Puck's gravestone`;
+      } else if (isPuckFollowing() && nearLivingPuck() && getPuckHp() < PUCK_MAX_HP) {
+        el.textContent = `${base} | E: heal Puck ($${PUCK_HEAL_COST})`;
+      } else if (state.bossFight && !state.bossDefeated) {
+        const puckFight = isPuckFollowing() ? " Puck fights with you!" : "";
+        el.textContent = `${base} | Beat Miner King, use bombs to stun him!${puckFight}`;
       } else if (state.bossDefeated && !state.continueUnlocked) {
         el.textContent = `${base} | Mine the chamber floor (down) to go deeper!`;
+      } else if (nearMrsTugg()) {
+        el.textContent = `${base} | E: talk to Mrs. Tugg (jobs)`;
       } else {
         el.textContent = base;
       }
@@ -3171,8 +4329,21 @@
     function updateHud() {
       updateControlsHint();
       document.getElementById("money").textContent = state.money;
-      document.getElementById("depth").textContent = player.y;
+      document.getElementById("depth").textContent = getPlayerDepthMeters();
       document.getElementById("health").textContent = state.hp;
+      const puckRow = document.getElementById("puckHealthRow");
+      const puckHpEl = document.getElementById("puckHealth");
+      if (puckRow && puckHpEl) {
+        if (isPuckFollowing()) {
+          puckRow.style.display = "";
+          puckHpEl.textContent = getPuckHp();
+        } else if (isPuckDead()) {
+          puckRow.style.display = "";
+          puckHpEl.textContent = "dead";
+        } else {
+          puckRow.style.display = "none";
+        }
+      }
       document.getElementById("pickLvl").textContent =
         state.pickaxe >= PICK_QUAD ? getPickaxeName(state.pickaxe) : state.pickaxe;
       document.getElementById("pickStr").textContent = getPickStrength(state.pickaxe);
@@ -3241,7 +4412,13 @@
       }
 
       const healBtn = document.getElementById("healBtn");
-      healBtn.disabled = state.money < 20 || state.hp >= 100 || !isInShop();
+      const puckNeedsHeal = isPuckFollowing() && getPuckHp() < PUCK_MAX_HP;
+      const canHealYou = state.hp < 100 && state.money >= 20;
+      const canHealPuck = puckNeedsHeal && state.money >= PUCK_HEAL_COST;
+      healBtn.disabled = !isInShop() || (!canHealYou && !canHealPuck);
+      healBtn.textContent = puckNeedsHeal
+        ? `Heal you/Puck ($20 / $${PUCK_HEAL_COST})`
+        : "Heal 25 HP ($20)";
 
       const workerCost = getWorkerCost();
       const workerBtn = document.getElementById("workerBtn");
@@ -3398,6 +4575,75 @@
       ctx.fillRect(3, 8, 4, 1);
       ctx.fillStyle = "#5a3a20";
       ctx.fillRect(-7, -29, 14, 2);
+    }
+
+    function drawPuckCorpseAt(camX, camY, h) {
+      const dx = typeof h.deathX === "number" ? h.deathX : h.x;
+      const dy = typeof h.deathY === "number" ? h.deathY : h.y;
+      const hx = (dx - camX) * TILE;
+      const hy = (dy - camY) * TILE;
+      if (hx < -TILE * 2 || hx > canvas.width + TILE || hy < -TILE * 2 || hy > canvas.height + TILE) return;
+      ctx.save();
+      ctx.translate(hx + TILE / 2, hy + TILE / 2 + 4);
+      ctx.rotate(Math.PI / 2.15);
+      drawPerson({
+        shirt: "#5a5040",
+        shirtDark: "#2a2418",
+        pants: "#3a3020",
+        pantsDark: "#141008",
+        hat: "none",
+        hair: "#3a2a18",
+        skin: "#b89878",
+      });
+      drawHomelessRags();
+      drawPlayerDamage(1);
+      ctx.restore();
+    }
+
+    function drawPuckBurialPlot(sx, sy) {
+      const grassY = sy + TILE - 4;
+      ctx.fillStyle = "#4a3828";
+      ctx.fillRect(sx + 4, grassY - 3, TILE - 8, 5);
+      ctx.fillStyle = "#6a5038";
+      ctx.fillRect(sx + 7, grassY - 5, TILE - 14, 3);
+      ctx.fillStyle = "#3a6a28";
+      ctx.fillRect(sx + 9, grassY - 11, 2, 6);
+      ctx.fillRect(sx + 14, grassY - 10, 2, 5);
+      ctx.fillStyle = "#c87878";
+      ctx.fillRect(sx + 11, grassY - 12, 2, 2);
+    }
+
+    function drawPixelLetter(ch, px, py, color) {
+      const glyphs = {
+        P: [[1, 1, 1], [1, 0, 1], [1, 1, 0], [1, 0, 0], [1, 0, 0]],
+      };
+      const g = glyphs[ch];
+      if (!g) return;
+      ctx.fillStyle = color;
+      for (let row = 0; row < g.length; row++) {
+        for (let col = 0; col < g[row].length; col++) {
+          if (g[row][col]) ctx.fillRect(px + col * 2, py + row * 2, 2, 2);
+        }
+      }
+    }
+
+    function drawPuckGravestone(sx, sy) {
+      const grassY = sy + TILE - 4;
+      const stoneW = 16;
+      const stoneH = 20;
+      const stoneX = sx + Math.floor((TILE - stoneW) / 2);
+      const stoneY = grassY - stoneH;
+      ctx.fillStyle = "#3e3e48";
+      ctx.fillRect(stoneX, stoneY, stoneW, stoneH);
+      ctx.fillStyle = "#5c5c6a";
+      ctx.fillRect(stoneX + 2, stoneY + 2, stoneW - 4, stoneH - 4);
+      ctx.fillStyle = "#787888";
+      ctx.fillRect(stoneX + 4, stoneY + 3, stoneW - 8, 4);
+      const cx = stoneX + stoneW / 2;
+      ctx.fillStyle = "#2a2a32";
+      ctx.fillRect(cx - 1, stoneY + 2, 2, 10);
+      ctx.fillRect(cx - 4, stoneY + 5, 8, 2);
+      drawPixelLetter("P", stoneX + 5, stoneY + 11, "#2a2a36");
     }
 
     function drawPlayerDamage(damage) {
@@ -3888,10 +5134,35 @@
       }
     }
 
+    function drawMonsterBlock(sx, sy, wx, wy) {
+      const t = performance.now() / 1000;
+      const blink = Math.sin(t * 6 + wx * 0.7 + wy * 0.5) > 0.2;
+      ctx.fillStyle = "#4a3848";
+      ctx.fillRect(sx, sy, TILE, TILE);
+      ctx.fillStyle = "#3a2838";
+      ctx.fillRect(sx + 2, sy + 2, TILE - 4, TILE - 4);
+      ctx.fillStyle = blink ? "#ff3050" : "#8a1830";
+      ctx.fillRect(sx + 6, sy + 8, 4, 4);
+      ctx.fillRect(sx + 14, sy + 8, 4, 4);
+      ctx.fillStyle = "#1a0810";
+      ctx.fillRect(sx + 7, sy + 9, 2, 2);
+      ctx.fillRect(sx + 15, sy + 9, 2, 2);
+      ctx.fillStyle = "#2a1820";
+      ctx.fillRect(sx + 8, sy + 16, 8, 2);
+      for (let i = 0; i < 4; i++) {
+        const fangX = sx + 7 + i * 3;
+        ctx.fillRect(fangX, sy + 18 + (i % 2), 2, 3);
+      }
+    }
+
     function drawTile(x, y, tile, sx, sy) {
       if (tile === "air") return;
       if (tile === "candle") {
         drawCandleSprite(sx, sy);
+        return;
+      }
+      if (tile === "monster") {
+        drawMonsterBlock(sx, sy, x, y);
         return;
       }
       const def = oreDefs[tile];
@@ -3981,8 +5252,8 @@
       ctx.fillRect(6, -28, 3, 8);
       ctx.restore();
 
-      if (!state.tuggFound || !state.tuggFound.dog) return;
-      const msg = "Thank you, hero!";
+      const msg = getMrsTuggBubbleText();
+      if (!msg) return;
       ctx.save();
       ctx.font = "bold 11px Verdana";
       const padX = 6, padY = 4;
@@ -4166,10 +5437,11 @@
         }
       }
 
-      // Draw Mrs. Tugg's lost items in their underground alcoves.
-      for (const item of TUGG_ITEMS) {
-        if (state.tuggFound[item.id]) continue;
-        const p = tuggItemPos(item);
+      // Lost items in underground alcoves (see newspaper ads).
+      for (const item of LOST_ITEMS) {
+        if (!isMrsTuggQuestUnlocked(item.questId)) continue;
+        if (state.worldFound[item.id]) continue;
+        const p = lostItemPos(item);
         if (p.x < camX || p.x >= camX + VIEW_W) continue;
         if (p.y < camY || p.y >= camY + VIEW_H) continue;
         const sx = (p.x - camX) * TILE;
@@ -4331,27 +5603,69 @@
         }
       }
 
-      // Draw homeless guy.
-      if (state.homeless) {
+      // Draw Puck (only after Find Puck job unlocks).
+      if (state.homeless && isMrsTuggQuestUnlocked("find_puck")) {
         const h = state.homeless;
-        const hx = (h.x - camX) * TILE;
-        const hy = (h.y - camY) * TILE;
-        if (hx >= -TILE * 2 && hx <= canvas.width + TILE && hy >= -TILE * 2 && hy <= canvas.height + TILE) {
-          ctx.save();
-          ctx.translate(hx + TILE / 2, hy + TILE / 2);
-          drawPerson({
-            shirt: "#7a6850",
-            shirtDark: "#3a3024",
-            pants: "#4a3a28",
-            pantsDark: "#1a1408",
-            hat: "none",
-            hair: "#3a2a18",
-            skin: "#d4a880",
-          });
-          drawHomelessRags();
-          ctx.restore();
+        if (h.state === "dead") drawPuckCorpseAt(camX, camY, h);
+        if (h.state === "following") {
+          const hx = (h.x - camX) * TILE;
+          const hy = (h.y - camY) * TILE;
+          if (hx >= -TILE * 2 && hx <= canvas.width + TILE && hy >= -TILE * 2 && hy <= canvas.height + TILE) {
+            const puckDamage = Math.max(0, 1 - getPuckHp() / PUCK_MAX_HP);
+            ctx.save();
+            ctx.translate(hx + TILE / 2, hy + TILE / 2);
+            drawPerson({
+              shirt: "#7a6850",
+              shirtDark: "#3a3024",
+              pants: "#4a3a28",
+              pantsDark: "#1a1408",
+              hat: "none",
+              hair: "#3a2a18",
+              skin: "#d4a880",
+            });
+            drawHomelessRags();
+            if (puckDamage > 0) drawPlayerDamage(puckDamage);
+            ctx.restore();
 
-          if (h.state === "waiting") {
+            if (h.hp <= PUCK_HEAL_PLEASE_HP) {
+              const bob = Math.sin(performance.now() / 220) * 2;
+              ctx.save();
+              ctx.fillStyle = "#ffaaaa";
+              ctx.font = "bold 11px Verdana";
+              ctx.textAlign = "center";
+              ctx.fillText("heal me!", hx + TILE / 2, hy - 12 + bob);
+              ctx.textAlign = "start";
+              ctx.restore();
+            } else if (state.bossFight && state.boss) {
+              const swing = performance.now() - (h.lastBossAttackAt || 0) < 220;
+              if (swing || isPuckNearBoss(h)) {
+                ctx.save();
+                ctx.fillStyle = swing ? "#ff8866" : "#ffd56b";
+                ctx.font = "bold 16px Verdana";
+                ctx.textAlign = "center";
+                ctx.fillText(swing ? "WHACK!" : "!", hx + TILE / 2, hy - 12);
+                ctx.textAlign = "start";
+                ctx.restore();
+              }
+            }
+          }
+        } else if (h.state === "waiting") {
+          const hx = (h.x - camX) * TILE;
+          const hy = (h.y - camY) * TILE;
+          if (hx >= -TILE * 2 && hx <= canvas.width + TILE && hy >= -TILE * 2 && hy <= canvas.height + TILE) {
+            ctx.save();
+            ctx.translate(hx + TILE / 2, hy + TILE / 2);
+            drawPerson({
+              shirt: "#7a6850",
+              shirtDark: "#3a3024",
+              pants: "#4a3a28",
+              pantsDark: "#1a1408",
+              hat: "none",
+              hair: "#3a2a18",
+              skin: "#d4a880",
+            });
+            drawHomelessRags();
+            ctx.restore();
             const bob = Math.sin(performance.now() / 280) * 2;
             ctx.save();
             ctx.fillStyle = "#ffd56b";
@@ -4402,15 +5716,27 @@
         }
       }
 
-      // Surface line.
+      // Surface line (draw grass before grave so stone sits on top).
       const sy = (SURFACE_Y_MAX - camY) * TILE;
       if (sy >= 0 && sy <= canvas.height) {
         ctx.fillStyle = "#6ec56a";
         ctx.fillRect(0, sy + TILE - 4, canvas.width, 4);
       }
 
+      const graveSx = (PUCK_BURIAL_X - camX) * TILE;
+      const graveSy = (PUCK_BURIAL_Y - camY) * TILE;
+      if (
+        graveSx >= -TILE &&
+        graveSx <= canvas.width &&
+        graveSy >= -TILE &&
+        graveSy <= canvas.height
+      ) {
+        if (isPuckBuried()) drawPuckGravestone(graveSx, graveSy);
+        else if (isPuckDead()) drawPuckBurialPlot(graveSx, graveSy);
+      }
+
       drawCelebration(camX, camY);
-      drawLavaGlow(camX, camY);
+      if (pmSettings.lavaGlow) drawLavaGlow(camX, camY);
       drawDarkness(camX, camY);
     }
 
@@ -4446,9 +5772,11 @@
     let darknessCanvas = null;
     let darknessCtx = null;
     function getDarknessAtDepth(worldY) {
+      if (!pmSettings.darknessEnabled) return 0;
       const depth = worldY - SURFACE_Y_MAX;
       if (depth <= 5) return 0;
-      return Math.min(0.95, (depth - 5) / 220);
+      const base = Math.min(0.95, (depth - 5) / 220);
+      return base * (pmSettings.darknessStrength / 100);
     }
     function drawLightOnDark(dctx, cx, cy, radius, strength = 1) {
       const g = dctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
@@ -4482,7 +5810,7 @@
       dctx.globalCompositeOperation = "destination-out";
       const px = (player.x - camX) * TILE + TILE / 2;
       const py = (player.y - camY) * TILE;
-      drawLightOnDark(dctx, px, py, TILE * 3, 1);
+      drawLightOnDark(dctx, px, py, TILE * 3 * (pmSettings.playerLight / 100), 1);
 
       for (let vy = 0; vy < VIEW_H; vy++) {
         for (let vx = 0; vx < VIEW_W; vx++) {
@@ -4494,7 +5822,7 @@
             const flicker = 1 + Math.sin(t + wx + wy) * 0.06;
             const cx = vx * TILE + TILE / 2;
             const cy = vy * TILE + TILE / 2;
-            const r = TILE * 8 * flicker;
+            const r = TILE * 8 * flicker * (pmSettings.candleLight / 100);
             const g = dctx.createRadialGradient(cx, cy, 0, cx, cy, r);
             g.addColorStop(0, "rgba(0,0,0,1)");
             g.addColorStop(0.35, "rgba(0,0,0,1)");
@@ -4502,7 +5830,7 @@
             g.addColorStop(1, "rgba(0,0,0,0)");
             dctx.fillStyle = g;
             dctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-          } else if (tile === "lava") {
+          } else if (tile === "lava" && pmSettings.lavaGlow) {
             const t = performance.now() / 300;
             const flicker = 1 + Math.sin(t + wx * 0.7 + wy * 0.3) * 0.07;
             const cx = vx * TILE + TILE / 2;
@@ -4549,6 +5877,7 @@
       updateFxParticles();
       spreadLava();
       checkPlayerLavaDeath();
+      checkPuckLavaDeath();
       updateChamberBombs(now);
       updateBossFight();
       updateWorkers();
@@ -4648,6 +5977,7 @@
     }
 
     function spreadLava() {
+      if (!pmSettings.lavaSpread) return;
       const now = performance.now();
       if (now - lastLavaSpreadAt < 1000) return;
       lastLavaSpreadAt = now;
@@ -4689,6 +6019,7 @@
           audioUnlocked = true;
         }
         const k = e.key.toLowerCase();
+        const isSpaceKey = e.key === " " || e.key === "Space" || e.code === "Space";
         const isGameKey =
           k === "arrowleft" ||
           k === "a" ||
@@ -4698,35 +6029,50 @@
           k === "w" ||
           k === "arrowdown" ||
           k === "s" ||
-          k === " ";
+          isSpaceKey;
         if (k === "t" && GAME_TEST_MODE) {
           e.preventDefault();
-          applyGameTestLoad();
+          applyGameTestLoad(true);
           draw();
+          return;
+        }
+        if (e.key === "Escape") {
+          closePmSettings();
+          return;
+        }
+        if (isGameInputBlocked()) {
+          if (
+            document.getElementById("newspaperModal").classList.contains("show") &&
+            pmKeyMatchesMine(e)
+          ) {
+            e.preventDefault();
+            state.classicMode = false;
+            hideNewspaper();
+            mineTile();
+          }
           return;
         }
         if (state.gamePaused || isInCutscene()) return;
         if (isGameKey && document.activeElement instanceof HTMLButtonElement) {
           document.activeElement.blur();
         }
-        if (k === "arrowleft" || k === "a") {
-          if (state.pendingWorker) nudgePendingWorker(-1);
-          else movePlayer(-1, 0);
-        }
-        else if (k === "arrowright" || k === "d") {
-          if (state.pendingWorker) nudgePendingWorker(1);
-          else movePlayer(1, 0);
-        }
-        else if (k === "arrowup" || k === "w") movePlayer(0, -1);
-        else if (k === "arrowdown" || k === "s") movePlayer(0, 1);
-        else if (k === " ") {
-          // Stop Space from also "clicking" a focused button (e.g. Use Water Bucket).
+        if (pmKeyMatchesMine(e)) {
           e.preventDefault();
+          focusGameCanvas();
           mineTile();
+          return;
         }
-        else if (k === "c") {
+        if (pmKeyMatchesMove(e.key) && handlePmMoveKey(e)) return;
+        if (k === "c") {
           e.preventDefault();
           placeCandleAtPlayer();
+        }
+        else if (k === "e") {
+          e.preventDefault();
+          if (tryReadPuckGrave()) return;
+          if (tryBuryPuck()) return;
+          if (tryHealPuck()) return;
+          tryTalkMrsTugg();
         }
       },
       { capture: true }
@@ -4792,11 +6138,35 @@
         showMessage("Go to the shop to heal.");
         return;
       }
-      if (state.money < 20 || state.hp >= 100) return;
-      state.money -= 20;
-      state.hp = Math.min(100, state.hp + 25);
+      const h = state.homeless;
+      const puckNeedsHeal = isPuckFollowing() && getPuckHp() < PUCK_MAX_HP;
+      const youNeedHeal = state.hp < 100;
+      if (!youNeedHeal && !puckNeedsHeal) return;
+      if (youNeedHeal && state.money < 20) {
+        showMessage("Not enough money to heal.");
+        return;
+      }
+      if (puckNeedsHeal && state.money < (youNeedHeal ? 20 + PUCK_HEAL_COST : PUCK_HEAL_COST)) {
+        showMessage(`Need $${PUCK_HEAL_COST} to heal Puck.`);
+        return;
+      }
+      if (youNeedHeal) {
+        state.money -= 20;
+        state.hp = Math.min(100, state.hp + 25);
+      }
+      if (puckNeedsHeal && h) {
+        state.money -= PUCK_HEAL_COST;
+        h.hp = Math.min(PUCK_MAX_HP, h.hp + 40);
+      }
       playShopBuyAnim();
-      showMessage("You feel better.", "var(--good)");
+      showMessage(
+        youNeedHeal && puckNeedsHeal
+          ? "You and Puck feel better."
+          : puckNeedsHeal
+            ? "Puck feels better."
+            : "You feel better.",
+        "var(--good)"
+      );
       playTone(420, 0.08, "triangle", 0.04);
       updateHud();
     });
@@ -4825,6 +6195,7 @@
       playShopBuyAnim();
       state.pendingWorker = {
         x: spawnX,
+        startX: spawnX,
         type: "normal",
         width: 1,
         height: 1,
@@ -4832,8 +6203,8 @@
       };
       showMessage(
         state.pendingWorker.spawnInChamber
-          ? "Chamber hologram ready! Arrows then Hire — mines down!"
-          : "Hologram ready! Move it with ← → arrows then press Hire.",
+          ? "Chamber hologram ready! → to slide forward, then Hire — mines down!"
+          : "Hologram ready! → moves it forward along the lane (not back). Then Hire.",
         "var(--good)"
       );
       sfx.place();
@@ -4864,6 +6235,7 @@
       playShopBuyAnim();
       state.pendingWorker = {
         x: spawnX,
+        startX: spawnX,
         type: "heavy",
         width: 2,
         height: 2,
@@ -4872,10 +6244,11 @@
       if (state.pendingWorker.x > WORLD_W - state.pendingWorker.width - 1) {
         state.pendingWorker.x = WORLD_W - state.pendingWorker.width - 1;
       }
+      state.pendingWorker.startX = state.pendingWorker.x;
       showMessage(
         state.pendingWorker.spawnInChamber
-          ? "Chamber mega hologram ready! Arrows then Hire!"
-          : "Red mega hologram ready! Move it with ← → arrows then press Hire.",
+          ? "Chamber mega hologram ready! → forward, then Hire!"
+          : "Mega hologram ready! → slides it forward (not back). Then Hire.",
         "var(--good)"
       );
       sfx.place();
@@ -4988,12 +6361,23 @@
 
     function nudgePendingWorker(dir) {
       if (!state.pendingWorker) return;
+      const pw = state.pendingWorker;
+      const startX = pw.startX ?? pw.x;
       if (dir < 0) {
-        state.pendingWorker.x = Math.max(1, state.pendingWorker.x - 1);
+        if (pw.x <= startX) {
+          showMessage("Can't slide the hologram backward — only forward →", "var(--warn)", 80);
+          sfx.blocked();
+          return;
+        }
+        pw.x = Math.max(startX, pw.x - 1);
         playTone(340, 0.04, "square", 0.025);
       } else {
-        const maxPendingX = WORLD_W - state.pendingWorker.width - 1;
-        state.pendingWorker.x = Math.min(maxPendingX, state.pendingWorker.x + 1);
+        const maxPendingX = WORLD_W - pw.width - 1;
+        if (pw.x >= maxPendingX) {
+          sfx.blocked();
+          return;
+        }
+        pw.x = Math.min(maxPendingX, pw.x + 1);
         playTone(380, 0.04, "square", 0.025);
       }
       updateHud();
@@ -5054,8 +6438,11 @@
       }
       state.money -= HOMELESS_COST;
       state.homeless.state = "following";
+      state.homeless.hp = PUCK_MAX_HP;
       state.homeless.lastMoveAt = performance.now();
       state.homeless.lastMineAt = performance.now();
+      state.homeless.lastBossAttackAt = 0;
+      state.homeless.lastHealPleaseAt = 0;
       hideHomelessPrompt();
       sfx.cash();
       showMessage("\"Thanks! I'm Puck. I'll tag along and help you mine.\"", "var(--good)", 200);
@@ -5068,6 +6455,12 @@
       showMessage("\"Sigh... maybe next time.\"", "var(--muted)", 150);
     });
 
+    document.getElementById("puckGraveCloseBtn").addEventListener("click", () => {
+      hidePuckGraveModal();
+    });
+
+    document.getElementById("mrsTuggCloseBtn").addEventListener("click", hideMrsTuggModal);
+
     document.getElementById("playAgainBtn").addEventListener("click", onVictoryPlayAgain);
     document.getElementById("continueBtn").addEventListener("click", onVictoryContinue);
 
@@ -5079,7 +6472,7 @@
       player.dirX = 0;
       player.dirY = 1;
       ensureLoadedAroundPlayer();
-      if (state.homeless && state.homeless.state === "following") {
+      if (isPuckFollowing()) {
         state.homeless.x = spawn.x - 1;
         state.homeless.y = spawn.y;
         showMessage("Teleported to the top! Puck tagged along.", "var(--good)");
@@ -5111,6 +6504,7 @@
       stopMusic();
       sfx.paperClose();
       newspaperMusicStarted = false;
+      focusGameCanvas();
     }
     newspaperModal.addEventListener("click", startNewspaperMusic);
     document.getElementById("playV001Btn").addEventListener("click", (e) => {
@@ -5129,8 +6523,25 @@
       draw();
     });
 
+    canvas.addEventListener("pointerdown", (e) => {
+      if (isGameInputBlocked() || state.gamePaused || isInCutscene() || state.dead) return;
+      focusGameCanvas();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const px = (e.clientX - rect.left) * scaleX;
+      const py = (e.clientY - rect.top) * scaleY;
+      const cam = getCamera();
+      const wx = cam.x + Math.floor(px / TILE);
+      const wy = cam.y + Math.floor(py / TILE);
+      mineTowardWorld(wx, wy);
+      e.preventDefault();
+    });
+
+    setupPmSettingsUI();
     resizeGameCanvas();
     resetGame();
+    applyPmSettings();
     showNewspaper();
     tick();
   </script>
