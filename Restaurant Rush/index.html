@@ -18,6 +18,7 @@ Restaurant Rush
 - Screen 2: kitchen (sink, dishwasher, fridge, MEAT box — empty clean plate only, trash, salt & pepper on counter)
 - Screen 3: kitchen (microwave, cutting board, cooler, oven, blender, trash — click to open)
 - Screens: Garden, Kitchen 1, Kitchen 2, Storefront, Cashier, Cafeteria (2×3 grid; corners + arrows show room name)
+- Storefront (screen 4): beige building, grey sidewalk, parking lot with separate spots, closed sliding glass doors (same look as cashier)
 - Cafeteria (screen 6): tables on gray floor; random diners each visit; bus cart on left — dirty trays land here after cashier handoff (home stack 3); blue dotted top shelf = pick up dirty tray; mop on right — pick up / put down like a plate (no food)
 - Cashier (screen 5): random orders (2–4 items): at least 1 drink + food or soup; max 2 per kind (drink / soup / food); tray spot; correct order → customer slides off screen right with tray, doors open, next customer enters then shows order
 - Recipes button (top-left, all screens): list + how-to steps for bread, baked foods, chopped fruit/veg, fruit juices, soups
@@ -4878,18 +4879,6 @@ Restaurant Rush
     .caf-cart-shelf--lower { bottom: 34%; }
     .caf-cart-shelf--upper { bottom: 62%; }
 
-    .caf-cart-handle {
-      position: absolute;
-      right: 6%;
-      bottom: 78%;
-      width: 28%;
-      height: 22%;
-      border-top: 4px solid #9e9e9e;
-      border-right: 4px solid #9e9e9e;
-      border-radius: 0 8px 0 0;
-      box-shadow: 1px -1px 0 rgba(255, 255, 255, 0.25);
-    }
-
     .caf-cart-wheel {
       position: absolute;
       bottom: 0;
@@ -5063,12 +5052,27 @@ Restaurant Rush
       top: 0;
       margin-left: -4px;
       width: 8px;
-      height: 82px;
-      border-radius: 4px;
+      height: 76px;
+      border-radius: 4px 4px 1px 1px;
       background: linear-gradient(to right, #6d4c41, #8d6e63 40%, #a1887f);
       border: 1px solid #5d4037;
       box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.3);
       pointer-events: none;
+    }
+
+    .mop-connector {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      margin-left: -9px;
+      width: 18px;
+      height: 12px;
+      border-radius: 2px;
+      background: linear-gradient(to bottom, #b0bec5 0%, #78909c 50%, #607d8b 100%);
+      border: 1px solid #546e7a;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      pointer-events: none;
+      z-index: 1;
     }
 
     .mop-head {
@@ -6121,6 +6125,149 @@ Restaurant Rush
         rgba(255, 255, 255, 0.08) 0%,
         transparent 40%
       );
+    }
+
+    /* Screen 4 — Storefront exterior */
+    .screen-storefront {
+      background: #87ceeb;
+      --storefront-parking-h: 22%;
+      --storefront-sidewalk-h: 3.5%;
+      user-select: none;
+    }
+
+    body.on-storefront .basket-home,
+    body.on-storefront .plate-home,
+    body.on-storefront .cup-home,
+    body.on-storefront .pot-home,
+    body.on-storefront .bowl-home,
+    body.on-storefront .tray-home,
+    body.on-storefront .recipe-book {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .storefront-scene {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .storefront-scene .outside-sky {
+      height: 100%;
+      z-index: 0;
+    }
+
+    .storefront-building {
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--storefront-parking-h) + var(--storefront-sidewalk-h));
+      transform: translateX(-50%);
+      width: min(92vw, 980px);
+      top: 10%;
+      z-index: 1;
+      background: linear-gradient(to bottom, #efe3cc 0%, #e5d5b8 28%, #dcc9a3 62%, #d4bc96 100%);
+      border: 3px solid #c4ad82;
+      border-bottom: none;
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.12),
+        inset 0 2px 0 rgba(255, 255, 255, 0.45);
+    }
+
+    .storefront-building::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 8px;
+      background: linear-gradient(to bottom, #f5ead6, #dcc9a3);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .storefront-glass-doors {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(44vw, 340px);
+      height: min(58%, 360px);
+      z-index: 2;
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px 0;
+      background: linear-gradient(to bottom, #6d4c41, #5d4037);
+      border-radius: 4px 4px 0 0;
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.18),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .storefront-sidewalk {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: var(--storefront-parking-h);
+      height: var(--storefront-sidewalk-h);
+      z-index: 1;
+      background: linear-gradient(to bottom, #e0e0e0, #bdbdbd 55%, #9e9e9e);
+      box-shadow:
+        0 -2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 1px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .storefront-parking-lot {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--storefront-parking-h);
+      z-index: 1;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px),
+        radial-gradient(circle at 70% 60%, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px),
+        linear-gradient(to bottom, #525252, #454545 55%, #3d3d3d);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+      pointer-events: none;
+    }
+
+    .storefront-parking {
+      --storefront-spot-count: 4;
+      --storefront-line-w: 5px;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: var(--storefront-parking-h);
+      display: grid;
+      grid-template-columns: repeat(calc(var(--storefront-spot-count) + 2), 1fr);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .storefront-parking-spot {
+      min-width: 0;
+      height: 100%;
+      background: transparent;
+      border-left: var(--storefront-line-w) solid rgba(255, 255, 255, 0.92);
+      pointer-events: none;
+    }
+
+    .storefront-parking-spot:nth-child(1) { grid-column: 2; }
+    .storefront-parking-spot:nth-child(2) { grid-column: 3; }
+    .storefront-parking-spot:nth-child(3) { grid-column: 4; }
+    .storefront-parking-spot:nth-child(4) {
+      grid-column: 5;
+      border-right: var(--storefront-line-w) solid rgba(255, 255, 255, 0.92);
+    }
+
+    .screen-storefront .corner-num {
+      color: #555;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
     }
 
     /* Screen 5 — Cashier room */
@@ -7402,7 +7549,29 @@ Restaurant Rush
   </section>
 
   <!-- Screen 4: Storefront -->
-  <section class="screen" id="screen-4" data-screen="4">
+  <section class="screen screen-storefront" id="screen-4" data-screen="4">
+    <div class="storefront-scene" aria-hidden="true">
+      <div class="outside-sky">
+        <div class="outside-sun"></div>
+        <div class="outside-cloud one"></div>
+        <div class="outside-cloud two"></div>
+      </div>
+      <div class="storefront-building">
+        <div class="storefront-glass-doors" aria-hidden="true">
+          <div class="cashier-glass-doors-outside" aria-hidden="true"></div>
+          <div class="cashier-glass-door door-left" aria-hidden="true"></div>
+          <div class="cashier-glass-door door-right" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="storefront-sidewalk"></div>
+      <div class="storefront-parking-lot"></div>
+      <div class="storefront-parking" aria-hidden="true">
+        <div class="storefront-parking-spot"></div>
+        <div class="storefront-parking-spot"></div>
+        <div class="storefront-parking-spot"></div>
+        <div class="storefront-parking-spot"></div>
+      </div>
+    </div>
     <span class="corner-num tl">4</span>
     <span class="corner-num tr">4</span>
     <span class="corner-num bl">4</span>
@@ -7529,7 +7698,6 @@ Restaurant Rush
             <div class="caf-cart-leg caf-cart-leg--right"></div>
             <div class="caf-cart-shelf caf-cart-shelf--lower"></div>
             <div class="caf-cart-shelf caf-cart-shelf--upper"></div>
-            <div class="caf-cart-handle"></div>
             <div class="caf-cart-wheel caf-cart-wheel--left"></div>
             <div class="caf-cart-wheel caf-cart-wheel--right"></div>
           </div>
@@ -7542,6 +7710,7 @@ Restaurant Rush
             <div class="mop-home-ring" aria-hidden="true"></div>
             <button type="button" class="mop" id="mop" aria-label="Pick up mop">
               <div class="mop-handle" aria-hidden="true"></div>
+              <div class="mop-connector" aria-hidden="true"></div>
               <div class="mop-head" aria-hidden="true"></div>
             </button>
           </div>
@@ -7731,6 +7900,8 @@ Restaurant Rush
       screens.forEach((s) => s.classList.remove("active"));
       const el = document.getElementById("screen-" + num);
       if (el) el.classList.add("active");
+      document.body.classList.toggle("on-storefront", num === 4);
+      if (num === 4) putDownOtherCarriers("");
       if (num !== 6 && mopFollowing) putDownMop();
       if (num === 6) {
         refreshCafeteriaDiners();
@@ -8235,6 +8406,7 @@ Restaurant Rush
     const pepperShakerDock = document.getElementById("pepperShakerDock");
     const screen2 = document.getElementById("screen-2");
     const screen3 = document.getElementById("screen-3");
+    const screen4 = document.getElementById("screen-4");
     const screen5 = document.getElementById("screen-5");
     const screen6 = document.getElementById("screen-6");
     const cafeteriaCart = document.getElementById("cafeteriaCart");
@@ -9073,6 +9245,11 @@ Restaurant Rush
     function isScreen2Active() {
       const active = document.querySelector(".screen.active");
       return active === screen2;
+    }
+
+    function isScreen4Active() {
+      const active = document.querySelector(".screen.active");
+      return active === screen4;
     }
 
     function isScreen5Active() {
