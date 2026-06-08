@@ -291,6 +291,166 @@ footer {
     }
 }
 
+.site-notice {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-left: 4px solid #ff9800;
+    border-radius: 6px;
+}
+
+.site-notice p {
+    margin-bottom: 0.75rem;
+}
+
+.site-notice p:last-child {
+    margin-bottom: 0;
+}
+
+.bug-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 2000;
+}
+
+.bug-overlay[hidden] {
+    display: none;
+}
+
+.bug-modal {
+    background: white;
+    width: min(480px, 100%);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+.bug-modal h2 {
+    border: none;
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+
+.bug-modal-intro {
+    color: #555;
+    margin-bottom: 1rem;
+}
+
+.bug-modal label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.35rem;
+    margin-top: 0.75rem;
+}
+
+.bug-modal input,
+.bug-modal textarea {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font: inherit;
+    resize: vertical;
+}
+
+.bug-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.bug-btn-primary {
+    background: #4CAF50;
+}
+
+.bug-btn-primary:hover {
+    background: #45a049;
+}
+
+.bug-btn-secondary {
+    background: #888;
+}
+
+.bug-btn-secondary:hover {
+    background: #666;
+}
+
+.bug-thanks {
+    color: #2e7d32;
+    font-weight: bold;
+    margin-top: 1rem;
+}
+
+.secret-comments {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, 92vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    background: #1e1e2e;
+    color: #f0f0f5;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #7e57c2;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    z-index: 3000;
+}
+
+.secret-comments[hidden] {
+    display: none;
+}
+
+.secret-comments h2 {
+    color: #ce93d8;
+    border-bottom-color: #7e57c2;
+}
+
+.secret-hint {
+    color: #ff8a80;
+    font-size: 0.9rem;
+    font-weight: normal;
+    font-style: italic;
+}
+
+.secret-comments-list {
+    list-style: none;
+    margin: 1rem 0;
+}
+
+.secret-comments-list li {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.85rem;
+    margin-bottom: 0.65rem;
+}
+
+.secret-comments-list .report-game {
+    color: #a8b4ff;
+    font-weight: bold;
+}
+
+.secret-comments-list .report-date {
+    display: block;
+    font-size: 0.8rem;
+    color: #8a90a8;
+    margin-top: 0.35rem;
+}
+
+.secret-empty {
+    color: #9aa0b0;
+    font-style: italic;
+}
+
 @media (max-width: 768px) {
     nav ul {
         flex-direction: column;

@@ -1,4 +1,4 @@
-<!-- Bo's game request: "perfect mine" where you start at the top of a mine, everything below is rock, danger increases deeper down with falling rocks, mined things give money, and some things need a better pickaxe. Added chunk loading: far map despawns and new nearby map spawns as you travel, with better resources deeper down. Then Bo asked for many more things to mine and many more pickaxe upgrades, so deep layers now have lots more ore tiers. Then Bo asked for lava far underground that cannot be mined and spreads into nearby empty blocks over time. Then Bo asked for buyable blue workers that only mine downward, use his current pickaxe level strength, mine once per second, stop on unbreakable blocks until upgrades, and die in lava. Then Bo asked for worker placement: buying now creates a slightly transparent blue hologram on the surface, +/- moves it, and Hire turns it into a real worker that starts mining from that spot. Then Bo asked for a pricier red 2x2 worker that mines 2 blocks at a time. Then Bo asked for Water Buckets to convert whole connected lava rivers to obsidian manually or by equipping nearby workers, while lava only flows sideways and down. Full mine, maze, chamber. Entering chamber asks Yes/No for respawn mode (Miner King death = respawn at chest). Boss fight, escape tunnel, surface celebration. Bombs stun Miner King (25 HP, dizzy wobble + stars, 3s). Any death during boss fight resets him and bombs. Respawn mode: boss or bomb death = chest. Victory cutscene; Continue = chamber bottom + chamber shop. Pick Lv25=4 blocks, Lv26=8 blocks, Lv27=auto dig on walk. -->
+<!-- Bo's game request: "perfect mine" — tree branch from Puck when you feed him ($500); press Q to whack monsters (2 hits). Added chunk loading: far map despawns and new nearby map spawns as you travel, with better resources deeper down. Then Bo asked for many more things to mine and many more pickaxe upgrades, so deep layers now have lots more ore tiers. Then Bo asked for lava far underground that cannot be mined and spreads into nearby empty blocks over time. Then Bo asked for buyable blue workers that only mine downward, use his current pickaxe level strength, mine once per second, stop on unbreakable blocks until upgrades, and die in lava. Then Bo asked for worker placement: buying now creates a slightly transparent blue hologram on the surface, +/- moves it, and Hire turns it into a real worker that starts mining from that spot. Then Bo asked for a pricier red 2x2 worker that mines 2 blocks at a time. Then Bo asked for Water Buckets to convert whole connected lava rivers to obsidian manually or by equipping nearby workers, while lava only flows sideways and down. Full mine, maze, chamber. Entering chamber asks Yes/No for respawn mode (Miner King death = respawn at chest). Boss fight, escape tunnel, surface celebration. Bombs stun Miner King (25 HP, dizzy wobble + stars, 3s). Any death during boss fight resets him and bombs. Respawn mode: boss or bomb death = chest. Victory cutscene; Continue = chamber bottom + chamber shop. Pick Lv25=4 blocks, Lv26=8 blocks, Lv27=auto dig on walk. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -717,6 +717,7 @@
             <div><strong>Workers:</strong> <span id="workerCount">0</span></div>
             <div><strong>Water Buckets:</strong> <span id="bucketCount">0</span></div>
             <div><strong>Candles:</strong> <span id="candleCount">0</span> <span class="muted">(press C to place)</span></div>
+            <div><strong>Tree Branch:</strong> <span id="branchStatus">no</span> <span class="muted">(Q to whack monsters)</span></div>
             <div><strong>Pending Worker X:</strong> <span id="workerLane">-</span></div>
             <div class="muted" id="shopHint">Go to the shop (top 3 rows, center) to bank and buy.</div>
           </div>
@@ -736,6 +737,7 @@
           <button id="equipWorkerBtn">Equip Worker</button>
           <button id="hireBtn">Hire</button>
           <button id="tpTopBtn">Teleport to Top</button>
+          <button id="danceBtn">Dance! (B)</button>
           <span id="msg"></span>
         </div>
       </aside>
@@ -745,7 +747,7 @@
       </section>
     </div>
 
-    <div class="controls" id="gameControlsHint">Move: WASD/Arrows | Space/Enter or click game: mine | Late pickaxes: 4 or 8 blocks, then Auto Digger</div>
+    <div class="controls" id="gameControlsHint">Move: WASD/Arrows | Space/Enter or click game: mine | Q: whack monsters with tree branch | Late pickaxes: 4 or 8 blocks, then Auto Digger</div>
   </main>
 
   <div id="cutsceneOverlay"></div>
@@ -784,8 +786,8 @@
 
   <div id="homelessModal" class="respawn-modal">
     <div class="respawn-panel">
-      <p><strong>"Hey, can you give me some food?"</strong></p>
-      <p class="muted-small">Puck, a scruffy miner in a hole, looks up at you with hungry eyes.<br>Cost: $500</p>
+      <p><strong>"Psst — down here! A monster chased me and rocks sealed the only way out. I dropped my last loaf of bread. Spot me $500 and you can have my stick. Two whacks, they're history."</strong></p>
+      <p class="muted-small">Puck looks miserable, staring at the bread on the ground.</p>
       <div class="respawn-actions">
         <button id="homelessYesBtn">Yes</button>
         <button id="homelessNoBtn">No</button>
@@ -1085,7 +1087,8 @@
     const REVERSED_LAYER_TEST_MODE = false;
     const REVERSED_LAYER_DEPTH_MAX = 5200;
     const MAZE_TEST_MODE = false; // true = straight tunnel through maze (cheat)
-    const GAME_TEST_MODE = true; // true = money + max pick durability + Puck (press T)
+    const GAME_TEST_MODE = true; // start at GAME_TEST_START_DEPTH with max gear
+    const GAME_TEST_START_DEPTH = 499;
     const CHAMBER_SIZE = 48;
     const MAZE_HEIGHT = 75;
     const MAZE_Y_START = 2500;
@@ -1112,6 +1115,17 @@
     const PUCK_BURIAL_Y = PLAYER_MIN_Y;
     const MONSTER_MIN_DEPTH = 500;
     const MONSTER_SPAWN_CHANCE = 0.05;
+    const MONSTER_MOVE_MS = 700;
+    const MONSTER_ATTACK_MS = 1100;
+    const MONSTER_SPAWN_CHECK_MS = 1400;
+    const MONSTER_MAX_NEAR_PLAYER = 6;
+    const MONSTER_HP = 2;
+    const OW_ORE_MOVE_MS = 650;
+    const OW_ORE_MAX_NEAR = 3;
+    const DUCK_EVERY_M = 100;
+    const DANCE_MS = 3200;
+    const BRANCH_ATTACK_MS = 480;
+    const MONSTER_KILL_VALUE = 15;
     const CHAMBER_CHEST_X = TUNNEL_X;
 
     const HOMELESS_DEPTH = 500;
@@ -1120,11 +1134,26 @@
     const HOMELESS_HOLE_Y_MIN = HOMELESS_DEPTH;
     const HOMELESS_HOLE_Y_MAX = HOMELESS_DEPTH + 3;
     const HOMELESS_COST = 500;
+    const PUCK_HOLE_EXIT_X = TUNNEL_X - 3;
+    const PUCK_BREAD_X = TUNNEL_X - 1;
+    const PUCK_BREAD_Y = HOMELESS_DEPTH + 2;
+    const PUCK_STORY_INTRO_MS = 1200;
+    const PUCK_STORY_MINE_MS = 2400;
+    const PUCK_STORY_ATTACK_MS = 1600;
+    const PUCK_STORY_BREAD_MS = 1200;
+    const PUCK_STORY_SEAL_MS = 2000;
+    const PUCK_STORY_OUTRO_MS = 1400;
     const PUCK_MOVE_MS = 50;
     const PUCK_MINE_MS = 80;
     const PUCK_MINE_CHANCE = 1;
     const PUCK_BOSS_ATTACK_MS = 120;
     const PUCK_BOSS_DAMAGE = 50;
+
+    const DEATH_TO_HOSPITAL_MS = 850;
+    const HOSPITAL_FADE_IN_MS = 1100;
+    const HOSPITAL_ROOM_MS = 3800;
+    const HOSPITAL_RESET_MS = 1600;
+    const HOSPITAL_FADE_OUT_MS = 1100;
 
     // Lost things in the mine (newspaper ads / world — not all Mrs. Tugg's).
     const LOST_ITEMS = [
@@ -1180,7 +1209,7 @@
       { id: "emerald2", title: "Green Gem", desc: "Mine 2 emerald ore.", type: "mine_ore", ore: "emerald", count: 2, reward: 1800, after: "diamond2" },
 
       // —— Puck ——
-      { id: "feed_puck", title: "Feed Puck", desc: "Give Puck food ($500) so he follows you.", type: "feed_puck", reward: 500, after: "find_puck" },
+      { id: "feed_puck", title: "Feed Puck", desc: "Give Puck food ($500) — he follows you and gives you his stick.", type: "feed_puck", reward: 500, after: "find_puck" },
       { id: "dog", title: "Find Buster", desc: "Find her dog near 100m.", type: "find_item", itemId: "dog", reward: 1500, after: "find_puck" },
 
       // —— Lost & found ——
@@ -1225,12 +1254,33 @@
       return false;
     }
 
+    function getPuckHoleExitCells() {
+      const cells = [];
+      for (let y = HOMELESS_HOLE_Y_MIN; y <= HOMELESS_HOLE_Y_MAX; y++) {
+        cells.push([PUCK_HOLE_EXIT_X, y]);
+      }
+      return cells;
+    }
+
     function carvePuckHole() {
       for (let y = HOMELESS_HOLE_Y_MIN; y <= HOMELESS_HOLE_Y_MAX; y++) {
         for (let x = HOMELESS_HOLE_X_MIN; x <= HOMELESS_HOLE_X_MAX; x++) {
           if (inBounds(x, y)) setTile(x, y, "air");
         }
       }
+      if (!state.puckHoleSealed) {
+        for (const [x, y] of getPuckHoleExitCells()) {
+          if (inBounds(x, y)) setTile(x, y, "air");
+        }
+      }
+    }
+
+    function sealPuckHoleEntrance() {
+      for (const [x, y] of getPuckHoleExitCells()) {
+        if (inBounds(x, y)) setTile(x, y, "stone");
+        spawnMineFx(x, y, "#6d7482");
+      }
+      state.puckHoleSealed = true;
     }
 
     function carveLostItemAlcove(item) {
@@ -1279,6 +1329,7 @@
     const ANIM_MINE_MS = 260;
     const ANIM_SWING_MS = 320;
     const ANIM_BUY_MS = 500;
+    const PUCK_GRIEF_KNEEL_MS = 1500;
 
     const oreDefs = {
       dirt:     { color: "#594532", value: 1, hard: 1 },
@@ -1517,6 +1568,18 @@
       };
     }
 
+    function getDrawCamera() {
+      if (state.cutscene === "puckStory") {
+        const focusX = TUNNEL_X;
+        const focusY = HOMELESS_HOLE_Y_MIN + 2;
+        return {
+          x: Math.max(0, Math.min(WORLD_W - VIEW_W, focusX - Math.floor(VIEW_W / 2))),
+          y: Math.max(0, focusY - Math.floor(VIEW_H / 2) + 2),
+        };
+      }
+      return getCamera();
+    }
+
     function handlePmMoveKey(e) {
       if (!pmKeyMatchesMove(e.key)) return false;
       const k = e.key.toLowerCase();
@@ -1595,6 +1658,7 @@
     let mazeAirTiles = new Set();
     let mazeBuilt = false;
     let celebrationCrowd = [];
+    let surfaceCrowd = [];
     let fxParticles = [];
     const strategyTips = [
       "Upgrade your pickaxe first so workers can break more ores.",
@@ -1602,6 +1666,7 @@
       "Place workers in different lanes to mine more at once.",
       "Repair before durability hits zero so you do not get stuck.",
       "Bank often near the surface so you do not lose progress momentum.",
+      "Cave monsters need Puck's stick — feed him near 500m, then whack with Q (2 hits).",
       "Mega workers clear wide tunnels fast but cost more, so save up first."
     ];
 
@@ -1615,7 +1680,7 @@
       const ms =
         player.anim === "mine"
           ? ANIM_MINE_MS
-          : player.anim === "swing"
+          : player.anim === "swing" || player.anim === "branch"
             ? ANIM_SWING_MS
             : ANIM_BUY_MS;
       const t = Math.min(1, (performance.now() - player.animStart) / ms);
@@ -1701,6 +1766,29 @@
       return state.respawnMode === true && (reason === "boss" || reason === "bomb");
     }
 
+    function startPuckGriefForPlayerDeath() {
+      const h = state.homeless;
+      if (!h || h.state !== "following") return;
+      h.griefAnimStart = performance.now();
+      const spots = [
+        [player.x - 1, player.y],
+        [player.x + 1, player.y],
+        [player.x, player.y + 1],
+        [player.x - 1, player.y - 1],
+        [player.x + 1, player.y - 1],
+      ];
+      for (const [nx, ny] of spots) {
+        if (!inBounds(nx, ny)) continue;
+        if (nx === player.x && (ny === player.y || ny === player.y - 1)) continue;
+        if (getTile(nx, ny) === "air") {
+          h.x = nx;
+          h.y = ny;
+          break;
+        }
+      }
+      sfx.puckGrief();
+    }
+
     function killPlayer(message, reason = "generic") {
       if (state.dead) return;
       if (state.bossFight && !state.bossDefeated) resetBossFight();
@@ -1720,6 +1808,370 @@
       updateHud();
     }
 
+    function updateDeathTransition(now) {
+      if (!state.dead || state.cutscene) return;
+      const elapsed = now - (player.deathAnimStart || now);
+      if (elapsed >= DEATH_TO_HOSPITAL_MS) startHospitalCutscene();
+    }
+
+    function startHospitalCutscene() {
+      if (state.cutscene === "hospital") return;
+      state.cutscene = "hospital";
+      state.cutsceneStart = performance.now();
+      state.gamePaused = true;
+      const overlay = document.getElementById("cutsceneOverlay");
+      overlay.style.display = "block";
+      overlay.style.opacity = "0";
+      playTone(180, 0.25, "sine", 0.04);
+    }
+
+    function getHospitalElapsed(now) {
+      return now - (state.cutsceneStart || now);
+    }
+
+    function getHospitalPhase(now) {
+      const e = getHospitalElapsed(now);
+      let t = HOSPITAL_FADE_IN_MS;
+      if (e < t) return "fadeIn";
+      t += HOSPITAL_ROOM_MS;
+      if (e < t) return "room";
+      t += HOSPITAL_RESET_MS;
+      if (e < t) return "reset";
+      t += HOSPITAL_FADE_OUT_MS;
+      if (e < t) return "fadeOut";
+      return "done";
+    }
+
+    function getHospitalCaption(now) {
+      const phase = getHospitalPhase(now);
+      if (phase === "fadeIn") return "Everything goes dark...";
+      if (phase === "room") return "You wake up in a hospital bed...";
+      if (phase === "reset") return "The mine resets. All your tunnels are gone.";
+      if (phase === "fadeOut") return "Back to the surface...";
+      return "";
+    }
+
+    function resetWorldAfterHospitalDeath() {
+      activeTiles = new Map();
+      savedEdits = new Map();
+      mazeBuilt = false;
+      mazeAirTiles = new Set();
+
+      state.dead = false;
+      state.hp = 100;
+      state.monsters = [];
+      state.owOres = [];
+      state.rubberDucks = [];
+      state.rubberDuckDepths = {};
+      state.danceUntil = 0;
+      state.bossFight = false;
+      state.boss = null;
+      player.deathAnimStart = null;
+      player.deathReason = null;
+
+      const spawn = getSurfaceSpawn();
+      player.x = spawn.x;
+      player.y = spawn.y;
+      player.dirX = 0;
+      player.dirY = 1;
+
+      let workerSlot = 0;
+      for (const worker of state.workers) {
+        if (worker.dead) continue;
+        worker.x = TUNNEL_X - 3 + workerSlot * 2;
+        worker.y = PLAYER_MIN_Y;
+        workerSlot++;
+      }
+
+      const h = state.homeless;
+      if (h) {
+        h.griefAnimStart = 0;
+        if (h.state === "following") {
+          h.x = spawn.x - 1;
+          h.y = spawn.y;
+        } else if (h.state === "waiting") {
+          h.x = TUNNEL_X - 1;
+          h.y = HOMELESS_HOLE_Y_MAX;
+        }
+      }
+
+      refreshUnlockedQuestWorld();
+      updateRubberDucks();
+      ensureLoadedAroundPlayer();
+      updateHud();
+    }
+
+    function finishHospitalCutscene() {
+      resetWorldAfterHospitalDeath();
+      state.cutscene = null;
+      state.gamePaused = false;
+      document.getElementById("cutsceneOverlay").style.display = "none";
+      document.getElementById("cutsceneOverlay").style.opacity = "0";
+      showMessage("You're at the top again. Every tunnel you dug is gone!", "var(--warn)", 240);
+      playTone(440, 0.12, "triangle", 0.05);
+    }
+
+    function updateHospitalCutscene(now) {
+      if (state.cutscene !== "hospital") return;
+      const phase = getHospitalPhase(now);
+      const overlay = document.getElementById("cutsceneOverlay");
+      if (phase === "fadeIn") {
+        overlay.style.opacity = String(Math.min(0.35, getHospitalElapsed(now) / HOSPITAL_FADE_IN_MS * 0.35));
+      } else if (phase === "fadeOut") {
+        const fadeStart = HOSPITAL_FADE_IN_MS + HOSPITAL_ROOM_MS + HOSPITAL_RESET_MS;
+        const t = (getHospitalElapsed(now) - fadeStart) / HOSPITAL_FADE_OUT_MS;
+        overlay.style.opacity = String(Math.min(0.5, t * 0.5));
+      } else {
+        overlay.style.opacity = "0.12";
+      }
+      if (phase === "done") finishHospitalCutscene();
+    }
+
+    function drawHospitalPOVCutscene(now) {
+      resizeGameCanvas();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+      const elapsed = getHospitalElapsed(now);
+      const phase = getHospitalPhase(now);
+      let sceneAlpha = 1;
+      let blurWake = 0;
+      if (phase === "fadeIn") {
+        sceneAlpha = Math.min(1, elapsed / HOSPITAL_FADE_IN_MS);
+        blurWake = 1 - sceneAlpha;
+      } else if (phase === "room") {
+        const roomT = (elapsed - HOSPITAL_FADE_IN_MS) / HOSPITAL_ROOM_MS;
+        blurWake = Math.max(0, 0.18 * (1 - Math.min(1, roomT * 3)));
+      } else if (phase === "reset") {
+        blurWake = ((elapsed - HOSPITAL_FADE_IN_MS - HOSPITAL_ROOM_MS) / HOSPITAL_RESET_MS) * 0.3;
+      } else if (phase === "fadeOut") {
+        const fadeStart = HOSPITAL_FADE_IN_MS + HOSPITAL_ROOM_MS + HOSPITAL_RESET_MS;
+        sceneAlpha = 1 - Math.min(1, (elapsed - fadeStart) / HOSPITAL_FADE_OUT_MS);
+      }
+
+      ctx.save();
+      ctx.globalAlpha = sceneAlpha;
+
+      // Ceiling — you're lying down, looking up
+      ctx.fillStyle = "#eef4f8";
+      ctx.fillRect(0, 0, w, h * 0.48);
+      const tileW = w / 9;
+      const tileH = (h * 0.48) / 5;
+      ctx.strokeStyle = "#c8d8e4";
+      ctx.lineWidth = 1;
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 9; col++) {
+          ctx.strokeRect(col * tileW, row * tileH, tileW, tileH);
+        }
+      }
+      ctx.fillStyle = "#f4f8fc";
+      ctx.fillRect(w * 0.28, h * 0.04, w * 0.44, h * 0.055);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(w * 0.3, h * 0.048, w * 0.4, h * 0.035);
+      const lightGlow = ctx.createRadialGradient(w / 2, h * 0.06, 0, w / 2, h * 0.06, w * 0.55);
+      lightGlow.addColorStop(0, "rgba(255,255,255,0.8)");
+      lightGlow.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = lightGlow;
+      ctx.fillRect(0, 0, w, h * 0.48);
+
+      // Left wall
+      ctx.fillStyle = "#b8d0dc";
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.28);
+      ctx.lineTo(w * 0.18, h * 0.48);
+      ctx.lineTo(w * 0.18, h * 0.72);
+      ctx.lineTo(0, h * 0.62);
+      ctx.closePath();
+      ctx.fill();
+      // Right wall
+      ctx.beginPath();
+      ctx.moveTo(w, h * 0.28);
+      ctx.lineTo(w * 0.82, h * 0.48);
+      ctx.lineTo(w * 0.82, h * 0.72);
+      ctx.lineTo(w, h * 0.62);
+      ctx.closePath();
+      ctx.fill();
+
+      // Far wall / end of room (what you see past the foot of the bed)
+      ctx.fillStyle = "#dce8f0";
+      ctx.fillRect(w * 0.18, h * 0.42, w * 0.64, h * 0.3);
+      ctx.fillStyle = "#c8dce8";
+      ctx.fillRect(w * 0.62, h * 0.48, w * 0.14, h * 0.22);
+      ctx.fillStyle = "#e8f4ff";
+      ctx.fillRect(w * 0.64, h * 0.5, w * 0.1, h * 0.16);
+
+      // Clock on far wall
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#8098a8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(w * 0.38, h * 0.52, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#506878";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.38, h * 0.52);
+      ctx.lineTo(w * 0.38, h * 0.52 - 7);
+      ctx.moveTo(w * 0.38, h * 0.52);
+      ctx.lineTo(w * 0.38 + 5, h * 0.52 + 2);
+      ctx.stroke();
+
+      // Nurse silhouette in doorway (far away)
+      const nx = w * 0.66;
+      const ny = h * 0.58;
+      ctx.fillStyle = "#8098a8";
+      ctx.fillRect(nx - 5, ny - 18, 10, 10);
+      ctx.fillRect(nx - 7, ny - 8, 14, 16);
+      ctx.fillRect(nx - 9, ny + 8, 6, 12);
+      ctx.fillRect(nx + 3, ny + 8, 6, 12);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(nx - 4, ny - 16, 8, 4);
+
+      // IV pole — left side of your vision
+      const ivX = w * 0.08;
+      ctx.strokeStyle = "#788898";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(ivX, h * 0.48);
+      ctx.lineTo(ivX, h * 0.12);
+      ctx.stroke();
+      ctx.fillStyle = "#b8e8f4";
+      ctx.fillRect(ivX - 11, h * 0.12, 22, 26);
+      ctx.fillStyle = "#88c8d8";
+      ctx.fillRect(ivX - 7, h * 0.15, 14, 16);
+      ctx.strokeStyle = "#98c8d8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(ivX + 3, h * 0.38);
+      ctx.quadraticCurveTo(w * 0.2, h * 0.58, w * 0.38, h * 0.72);
+      ctx.stroke();
+
+      // Heart monitor — right side
+      const monX = w * 0.9;
+      ctx.fillStyle = "#384858";
+      ctx.fillRect(monX - 26, h * 0.46, 52, 36);
+      ctx.fillStyle = "#080c10";
+      ctx.fillRect(monX - 22, h * 0.49, 44, 20);
+      ctx.strokeStyle = "#30ff80";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const lineY = h * 0.59;
+      const beep = Math.floor(elapsed / 120) % 2 === 0;
+      ctx.moveTo(monX - 20, lineY);
+      for (let i = 0; i < 44; i += 4) {
+        const spike = beep && i % 16 === 8 ? -9 : 0;
+        ctx.lineTo(monX - 20 + i, lineY + spike);
+        ctx.lineTo(monX - 20 + i + 2, lineY);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = "#607080";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(monX, h * 0.46);
+      ctx.lineTo(monX, h * 0.7);
+      ctx.stroke();
+
+      // Foot of bed + your blanket (bottom of screen = your body)
+      ctx.fillStyle = "#8a98a8";
+      ctx.fillRect(w * 0.14, h * 0.7, w * 0.72, 10);
+      ctx.fillStyle = "#f8fcff";
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.74);
+      ctx.lineTo(w, h * 0.74);
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#eef4f8";
+      ctx.beginPath();
+      ctx.moveTo(w * 0.2, h * 0.76);
+      ctx.quadraticCurveTo(w * 0.5, h * 0.82, w * 0.8, h * 0.76);
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bed rails at edges of your vision
+      ctx.fillStyle = "#6a8098";
+      ctx.fillRect(0, h * 0.68, w, 6);
+      ctx.fillRect(0, h * 0.72, 28, h * 0.28);
+      ctx.fillRect(w - 28, h * 0.72, 28, h * 0.28);
+      ctx.fillStyle = "#98acb8";
+      ctx.fillRect(4, h * 0.76, 10, h * 0.2);
+      ctx.fillRect(w - 14, h * 0.76, 10, h * 0.2);
+
+      // Soft edge fade only — no circular "goggle" vignette
+      const topFade = ctx.createLinearGradient(0, 0, 0, h * 0.08);
+      topFade.addColorStop(0, "rgba(0,0,0,0.12)");
+      topFade.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = topFade;
+      ctx.fillRect(0, 0, w, h * 0.08);
+      const sideFadeL = ctx.createLinearGradient(0, 0, w * 0.12, 0);
+      sideFadeL.addColorStop(0, "rgba(0,0,0,0.15)");
+      sideFadeL.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = sideFadeL;
+      ctx.fillRect(0, 0, w * 0.12, h);
+      const sideFadeR = ctx.createLinearGradient(w, 0, w * 0.88, 0);
+      sideFadeR.addColorStop(0, "rgba(0,0,0,0.15)");
+      sideFadeR.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = sideFadeR;
+      ctx.fillRect(w * 0.88, 0, w * 0.12, h);
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      if (blurWake > 0.05) {
+        ctx.fillStyle = `rgba(220, 235, 245, ${blurWake * 0.5})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      if (phase === "fadeIn") {
+        const lid = (1 - sceneAlpha) * h * 0.52;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, w, lid);
+        ctx.fillRect(0, h - lid, w, lid);
+      }
+
+      if (phase === "reset") {
+        const rt = (elapsed - HOSPITAL_FADE_IN_MS - HOSPITAL_ROOM_MS) / HOSPITAL_RESET_MS;
+        ctx.fillStyle = `rgba(255, 255, 255, ${rt * 0.55})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      if (phase === "fadeOut" && sceneAlpha < 1) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${1 - sceneAlpha})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      drawHospitalCaption(getHospitalCaption(now));
+    }
+
+    function drawHospitalCaption(msg) {
+      if (!msg) return;
+      ctx.save();
+      ctx.font = "bold 13px Verdana";
+      const padX = 14;
+      const textW = ctx.measureText(msg).width;
+      const boxW = Math.min(canvas.width - 24, textW + padX * 2);
+      const boxH = 28;
+      const bx = (canvas.width - boxW) / 2;
+      const by = canvas.height - 52;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+      ctx.strokeStyle = "#5a3018";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, boxW, boxH, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#5a3018";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(msg, canvas.width / 2, by + boxH / 2 + 1);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+      ctx.restore();
+    }
+
     function respawnAtChest(message) {
       state.dead = false;
       state.hp = 100;
@@ -1731,6 +2183,8 @@
       player.dirY = 1;
       ensureLoadedAroundPlayer();
       syncPuckToChamber();
+      const h = state.homeless;
+      if (h) h.griefAnimStart = 0;
       showMessage(`${message} Respawn at chest — Miner King reset!`, "var(--warn)");
       playTone(440, 0.1, "triangle", 0.06);
       updateHud();
@@ -1797,6 +2251,11 @@
         playTone(170, 0.18, "sine", 0.08, 0.13);
         playTone(130, 0.22, "sine", 0.08, 0.26);
       },
+      puckGrief() {
+        playTone(440, 0.12, "sine", 0.05, 0);
+        playTone(330, 0.18, "sine", 0.06, 0.1);
+        playTone(260, 0.24, "sine", 0.06, 0.22);
+      },
       place() {
         playTone(500, 0.07, "sine", 0.06, 0);
       },
@@ -1807,6 +2266,10 @@
       water() {
         playTone(700, 0.06, "sine", 0.06, 0);
         playTone(520, 0.10, "sine", 0.06, 0.05);
+      },
+      whack() {
+        playTone(200, 0.06, "square", 0.08, 0);
+        playTone(140, 0.08, "square", 0.07, 0.04);
       },
       paperOpen() {
         playTone(880, 0.05, "sine", 0.05, 0);
@@ -2146,6 +2609,15 @@
     }
 
     function mineOneTile(tx, ty) {
+      const ow = getOwOreAt(tx, ty);
+      if (ow) {
+        triggerOwOreHit(ow);
+        return null;
+      }
+
+      const lurking = getMonsterAt(tx, ty);
+      if (lurking) return null;
+
       const tile = getTile(tx, ty);
       if (tile === "air") return null;
       if (tile === "lava") return null;
@@ -2155,15 +2627,9 @@
       if (!def || tile === "bedrock") return null;
       if (getPickStrength(state.pickaxe) < def.hard) return null;
 
-      const wasMonster = tile === "monster";
       setTile(tx, ty, "air");
-      if (wasMonster) triggerMonsterAttack(tx, ty);
       const durabilityLoss = Math.max(1, Math.ceil(def.hard / getPickStrength(state.pickaxe)));
-      if (GAME_TEST_MODE) {
-        state.pickDurability = getMaxDurability(state.pickaxe);
-      } else {
-        state.pickDurability = Math.max(0, state.pickDurability - durabilityLoss);
-      }
+      state.pickDurability = Math.max(0, state.pickDurability - durabilityLoss);
       if (state.questStats) {
         state.questStats.blocksMined++;
         if (tile === "gold") state.questStats.goldMined++;
@@ -2207,7 +2673,7 @@
           const tile = getTile(tx, ty);
           if (tile === "air") showMessage("Nothing to mine there.");
           else if (tile === "lava") showMessage("Lava is too hot to mine!");
-          else if (tile === "monster") showMessage("Hit the monster block harder!");
+          else if (getMonsterAt(tx, ty)) showMessage("Whack the monster with Puck's stick! (Press Q — feed Puck near 500m if you don't have it)");
           else if (isMazeProtectedBlock(tx, ty, tile)) showMessage("Maze walls are unbreakable.");
           else showMessage("Too hard to break or blocked.");
           sfx.blocked();
@@ -2823,6 +3289,18 @@
       return !!(state.homeless && state.homeless.state === "following");
     }
 
+    function grantBranchFromPuck() {
+      if (state.hasTreeBranch) return false;
+      state.hasTreeBranch = true;
+      return true;
+    }
+
+    function nearHungryPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "waiting") return false;
+      return Math.abs(player.x - h.x) <= 1 && Math.abs(player.y - h.y) <= 1;
+    }
+
     function isPuckDead() {
       return !!(state.homeless && state.homeless.state === "dead");
     }
@@ -2923,6 +3401,27 @@
       playTone(220, 0.2, "triangle", 0.05);
       playPuckMournMusic();
       showPuckGraveModal();
+      updateHud();
+      return true;
+    }
+
+    function tryBringBackPuck() {
+      const h = state.homeless;
+      if (!h || !nearPuckBurialSite()) return false;
+      if (h.state !== "dead" && h.state !== "buried") return false;
+      h.state = "following";
+      h.hp = PUCK_MAX_HP;
+      h.x = player.x - 1;
+      h.y = player.y;
+      h.lastMoveAt = performance.now();
+      h.lastMineAt = performance.now();
+      h.lastBossAttackAt = 0;
+      h.lastHealPleaseAt = 0;
+      h.deathAnimStart = 0;
+      hidePuckGraveModal();
+      grantBranchFromPuck();
+      showMessage("Puck is back with you — and his stick!", "var(--good)", 200);
+      playTone(520, 0.12, "triangle", 0.06);
       updateHud();
       return true;
     }
@@ -3180,6 +3679,12 @@
       if (state.cutscene === "fadeMenu") return Math.min(1, t / 1800);
       if (state.cutscene === "menu") return 1;
       return 0;
+    }
+
+    function updateCutscenes(now) {
+      if (state.cutscene === "puckStory") updatePuckBackstoryCutscene(now);
+      else if (state.cutscene === "hospital") updateHospitalCutscene(now);
+      else updateVictoryCutscene(now);
     }
 
     function updateVictoryCutscene(now) {
@@ -3544,13 +4049,437 @@
       return true;
     }
 
-    function maybeMonsterTile(x, y, baseTile) {
-      if (!canSpawnMonsterAt(x, y)) return baseTile;
-      if (baseTile === "air" || baseTile === "lava" || baseTile === "bedrock" || baseTile === "candle") {
-        return baseTile;
+    function getMonsterAt(x, y) {
+      if (!state.monsters) return null;
+      return state.monsters.find((m) => m.x === x && m.y === y) || null;
+    }
+
+    function trySpawnMonsterEntity(x, y, baseTile) {
+      if (!state.monsters) state.monsters = [];
+      if (!canSpawnMonsterAt(x, y)) return;
+      // Monsters should appear in existing open holes/tunnels only.
+      if (baseTile !== "air") return;
+      if (hash2d(x * 19 + 501, y * 31 + 907) >= MONSTER_SPAWN_CHANCE) return;
+      if (getMonsterAt(x, y)) return;
+      state.monsters.push({
+        x,
+        y,
+        hp: MONSTER_HP,
+        baseTile: "air",
+        embedded: false,
+        lastMoveAt: performance.now() + hash2d(x, y) * 400,
+        lastAttackAt: 0,
+      });
+    }
+
+    function removeMonsterEntity(m, restoreTile) {
+      if (!state.monsters) return;
+      const i = state.monsters.indexOf(m);
+      if (i < 0) return;
+      if (restoreTile && m.embedded) setTile(m.x, m.y, m.baseTile);
+      state.monsters.splice(i, 1);
+    }
+
+    function monsterCanWalkTo(x, y) {
+      if (!inBounds(x, y)) return false;
+      if (!isAir(x, y)) return false;
+      if (getMonsterAt(x, y)) return false;
+      if (x === player.x && (y === player.y || y === player.y - 1)) return false;
+      if (bossOccupies(x, y) || bossOccupies(x, y - 1)) return false;
+      const h = state.homeless;
+      if (h && h.state === "following" && h.x === x && h.y === y) return false;
+      return true;
+    }
+
+    function tryMoveMonster(m, dx, dy) {
+      const nx = m.x + dx;
+      const ny = m.y + dy;
+      if (!monsterCanWalkTo(nx, ny)) return false;
+      if (m.embedded) {
+        setTile(m.x, m.y, m.baseTile);
+        m.embedded = false;
       }
-      if (hash2d(x * 19 + 501, y * 31 + 907) >= MONSTER_SPAWN_CHANCE) return baseTile;
-      return "monster";
+      m.x = nx;
+      m.y = ny;
+      return true;
+    }
+
+    function updateMonsters(now) {
+      if (!state.monsters) state.monsters = [];
+      if (!state.lastMonsterSpawnAt) state.lastMonsterSpawnAt = 0;
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+
+      if (
+        player.y >= MONSTER_MIN_DEPTH &&
+        now - state.lastMonsterSpawnAt >= MONSTER_SPAWN_CHECK_MS
+      ) {
+        state.lastMonsterSpawnAt = now;
+        const nearCount = state.monsters.filter(
+          (m) => Math.abs(m.y - player.y) <= 14
+        ).length;
+        if (nearCount < MONSTER_MAX_NEAR_PLAYER) {
+          for (let i = 0; i < 20; i++) {
+            const rx = Math.max(1, Math.min(WORLD_W - 2, player.x + Math.floor(Math.random() * 25) - 12));
+            const ry = Math.max(MONSTER_MIN_DEPTH, player.y + Math.floor(Math.random() * 17) - 8);
+            if (!canSpawnMonsterAt(rx, ry)) continue;
+            if (!isAir(rx, ry)) continue;
+            if (getMonsterAt(rx, ry)) continue;
+            if (Math.abs(rx - player.x) <= 2 && Math.abs(ry - player.y) <= 2) continue;
+            trySpawnMonsterEntity(rx, ry, "air");
+            break;
+          }
+        }
+      }
+
+      if (!state.monsters.length) return;
+
+      for (const m of state.monsters) {
+        if (now - m.lastMoveAt >= MONSTER_MOVE_MS) {
+          m.lastMoveAt = now;
+          let moved = false;
+          const dist = Math.abs(player.x - m.x) + Math.abs(player.y - m.y);
+          if (dist > 0 && dist <= 14) {
+            const dx = Math.sign(player.x - m.x);
+            const dy = Math.sign(player.y - m.y);
+            const chase = [
+              [dx, 0],
+              [0, dy],
+              [dx, dy],
+            ];
+            for (const [mx, my] of chase) {
+              if (mx === 0 && my === 0) continue;
+              if (tryMoveMonster(m, mx, my)) {
+                moved = true;
+                break;
+              }
+            }
+          }
+          if (!moved) {
+            const wiggle = [
+              [1, 0],
+              [-1, 0],
+              [0, 1],
+              [0, -1],
+            ];
+            const start = Math.floor(hash2d(m.x + now, m.y) * 4);
+            for (let i = 0; i < 4; i++) {
+              const [mx, my] = wiggle[(start + i) % 4];
+              if (tryMoveMonster(m, mx, my)) break;
+            }
+          }
+        }
+
+        const touch =
+          Math.abs(player.x - m.x) + Math.abs(player.y - m.y) <= 1 ||
+          (Math.abs(player.x - m.x) <= 1 &&
+            (player.y === m.y || player.y - 1 === m.y || player.y + 1 === m.y));
+        if (touch && now - (m.lastAttackAt || 0) >= MONSTER_ATTACK_MS) {
+          m.lastAttackAt = now;
+          triggerMonsterAttack(m.x, m.y);
+        }
+
+        const h = state.homeless;
+        const hitsPuck =
+          h &&
+          h.state === "following" &&
+          Math.abs(h.x - m.x) <= 1 &&
+          Math.abs(h.y - m.y) <= 1;
+        if (hitsPuck && now - (m.lastPuckAttackAt || 0) >= MONSTER_ATTACK_MS) {
+          m.lastPuckAttackAt = now;
+          const puckDamage = 6 + Math.floor(hash2d(m.x * 11 + now, m.y * 13 + 7) * 8);
+          hurtPuck(puckDamage, `Monster claws Puck! -${puckDamage} HP`);
+          spawnMineFx(h.x, h.y, "#c03070");
+        }
+      }
+
+      const minY = player.y - getActiveRadius() - 10;
+      const maxY = player.y + getActiveRadius() + 10;
+      state.monsters = state.monsters.filter((m) => {
+        if (m.y >= minY && m.y <= maxY) return true;
+        if (m.embedded) setTile(m.x, m.y, m.baseTile);
+        return false;
+      });
+    }
+
+    function drawMonsters(camX, camY) {
+      if (!state.monsters) return;
+      for (const m of state.monsters) {
+        const sx = (m.x - camX) * TILE;
+        const sy = (m.y - camY) * TILE;
+        if (sx < -TILE || sx > canvas.width + TILE || sy < -TILE || sy > canvas.height + TILE) continue;
+        drawMonsterBlock(sx, sy, m.x, m.y, m);
+      }
+    }
+
+    function getDepthMeters(y) {
+      return y <= SURFACE_Y_MAX ? 0 : y;
+    }
+
+    function getOwOreAt(x, y) {
+      if (!state.owOres) return null;
+      return state.owOres.find((o) => o.x === x && o.y === y) || null;
+    }
+
+    function owOreCanSitAt(x, y) {
+      if (!inBounds(x, y)) return false;
+      if (!isAir(x, y)) return false;
+      if (getOwOreAt(x, y)) return false;
+      if (getMonsterAt(x, y)) return false;
+      if (x === player.x && (y === player.y || y === player.y - 1)) return false;
+      const h = state.homeless;
+      if (h && h.state === "following" && h.x === x && h.y === y) return false;
+      return true;
+    }
+
+    function owOreHasOreNeighbor(x, y) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const tile = getTile(x + dx, y + dy);
+        const def = oreDefs[tile];
+        if (def && tile !== "lava" && tile !== "bedrock" && tile !== "candle") return true;
+      }
+      return false;
+    }
+
+    function pickOwOreType(x, y) {
+      const tile = tileForDepth(y, hash2d(x * 19 + 3, y * 23 + 7));
+      if (tile === "air" || tile === "lava" || tile === "bedrock") return "gold";
+      return tile;
+    }
+
+    function trySpawnOwOresNearPlayer() {
+      if (!state.owOres) state.owOres = [];
+      if (player.y <= SURFACE_Y_MAX + 15) return;
+      const near = state.owOres.filter((o) => Math.abs(o.y - player.y) <= 18).length;
+      if (near >= OW_ORE_MAX_NEAR) return;
+      for (let i = 0; i < 12; i++) {
+        const x = player.x + Math.floor(Math.random() * 15) - 7;
+        const y = player.y + Math.floor(Math.random() * 13) - 6;
+        if (!owOreCanSitAt(x, y)) continue;
+        if (!owOreHasOreNeighbor(x, y)) continue;
+        if (hash2d(x * 41 + 17, y * 37 + 29) > 0.035) continue;
+        state.owOres.push({
+          x,
+          y,
+          oreType: pickOwOreType(x, y),
+          lastMoveAt: performance.now() + hash2d(x, y) * 500,
+          owUntil: 0,
+          wobble: hash2d(x, y) * Math.PI * 2,
+        });
+        if (state.owOres.filter((o) => Math.abs(o.y - player.y) <= 18).length >= OW_ORE_MAX_NEAR) break;
+      }
+    }
+
+    function fleeOwOre(ore) {
+      const dirs = [
+        [Math.sign(ore.x - player.x), 0],
+        [0, Math.sign(ore.y - player.y)],
+        [Math.sign(player.x - ore.x), 0],
+        [0, Math.sign(player.y - ore.y)],
+        [1, 0], [-1, 0], [0, 1], [0, -1],
+      ];
+      for (let i = dirs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [dirs[i], dirs[j]] = [dirs[j], dirs[i]];
+      }
+      for (const [dx, dy] of dirs) {
+        if (dx === 0 && dy === 0) continue;
+        const nx = ore.x + dx;
+        const ny = ore.y + dy;
+        if (owOreCanSitAt(nx, ny)) {
+          ore.x = nx;
+          ore.y = ny;
+          spawnMineFx(nx, ny, oreDefs[ore.oreType]?.color || "#e3b83f");
+          return;
+        }
+      }
+    }
+
+    function triggerOwOreHit(ore) {
+      ore.owUntil = performance.now() + 850;
+      playTone(920, 0.07, "square", 0.07);
+      playTone(520, 0.12, "sine", 0.05, 0.04);
+      fleeOwOre(ore);
+      player.mineFlashX = ore.x;
+      player.mineFlashY = ore.y;
+      player.mineFlashStart = performance.now();
+    }
+
+    function updateOwOres(now) {
+      if (!state.owOres) state.owOres = [];
+      if (state.dead || state.gamePaused || isInCutscene()) return;
+      if (now - (state.lastOwOreSpawnAt || 0) > 2200) {
+        state.lastOwOreSpawnAt = now;
+        trySpawnOwOresNearPlayer();
+      }
+      const minY = player.y - getActiveRadius() - 12;
+      const maxY = player.y + getActiveRadius() + 12;
+      state.owOres = state.owOres.filter((o) => o.y >= minY && o.y <= maxY);
+      for (const ore of state.owOres) {
+        if (now - ore.lastMoveAt < OW_ORE_MOVE_MS) continue;
+        ore.lastMoveAt = now;
+        const dist = Math.abs(player.x - ore.x) + Math.abs(player.y - ore.y);
+        if (dist <= 5 && Math.random() < 0.55) fleeOwOre(ore);
+        else if (Math.random() < 0.35) {
+          const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          const [dx, dy] = dirs[Math.floor(Math.random() * dirs.length)];
+          if (owOreCanSitAt(ore.x + dx, ore.y + dy)) {
+            ore.x += dx;
+            ore.y += dy;
+          }
+        }
+      }
+    }
+
+    function drawOwOreBlock(sx, sy, ore, now) {
+      const def = oreDefs[ore.oreType] || oreDefs.gold;
+      const hop = Math.sin(now / 180 + ore.wobble) * 2;
+      const sx2 = sx;
+      const sy2 = sy + hop;
+      ctx.fillStyle = def.color;
+      ctx.fillRect(sx2 + 2, sy2 + 2, TILE - 4, TILE - 4);
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillRect(sx2 + 6, sy2 + 6, 4, 4);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx2 + 7, sy2 + 9, 2, 2);
+      ctx.fillRect(sx2 + 13, sy2 + 9, 2, 2);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(sx2 + 8, sy2 + 10, 1, 1);
+      ctx.fillRect(sx2 + 14, sy2 + 10, 1, 1);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx2 + 9, sy2 + 14, 6, 2);
+      if (ore.owUntil > now) {
+        const bob = Math.sin(now / 60) * 2;
+        ctx.save();
+        ctx.fillStyle = "#ff5050";
+        ctx.font = "bold 12px Verdana";
+        ctx.textAlign = "center";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 4;
+        ctx.fillText("OW!", sx2 + TILE / 2, sy2 - 6 + bob);
+        ctx.shadowBlur = 0;
+        ctx.textAlign = "start";
+        ctx.restore();
+      }
+    }
+
+    function drawOwOres(camX, camY) {
+      if (!state.owOres) return;
+      const now = performance.now();
+      for (const ore of state.owOres) {
+        const sx = (ore.x - camX) * TILE;
+        const sy = (ore.y - camY) * TILE;
+        if (sx < -TILE || sx > canvas.width + TILE || sy < -TILE || sy > canvas.height + TILE) continue;
+        drawOwOreBlock(sx, sy, ore, now);
+      }
+    }
+
+    function ensureRubberDucksUpToDepth(maxDepthM) {
+      if (!state.rubberDucks) state.rubberDucks = [];
+      if (!state.rubberDuckDepths) state.rubberDuckDepths = {};
+      for (let depthM = DUCK_EVERY_M; depthM <= maxDepthM; depthM += DUCK_EVERY_M) {
+        if (state.rubberDuckDepths[depthM]) continue;
+        const y = depthM;
+        if (y >= getWorldYMax() - 5) continue;
+        const side = hash2d(depthM, 99) < 0.5 ? -1 : 1;
+        const x = TUNNEL_X + side * (2 + (depthM % 4));
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = 0; dx <= 1; dx++) {
+            const tx = x + dx * side;
+            const ty = y + dy;
+            if (inBounds(tx, ty) && !isProtectedTunnelColumn(tx) && getTile(tx, ty) !== "bedrock") {
+              setTile(tx, ty, "air");
+            }
+          }
+        }
+        state.rubberDucks.push({ x, y, depthM });
+        state.rubberDuckDepths[depthM] = true;
+      }
+    }
+
+    function updateRubberDucks() {
+      if (player.y <= SURFACE_Y_MAX + DUCK_EVERY_M) return;
+      ensureRubberDucksUpToDepth(getDepthMeters(player.y));
+    }
+
+    function drawRubberDuck(sx, sy, now) {
+      const bob = Math.sin(now / 500) * 1.5;
+      ctx.fillStyle = "#4a9ee8";
+      ctx.fillRect(sx + 2, sy + TILE - 8, TILE - 4, 6);
+      ctx.fillStyle = "rgba(100,180,255,0.45)";
+      ctx.fillRect(sx + 4, sy + TILE - 7, TILE - 8, 3);
+      ctx.fillStyle = "#ffd028";
+      ctx.fillRect(sx + 6, sy + 8 + bob, TILE - 12, TILE - 14);
+      ctx.fillStyle = "#ffb810";
+      ctx.fillRect(sx + 8, sy + 10 + bob, TILE - 16, TILE - 18);
+      ctx.fillStyle = "#ff8800";
+      ctx.fillRect(sx + TILE - 10, sy + 12 + bob, 4, 3);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx + 10, sy + 12 + bob, 2, 2);
+    }
+
+    function drawRubberDucks(camX, camY) {
+      if (!state.rubberDucks) return;
+      const now = performance.now();
+      for (const duck of state.rubberDucks) {
+        const sx = (duck.x - camX) * TILE;
+        const sy = (duck.y - camY) * TILE;
+        if (sx < -TILE || sx > canvas.width + TILE || sy < -TILE || sy > canvas.height + TILE) continue;
+        drawRubberDuck(sx, sy, now);
+      }
+    }
+
+    function isDancing() {
+      return !!(state.danceUntil && performance.now() < state.danceUntil);
+    }
+
+    function ensureSurfaceCrowd() {
+      if (surfaceCrowd.length > 0) return;
+      for (let y = 0; y <= SURFACE_Y_MAX; y++) {
+        for (let x = 2; x < WORLD_W - 2; x++) {
+          if (Math.abs(x - SHOP_X) <= 2) continue;
+          if (Math.abs(x - HOUSE_X) <= HOUSE_HALF_WIDTH + 1) continue;
+          surfaceCrowd.push({
+            x,
+            y,
+            skin: ["#7af0a1", "#f5c77a", "#9ac4ff", "#ff9aa2", "#c9f27a", "#ffd56b"][x % 6],
+            phase: hash2d(x + 17, y + 31) * Math.PI * 2,
+          });
+        }
+      }
+    }
+
+    function tryStartDance() {
+      if (state.dead || state.gamePaused || isInCutscene()) return false;
+      if (!isAtSurface()) {
+        showMessage("Go to the surface to dance!");
+        return false;
+      }
+      state.danceUntil = performance.now() + DANCE_MS;
+      ensureSurfaceCrowd();
+      showMessage("Everybody dance!", "var(--good)", 120);
+      playTone(440, 0.08, "triangle", 0.06);
+      playTone(550, 0.08, "triangle", 0.06, 0.08);
+      playTone(660, 0.1, "triangle", 0.06, 0.16);
+      return true;
+    }
+
+    function drawSurfaceDance(camX, camY) {
+      if (!isDancing() || !isAtSurface()) return;
+      ensureSurfaceCrowd();
+      const t = performance.now() / 1000;
+      for (const person of surfaceCrowd) {
+        if (person.y < camY || person.y > camY + VIEW_H - 1) continue;
+        const sx = (person.x - camX) * TILE;
+        const sy = (person.y - camY) * TILE;
+        const bounce = Math.sin(t * 9 + person.phase) * 5;
+        const armUp = Math.sin(t * 11 + person.phase) > 0.15;
+        drawMiniPerson(sx, sy - bounce, person.skin, armUp);
+      }
+      ctx.fillStyle = "rgba(255, 213, 107, 0.95)";
+      ctx.font = "bold 13px Verdana";
+      ctx.textAlign = "center";
+      ctx.fillText("DANCE PARTY!", canvas.width / 2, 18);
+      ctx.textAlign = "start";
     }
 
     function triggerMonsterAttack(tx, ty) {
@@ -3571,6 +4500,72 @@
       if (state.hp <= 0) killPlayer("A cave monster got you!", "monster");
     }
 
+    function getBranchTargetMonster() {
+      let dx = player.dirX;
+      let dy = player.dirY;
+      if (dx === 0 && dy === 0) dy = 1;
+      const targets = [
+        [player.x + dx, player.y + dy],
+        [player.x + dx, player.y],
+        [player.x, player.y + dy],
+      ];
+      for (const [tx, ty] of targets) {
+        const m = getMonsterAt(tx, ty);
+        if (m) return { m, tx, ty, dx, dy };
+      }
+      return null;
+    }
+
+    function tryBranchAttack() {
+      if (state.dead || state.gamePaused || isInCutscene()) return false;
+      if (!state.hasTreeBranch) {
+        showMessage("You need Puck's stick! Find him near 500m and give him food ($500).");
+        sfx.blocked();
+        return false;
+      }
+      const now = performance.now();
+      if (now - (state.lastBranchAttackAt || 0) < BRANCH_ATTACK_MS) return false;
+
+      const hit = getBranchTargetMonster();
+      if (!hit) {
+        showMessage("No monster there to whack!");
+        sfx.blocked();
+        return false;
+      }
+
+      const { m, tx, ty, dx, dy } = hit;
+      state.lastBranchAttackAt = now;
+      player.dirX = dx;
+      player.dirY = dy;
+      startPlayerAnim("branch");
+      sfx.whack();
+
+      m.hp = (typeof m.hp === "number" ? m.hp : MONSTER_HP) - 1;
+      player.mineFlashX = tx;
+      player.mineFlashY = ty;
+      player.mineFlashStart = now;
+      spawnMineFx(tx, ty, "#6b4423");
+
+      if (m.hp <= 0) {
+        removeMonsterEntity(m, true);
+        state.bagValue += MONSTER_KILL_VALUE;
+        if (state.questStats) state.questStats.blocksMined++;
+        showMessage(`Monster defeated! +$${MONSTER_KILL_VALUE}`, "var(--good)");
+        playTone(120, 0.1, "sawtooth", 0.05);
+      } else {
+        showMessage("Whack! One more hit!", "var(--good)");
+        if (Math.random() < 0.4) {
+          const dmg = 3 + Math.floor(Math.random() * 5);
+          state.hp -= dmg;
+          showMessage(`It fought back! -${dmg} HP`, "var(--bad)");
+          sfx.hurt();
+          if (state.hp <= 0) killPlayer("A cave monster got you!", "monster");
+        }
+      }
+      updateHud();
+      return true;
+    }
+
     function generateTileAt(x, y) {
       if (y <= SURFACE_Y_MAX) return "air";
       if (x === 0 || x === WORLD_W - 1) return "bedrock";
@@ -3580,8 +4575,8 @@
       if (isLostItemAlcove(x, y)) return "air";
       if (state.classicMode) {
         const layerDepth = getLayerDepth(y);
-        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
-        return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
+        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.018) return "lava";
+        return tileForDepth(layerDepth, hash2d(x, y));
       }
       if (isEscapeTunnel(x, y)) return "air";
       if (isInChamberRegion(y)) {
@@ -3594,10 +4589,10 @@
         if (!state.bossDefeated || isBelowWorld(y)) return "bedrock";
         if (Math.abs(x - TUNNEL_X) <= 1) return "air";
         const layerDepth = y - CHAMBER_Y_END + getLayerDepth(CHAMBER_Y_END);
-        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) {
+        if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.018) {
           return "lava";
         }
-        return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
+        return tileForDepth(layerDepth, hash2d(x, y));
       }
       if (isInMazeRegion(y)) {
         buildMazeLayout();
@@ -3613,15 +4608,26 @@
         return "stone";
       }
       const layerDepth = getLayerDepth(y);
-      if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.035) return "lava";
-      return maybeMonsterTile(x, y, tileForDepth(layerDepth, hash2d(x, y)));
+      if (!isProtectedTunnelColumn(x) && layerDepth > 1200 && hash2d(x * 3 + 7, y * 5 + 11) < 0.018) return "lava";
+      return tileForDepth(layerDepth, hash2d(x, y));
     }
 
     function getTile(x, y) {
       if (!inBounds(x, y)) return "bedrock";
       const key = keyFor(x, y);
       if (!activeTiles.has(key)) {
-        const tile = savedEdits.has(key) ? savedEdits.get(key) : generateTileAt(x, y);
+        let tile = savedEdits.has(key) ? savedEdits.get(key) : generateTileAt(x, y);
+        if (tile === "monster") {
+          trySpawnMonsterEntity(x, y, "stone");
+          tile = "stone";
+          savedEdits.set(key, "stone");
+        } else if (!savedEdits.has(key)) {
+          trySpawnMonsterEntity(x, y, tile);
+        }
+        if (tile === "air") {
+          // Allow monsters to show up in already existing deep holes too.
+          trySpawnMonsterEntity(x, y, tile);
+        }
         activeTiles.set(key, tile);
       }
       const tile = activeTiles.get(key);
@@ -3665,82 +4671,115 @@
       return PUCK_BOSS_DAMAGE;
     }
 
-    function applyGameTestLoad(keepPosition) {
-      const savedX = player.x;
-      const savedY = player.y;
-      const savedPick = state.pickaxe;
-
-      state.money = 99999999;
-      state.bagValue = 0;
-      state.pickaxe = savedPick;
-      state.pickDurability = getMaxDurability(savedPick);
-      state.workers = [];
-      state.workersBought = 0;
-      state.heavyWorkersBought = 0;
-      state.pendingWorker = null;
-      state.bossDefeated = false;
-      state.bossFight = false;
-      state.boss = null;
-      state.hasSword = false;
-      state.chamberChestOpened = false;
-      state.chamberBombs = null;
-      state.doorsOpen = false;
-      state.chamberSealed = false;
-      state.celebrationShown = false;
-      state.continueUnlocked = false;
-      state.worldFound = {};
-      state.tuggQuestDone = {
-        mine25: true,
-        find_puck: true,
-        feed_puck: true,
-      };
-      state.questStats = {
-        blocksMined: 0,
-        candlesPlaced: 0,
-        soldAtShop: 0,
-        goldMined: 0,
-        metPuck: true,
-      };
-      state.dead = false;
-      state.gamePaused = false;
-      state.cutscene = null;
-      player.deathAnimStart = null;
-      player.deathReason = null;
-      hideVictoryMenu();
-      hideRespawnPrompt();
-      hidePuckGraveModal();
-
-      if (keepPosition) {
-        player.x = savedX;
-        player.y = savedY;
-      } else {
-        const startPos = getSurfaceSpawn();
-        player.x = startPos.x;
-        player.y = startPos.y;
+    function carveTestShaft(fromY, toY) {
+      for (let y = fromY; y <= toY; y++) {
+        for (let x = TUNNEL_X - 1; x <= TUNNEL_X + 1; x++) {
+          if (inBounds(x, y)) setTile(x, y, "air");
+        }
       }
+    }
+
+    function applyGameTestLoad() {
+      const depth = GAME_TEST_START_DEPTH;
+      player.x = TUNNEL_X;
+      player.y = depth;
       player.dirX = 0;
       player.dirY = 1;
 
-      if (state.homeless) {
-        state.homeless.state = "following";
-        state.homeless.hp = PUCK_MAX_HP;
-        state.homeless.x = player.x - 1;
-        state.homeless.y = player.y;
-        state.homeless.lastMoveAt = performance.now();
-        state.homeless.lastMineAt = performance.now();
-        state.homeless.lastBossAttackAt = 0;
-        state.homeless.lastHealPleaseAt = 0;
-        state.homeless.deathAnimStart = 0;
+      state.money = 999999;
+      state.bagValue = 50000;
+      state.pickaxe = PICK_AUTO;
+      state.pickDurability = getMaxDurability(PICK_AUTO);
+      state.waterBuckets = 99;
+      state.candles = 99;
+      state.hasTreeBranch = false;
+      state.hasSword = true;
+      state.chamberChestOpened = true;
+      state.workersBought = 5;
+      state.heavyWorkersBought = 2;
+      state.workers = [
+        {
+          x: TUNNEL_X - 4,
+          y: depth - 30,
+          type: "normal",
+          width: 1,
+          height: 1,
+          hasWaterBucket: true,
+          infiniteWaterBucket: true,
+          dead: false,
+        },
+        {
+          x: TUNNEL_X + 4,
+          y: depth - 25,
+          type: "normal",
+          width: 1,
+          height: 1,
+          hasWaterBucket: true,
+          infiniteWaterBucket: true,
+          dead: false,
+        },
+        {
+          x: TUNNEL_X - 6,
+          y: depth - 40,
+          type: "heavy",
+          width: 2,
+          height: 2,
+          hasWaterBucket: true,
+          infiniteWaterBucket: true,
+          dead: false,
+        },
+      ];
+      state.hp = 100;
+      state.dead = false;
+
+      // Puck only — still hungry in his hole (no stick, not following).
+      const h = state.homeless;
+      h.state = "waiting";
+      h.x = TUNNEL_X - 1;
+      h.y = HOMELESS_HOLE_Y_MAX;
+      h.hp = PUCK_MAX_HP;
+      h.lastMoveAt = 0;
+      h.lastMineAt = 0;
+      h.lastBossAttackAt = 0;
+      h.lastHealPleaseAt = 0;
+      h.sad = false;
+      h.promptShown = false;
+      state.puckBackstorySeen = false;
+      state.puckHoleSealed = false;
+      state.puckBreadVisible = false;
+      state.puckStory = null;
+
+      for (const item of LOST_ITEMS) state.worldFound[item.id] = true;
+      state.tuggQuestDone = {};
+      for (const task of MRS_TUGG_TASKS) {
+        if (task.id === "find_puck" || task.id === "feed_puck") continue;
+        state.tuggQuestDone[task.id] = true;
       }
+      state.tuggQuestDone.mine25 = true;
+      state.mrsTuggMet = true;
+
+      state.bossDefeated = true;
+      state.continueUnlocked = true;
+      state.doorsOpen = true;
+      state.respawnMode = true;
+      state.respawnPromptShown = true;
+      state.celebrationShown = true;
+      state.bossFight = false;
+      state.boss = null;
+
+      state.questStats = {
+        blocksMined: 9999,
+        candlesPlaced: 99,
+        soldAtShop: 99999,
+        goldMined: 999,
+        metPuck: false,
+      };
 
       ensureLoadedAroundPlayer();
-      showMessage(
-        "Cheat: max money, unbreakable pick (this level), Puck with you! Press T here to reload.",
-        "var(--good)",
-        280
-      );
-      updateHud();
-      updateMusic();
+      refreshUnlockedQuestWorld();
+      carveTestShaft(GROUND_Y, HOMELESS_HOLE_Y_MAX + 1);
+
+      showMessage(`Test load: ${depth}m — max gear, but Puck is still in the hole below!`, "var(--good)", 300);
     }
 
     function resetGame() {
@@ -3789,7 +4828,13 @@
         respawnPromptShown: false,
         gamePaused: false,
         classicMode: false,
+        puckBackstorySeen: false,
+        puckHoleSealed: false,
+        puckBreadVisible: false,
+        puckStory: null,
         candles: 0,
+        hasTreeBranch: false,
+        lastBranchAttackAt: 0,
         worldFound: {},
         tuggQuestDone: {},
         questStats: { blocksMined: 0, candlesPlaced: 0, soldAtShop: 0, goldMined: 0, metPuck: false },
@@ -3806,23 +4851,33 @@
           deathX: 0,
           deathY: 0,
           deathAnimStart: 0,
+          griefAnimStart: 0,
+          sad: false,
           promptShown: false,
         },
         chamberBombs: null,
         cutscene: null,
         cutsceneStart: 0,
-        continueUnlocked: false
+        continueUnlocked: false,
+        monsters: [],
+        lastMonsterSpawnAt: 0,
+        owOres: [],
+        rubberDucks: [],
+        rubberDuckDepths: {},
+        danceUntil: 0,
+        lastOwOreSpawnAt: 0,
       };
       state.classicMode = !!prevClassicMode;
+      surfaceCrowd = [];
       hideVictoryMenu();
       player.deathAnimStart = null;
       lastLavaSpreadAt = performance.now();
       lastWorkerActionAt = performance.now();
       hideRespawnPrompt();
-      ensureLoadedAroundPlayer();
       if (GAME_TEST_MODE) {
-        applyGameTestLoad(false);
+        applyGameTestLoad();
       } else {
+        ensureLoadedAroundPlayer();
         showMessage("You start at the top! Dig down to find the maze and the chamber.", "var(--good)");
       }
       updateHud();
@@ -4081,6 +5136,53 @@
       return null;
     }
 
+    function getPuckBubbleText() {
+      const h = state.homeless;
+      if (!h || h.state !== "waiting" || state.cutscene === "puckStory") return null;
+      const near = nearWaitingPuck();
+      if (state.puckBackstorySeen || h.sad) {
+        if (near) return "Press E!";
+        return "...";
+      }
+      if (near) return "Psst! Press E!";
+      return "?";
+    }
+
+    function drawSpeechBubble(sx, sy, msg, bob) {
+      if (!msg) return;
+      ctx.save();
+      ctx.font = "bold 11px Verdana";
+      const padX = 6;
+      const textW = ctx.measureText(msg).width;
+      const bubbleW = textW + padX * 2;
+      const bubbleH = 16;
+      const bx = sx + TILE / 2 - bubbleW / 2;
+      const by = sy - TILE - 8 - (bob || 0);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.strokeStyle = "#5a3018";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bubbleW, bubbleH, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx + TILE / 2 - 3, by + bubbleH);
+      ctx.lineTo(sx + TILE / 2 + 3, by + bubbleH);
+      ctx.lineTo(sx + TILE / 2, by + bubbleH + 5);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.fill();
+      ctx.strokeStyle = "#5a3018";
+      ctx.stroke();
+      ctx.fillStyle = "#5a3018";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(msg, sx + TILE / 2, by + bubbleH / 2 + 1);
+      ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
+      ctx.restore();
+    }
+
     function checkPlayerLavaDeath() {
       if (state.dead) return;
       if (getTile(player.x, player.y) === "lava" || getTile(player.x, player.y - 1) === "lava") {
@@ -4178,11 +5280,7 @@
       if (h.state === "waiting") {
         const dx = Math.abs(player.x - h.x);
         const dy = Math.abs(player.y - h.y);
-        if (dx <= 1 && dy <= 1 && state.questStats) state.questStats.metPuck = true;
         if (dx > 3 || dy > 3) h.promptShown = false;
-        if (dx <= 1 && dy <= 1 && !h.promptShown && !state.gamePaused && !state.dead) {
-          showHomelessPrompt();
-        }
         return;
       }
 
@@ -4225,16 +5323,20 @@
               const tx = h.x + mdx;
               const ty = h.y + mdy;
               if (!inBounds(tx, ty)) continue;
+              const lurking = getMonsterAt(tx, ty);
+              if (lurking) {
+                removeMonsterEntity(lurking, true);
+                triggerMonsterAttack(tx, ty);
+                spawnMineFx(tx, ty, "#5a2848");
+                break;
+              }
               const tile = getTile(tx, ty);
               if (tile === "air" || tile === "lava" || tile === "bedrock" || tile === "candle") continue;
               const def = oreDefs[tile];
               if (!def) continue;
-              const wasMonster = tile === "monster";
               setTile(tx, ty, "air");
               spawnMineFx(tx, ty, def.color);
-              if (wasMonster) {
-                triggerMonsterAttack(tx, ty);
-              } else if (def.value > 0) {
+              if (def.value > 0) {
                 state.money += def.value;
                 showMessage(`Puck found ${tile}! +$${def.value}`, "var(--good)", 60);
                 updateHud();
@@ -4244,6 +5346,193 @@
           }
         }
       }
+    }
+
+    function nearWaitingPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "waiting") return false;
+      return Math.abs(player.x - h.x) <= 1 && Math.abs(player.y - h.y) <= 1;
+    }
+
+    function startPuckBackstoryCutscene() {
+      const h = state.homeless;
+      if (!h || state.puckBackstorySeen || state.cutscene) return;
+      hideHomelessPrompt();
+      state.cutscene = "puckStory";
+      state.cutsceneStart = performance.now();
+      state.gamePaused = true;
+      state.puckStory = {
+        mineStep: 0,
+        monsterX: TUNNEL_X + 1,
+        monsterY: HOMELESS_HOLE_Y_MAX + 2,
+        monsterVisible: false,
+        breadDropped: false,
+        sealStep: 0,
+        attackSfxAt: 0,
+      };
+      h.sad = true;
+      h.x = TUNNEL_X;
+      h.y = HOMELESS_HOLE_Y_MIN;
+      document.getElementById("cutsceneOverlay").style.display = "block";
+      document.getElementById("cutsceneOverlay").style.opacity = "0";
+      playTone(180, 0.2, "sine", 0.05);
+    }
+
+    function finishPuckBackstory() {
+      const h = state.homeless;
+      state.puckBackstorySeen = true;
+      state.puckBreadVisible = true;
+      state.puckStory = null;
+      state.cutscene = null;
+      state.gamePaused = false;
+      document.getElementById("cutsceneOverlay").style.display = "none";
+      document.getElementById("cutsceneOverlay").style.opacity = "0";
+      if (h) {
+        h.sad = true;
+        h.x = TUNNEL_X - 1;
+        h.y = HOMELESS_HOLE_Y_MAX;
+      }
+      sealPuckHoleEntrance();
+      showMessage("Puck is trapped! His bread is on the ground.", "var(--warn)", 220);
+      showHomelessPrompt();
+    }
+
+    function getPuckStoryElapsed(now) {
+      return now - (state.cutsceneStart || now);
+    }
+
+    function getPuckStoryPhase(now) {
+      const e = getPuckStoryElapsed(now);
+      let t = PUCK_STORY_INTRO_MS;
+      if (e < t) return "intro";
+      t += PUCK_STORY_MINE_MS;
+      if (e < t) return "mine";
+      t += PUCK_STORY_ATTACK_MS;
+      if (e < t) return "attack";
+      t += PUCK_STORY_BREAD_MS;
+      if (e < t) return "bread";
+      t += PUCK_STORY_SEAL_MS;
+      if (e < t) return "seal";
+      t += PUCK_STORY_OUTRO_MS;
+      if (e < t) return "outro";
+      return "done";
+    }
+
+    function getPuckStoryCaption(now) {
+      const phase = getPuckStoryPhase(now);
+      if (phase === "intro") return "Puck remembers when he dug down here...";
+      if (phase === "mine") return "He kept mining deeper and deeper...";
+      if (phase === "attack") return "A cave monster leaped out!";
+      if (phase === "bread") return "Puck dropped his only loaf of bread!";
+      if (phase === "seal") return "Rocks sealed the only open wall!";
+      if (phase === "outro") return "And he has been stuck ever since...";
+      return "";
+    }
+
+    function updatePuckBackstoryCutscene(now) {
+      if (state.cutscene !== "puckStory" || !state.puckStory) return;
+      const h = state.homeless;
+      const ps = state.puckStory;
+      const phase = getPuckStoryPhase(now);
+      const elapsed = getPuckStoryElapsed(now);
+      const overlay = document.getElementById("cutsceneOverlay");
+      if (phase === "intro") {
+        overlay.style.opacity = String(Math.min(0.55, elapsed / 800 * 0.55));
+      } else if (phase === "outro") {
+        const outStart =
+          PUCK_STORY_INTRO_MS +
+          PUCK_STORY_MINE_MS +
+          PUCK_STORY_ATTACK_MS +
+          PUCK_STORY_BREAD_MS +
+          PUCK_STORY_SEAL_MS;
+        overlay.style.opacity = String(Math.min(0.65, (elapsed - outStart) / 700 * 0.65));
+      } else {
+        overlay.style.opacity = "0.35";
+      }
+
+      if (phase === "done") {
+        finishPuckBackstory();
+        return;
+      }
+
+      if (!h) return;
+
+      if (phase === "mine") {
+        const mineStart = PUCK_STORY_INTRO_MS;
+        const mineT = (elapsed - mineStart) / PUCK_STORY_MINE_MS;
+        h.y = HOMELESS_HOLE_Y_MIN + Math.floor(mineT * (HOMELESS_HOLE_Y_MAX - HOMELESS_HOLE_Y_MIN + 1));
+        h.x = TUNNEL_X;
+        const step = Math.floor(mineT * 5);
+        if (step > ps.mineStep) {
+          ps.mineStep = step;
+          const ty = HOMELESS_HOLE_Y_MAX + step;
+          if (inBounds(h.x, ty) && getTile(h.x, ty) !== "air") {
+            setTile(h.x, ty, "air");
+            spawnMineFx(h.x, ty, "#6d7482");
+            sfx.mine();
+          }
+          if (inBounds(h.x + 1, ty) && getTile(h.x + 1, ty) !== "air") {
+            setTile(h.x + 1, ty, "air");
+          }
+        }
+      }
+
+      if (phase === "attack") {
+        ps.monsterVisible = true;
+        ps.monsterY = HOMELESS_HOLE_Y_MAX + ps.mineStep;
+        h.x = TUNNEL_X - 1;
+        if (Math.floor((elapsed - PUCK_STORY_INTRO_MS - PUCK_STORY_MINE_MS) / 200) % 2 === 0) {
+          spawnMineFx(h.x, h.y, "#c03070");
+        }
+        if (!ps.attackSfxAt || now - ps.attackSfxAt > 450) {
+          ps.attackSfxAt = now;
+          playTone(140, 0.1, "sawtooth", 0.05);
+        }
+      }
+
+      if (phase === "bread") {
+        ps.monsterVisible = false;
+        ps.breadDropped = true;
+        h.sad = true;
+        h.x = TUNNEL_X - 1;
+        h.y = HOMELESS_HOLE_Y_MAX;
+      }
+
+      if (phase === "seal") {
+        const sealStart =
+          PUCK_STORY_INTRO_MS +
+          PUCK_STORY_MINE_MS +
+          PUCK_STORY_ATTACK_MS +
+          PUCK_STORY_BREAD_MS;
+        const sealT = (elapsed - sealStart) / PUCK_STORY_SEAL_MS;
+        const cells = getPuckHoleExitCells();
+        const target = Math.min(cells.length, Math.ceil(sealT * (cells.length + 1)));
+        if (target > ps.sealStep) {
+          for (let i = ps.sealStep; i < target; i++) {
+            const [x, y] = cells[i];
+            if (inBounds(x, y)) {
+              setTile(x, y, "stone");
+              spawnMineFx(x, y, "#6d7482");
+            }
+          }
+          ps.sealStep = target;
+          playTone(190, 0.06, "square", 0.04);
+        }
+      }
+    }
+
+    function tryTalkToPuck() {
+      const h = state.homeless;
+      if (!h || h.state !== "waiting" || state.dead || state.gamePaused || isInCutscene()) return false;
+      if (!nearWaitingPuck()) return false;
+      if (state.questStats) state.questStats.metPuck = true;
+      h.promptShown = true;
+      if (!state.puckBackstorySeen) {
+        startPuckBackstoryCutscene();
+        return true;
+      }
+      showHomelessPrompt();
+      return true;
     }
 
     function showHomelessPrompt() {
@@ -4307,8 +5596,10 @@
             ? "Arrows"
             : "WASD/Arrows";
       const mineHint = pmSettings.mineKey === "enter" ? "Enter" : "Space";
-      const base = `Move: ${moveHint} | ${mineHint}/Enter or click game: mine`;
-      if (isPuckDead() && !isPuckBuried() && nearPuckBurialSite()) {
+      const base = `Move: ${moveHint} | ${mineHint}/Enter or click game: mine | Q: whack monsters`;
+      if ((isPuckDead() || isPuckBuried()) && nearPuckBurialSite()) {
+        el.textContent = `${base} | E: bring Puck back`;
+      } else if (isPuckDead() && !isPuckBuried() && nearPuckBurialSite()) {
         el.textContent = `${base} | E: bury Puck on the hill`;
       } else if (nearPuckGrave()) {
         el.textContent = `${base} | E: read Puck's gravestone`;
@@ -4319,8 +5610,12 @@
         el.textContent = `${base} | Beat Miner King, use bombs to stun him!${puckFight}`;
       } else if (state.bossDefeated && !state.continueUnlocked) {
         el.textContent = `${base} | Mine the chamber floor (down) to go deeper!`;
+      } else if (nearHungryPuck() && !state.hasTreeBranch) {
+        el.textContent = `${base} | Feed Puck ($500) for his fighting stick`;
       } else if (nearMrsTugg()) {
         el.textContent = `${base} | E: talk to Mrs. Tugg (jobs)`;
+      } else if (isAtSurface()) {
+        el.textContent = `${base} | B: dance party!`;
       } else {
         el.textContent = base;
       }
@@ -4365,6 +5660,8 @@
       document.getElementById("workerCount").textContent = state.workers.filter((w) => !w.dead).length;
       document.getElementById("bucketCount").textContent = state.waterBuckets;
       document.getElementById("candleCount").textContent = state.candles;
+      const branchEl = document.getElementById("branchStatus");
+      if (branchEl) branchEl.textContent = state.hasTreeBranch ? "yes" : "no";
       const shopHint = document.getElementById("shopHint");
       if (state.continueUnlocked) {
         shopHint.textContent = "Shop on surface OR in the chamber (center, near top).";
@@ -4472,6 +5769,30 @@
       ctx.fillRect(sx + 2, sy + size - 3, size - 4, 2);
     }
 
+    function getBranchAngle(dx, dy) {
+      if (Math.abs(dy) > Math.abs(dx)) return dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+      return dx >= 0 ? 0 : Math.PI;
+    }
+
+    function drawBranchIcon(cx, cy, size, angle) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      const stickX = -Math.floor(size * 0.2);
+      const stickW = size;
+      ctx.fillStyle = "#5a3820";
+      ctx.fillRect(stickX, -2, stickW, 4);
+      ctx.fillStyle = "#6b4423";
+      ctx.fillRect(stickX + 1, -1, stickW - 2, 2);
+      const tip = stickX + stickW;
+      ctx.fillStyle = "#4a6a28";
+      ctx.fillRect(tip - 7, -6, 8, 4);
+      ctx.fillRect(tip - 5, -8, 6, 3);
+      ctx.fillStyle = "#5a8a38";
+      ctx.fillRect(tip - 6, -5, 5, 3);
+      ctx.restore();
+    }
+
     function drawPickaxeSwing(cx, cy, dirX, dirY, t) {
       const facing = dirX < 0 ? -1 : 1;
       const handX = cx + facing * 9;
@@ -4575,6 +5896,155 @@
       ctx.fillRect(3, 8, 4, 1);
       ctx.fillStyle = "#5a3a20";
       ctx.fillRect(-7, -29, 14, 2);
+    }
+
+    function drawBreadLoaf(sx, sy) {
+      ctx.fillStyle = "#a06828";
+      ctx.fillRect(sx + 3, sy + 16, TILE - 6, 6);
+      ctx.fillStyle = "#c4883a";
+      ctx.fillRect(sx + 4, sy + 14, TILE - 8, 8);
+      ctx.fillStyle = "#e8b860";
+      ctx.fillRect(sx + 6, sy + 12, TILE - 12, 6);
+      ctx.fillStyle = "#8a5020";
+      ctx.fillRect(sx + 8, sy + 15, 3, 2);
+      ctx.fillRect(sx + 14, sy + 17, 2, 2);
+    }
+
+    function drawPuckSadFaceAt(hx, hy, griefStart) {
+      ctx.save();
+      ctx.translate(hx + TILE / 2, hy + TILE / 2);
+      ctx.fillStyle = "#ffd0a0";
+      ctx.fillRect(-7, -26, 14, 14);
+      drawPuckGriefFace(griefStart || state.cutsceneStart || performance.now());
+      ctx.restore();
+    }
+
+    function drawPuckStoryOverlay(camX, camY, now) {
+      if (state.cutscene !== "puckStory" || !state.puckStory) return;
+      const ps = state.puckStory;
+      const phase = getPuckStoryPhase(now);
+
+      if (ps.monsterVisible) {
+        const msx = (ps.monsterX - camX) * TILE;
+        const msy = (ps.monsterY - camY) * TILE;
+        if (msx >= -TILE && msx <= canvas.width && msy >= -TILE && msy <= canvas.height) {
+          drawMonsterBlock(msx, msy, ps.monsterX, ps.monsterY, null);
+        }
+      }
+
+      if (ps.breadDropped || phase === "bread" || phase === "seal" || phase === "outro") {
+        const bsx = (PUCK_BREAD_X - camX) * TILE;
+        const bsy = (PUCK_BREAD_Y - camY) * TILE;
+        if (bsx >= -TILE && bsx <= canvas.width && bsy >= -TILE && bsy <= canvas.height) {
+          drawBreadLoaf(bsx, bsy);
+        }
+      }
+
+      const caption = getPuckStoryCaption(now);
+      const h = state.homeless;
+      if (caption && h) {
+        const hx = (h.x - camX) * TILE;
+        const hy = (h.y - camY) * TILE;
+        const bob = Math.sin(now / 280) * 2;
+        drawSpeechBubble(hx, hy, caption, bob);
+      }
+    }
+
+    function drawPuckBreadOnGround(camX, camY) {
+      if (!state.puckBreadVisible || state.cutscene === "puckStory") return;
+      const bsx = (PUCK_BREAD_X - camX) * TILE;
+      const bsy = (PUCK_BREAD_Y - camY) * TILE;
+      if (bsx >= -TILE && bsx <= canvas.width && bsy >= -TILE && bsy <= canvas.height) {
+        drawBreadLoaf(bsx, bsy);
+      }
+    }
+
+    function getPuckGriefProgress(h) {
+      if (!h || !h.griefAnimStart) return 0;
+      const raw = Math.min(1, (performance.now() - h.griefAnimStart) / PUCK_GRIEF_KNEEL_MS);
+      return 1 - (1 - raw) * (1 - raw);
+    }
+
+    function drawPuckGriefFace(griefStart) {
+      const skin = "#d4a880";
+      const hair = "#3a2a18";
+
+      ctx.fillStyle = skin;
+      ctx.fillRect(-7, -26, 14, 14);
+      ctx.fillStyle = hair;
+      ctx.fillRect(-7, -30, 14, 6);
+
+      // Angry / distressed brows (like the reference)
+      ctx.fillStyle = "#1a1008";
+      ctx.fillRect(-6, -23, 2, 1);
+      ctx.fillRect(-4, -22, 2, 1);
+      ctx.fillRect(4, -22, 2, 1);
+      ctx.fillRect(6, -23, 2, 1);
+
+      // Wide open wailing mouth
+      ctx.fillStyle = "#1a1010";
+      ctx.fillRect(-3, -15, 7, 4);
+      ctx.fillStyle = "#3a2020";
+      ctx.fillRect(-2, -14, 5, 2);
+
+      // One pixel drool strand from mouth corner — grows slowly, then stays
+      const elapsed = griefStart ? performance.now() - griefStart : 0;
+      const drops = Math.min(4, 1 + Math.floor(elapsed / 900));
+      ctx.fillStyle = "#d4e8e4";
+      for (let i = 0; i < drops; i++) {
+        ctx.fillRect(4, -11 + i * 2, 1, 2);
+      }
+    }
+
+    function drawPuckKneelingCrying(kneel, griefStart) {
+      const shirt = "#7a6850";
+      const pants = "#4a3a28";
+      const skin = "#d4a880";
+      const sink = kneel * 10;
+
+      ctx.translate(0, sink);
+
+      // Kneeling legs — simple pixel L-shapes
+      ctx.fillStyle = pants;
+      ctx.fillRect(-8, 6, 8, 8);
+      ctx.fillRect(-10, 12, 10, 3);
+      ctx.fillRect(1, 7, 8, 7);
+      ctx.fillRect(0, 12, 10, 3);
+
+      // Torso + arms (same proportions as drawPerson)
+      ctx.fillStyle = shirt;
+      ctx.fillRect(-8, -12, 16, 12);
+      ctx.fillStyle = skin;
+      ctx.fillRect(-10, -10, 2, 7);
+      ctx.fillRect(8, -10, 2, 7);
+      ctx.fillRect(-10, -3, 2, 3);
+      ctx.fillRect(8, -3, 2, 3);
+
+      // Ragged shirt patches
+      ctx.fillStyle = "#2a2014";
+      ctx.fillRect(-6, -8, 3, 1);
+      ctx.fillRect(4, -5, 2, 1);
+
+      drawPuckGriefFace(griefStart);
+    }
+
+    function drawPuckGrievingAt(hx, hy, h) {
+      const griefT = getPuckGriefProgress(h);
+      const griefStart = h.griefAnimStart || performance.now();
+      ctx.save();
+      ctx.translate(hx + TILE / 2, hy + TILE / 2 + 2);
+      drawPuckKneelingCrying(griefT, griefStart);
+      ctx.restore();
+
+      if (griefT > 0.9) {
+        ctx.save();
+        ctx.fillStyle = "#cc8888";
+        ctx.font = "10px Verdana";
+        ctx.textAlign = "center";
+        ctx.fillText("nooo...", hx + TILE / 2, hy - 8);
+        ctx.textAlign = "start";
+        ctx.restore();
+      }
     }
 
     function drawPuckCorpseAt(camX, camY, h) {
@@ -4709,18 +6179,21 @@
       const { kind, t } = getPlayerAnimProgress();
       const mineT = kind === "mine" ? t : 0;
       const swingT = kind === "swing" ? t : 0;
+      const branchT = kind === "branch" ? t : 0;
       const buyT = kind === "buy" ? t : 0;
       const dx = player.dirX;
       const dy = player.dirY;
       const cx = px + TILE / 2;
       const cy = py + TILE / 2;
       const bump = Math.sin(mineT * Math.PI) * 5;
-      const leanX = dx * (2 + bump) + dx * swingT * 4;
-      const leanY = dy * (2 + bump) - Math.sin(buyT * Math.PI) * 6;
+      const danceT = isDancing() && isAtSurface() ? performance.now() / 1000 : 0;
+      const danceWiggle = danceT ? Math.sin(danceT * 12) * 4 : 0;
+      const leanX = dx * (2 + bump) + dx * (swingT + branchT) * 4 + danceWiggle;
+      const leanY = dy * (2 + bump) - Math.sin(buyT * Math.PI) * 6 - (danceT ? Math.abs(Math.sin(danceT * 10)) * 3 : 0);
 
       ctx.save();
       ctx.translate(cx + leanX, cy + leanY);
-      if (swingT > 0) ctx.rotate((dx || 1) * swingT * 0.4);
+      if (swingT > 0 || branchT > 0) ctx.rotate((dx || 1) * (swingT + branchT) * 0.4);
 
       const damage = Math.max(0, 1 - (state.hp || 0) / 100);
       const wobble = damage > 0.6 ? Math.sin(performance.now() / 90) * damage * 1.5 : 0;
@@ -4732,7 +6205,7 @@
         pants: "#15294a",
         pantsDark: "#0a1426",
         hat: "miner",
-        armUp: buyT > 0 ? Math.sin(buyT * Math.PI) : 0,
+        armUp: danceT ? (Math.sin(danceT * 11) > 0 ? 1 : 0.2) : buyT > 0 ? Math.sin(buyT * Math.PI) : 0,
       });
 
       if (damage > 0) drawPlayerDamage(damage);
@@ -4747,6 +6220,20 @@
           cx + leanX + Math.cos(sa) * 12 - 7,
           cy + leanY + Math.sin(sa) * 12 - 7,
           14
+        );
+      } else if (branchT > 0) {
+        drawSwingSlash(cx + leanX, cy + leanY, dx, dy, branchT);
+        const holdA = dx >= 0 ? 0 : Math.PI;
+        const strikeA = getBranchAngle(dx, dy);
+        const ba = holdA + (strikeA - holdA) * branchT;
+        drawBranchIcon(cx + leanX, cy + leanY, 16, ba);
+      } else if (state.hasTreeBranch && !state.hasSword) {
+        const facing = dx >= 0 ? 1 : -1;
+        drawBranchIcon(
+          px + TILE / 2 + facing * 6,
+          py + TILE / 2 - 6,
+          14,
+          facing > 0 ? 0 : Math.PI
         );
       } else if (state.hasSword && !state.bossDefeated) {
         drawSwordIcon(px + (dx >= 0 ? TILE - 6 : 2), py + 8, 14);
@@ -5134,10 +6621,11 @@
       }
     }
 
-    function drawMonsterBlock(sx, sy, wx, wy) {
+    function drawMonsterBlock(sx, sy, wx, wy, m) {
       const t = performance.now() / 1000;
       const blink = Math.sin(t * 6 + wx * 0.7 + wy * 0.5) > 0.2;
-      ctx.fillStyle = "#4a3848";
+      const hurt = m && typeof m.hp === "number" && m.hp < MONSTER_HP;
+      ctx.fillStyle = hurt ? "#5a3040" : "#4a3848";
       ctx.fillRect(sx, sy, TILE, TILE);
       ctx.fillStyle = "#3a2838";
       ctx.fillRect(sx + 2, sy + 2, TILE - 4, TILE - 4);
@@ -5153,16 +6641,16 @@
         const fangX = sx + 7 + i * 3;
         ctx.fillRect(fangX, sy + 18 + (i % 2), 2, 3);
       }
+      if (hurt) {
+        ctx.fillStyle = "rgba(255, 80, 40, 0.55)";
+        ctx.fillRect(sx + 2, sy + 2, TILE - 4, 4);
+      }
     }
 
     function drawTile(x, y, tile, sx, sy) {
       if (tile === "air") return;
       if (tile === "candle") {
         drawCandleSprite(sx, sy);
-        return;
-      }
-      if (tile === "monster") {
-        drawMonsterBlock(sx, sy, x, y);
         return;
       }
       const def = oreDefs[tile];
@@ -5253,38 +6741,7 @@
       ctx.restore();
 
       const msg = getMrsTuggBubbleText();
-      if (!msg) return;
-      ctx.save();
-      ctx.font = "bold 11px Verdana";
-      const padX = 6, padY = 4;
-      const textW = ctx.measureText(msg).width;
-      const bubbleW = textW + padX * 2;
-      const bubbleH = 16;
-      const bx = sx + TILE / 2 - bubbleW / 2;
-      const by = sy - TILE - 8 - bob;
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      ctx.strokeStyle = "#5a3018";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(bx, by, bubbleW, bubbleH, 5);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(sx + TILE / 2 - 3, by + bubbleH);
-      ctx.lineTo(sx + TILE / 2 + 3, by + bubbleH);
-      ctx.lineTo(sx + TILE / 2, by + bubbleH + 5);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      ctx.fill();
-      ctx.strokeStyle = "#5a3018";
-      ctx.stroke();
-      ctx.fillStyle = "#5a3018";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(msg, sx + TILE / 2, by + bubbleH / 2 + 1);
-      ctx.textAlign = "start";
-      ctx.textBaseline = "alphabetic";
-      ctx.restore();
+      drawSpeechBubble(sx, sy, msg, bob);
     }
 
     function drawDog(sx, sy) {
@@ -5369,8 +6826,12 @@
       resizeGameCanvas();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const camX = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - Math.floor(VIEW_W / 2)));
-      const camY = Math.max(0, player.y - Math.floor(VIEW_H / 2));
+      if (state.cutscene === "hospital") {
+        drawHospitalPOVCutscene(performance.now());
+        return;
+      }
+
+      const { x: camX, y: camY } = getDrawCamera();
 
       for (let vy = 0; vy < VIEW_H; vy++) {
         for (let vx = 0; vx < VIEW_W; vx++) {
@@ -5485,6 +6946,9 @@
       }
 
       drawBoss(camX, camY);
+      drawMonsters(camX, camY);
+      drawOwOres(camX, camY);
+      drawRubberDucks(camX, camY);
 
       // Draw player.
       const px = (player.x - camX) * TILE;
@@ -5571,7 +7035,8 @@
         if (wx < -workerW || wy < -workerH || wx > canvas.width || wy > canvas.height) continue;
         if (worker.type === "heavy") {
           ctx.save();
-          ctx.translate(wx + workerW / 2, wy + workerH - TILE / 2 - 2);
+          const danceBounce = isDancing() && worker.y === PLAYER_MIN_Y ? Math.sin(performance.now() / 120) * 4 : 0;
+          ctx.translate(wx + workerW / 2, wy + workerH - TILE / 2 - 2 - danceBounce);
           ctx.scale(1.15, 1.15);
           drawPerson({
             shirt: "#d84c4c",
@@ -5584,7 +7049,8 @@
           ctx.restore();
         } else {
           ctx.save();
-          ctx.translate(wx + TILE / 2, wy + TILE / 2);
+          const danceBounce = isDancing() && worker.y === PLAYER_MIN_Y ? Math.sin(performance.now() / 120 + worker.x) * 4 : 0;
+          ctx.translate(wx + TILE / 2, wy + TILE / 2 - danceBounce);
           drawPerson({
             shirt: "#5ea6ff",
             shirtDark: "#2a5a99",
@@ -5653,6 +7119,8 @@
           const hx = (h.x - camX) * TILE;
           const hy = (h.y - camY) * TILE;
           if (hx >= -TILE * 2 && hx <= canvas.width + TILE && hy >= -TILE * 2 && hy <= canvas.height + TILE) {
+            const showSad =
+              h.sad || state.puckBackstorySeen || state.cutscene === "puckStory";
             ctx.save();
             ctx.translate(hx + TILE / 2, hy + TILE / 2);
             drawPerson({
@@ -5666,17 +7134,11 @@
             });
             drawHomelessRags();
             ctx.restore();
+            if (showSad) {
+              drawPuckSadFaceAt(hx, hy, state.cutsceneStart);
+            }
             const bob = Math.sin(performance.now() / 280) * 2;
-            ctx.save();
-            ctx.fillStyle = "#ffd56b";
-            ctx.font = "bold 18px Verdana";
-            ctx.textAlign = "center";
-            ctx.shadowColor = "rgba(0,0,0,0.8)";
-            ctx.shadowBlur = 6;
-            ctx.fillText("?", hx + TILE / 2, hy - 14 + bob);
-            ctx.shadowBlur = 0;
-            ctx.textAlign = "start";
-            ctx.restore();
+            drawSpeechBubble(hx, hy, getPuckBubbleText(), bob);
           }
         }
       }
@@ -5736,6 +7198,9 @@
       }
 
       drawCelebration(camX, camY);
+      drawSurfaceDance(camX, camY);
+      drawPuckBreadOnGround(camX, camY);
+      drawPuckStoryOverlay(camX, camY, performance.now());
       if (pmSettings.lavaGlow) drawLavaGlow(camX, camY);
       drawDarkness(camX, camY);
     }
@@ -5862,12 +7327,20 @@
 
     function tick() {
       const now = performance.now();
-      updateVictoryCutscene(now);
+      updateDeathTransition(now);
+      updateCutscenes(now);
       if (messageTimer > 0) {
         messageTimer--;
         if (messageTimer === 0) document.getElementById("msg").textContent = "";
       }
       if (isInCutscene()) {
+        updateFxParticles();
+        updateMusic();
+        draw();
+        requestAnimationFrame(tick);
+        return;
+      }
+      if (state.dead) {
         updateFxParticles();
         updateMusic();
         draw();
@@ -5880,6 +7353,9 @@
       checkPuckLavaDeath();
       updateChamberBombs(now);
       updateBossFight();
+      updateMonsters(now);
+      updateOwOres(now);
+      updateRubberDucks();
       updateWorkers();
       updateHomeless(now);
       checkStuckGameOver();
@@ -5959,6 +7435,12 @@
 
         // Mine one row below the worker (2 blocks for mega worker).
         for (const [tx, ty] of targets) {
+          const lurking = getMonsterAt(tx, ty);
+          if (lurking) {
+            removeMonsterEntity(lurking, true);
+            triggerMonsterAttack(tx, ty);
+            continue;
+          }
           const tile = getTile(tx, ty);
           if (tile === "air" || tile === "bedrock") continue;
           if (isMazeProtectedBlock(tx, ty, tile)) continue;
@@ -6030,12 +7512,6 @@
           k === "arrowdown" ||
           k === "s" ||
           isSpaceKey;
-        if (k === "t" && GAME_TEST_MODE) {
-          e.preventDefault();
-          applyGameTestLoad(true);
-          draw();
-          return;
-        }
         if (e.key === "Escape") {
           closePmSettings();
           return;
@@ -6066,9 +7542,18 @@
         if (k === "c") {
           e.preventDefault();
           placeCandleAtPlayer();
+        } else if (k === "q") {
+          e.preventDefault();
+          focusGameCanvas();
+          tryBranchAttack();
+        } else if (k === "b") {
+          e.preventDefault();
+          tryStartDance();
         }
         else if (k === "e") {
           e.preventDefault();
+          if (tryTalkToPuck()) return;
+          if (tryBringBackPuck()) return;
           if (tryReadPuckGrave()) return;
           if (tryBuryPuck()) return;
           if (tryHealPuck()) return;
@@ -6445,7 +7930,14 @@
       state.homeless.lastHealPleaseAt = 0;
       hideHomelessPrompt();
       sfx.cash();
-      showMessage("\"Thanks! I'm Puck. I'll tag along and help you mine.\"", "var(--good)", 200);
+      const gotStick = grantBranchFromPuck();
+      showMessage(
+        gotStick
+          ? "\"Thanks! Here — take my stick for the monsters. I'll tag along too!\""
+          : "\"Thanks! I'm Puck. I'll tag along and help you mine.\"",
+        "var(--good)",
+        240
+      );
       updateHud();
     });
 
@@ -6481,6 +7973,10 @@
       }
       updateHud();
       draw();
+    });
+
+    document.getElementById("danceBtn").addEventListener("click", () => {
+      tryStartDance();
     });
 
     const newspaperModal = document.getElementById("newspaperModal");

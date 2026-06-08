@@ -242,6 +242,151 @@ function addResetButton() {
     }
 }
 
+// Bug report system
+const BUG_STORAGE_KEY = 'appleBobs_bugReports';
+const SECRET_CODE = 'hiphipdog';
+let secretBuffer = '';
+
+function getBugReports() {
+    try {
+        return JSON.parse(localStorage.getItem(BUG_STORAGE_KEY) || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveBugReport(report) {
+    const reports = getBugReports();
+    reports.unshift({
+        game: report.game || 'Unknown game',
+        message: report.message,
+        date: new Date().toISOString()
+    });
+    localStorage.setItem(BUG_STORAGE_KEY, JSON.stringify(reports));
+}
+
+function openBugReportModal() {
+    const overlay = document.getElementById('bugReportOverlay');
+    const form = document.getElementById('bugReportForm');
+    const thanks = document.getElementById('bugReportThanks');
+    if (!overlay || !form) return;
+    form.hidden = false;
+    if (thanks) thanks.hidden = true;
+    form.reset();
+    overlay.hidden = false;
+    const messageField = document.getElementById('bugMessage');
+    if (messageField) messageField.focus();
+}
+
+function closeBugReportModal() {
+    const overlay = document.getElementById('bugReportOverlay');
+    if (overlay) overlay.hidden = true;
+}
+
+function renderSecretComments() {
+    const panel = document.getElementById('secretCommentsPanel');
+    const list = document.getElementById('secretCommentsList');
+    const empty = document.getElementById('secretEmpty');
+    if (!panel || !list) return;
+
+    const reports = getBugReports();
+    list.innerHTML = '';
+
+    if (reports.length === 0) {
+        if (empty) empty.hidden = false;
+    } else {
+        if (empty) empty.hidden = true;
+        reports.forEach((report) => {
+            const item = document.createElement('li');
+            const date = new Date(report.date);
+            const dateText = date.toLocaleString();
+            item.innerHTML = `
+                <div class="report-game">${escapeHtml(report.game)}</div>
+                <div class="report-message">${escapeHtml(report.message)}</div>
+                <span class="report-date">${dateText}</span>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    panel.hidden = false;
+}
+
+function closeSecretComments() {
+    const panel = document.getElementById('secretCommentsPanel');
+    if (panel) panel.hidden = true;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function initBugReports() {
+    const reportBtn = document.getElementById('reportBugsBtn');
+    const overlay = document.getElementById('bugReportOverlay');
+    const form = document.getElementById('bugReportForm');
+    const cancelBtn = document.getElementById('bugCancelBtn');
+    const thanks = document.getElementById('bugReportThanks');
+    const secretCloseBtn = document.getElementById('secretCloseBtn');
+
+    if (reportBtn) {
+        reportBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openBugReportModal();
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeBugReportModal);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeBugReportModal();
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const gameField = document.getElementById('bugGame');
+            const messageField = document.getElementById('bugMessage');
+            const message = messageField ? messageField.value.trim() : '';
+            if (!message) return;
+
+            saveBugReport({
+                game: gameField ? gameField.value.trim() : '',
+                message
+            });
+
+            form.hidden = true;
+            if (thanks) thanks.hidden = false;
+            showMessage('Thanks! Bo got your bug report.', 'success');
+
+            setTimeout(closeBugReportModal, 1500);
+        });
+    }
+
+    if (secretCloseBtn) {
+        secretCloseBtn.addEventListener('click', closeSecretComments);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key.length !== 1) return;
+        secretBuffer += e.key.toLowerCase();
+        if (secretBuffer.length > SECRET_CODE.length) {
+            secretBuffer = secretBuffer.slice(-SECRET_CODE.length);
+        }
+        if (secretBuffer === SECRET_CODE) {
+            secretBuffer = '';
+            closeBugReportModal();
+            renderSecretComments();
+        }
+    });
+}
+
 // Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🍎 AppleBucks script loaded!');
@@ -291,6 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAppleBucks();
     checkGameReturn();
     addResetButton();
+    initBugReports();
     
     // Add keyboard shortcut for reset (Ctrl+R)
     document.addEventListener('keydown', function(e) {

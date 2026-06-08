@@ -1,813 +1,443 @@
 <!--
-Conway's Game of Life - 3D Version
-Features:
-- Run and stop simulations
-- Change speed
-- Change board size (now 3D!)
-- Draw own starting position
-- Choose from several automatic starting states from a dropdown list
-- 3D visualization with rotation controls
+PLAN:
+- Build a classic 2D Conway's Game of Life (B3/S23).
+- Let player paint cells by clicking/dragging.
+- Include controls: run/pause, step, clear, random, speed, grid size, wrap edges.
+- Show generation count and live cell count.
 -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Conway's Game of Life - 3D</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conway's Game of Life</title>
+  <style>
+    :root {
+      --bg: #101217;
+      --panel: #1d2330;
+      --panel-border: #2a3345;
+      --text: #d5deee;
+      --muted: #93a3bc;
+      --alive: #78f08d;
+      --alive-glow: #3dcf6f;
+      --dead: #0f1520;
+      --accent: #66a8ff;
+      --danger: #ff6b6b;
+    }
 
-		body {
-			font-family: Comic Sans MS, sans-serif;
-			background: #1a1a1a;
-			color: #fff;
-			padding: 20px;
-			overflow-x: hidden;
-		}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-		.container {
-			max-width: 1400px;
-			margin: 0 auto;
-		}
+    body {
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1c2433, var(--bg) 60%);
+      color: var(--text);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
 
-		h1 {
-			text-align: center;
-			margin-bottom: 20px;
-			color: #4CAF50;
-		}
+    .app {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 16px;
+    }
 
-		.controls {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 15px;
-			margin-bottom: 20px;
-			align-items: center;
-			justify-content: center;
-		}
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 14px;
+    }
 
-		.control-group {
-			display: flex;
-			flex-direction: column;
-			gap: 5px;
-		}
+    h1 {
+      font-size: clamp(1.4rem, 2.2vw, 2rem);
+      margin-bottom: 8px;
+    }
 
-		label {
-			font-size: 12px;
-			color: #aaa;
-		}
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
 
-		button {
-			padding: 10px 20px;
-			background: #4CAF50;
-			color: white;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			font-size: 14px;
-			transition: background 0.3s;
-		}
+    .controls {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      align-items: end;
+    }
 
-		button:hover {
-			background: #45a049;
-		}
+    button,
+    select,
+    input[type="range"] {
+      width: 100%;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      border: 1px solid #3a4861;
+      background: #29354b;
+      color: var(--text);
+      padding: 9px 10px;
+    }
 
-		button:disabled {
-			background: #666;
-			cursor: not-allowed;
-		}
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.05s ease, filter 0.15s ease;
+    }
 
-		button.stop {
-			background: #f44336;
-		}
+    button:hover {
+      filter: brightness(1.08);
+    }
 
-		button.stop:hover {
-			background: #da190b;
-		}
+    button:active {
+      transform: translateY(1px);
+    }
 
-		select, input[type="range"] {
-			padding: 8px;
-			background: #333;
-			color: white;
-			border: 1px solid #555;
-			border-radius: 5px;
-		}
+    button.primary {
+      background: #2d5fa4;
+      border-color: #5d8fd4;
+    }
 
-		.speed-display, .size-display {
-			font-size: 12px;
-			color: #4CAF50;
-			min-width: 80px;
-		}
+    button.warn {
+      background: #7f3442;
+      border-color: #b84e64;
+    }
 
-		.canvas-container {
-			display: flex;
-			justify-content: center;
-			margin-bottom: 20px;
-			position: relative;
-		}
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
 
-		#gameCanvas {
-			width: 800px;
-			height: 600px;
-			border: 2px solid #4CAF50;
-			background: #000;
-		}
+    .statline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
 
-		.info {
-			text-align: center;
-			color: #aaa;
-			font-size: 14px;
-			margin-top: 10px;
-		}
+    .statline strong {
+      color: var(--text);
+      font-size: 1rem;
+    }
 
-		.generation {
-			text-align: center;
-			font-size: 18px;
-			color: #4CAF50;
-			margin-bottom: 10px;
-		}
+    canvas {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: block;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+      background: var(--dead);
+      image-rendering: pixelated;
+      cursor: crosshair;
+      touch-action: none;
+    }
 
-		.rules-box {
-			background: #2a2a2a;
-			border: 2px solid #4CAF50;
-			border-radius: 10px;
-			padding: 20px;
-			margin-bottom: 20px;
-			max-width: 800px;
-			margin-left: auto;
-			margin-right: auto;
-		}
-
-		.rules-title {
-			color: #4CAF50;
-			font-size: 20px;
-			margin-bottom: 15px;
-			text-align: center;
-			cursor: pointer;
-			user-select: none;
-		}
-
-		.rules-title:hover {
-			color: #66ff66;
-		}
-
-		.rules-content {
-			color: #ddd;
-			font-size: 16px;
-			line-height: 1.6;
-		}
-
-		.rules-content.hidden {
-			display: none;
-		}
-
-		.rule-item {
-			margin-bottom: 15px;
-			padding-left: 25px;
-			position: relative;
-		}
-
-		.rule-item::before {
-			content: "•";
-			color: #4CAF50;
-			font-size: 24px;
-			position: absolute;
-			left: 0;
-		}
-
-		.camera-info {
-			position: absolute;
-			top: 10px;
-			left: 10px;
-			background: rgba(0, 0, 0, 0.7);
-			padding: 10px;
-			border-radius: 5px;
-			font-size: 12px;
-			color: #aaa;
-		}
-	</style>
+    .help {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body>
-	<div class="container">
-		<h1>Conway's Game of Life - 3D! 🎮</h1>
-		
-		<div class="rules-box">
-			<div class="rules-title" id="rulesTitle">📖 How It Works (Click to Show/Hide)</div>
-			<div class="rules-content hidden" id="rulesContent">
-				<p style="margin-bottom: 15px; text-align: center; color: #4CAF50; font-size: 18px;">
-					<strong>It's like a tiny 3D world where cells live or die!</strong>
-				</p>
-				
-				<div class="rule-item">
-					<strong>Each green cube is a living cell.</strong> Each empty space is a dead cell.
-				</div>
-				
-				<div class="rule-item">
-					<strong>Every cell has 26 neighbors</strong> (all the cubes around it in 3D space - up, down, left, right, front, back, and all the corners!).
-				</div>
-				
-				<div class="rule-item">
-					<strong>If a living cell has 4, 5, 6, or 7 neighbors, it stays alive!</strong> Otherwise, it dies (too lonely or too crowded).
-				</div>
-				
-				<div class="rule-item">
-					<strong>If a dead cell has 3, 5, 6, 7, or 8 neighbors, it comes to life!</strong> Like magic! (This is called Bays' 3D Life rule: 4567/35678)
-				</div>
-				
-				<div class="rule-item">
-					<strong>Drag with your mouse to rotate the 3D world!</strong> Scroll to zoom in and out.
-				</div>
-				
-				<p style="margin-top: 20px; text-align: center; color: #aaa; font-size: 14px;">
-					Try clicking "Random" in the preset patterns to see a cool 3D pattern!
-				</p>
-			</div>
-		</div>
-		
-		<div class="generation" id="generation">Generation: 0</div>
-		
-		<div class="controls">
-			<button id="playPauseBtn">Start</button>
-			<button id="clearBtn">Clear</button>
-			<button id="resetBtn">Reset</button>
-			
-			<div class="control-group">
-				<label>Speed</label>
-				<div style="display: flex; align-items: center; gap: 10px;">
-					<input type="range" id="speedSlider" min="1" max="20" value="5">
-					<span class="speed-display" id="speedDisplay">5</span>
-				</div>
-			</div>
-			
-			<div class="control-group">
-				<label>Board Size</label>
-				<div style="display: flex; align-items: center; gap: 10px;">
-					<input type="range" id="sizeSlider" min="10" max="30" value="20" step="5">
-					<span class="size-display" id="sizeDisplay">20x20x20</span>
-				</div>
-			</div>
-			
-			<div class="control-group">
-				<label>Preset Patterns</label>
-				<select id="presetSelect">
-					<option value="none">None (Draw Your Own)</option>
-					<option value="random">Random</option>
-					<option value="block">2x2x2 Block (Still Life)</option>
-					<option value="line">Line</option>
-					<option value="glider3d">Simple Glider</option>
-					<option value="oscillator">Small Oscillator</option>
-					<option value="sphere">Sphere</option>
-				</select>
-			</div>
-		</div>
-		
-		<div class="canvas-container">
-			<div class="camera-info">
-				🖱️ WASD to rotate | Scroll to zoom | Left-click to toggle cells
-			</div>
-			<div id="gameCanvas"></div>
-		</div>
-		
-		<div class="info">
-			Click on cubes to toggle them on/off. Use presets to load patterns. Drag to rotate the 3D view!
-		</div>
-	</div>
+  <main class="app">
+    <section class="panel">
+      <h1>Conway's Game of Life</h1>
+      <p class="subtitle">Classic rules: cells are born with 3 neighbors and survive with 2 or 3.</p>
+    </section>
 
-	<script>
-		// Three.js setup
-		let scene, camera, renderer;
-		let boardSize = 20;
-		let board = [];
-		let nextBoard = [];
-		let isRunning = false;
-		let animationId = null;
-		let generation = 0;
-		let speed = 5;
-		let lastUpdate = 0;
-		let initialBoard = [];
-		let cellMeshes = [];
-		let raycaster, mouse;
-		let isMouseDown = false;
-		
-		// Camera controls
-		let cameraAngleX = Math.PI / 4;
-		let cameraAngleY = Math.PI / 4;
-		let cameraDistance = boardSize * 1.2;
-		let isDragging = false;
-		let lastMouseX = 0;
-		let lastMouseY = 0;
-		let keysPressed = {};
+    <section class="panel controls">
+      <button id="runBtn" class="primary">Run</button>
+      <button id="stepBtn">Step</button>
+      <button id="clearBtn" class="warn">Clear</button>
+      <button id="randomBtn">Randomize</button>
 
-		// Bays' 3D Life rule: 4567/35678
-		// Survival: 4, 5, 6, or 7 neighbors
-		// Birth: 3, 5, 6, 7, or 8 neighbors
-		const SURVIVE_VALUES = [4, 5, 6, 7];
-		const BIRTH_VALUES = [3, 5, 6, 7, 8];
-		
-		function shouldSurvive(neighborCount) {
-			return SURVIVE_VALUES.includes(neighborCount);
-		}
-		
-		function shouldBirth(neighborCount) {
-			return BIRTH_VALUES.includes(neighborCount);
-		}
+      <div>
+        <label for="speedRange">Speed</label>
+        <input id="speedRange" type="range" min="1" max="30" value="10">
+      </div>
 
-		function initThreeJS() {
-			const container = document.getElementById('gameCanvas');
-			
-			scene = new THREE.Scene();
-			scene.background = new THREE.Color(0x000000);
+      <div>
+        <label for="sizeSelect">Grid Size</label>
+        <select id="sizeSelect">
+          <option value="25">25 x 25</option>
+          <option value="40" selected>40 x 40</option>
+          <option value="60">60 x 60</option>
+          <option value="80">80 x 80</option>
+        </select>
+      </div>
 
-			camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 1000);
-			camera.position.set(boardSize * 0.8, boardSize * 0.8, boardSize * 0.8);
-			camera.lookAt(boardSize / 2, boardSize / 2, boardSize / 2);
+      <div>
+        <label for="wrapSelect">Edge Mode</label>
+        <select id="wrapSelect">
+          <option value="on" selected>Wrap Around</option>
+          <option value="off">Hard Edges</option>
+        </select>
+      </div>
+    </section>
 
-			renderer = new THREE.WebGLRenderer({ antialias: true });
-			renderer.setSize(800, 600);
-			container.appendChild(renderer.domElement);
-			
-			// Manual camera controls
-			updateCameraPosition();
+    <section class="panel statline">
+      <div>Generation: <strong id="generationLabel">0</strong></div>
+      <div>Live Cells: <strong id="liveLabel">0</strong></div>
+      <div>Speed: <strong id="speedLabel">10</strong> ticks/s</div>
+      <div>Status: <strong id="statusLabel">Paused</strong></div>
+    </section>
 
-			// Add lights
-			const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-			scene.add(ambientLight);
+    <section class="panel">
+      <canvas id="lifeCanvas" width="900" height="900"></canvas>
+    </section>
 
-			const directionalLight1 = new THREE.DirectionalLight(0x4CAF50, 0.8);
-			directionalLight1.position.set(1, 1, 1);
-			scene.add(directionalLight1);
+    <section class="panel help">
+      Click or drag to draw cells. Press <strong>Run</strong> to simulate, <strong>Step</strong> for one tick, and <strong>Randomize</strong> to quickly seed the grid.
+    </section>
+  </main>
 
-			const directionalLight2 = new THREE.DirectionalLight(0x4CAF50, 0.4);
-			directionalLight2.position.set(-1, -1, -1);
-			scene.add(directionalLight2);
+  <script>
+    const canvas = document.getElementById("lifeCanvas");
+    const ctx = canvas.getContext("2d");
 
-			// Raycaster for mouse picking
-			raycaster = new THREE.Raycaster();
-			mouse = new THREE.Vector2();
+    const runBtn = document.getElementById("runBtn");
+    const stepBtn = document.getElementById("stepBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const randomBtn = document.getElementById("randomBtn");
+    const speedRange = document.getElementById("speedRange");
+    const sizeSelect = document.getElementById("sizeSelect");
+    const wrapSelect = document.getElementById("wrapSelect");
 
-			// Mouse events
-			renderer.domElement.addEventListener('mousedown', onMouseDown, false);
-			renderer.domElement.addEventListener('mousemove', onMouseMove, false);
-			renderer.domElement.addEventListener('mouseup', onMouseUp, false);
-			renderer.domElement.addEventListener('wheel', onMouseWheel, false);
-			renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
-			
-			// Keyboard events for WASD rotation
-			window.addEventListener('keydown', onKeyDown, false);
-			window.addEventListener('keyup', onKeyUp, false);
-		}
-		
-		function updateCameraPosition() {
-			const centerX = boardSize / 2;
-			const centerY = boardSize / 2;
-			const centerZ = boardSize / 2;
-			
-			camera.position.x = centerX + cameraDistance * Math.sin(cameraAngleY) * Math.cos(cameraAngleX);
-			camera.position.y = centerY + cameraDistance * Math.sin(cameraAngleX);
-			camera.position.z = centerZ + cameraDistance * Math.cos(cameraAngleY) * Math.cos(cameraAngleX);
-			camera.lookAt(centerX, centerY, centerZ);
-		}
+    const generationLabel = document.getElementById("generationLabel");
+    const liveLabel = document.getElementById("liveLabel");
+    const speedLabel = document.getElementById("speedLabel");
+    const statusLabel = document.getElementById("statusLabel");
 
-		function initBoard() {
-			board = [];
-			nextBoard = [];
-			for (let z = 0; z < boardSize; z++) {
-				board[z] = [];
-				nextBoard[z] = [];
-				for (let y = 0; y < boardSize; y++) {
-					board[z][y] = [];
-					nextBoard[z][y] = [];
-					for (let x = 0; x < boardSize; x++) {
-						board[z][y][x] = 0;
-						nextBoard[z][y][x] = 0;
-					}
-				}
-			}
-			initialBoard = JSON.parse(JSON.stringify(board));
-			generation = 0;
-			updateGeneration();
-			updateVisualization();
-		}
+    let gridSize = Number(sizeSelect.value);
+    let grid = makeGrid(gridSize, gridSize);
+    let nextGrid = makeGrid(gridSize, gridSize);
 
-		function getColorFromNeighborCount(neighborCount) {
-			// Map neighbor count (0-26) to a color gradient
-			// From dark green (few neighbors) to bright yellow (many neighbors)
-			const maxNeighbors = 26;
-			const ratio = neighborCount / maxNeighbors;
-			
-			// Create a gradient from dark green to bright yellow
-			let r, g, b;
-			if (ratio < 0.5) {
-				// Green to yellow-green
-				const localRatio = ratio * 2;
-				r = Math.floor(74 + localRatio * 181); // 74 -> 255
-				g = Math.floor(175 + localRatio * 80);  // 175 -> 255
-				b = Math.floor(50 - localRatio * 50);   // 50 -> 0
-			} else {
-				// Yellow-green to bright yellow
-				const localRatio = (ratio - 0.5) * 2;
-				r = 255;
-				g = 255;
-				b = Math.floor(205 - localRatio * 205); // 205 -> 0
-			}
-			
-			return (r << 16) | (g << 8) | b;
-		}
+    let running = false;
+    let generation = 0;
+    let speed = Number(speedRange.value);
+    let wrapEdges = true;
+    let lastTickMs = 0;
+    let drawing = false;
+    let drawState = 1;
 
-		function updateVisualization() {
-			// Remove old meshes
-			cellMeshes.forEach(mesh => {
-				scene.remove(mesh);
-				mesh.geometry.dispose();
-				mesh.material.dispose();
-			});
-			cellMeshes = [];
+    function makeGrid(rows, cols) {
+      return Array.from({ length: rows }, () => Array(cols).fill(0));
+    }
 
-			// Create cubes for living cells with colors based on neighbor count
-			const geometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+    function countLiveCells() {
+      let count = 0;
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          count += grid[y][x];
+        }
+      }
+      return count;
+    }
 
-			for (let z = 0; z < boardSize; z++) {
-				for (let y = 0; y < boardSize; y++) {
-					for (let x = 0; x < boardSize; x++) {
-						if (board[z][y][x] === 1) {
-							const neighborCount = countNeighbors(x, y, z);
-							const color = getColorFromNeighborCount(neighborCount);
-							
-							const material = new THREE.MeshPhongMaterial({ 
-								color: color,
-								emissive: color,
-								emissiveIntensity: 0.2
-							});
-							
-							const cube = new THREE.Mesh(geometry, material);
-							cube.position.set(x, y, z);
-							cube.userData = { x, y, z };
-							scene.add(cube);
-							cellMeshes.push(cube);
-						}
-					}
-				}
-			}
-		}
+    function getNeighborCount(x, y) {
+      let neighbors = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          let nx = x + dx;
+          let ny = y + dy;
 
-		function countNeighbors(x, y, z) {
-			let count = 0;
-			for (let dz = -1; dz <= 1; dz++) {
-				for (let dy = -1; dy <= 1; dy++) {
-					for (let dx = -1; dx <= 1; dx++) {
-						if (dx === 0 && dy === 0 && dz === 0) continue;
-						// Wrap around using modulo (toroidal)
-						const nx = (x + dx + boardSize) % boardSize;
-						const ny = (y + dy + boardSize) % boardSize;
-						const nz = (z + dz + boardSize) % boardSize;
-						count += board[nz][ny][nx];
-					}
-				}
-			}
-			return count;
-		}
+          if (wrapEdges) {
+            nx = (nx + gridSize) % gridSize;
+            ny = (ny + gridSize) % gridSize;
+            neighbors += grid[ny][nx];
+          } else if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
+            neighbors += grid[ny][nx];
+          }
+        }
+      }
+      return neighbors;
+    }
 
-		function updateGeneration() {
-			document.getElementById('generation').textContent = `Generation: ${generation}`;
-		}
+    function stepSimulation() {
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const alive = grid[y][x] === 1;
+          const neighbors = getNeighborCount(x, y);
+          const survives = alive && (neighbors === 2 || neighbors === 3);
+          const born = !alive && neighbors === 3;
+          nextGrid[y][x] = survives || born ? 1 : 0;
+        }
+      }
 
-		function nextGeneration() {
-			for (let z = 0; z < boardSize; z++) {
-				for (let y = 0; y < boardSize; y++) {
-					for (let x = 0; x < boardSize; x++) {
-						const neighbors = countNeighbors(x, y, z);
-						if (board[z][y][x] === 1) {
-							// Survive if neighbor count matches survival rule
-							nextBoard[z][y][x] = shouldSurvive(neighbors) ? 1 : 0;
-						} else {
-							// Birth if neighbor count matches birth rule
-							nextBoard[z][y][x] = shouldBirth(neighbors) ? 1 : 0;
-						}
-					}
-				}
-			}
-			
-			const temp = board;
-			board = nextBoard;
-			nextBoard = temp;
-			generation++;
-			updateGeneration();
-			updateVisualization();
-		}
+      const temp = grid;
+      grid = nextGrid;
+      nextGrid = temp;
+      generation++;
+      updateStats();
+      drawGrid();
+    }
 
-		function animate() {
-			requestAnimationFrame(animate);
-			
-			// Handle WASD rotation
-			const rotationSpeed = 0.02;
-			if (keysPressed['w'] || keysPressed['W']) {
-				cameraAngleX -= rotationSpeed;
-				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
-				updateCameraPosition();
-			}
-			if (keysPressed['s'] || keysPressed['S']) {
-				cameraAngleX += rotationSpeed;
-				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
-				updateCameraPosition();
-			}
-			if (keysPressed['a'] || keysPressed['A']) {
-				cameraAngleY -= rotationSpeed;
-				updateCameraPosition();
-			}
-			if (keysPressed['d'] || keysPressed['D']) {
-				cameraAngleY += rotationSpeed;
-				updateCameraPosition();
-			}
-			
-			if (isRunning) {
-				const currentTime = performance.now();
-				if (currentTime - lastUpdate >= 1000 / speed) {
-					nextGeneration();
-					lastUpdate = currentTime;
-				}
-			}
-			
-			renderer.render(scene, camera);
-		}
-		
-		function onKeyDown(event) {
-			keysPressed[event.key] = true;
-		}
-		
-		function onKeyUp(event) {
-			keysPressed[event.key] = false;
-		}
+    function randomizeGrid() {
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          grid[y][x] = Math.random() < 0.26 ? 1 : 0;
+        }
+      }
+      generation = 0;
+      updateStats();
+      drawGrid();
+    }
 
-		function startSimulation() {
-			if (!isRunning) {
-				isRunning = true;
-				document.getElementById('playPauseBtn').textContent = 'Stop';
-				document.getElementById('playPauseBtn').classList.add('stop');
-				lastUpdate = performance.now();
-			}
-		}
+    function clearGrid() {
+      for (let y = 0; y < gridSize; y++) {
+        grid[y].fill(0);
+        nextGrid[y].fill(0);
+      }
+      generation = 0;
+      updateStats();
+      drawGrid();
+    }
 
-		function stopSimulation() {
-			if (isRunning) {
-				isRunning = false;
-				document.getElementById('playPauseBtn').textContent = 'Start';
-				document.getElementById('playPauseBtn').classList.remove('stop');
-			}
-		}
+    function rebuildGrid(newSize) {
+      gridSize = newSize;
+      grid = makeGrid(gridSize, gridSize);
+      nextGrid = makeGrid(gridSize, gridSize);
+      generation = 0;
+      updateStats();
+      drawGrid();
+    }
 
-		function onMouseDown(event) {
-			if (event.button === 0) { // Left mouse button
-				if (!isRunning) {
-					isMouseDown = true;
-					handleMouseClick(event);
-				}
-			} else if (event.button === 2 || event.button === 1) { // Right or middle mouse button
-				isDragging = true;
-				lastMouseX = event.clientX;
-				lastMouseY = event.clientY;
-			}
-		}
+    function drawGrid() {
+      const cell = canvas.width / gridSize;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		function onMouseMove(event) {
-			if (isDragging) {
-				const deltaX = event.clientX - lastMouseX;
-				const deltaY = event.clientY - lastMouseY;
-				
-				cameraAngleY += deltaX * 0.01;
-				cameraAngleX += deltaY * 0.01;
-				
-				// Limit vertical rotation
-				cameraAngleX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraAngleX));
-				
-				updateCameraPosition();
-				
-				lastMouseX = event.clientX;
-				lastMouseY = event.clientY;
-			} else if (isMouseDown && !isRunning) {
-				handleMouseClick(event);
-			}
-		}
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          if (grid[y][x]) {
+            ctx.fillStyle = "var(--alive)";
+            ctx.fillRect(x * cell, y * cell, cell, cell);
+          }
+        }
+      }
 
-		function onMouseUp(event) {
-			if (event.button === 0) {
-				isMouseDown = false;
-			} else {
-				isDragging = false;
-			}
-		}
-		
-		function onMouseWheel(event) {
-			event.preventDefault();
-			cameraDistance += event.deltaY * 0.01;
-			cameraDistance = Math.max(boardSize * 0.5, Math.min(boardSize * 3, cameraDistance));
-			updateCameraPosition();
-		}
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= gridSize; i++) {
+        const p = i * cell;
+        ctx.beginPath();
+        ctx.moveTo(p, 0);
+        ctx.lineTo(p, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, p);
+        ctx.lineTo(canvas.width, p);
+        ctx.stroke();
+      }
+    }
 
-		function handleMouseClick(event) {
-			const rect = renderer.domElement.getBoundingClientRect();
-			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    function updateStats() {
+      generationLabel.textContent = String(generation);
+      liveLabel.textContent = String(countLiveCells());
+      speedLabel.textContent = String(speed);
+      statusLabel.textContent = running ? "Running" : "Paused";
+      runBtn.textContent = running ? "Pause" : "Run";
+      runBtn.classList.toggle("primary", !running);
+      runBtn.classList.toggle("warn", running);
+    }
 
-			raycaster.setFromCamera(mouse, camera);
-			const intersects = raycaster.intersectObjects(cellMeshes);
+    function pointerToCell(event) {
+      const rect = canvas.getBoundingClientRect();
+      const px = ((event.clientX - rect.left) / rect.width) * canvas.width;
+      const py = ((event.clientY - rect.top) / rect.height) * canvas.height;
+      const cell = canvas.width / gridSize;
+      const x = Math.floor(px / cell);
+      const y = Math.floor(py / cell);
+      return { x, y };
+    }
 
-			if (intersects.length > 0) {
-				const clickedMesh = intersects[0].object;
-				const { x, y, z } = clickedMesh.userData;
-				toggleCell(x, y, z);
-			} else {
-				// Try to add a cell near where clicked
-				const distance = boardSize * 0.5;
-				const direction = new THREE.Vector3();
-				raycaster.ray.direction.normalize();
-				const point = raycaster.ray.origin.clone().add(
-					raycaster.ray.direction.multiplyScalar(distance)
-				);
-				
-				const x = Math.round(point.x);
-				const y = Math.round(point.y);
-				const z = Math.round(point.z);
-				
-				if (x >= 0 && x < boardSize && 
-					y >= 0 && y < boardSize && 
-					z >= 0 && z < boardSize) {
-					toggleCell(x, y, z);
-				}
-			}
-		}
+    function paintAtPointer(event) {
+      const { x, y } = pointerToCell(event);
+      if (x < 0 || y < 0 || x >= gridSize || y >= gridSize) return;
+      grid[y][x] = drawState;
+      drawGrid();
+      updateStats();
+    }
 
-		function toggleCell(x, y, z) {
-			if (x >= 0 && x < boardSize && 
-				y >= 0 && y < boardSize && 
-				z >= 0 && z < boardSize) {
-				board[z][y][x] = board[z][y][x] === 1 ? 0 : 1;
-				initialBoard = JSON.parse(JSON.stringify(board));
-				updateVisualization();
-			}
-		}
+    runBtn.addEventListener("click", () => {
+      running = !running;
+      updateStats();
+    });
 
-		function loadPreset(preset) {
-			stopSimulation();
-			initBoard();
-			
-			const centerX = Math.floor(boardSize / 2);
-			const centerY = Math.floor(boardSize / 2);
-			const centerZ = Math.floor(boardSize / 2);
-			
-			switch(preset) {
-				case 'random':
-					for (let z = 0; z < boardSize; z++) {
-						for (let y = 0; y < boardSize; y++) {
-							for (let x = 0; x < boardSize; x++) {
-								board[z][y][x] = Math.random() > 0.85 ? 1 : 0;
-							}
-						}
-					}
-					break;
-					
-				case 'block':
-					// 2x2x2 block - a still life pattern
-					for (let dz = 0; dz < 2; dz++) {
-						for (let dy = 0; dy < 2; dy++) {
-							for (let dx = 0; dx < 2; dx++) {
-								const x = centerX + dx;
-								const y = centerY + dy;
-								const z = centerZ + dz;
-								if (x >= 0 && x < boardSize && 
-									y >= 0 && y < boardSize && 
-									z >= 0 && z < boardSize) {
-									board[z][y][x] = 1;
-								}
-							}
-						}
-					}
-					break;
-					
-				case 'line':
-					// Simple line pattern
-					for (let i = -3; i <= 3; i++) {
-						const x = centerX + i;
-						const y = centerY;
-						const z = centerZ;
-						if (x >= 0 && x < boardSize && 
-							y >= 0 && y < boardSize && 
-							z >= 0 && z < boardSize) {
-							board[z][y][x] = 1;
-						}
-					}
-					break;
-					
-				case 'glider3d':
-					// Simple 3D glider pattern (known to work with 4567/35678)
-					// A small pattern that moves through space
-					board[centerZ][centerY][centerX] = 1;
-					board[centerZ][centerY][centerX + 1] = 1;
-					board[centerZ][centerY + 1][centerX] = 1;
-					board[centerZ][centerY + 1][centerX + 1] = 1;
-					board[centerZ + 1][centerY][centerX] = 1;
-					board[centerZ + 1][centerY + 1][centerX + 1] = 1;
-					break;
-					
-				case 'oscillator':
-					// Small oscillator pattern
-					// Creates a pattern that oscillates between states
-					board[centerZ][centerY][centerX] = 1;
-					board[centerZ][centerY][centerX + 1] = 1;
-					board[centerZ][centerY + 1][centerX] = 1;
-					board[centerZ][centerY + 1][centerX + 1] = 1;
-					board[centerZ + 1][centerY][centerX] = 1;
-					board[centerZ + 1][centerY][centerX + 1] = 1;
-					board[centerZ + 1][centerY + 1][centerX] = 1;
-					board[centerZ + 1][centerY + 1][centerX + 1] = 1;
-					// Add a few more cells to create oscillation
-					board[centerZ][centerY + 2][centerX] = 1;
-					board[centerZ][centerY + 2][centerX + 1] = 1;
-					break;
-					
-				case 'sphere':
-					const radius = Math.floor(boardSize / 4);
-					for (let z = 0; z < boardSize; z++) {
-						for (let y = 0; y < boardSize; y++) {
-							for (let x = 0; x < boardSize; x++) {
-								const dx = x - centerX;
-								const dy = y - centerY;
-								const dz = z - centerZ;
-								const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-								if (dist <= radius) {
-									board[z][y][x] = 1;
-								}
-							}
-						}
-					}
-					break;
-			}
-			
-			initialBoard = JSON.parse(JSON.stringify(board));
-			updateVisualization();
-		}
+    stepBtn.addEventListener("click", () => {
+      if (!running) {
+        stepSimulation();
+      }
+    });
 
-		// Event listeners
-		document.getElementById('playPauseBtn').addEventListener('click', () => {
-			if (isRunning) {
-				stopSimulation();
-			} else {
-				startSimulation();
-			}
-		});
+    clearBtn.addEventListener("click", () => {
+      running = false;
+      clearGrid();
+    });
 
-		document.getElementById('clearBtn').addEventListener('click', () => {
-			stopSimulation();
-			initBoard();
-		});
+    randomBtn.addEventListener("click", () => {
+      running = false;
+      randomizeGrid();
+    });
 
-		document.getElementById('resetBtn').addEventListener('click', () => {
-			stopSimulation();
-			board = JSON.parse(JSON.stringify(initialBoard));
-			generation = 0;
-			updateGeneration();
-			updateVisualization();
-		});
+    speedRange.addEventListener("input", () => {
+      speed = Number(speedRange.value);
+      updateStats();
+    });
 
-		document.getElementById('speedSlider').addEventListener('input', (e) => {
-			speed = parseInt(e.target.value);
-			document.getElementById('speedDisplay').textContent = speed;
-		});
+    sizeSelect.addEventListener("change", () => {
+      running = false;
+      rebuildGrid(Number(sizeSelect.value));
+    });
 
-			document.getElementById('sizeSlider').addEventListener('input', (e) => {
-			stopSimulation();
-			boardSize = parseInt(e.target.value);
-			document.getElementById('sizeDisplay').textContent = `${boardSize}x${boardSize}x${boardSize}`;
-			cameraDistance = boardSize * 1.2;
-			updateCameraPosition();
-			initBoard();
-		});
+    wrapSelect.addEventListener("change", () => {
+      wrapEdges = wrapSelect.value === "on";
+    });
 
-		document.getElementById('presetSelect').addEventListener('change', (e) => {
-			if (e.target.value !== 'none') {
-				loadPreset(e.target.value);
-			}
-		});
+    canvas.addEventListener("pointerdown", (event) => {
+      drawing = true;
+      const { x, y } = pointerToCell(event);
+      drawState = grid[y]?.[x] ? 0 : 1;
+      paintAtPointer(event);
+      canvas.setPointerCapture(event.pointerId);
+    });
 
-		document.getElementById('rulesTitle').addEventListener('click', () => {
-			const rulesContent = document.getElementById('rulesContent');
-			rulesContent.classList.toggle('hidden');
-			const rulesTitle = document.getElementById('rulesTitle');
-			if (rulesContent.classList.contains('hidden')) {
-				rulesTitle.textContent = '📖 How It Works (Click to Show/Hide)';
-			} else {
-				rulesTitle.textContent = '📖 How It Works (Click to Hide)';
-			}
-		});
+    canvas.addEventListener("pointermove", (event) => {
+      if (drawing) {
+        paintAtPointer(event);
+      }
+    });
 
-		// Initialize
-		initThreeJS();
-		initBoard();
-		animate();
-	</script>
+    canvas.addEventListener("pointerup", () => {
+      drawing = false;
+    });
+
+    canvas.addEventListener("pointerleave", () => {
+      drawing = false;
+    });
+
+    function loop(timestamp) {
+      if (running) {
+        const interval = 1000 / speed;
+        if (timestamp - lastTickMs >= interval) {
+          stepSimulation();
+          lastTickMs = timestamp;
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+
+    updateStats();
+    drawGrid();
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>

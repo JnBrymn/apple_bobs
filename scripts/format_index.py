@@ -10,28 +10,8 @@ import glob
 import qrcode
 
 HIDDEN_GAMES = {
-    "test-applebucks",
-    "playground",
-    "ideas",
-    "scripts",
-    "folder",
-    "kill_the_buddy",
-    "zombie_kingshot",
-    "youareanidiot",
-    "the_gungen",
-    "petya",
-    "TEMPLE OF DOOOOOM",
-    "there is no law",
-    "ragedoll",
-    "core_destruction",
-    "arch_enemies",
-    "core_destruction_2",
-    "brotato",
-    "cosmic_colony",
-    "cosmic_creator",
     "exit 8",
     "fire_feild/progress_quest",
-    "perfect mine/stuff",
 }
 
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
@@ -129,6 +109,7 @@ def generate_index_html(menu_html):
             <ul>
                 <li><a href="#about">About</a></li>
                 <li><a href="#projects">Games</a></li>
+                <li><a href="#" id="reportBugsBtn">Report Bugs</a></li>
             </ul>
         </nav>
     </header>
@@ -138,6 +119,10 @@ def generate_index_html(menu_html):
             <h2>About Apple Bobs</h2>
             <p>Apple Bobs is a collection of browser-based games created by Bo Berryman using vibe coding techniques. Each game is crafted with vanilla HTML, CSS, and JavaScript for maximum compatibility and instant playability.</p>
             <p><strong>🎮 How to Play:</strong> You start with 5 AppleBucks! Each game costs 1 AppleBuck to play. Win games to earn more AppleBucks and keep playing!</p>
+            <div class="site-notice">
+                <p><strong>💻 Computer required:</strong> You need a computer to play Apple Bobs games. A keyboard and mouse work best. Games may not work correctly on phones or tablets.</p>
+                <p><strong>🐛 Found a bug?</strong> Please report it so Bo can fix it! Click <strong>Report Bugs</strong> at the top of the page and describe what went wrong.</p>
+            </div>
         </section>
 
         <section id="projects">
@@ -159,6 +144,32 @@ def generate_index_html(menu_html):
     <footer>
         <p>&copy; 2025 Apple Bobs - Games by Bo Berryman</p>
     </footer>
+
+    <div id="bugReportOverlay" class="bug-overlay" hidden>
+        <div class="bug-modal" role="dialog" aria-labelledby="bugModalTitle">
+            <h2 id="bugModalTitle">Report a Bug</h2>
+            <p class="bug-modal-intro">Tell Bo what went wrong. Which game was it? What happened?</p>
+            <form id="bugReportForm">
+                <label for="bugGame">Game (optional)</label>
+                <input type="text" id="bugGame" name="game" placeholder="e.g. Gamble Count" autocomplete="off">
+                <label for="bugMessage">What happened?</label>
+                <textarea id="bugMessage" name="message" rows="5" required placeholder="Describe the bug..."></textarea>
+                <div class="bug-modal-actions">
+                    <button type="button" id="bugCancelBtn" class="bug-btn-secondary">Cancel</button>
+                    <button type="submit" class="bug-btn-primary">Send Report</button>
+                </div>
+            </form>
+            <p id="bugReportThanks" class="bug-thanks" hidden>Thanks! Bo got your report.</p>
+        </div>
+    </div>
+
+    <div id="secretCommentsPanel" class="secret-comments" hidden>
+        <h2>Bug Reports <span class="secret-hint">(don't tell anyone about it)</span></h2>
+        <p class="secret-hint">don't tell anyone about it</p>
+        <ul id="secretCommentsList" class="secret-comments-list"></ul>
+        <p id="secretEmpty" class="secret-empty" hidden>No bug reports yet.</p>
+        <button type="button" id="secretCloseBtn">Close</button>
+    </div>
 
     <script src="script.js"></script>
 </body>

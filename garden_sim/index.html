@@ -1,0 +1,535 @@
+<!--
+Garden Sim — simulation starter for you to change!
+
+HOW IT WORKS: Click tiles to use your tool. Crops grow over time. Harvest and sell
+for coins. Buy seeds from the shop. Days pass automatically.
+
+CHANGE ME IDEAS:
+- CROPS — add new plants, grow times, sell prices, emojis
+- GRID_W / GRID_H — bigger or smaller garden
+- TICK_MS — faster or slower simulation
+- TOOLS — add sprinklers, fences, animals
+- weatherEvents() — rain, drought, pests
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garden Sim</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(180deg, #87ceeb 0%, #98d8aa 55%, #6ab04c 100%);
+            min-height: 100vh;
+            color: #2d3436;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(255,255,255,0.92);
+            border-bottom: 3px solid #6ab04c;
+            padding: 10px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h1 { font-size: 1.6rem; color: #2d6a4f; }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .stat {
+            background: #d8f3dc;
+            border: 2px solid #40916c;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 0.95rem;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            padding: 12px;
+            min-height: 0;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: rgba(255,255,255,0.94);
+            border: 3px solid #40916c;
+            border-radius: 14px;
+            padding: 12px;
+            margin-right: 12px;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #40916c;
+            margin: 12px 0 8px;
+            border-bottom: 2px solid #b7e4c7;
+            padding-bottom: 4px;
+        }
+
+        .section-title:first-child { margin-top: 0; }
+
+        .tool-btn, .shop-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border: 2px solid #95d5b2;
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: transform 0.1s, background 0.15s;
+        }
+
+        .tool-btn:hover, .shop-btn:hover { background: #ecfdf0; }
+        .tool-btn.selected {
+            background: #40916c;
+            color: #fff;
+            border-color: #1b4332;
+            box-shadow: 0 3px 0 #1b4332;
+        }
+
+        .shop-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .game-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 0;
+        }
+
+        canvas {
+            display: block;
+            border: 4px solid #1b4332;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            cursor: crosshair;
+            max-width: 100%;
+            background: #74c476;
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            background: rgba(255,255,255,0.85);
+            padding: 8px 14px;
+            border-radius: 10px;
+            max-width: 640px;
+            text-align: center;
+        }
+
+        .log {
+            margin-top: 10px;
+            width: 100%;
+            max-width: 640px;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid #40916c;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            min-height: 52px;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .log-line { color: #636e72; margin: 2px 0; }
+        .log-line:last-child { color: #2d6a4f; font-weight: 600; }
+
+        .speed-btns {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .speed-btns button {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #40916c;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .speed-btns button.active {
+            background: #40916c;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌱 Garden Sim</h1>
+        <div class="stats">
+            <span class="stat">💰 <span id="coins">50</span></span>
+            <span class="stat">🌾 Harvested: <span id="harvested">0</span></span>
+            <span class="stat">📅 Day <span id="day">1</span></span>
+            <span class="stat">💧 Water: <span id="water">100</span>%</span>
+        </div>
+    </header>
+
+    <div class="main">
+        <aside class="sidebar">
+            <div class="section-title">Tools</div>
+            <button class="tool-btn selected" data-tool="hoe">⛏️ Hoe — till grass</button>
+            <button class="tool-btn" data-tool="seed">🌱 Plant — uses seeds</button>
+            <button class="tool-btn" data-tool="water">💧 Water — helps grow</button>
+            <button class="tool-btn" data-tool="harvest">🧺 Harvest — sell crops</button>
+            <button class="tool-btn" data-tool="shovel">🪏 Shovel — clear tile</button>
+
+            <div class="section-title">Shop</div>
+            <button class="shop-btn" id="buySeeds">Buy 5 seeds (💰10)</button>
+            <button class="shop-btn" id="buyWater">Refill water (💰8)</button>
+
+            <div class="section-title">Seeds in bag</div>
+            <div id="seedBag" style="font-size:1.1rem;padding:4px 0;">🌱 × 8</div>
+
+            <div class="section-title">Sim speed</div>
+            <div class="speed-btns">
+                <button data-speed="1" class="active">1×</button>
+                <button data-speed="2">2×</button>
+                <button data-speed="4">4×</button>
+            </div>
+        </aside>
+
+        <div class="game-wrap">
+            <canvas id="world" width="640" height="480"></canvas>
+            <p class="hint">Simulation ticks on its own — pick a tool and click tiles. Change crops, prices, and speed in the code!</p>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // === CHANGE ME: crop types ===
+        const CROPS = {
+            carrot:  { emoji: '🥕', stages: ['🌱', '🌿', '🥕'], growTicks: 6, sell: 12, seedCost: 2 },
+            tomato:  { emoji: '🍅', stages: ['🌱', '🍃', '🍅'], growTicks: 8, sell: 18, seedCost: 3 },
+            corn:    { emoji: '🌽', stages: ['🌱', '🌾', '🌽'], growTicks: 10, sell: 22, seedCost: 4 }
+        };
+
+        const GRID_W = 16;
+        const GRID_H = 12;
+        const TILE = 40;
+        const TICK_MS = 900;
+        const WATER_DRAIN = 4;
+        const WATER_REFILL_COST = 8;
+        const SEED_PACK_COST = 10;
+        const SEED_PACK_AMOUNT = 5;
+
+        const TILE_GRASS = 0;
+        const TILE_DIRT = 1;
+        const TILE_WATERED = 2;
+
+        const canvas = document.getElementById('world');
+        const ctx = canvas.getContext('2d');
+        canvas.width = GRID_W * TILE;
+        canvas.height = GRID_H * TILE;
+
+        let world = [];
+        let tool = 'hoe';
+        let selectedCrop = 'carrot';
+        let coins = 50;
+        let seeds = 8;
+        let water = 100;
+        let day = 1;
+        let harvested = 0;
+        let tickCount = 0;
+        let speed = 1;
+        let logLines = ['Welcome to Garden Sim! Till soil, plant seeds, watch them grow.'];
+
+        function log(msg) {
+            logLines.push(msg);
+            if (logLines.length > 6) logLines.shift();
+            document.getElementById('log').innerHTML = logLines.map((l, i) =>
+                `<div class="log-line">${l}</div>`
+            ).join('');
+        }
+
+        function makeTile(type = TILE_GRASS) {
+            return { type, crop: null, stage: 0, grow: 0, watered: false };
+        }
+
+        function initWorld() {
+            world = [];
+            for (let y = 0; y < GRID_H; y++) {
+                const row = [];
+                for (let x = 0; x < GRID_W; x++) {
+                    row.push(makeTile());
+                }
+                world.push(row);
+            }
+            // pond in corner
+            for (let y = GRID_H - 2; y < GRID_H; y++) {
+                for (let x = 0; x < 3; x++) {
+                    world[y][x] = { type: 'pond', crop: null, stage: 0, grow: 0, watered: true };
+                }
+            }
+        }
+
+        function cropKeys() { return Object.keys(CROPS); }
+
+        function randomCropType() {
+            const keys = cropKeys();
+            return keys[Math.floor(Math.random() * keys.length)];
+        }
+
+        function updateUI() {
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('harvested').textContent = harvested;
+            document.getElementById('day').textContent = day;
+            document.getElementById('water').textContent = Math.round(water);
+            document.getElementById('seedBag').textContent = '🌱 × ' + seeds;
+            document.getElementById('buySeeds').disabled = coins < SEED_PACK_COST;
+            document.getElementById('buyWater').disabled = coins < WATER_REFILL_COST || water >= 100;
+        }
+
+        function tileColor(tile) {
+            if (tile.type === 'pond') return '#4dabf7';
+            if (tile.crop) return tile.watered ? '#a9e34b' : '#c0eb75';
+            if (tile.type === TILE_DIRT) return tile.watered ? '#bc8f5a' : '#a97142';
+            return ((tile.x + tile.y) % 2 === 0) ? '#74c476' : '#6ab04c';
+        }
+
+        function draw() {
+            for (let y = 0; y < GRID_H; y++) {
+                for (let x = 0; x < GRID_W; x++) {
+                    const tile = world[y][x];
+                    tile.x = x;
+                    tile.y = y;
+                    const px = x * TILE;
+                    const py = y * TILE;
+
+                    ctx.fillStyle = tileColor(tile);
+                    ctx.fillRect(px, py, TILE, TILE);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+                    ctx.strokeRect(px, py, TILE, TILE);
+
+                    if (tile.type === 'pond') {
+                        ctx.font = '22px serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('💧', px + TILE / 2, py + TILE / 2 + 8);
+                    } else if (tile.crop) {
+                        const info = CROPS[tile.crop];
+                        const emoji = info.stages[Math.min(tile.stage, info.stages.length - 1)];
+                        ctx.font = '26px serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(emoji, px + TILE / 2, py + TILE / 2 + 9);
+                    } else if (tile.type === TILE_DIRT || tile.type === TILE_WATERED) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                        ctx.fillRect(px + 6, py + TILE - 8, TILE - 12, 4);
+                    }
+                }
+            }
+
+            // crop picker when seed tool selected
+            if (tool === 'seed') {
+                ctx.fillStyle = 'rgba(255,255,255,0.92)';
+                ctx.fillRect(8, 8, 200, 36);
+                ctx.strokeStyle = '#40916c';
+                ctx.strokeRect(8, 8, 200, 36);
+                ctx.font = '13px Segoe UI, sans-serif';
+                ctx.fillStyle = '#2d3436';
+                ctx.textAlign = 'left';
+                ctx.fillText('Plant: ' + cropKeys().map(k =>
+                    (k === selectedCrop ? '▶ ' : '  ') + CROPS[k].emoji + ' ' + k
+                ).join('  '), 14, 30);
+            }
+        }
+
+        function useTool(x, y) {
+            const tile = world[y][x];
+            if (tile.type === 'pond') {
+                log('That is the pond — you cannot farm there.');
+                return;
+            }
+
+            if (tool === 'hoe') {
+                if (tile.type === TILE_GRASS && !tile.crop) {
+                    tile.type = TILE_DIRT;
+                    log('Tilled a patch of soil.');
+                }
+            } else if (tool === 'seed') {
+                if ((tile.type === TILE_DIRT || tile.type === TILE_WATERED) && !tile.crop) {
+                    if (seeds <= 0) {
+                        log('No seeds! Buy some in the shop.');
+                        return;
+                    }
+                    seeds--;
+                    tile.crop = selectedCrop;
+                    tile.stage = 0;
+                    tile.grow = 0;
+                    log('Planted ' + selectedCrop + ' ' + CROPS[selectedCrop].emoji);
+                }
+            } else if (tool === 'water') {
+                if (water < 5) {
+                    log('Water tank empty — buy a refill.');
+                    return;
+                }
+                if (tile.type === TILE_DIRT || tile.type === TILE_WATERED || tile.crop) {
+                    water = Math.max(0, water - 8);
+                    tile.watered = true;
+                    tile.type = TILE_WATERED;
+                    log('Watered a tile.');
+                }
+            } else if (tool === 'harvest') {
+                if (tile.crop) {
+                    const info = CROPS[tile.crop];
+                    if (tile.stage >= info.stages.length - 1) {
+                        coins += info.sell;
+                        harvested++;
+                        tile.crop = null;
+                        tile.stage = 0;
+                        tile.grow = 0;
+                        tile.watered = false;
+                        tile.type = TILE_DIRT;
+                        log('Harvested ' + info.emoji + ' for 💰' + info.sell + '!');
+                    } else {
+                        log('Not ready yet — let it grow more.');
+                    }
+                }
+            } else if (tool === 'shovel') {
+                if (tile.crop || tile.type !== TILE_GRASS) {
+                    tile.crop = null;
+                    tile.stage = 0;
+                    tile.grow = 0;
+                    tile.watered = false;
+                    tile.type = TILE_GRASS;
+                    log('Cleared tile back to grass.');
+                }
+            }
+            updateUI();
+            draw();
+        }
+
+        function simTick() {
+            tickCount++;
+            let growing = 0;
+
+            for (let y = 0; y < GRID_H; y++) {
+                for (let x = 0; x < GRID_W; x++) {
+                    const tile = world[y][x];
+                    if (!tile.crop) continue;
+
+                    const info = CROPS[tile.crop];
+                    if (tile.stage >= info.stages.length - 1) continue;
+
+                    growing++;
+                    const bonus = tile.watered ? 1.4 : 1;
+                    tile.grow += bonus;
+
+                    if (tile.grow >= info.growTicks) {
+                        tile.grow = 0;
+                        tile.stage++;
+                        if (tile.stage >= info.stages.length - 1) {
+                            log(CROPS[tile.crop].emoji + ' is ready to harvest!');
+                        }
+                    }
+
+                    if (tile.watered && Math.random() < 0.25) {
+                        tile.watered = false;
+                    }
+                }
+            }
+
+            water = Math.max(0, water - WATER_DRAIN * 0.15);
+
+            if (tickCount % 8 === 0) {
+                day++;
+                log('☀️ Day ' + day + ' — ' + growing + ' crops still growing.');
+            }
+
+            updateUI();
+            draw();
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const my = (e.clientY - rect.top) * scaleY;
+            const x = Math.floor(mx / TILE);
+            const y = Math.floor(my / TILE);
+            if (x >= 0 && x < GRID_W && y >= 0 && y < GRID_H) useTool(x, y);
+        });
+
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                tool = btn.dataset.tool;
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                draw();
+            });
+        });
+
+        document.getElementById('buySeeds').addEventListener('click', () => {
+            if (coins >= SEED_PACK_COST) {
+                coins -= SEED_PACK_COST;
+                seeds += SEED_PACK_AMOUNT;
+                log('Bought ' + SEED_PACK_AMOUNT + ' seeds.');
+                updateUI();
+            }
+        });
+
+        document.getElementById('buyWater').addEventListener('click', () => {
+            if (coins >= WATER_REFILL_COST) {
+                coins -= WATER_REFILL_COST;
+                water = 100;
+                log('Water tank refilled!');
+                updateUI();
+            }
+        });
+
+        document.querySelectorAll('.speed-btns button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                speed = Number(btn.dataset.speed);
+                document.querySelectorAll('.speed-btns button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const keys = cropKeys();
+            if (tool === 'seed') {
+                if (e.key === '1') selectedCrop = keys[0];
+                if (e.key === '2') selectedCrop = keys[1];
+                if (e.key === '3') selectedCrop = keys[2];
+                draw();
+            }
+        });
+
+        initWorld();
+        updateUI();
+        draw();
+
+        setInterval(() => {
+            for (let i = 0; i < speed; i++) simTick();
+        }, TICK_MS);
+    </script>
+</body>
+</html>

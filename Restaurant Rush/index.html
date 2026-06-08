@@ -20,8 +20,9 @@ Restaurant Rush
 - Screens: Garden, Kitchen 1, Kitchen 2, Storefront, Cashier, Cafeteria (2×3 grid; corners + arrows show room name)
 - Storefront (screen 4): beige building, grey sidewalk, parking lot with separate spots, closed sliding glass doors (same look as cashier)
 - Cafeteria (screen 6): tables on gray floor; random diners each visit; bus cart on left — dirty trays land here after cashier handoff (home stack 3); blue dotted top shelf = pick up dirty tray; mop on right — pick up / put down like a plate (no food)
+- Start screen: checkered floor, tomato splat, yellow “Restaurant” + blue “RUSH”, start button → white fade → name screen (beige, “NAME YOUR RESTAURANT!”, 10-char input, Continue) → game (cashier, screen 5)
 - Cashier (screen 5): random orders (2–4 items): at least 1 drink + food or soup; max 2 per kind (drink / soup / food); tray spot; correct order → customer slides off screen right with tray, doors open, next customer enters then shows order
-- Recipes button (top-left, all screens): list + how-to steps for bread, baked foods, chopped fruit/veg, fruit juices, soups
+- Recipes button (top-left, all screens): list + how-to steps for bread, baked foods, chopped fruit/veg, fruit juices, soups — steps use food names + appliances only (no sink, dishwasher, plates, cups, bowls, pots, trays)
 - Layout:
     1 — 2 — 3
     |   |   |
@@ -128,6 +129,231 @@ Restaurant Rush
     .nav-arrow,
     .corner-num {
       z-index: 10;
+    }
+
+    body:not(.game-started) .recipe-book {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Start screen */
+    .start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 15000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff;
+      background-image:
+        linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+        linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+      background-size: 192px 192px;
+      background-position: 0 0, 0 96px, 96px -96px, -96px 0;
+      overflow: hidden;
+    }
+
+    .start-screen.is-hidden {
+      display: none;
+    }
+
+    .start-screen-stage {
+      position: relative;
+      width: min(100vw, 920px);
+      height: min(96vh, 820px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .start-tomato-splat {
+      position: absolute;
+      width: 158%;
+      height: 150%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(-7deg);
+      filter: drop-shadow(0 12px 28px rgba(183, 28, 28, 0.28));
+      pointer-events: none;
+    }
+
+    .start-tomato-splat-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .start-title {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      margin: 0;
+      padding: 0 2vw;
+      text-align: center;
+      line-height: 0.92;
+      pointer-events: none;
+    }
+
+    .start-title-restaurant {
+      display: block;
+      font-size: clamp(4.2rem, 18vw, 8.8rem);
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: #ffeb3b;
+      text-shadow:
+        2px 2px 0 #f9a825,
+        0 0 18px rgba(255, 235, 59, 0.35);
+      transform: rotate(-3deg);
+    }
+
+    .start-title-rush {
+      display: block;
+      margin-top: 0.06em;
+      font-size: clamp(5.2rem, 23vw, 11rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      color: #42a5f5;
+      text-shadow:
+        2px 2px 0 #1565c0,
+        0 0 18px rgba(66, 165, 245, 0.35);
+      transform: rotate(2deg);
+    }
+
+    .start-btn {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      bottom: 8%;
+      transform: translateX(-50%);
+      min-width: 132px;
+      padding: 0.55rem 1.6rem;
+      border: 3px solid #0d47a1;
+      border-radius: 4px;
+      background: #42a5f5;
+      color: #0d1b2a;
+      font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+      font-weight: 800;
+      font-family: inherit;
+      text-transform: lowercase;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #1565c0;
+      transition: background 0.12s, transform 0.12s, box-shadow 0.12s;
+    }
+
+    .start-btn:hover {
+      background: #64b5f6;
+    }
+
+    .start-btn:active {
+      transform: translateX(-50%) translateY(3px);
+      box-shadow: 0 1px 0 #1565c0;
+    }
+
+    .start-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 16000;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.8s ease-in;
+    }
+
+    .start-flash.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .name-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 15000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3ece0;
+      opacity: 1;
+      transition: opacity 1.8s ease-in;
+    }
+
+    .name-screen.is-fading-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .name-screen.is-hidden {
+      display: none;
+    }
+
+    .name-screen-panel {
+      width: min(92vw, 480px);
+      text-align: center;
+    }
+
+    .name-screen-label {
+      display: block;
+      margin-bottom: 1rem;
+      font-size: clamp(1.35rem, 4.5vw, 2.1rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #333;
+    }
+
+    .name-screen-input {
+      display: block;
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 2px solid #bbb;
+      border-radius: 6px;
+      background: #fff;
+      color: #222;
+      font-size: clamp(1.3rem, 4.5vw, 1.85rem);
+      font-family: inherit;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .name-screen-input:focus {
+      outline: 3px solid #42a5f5;
+      border-color: #42a5f5;
+    }
+
+    .name-screen-continue {
+      display: block;
+      margin: 1.6rem auto 0;
+      min-width: 168px;
+      padding: 0.55rem 1.8rem;
+      border: 3px solid #888;
+      border-radius: 4px;
+      background: #b0b0b0;
+      color: #666;
+      font-size: clamp(1.15rem, 3.8vw, 1.55rem);
+      font-weight: 800;
+      font-family: inherit;
+      cursor: not-allowed;
+      opacity: 0.72;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s, box-shadow 0.12s, transform 0.12s;
+    }
+
+    .name-screen-continue:not(:disabled) {
+      border-color: #0d47a1;
+      background: #42a5f5;
+      color: #0d1b2a;
+      cursor: pointer;
+      opacity: 1;
+      box-shadow: 0 4px 0 #1565c0;
+    }
+
+    .name-screen-continue:not(:disabled):hover {
+      background: #64b5f6;
+    }
+
+    .name-screen-continue:not(:disabled):active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1565c0;
     }
 
     /* Recipe book — all screens */
@@ -6186,6 +6412,30 @@ Restaurant Rush
       border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
+    .storefront-sign {
+      position: absolute;
+      left: 50%;
+      top: 14%;
+      transform: translateX(-50%);
+      z-index: 3;
+      max-width: 90%;
+      padding: 0.25rem 0.75rem;
+      font-size: clamp(1.35rem, 4.2vw, 2.35rem);
+      font-weight: 800;
+      color: #4e342e;
+      text-align: center;
+      letter-spacing: 0.03em;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+    }
+
+    .storefront-sign:empty {
+      display: none;
+    }
+
     .storefront-glass-doors {
       position: absolute;
       left: 50%;
@@ -7093,8 +7343,51 @@ Restaurant Rush
 </head>
 <body>
 
+  <div class="start-screen" id="startScreen">
+    <div class="start-screen-stage">
+      <div class="start-tomato-splat" aria-hidden="true">
+        <svg class="start-tomato-splat-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="startSplatGrad" cx="42%" cy="38%" r="58%">
+              <stop offset="0%" stop-color="#ff6f60"/>
+              <stop offset="55%" stop-color="#e53935"/>
+              <stop offset="100%" stop-color="#b71c1c"/>
+            </radialGradient>
+          </defs>
+          <g fill="url(#startSplatGrad)">
+            <path d="M250 292 C205 338 135 322 152 258 C88 242 102 168 168 182 C152 108 238 92 268 158 C322 88 402 132 378 208 C448 222 432 308 358 318 C392 388 298 408 250 358 C188 412 108 378 132 302 C62 278 88 198 148 212 C128 152 208 168 250 208 C222 248 250 292 250 292 Z"/>
+          </g>
+        </svg>
+      </div>
+      <h1 class="start-title">
+        <span class="start-title-restaurant">Restaurant</span>
+        <span class="start-title-rush">RUSH</span>
+      </h1>
+      <button type="button" class="start-btn" id="startBtn">start</button>
+    </div>
+  </div>
+  <div class="start-flash" id="startFlash" aria-hidden="true"></div>
+
+  <div class="name-screen is-hidden" id="nameScreen">
+    <div class="name-screen-panel">
+      <label class="name-screen-label" for="restaurantNameInput">NAME YOUR RESTAURANT!</label>
+      <input
+        type="text"
+        id="restaurantNameInput"
+        class="name-screen-input"
+        maxlength="10"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Restaurant name"
+      />
+      <button type="button" class="name-screen-continue" id="nameContinueBtn" disabled>
+        Continue
+      </button>
+    </div>
+  </div>
+
   <!-- Screen 1: Garden -->
-  <section class="screen screen-outside active" id="screen-1" data-screen="1">
+  <section class="screen screen-outside" id="screen-1" data-screen="1">
     <div class="outside" aria-hidden="true">
       <div class="outside-sky">
         <div class="outside-sun"></div>
@@ -7557,6 +7850,7 @@ Restaurant Rush
         <div class="outside-cloud two"></div>
       </div>
       <div class="storefront-building">
+        <div class="storefront-sign" id="storefrontSign" aria-hidden="true"></div>
         <div class="storefront-glass-doors" aria-hidden="true">
           <div class="cashier-glass-doors-outside" aria-hidden="true"></div>
           <div class="cashier-glass-door door-left" aria-hidden="true"></div>
@@ -8109,6 +8403,8 @@ Restaurant Rush
       "meat",
     ]);
 
+    // Recipe steps: food names + appliances only (oven, blender, cutting board, microwave, MEAT box, etc.).
+    // No sink, dishwasher, or carriers (plate, cup, bowl, pot, tray).
     const RECIPE_BOOK = [
       {
         id: "bread",
@@ -8183,81 +8479,124 @@ Restaurant Rush
       {
         id: "juice-grapes",
         name: "Grape juice",
-        steps:
-          "1) Grapes + Sink → washed on plate\n2) Kitchen 2: washed grapes + Blender (3s)\n3) Clean empty cup → pour grape juice from blender",
+        steps: "Grapes + Blender",
       },
       {
         id: "juice-apples",
         name: "Apple juice",
-        steps:
-          "1) Apples + Sink → washed on plate\n2) Kitchen 2: washed apples + Blender (3s)\n3) Clean empty cup → pour apple juice from blender",
+        steps: "Apples + Blender",
       },
       {
         id: "juice-pineapple",
         name: "Pineapple juice",
-        steps:
-          "1) Pineapple + Sink → washed on plate\n2) Kitchen 2: washed pineapple + Blender (3s)\n3) Clean empty cup → pour pineapple juice from blender",
+        steps: "Pineapple + Blender",
       },
       {
         id: "carrot-soup",
         name: "Carrot Soup",
-        steps:
-          "1) Carrots + Blender → cold soup in pot\n2) Kitchen 1: set pot on counter, add Salt then Pepper (before microwave!)\n3) Kitchen 2: Microwave → hot Carrot Soup",
+        steps: "Carrots + Blender + Salt + Pepper + Microwave",
       },
       {
         id: "cucumber-soup",
         name: "Cucumber Soup",
-        steps:
-          "1) Cucumbers + Blender → cold soup in pot\n2) Kitchen 1: Salt + Pepper on counter (before microwave!)\n3) Kitchen 2: Microwave → hot Cucumber Soup",
+        steps: "Cucumbers + Blender + Salt + Pepper + Microwave",
       },
       {
         id: "potato-soup",
         name: "Potato Soup",
-        steps:
-          "1) Potatoes + Blender → cold potato soup in pot\n2) Chopped carrots (Carrots + Cutting board) + combine on counter\n3) Kitchen 1: Salt + Pepper (before microwave!)\n4) Kitchen 2: Microwave → hot Potato Soup",
+        steps: "Potatoes + Blender + Carrots + Cutting board + Salt + Pepper + Microwave",
       },
       {
         id: "tomato-soup",
         name: "Tomato Soup",
-        steps:
-          "1) Tomatoes + Blender → cold tomato soup in pot\n2) Chopped tomatoes (Tomatoes + Cutting board) + combine on counter\n3) Kitchen 1: Salt + Pepper (before microwave!)\n4) Kitchen 2: Microwave → hot Tomato Soup",
+        steps: "Tomatoes + Blender + Cutting board + Salt + Pepper + Microwave",
       },
       {
         id: "cooked-meat",
         name: "Cooked meat",
-        steps: "1) Kitchen 1: MEAT box → empty clean plate\n2) Kitchen 2: Oven (~4s)",
+        steps: "MEAT + Oven",
       },
       {
         id: "chopped-cooked-meat",
         name: "Chopped & cooked meat",
-        steps:
-          "1) MEAT box → plate\n2) Kitchen 2: Cutting board (~3s)\n3) Oven (~4s)",
+        steps: "MEAT + Cutting board + Oven",
       },
       {
         id: "seasoned-steak",
         name: "Seasoned steak",
-        steps:
-          "1) MEAT box → plate\n2) Kitchen 1: set plate on counter → Salt → Pepper\n3) Kitchen 2: Oven (~4s)",
+        steps: "MEAT + Salt + Pepper + Oven",
       },
       {
         id: "steak-sandwich",
         name: "Steak sandwich",
         steps:
-          "1) Make bread (Wheat + Blender + Water + Oven)\n2) Make cooked meat (MEAT box → Oven)\n3) Chopped tomatoes (Tomatoes + Sink + Cutting board)\n4) Kitchen 1: combine cooked meat + chopped tomatoes on counter\n5) Combine bread + meat with tomato on counter",
+          "Wheat + Blender + Water + Oven + MEAT + Oven + Tomatoes + Cutting board",
       },
       {
         id: "meat-potato-stew",
         name: "Meat & potato stew",
         steps:
-          "1) Potatoes + Blender → cold potato soup in pot\n2) Chopped carrots + combine on counter\n3) MEAT box → plate → Cutting board → Oven (chopped cooked meat)\n4) Combine chopped cooked meat + potato stew pot on counter\n5) Kitchen 1: Salt + Pepper on counter\n6) Kitchen 2: Microwave → hot Meat & potato stew",
+          "Potatoes + Blender + Carrots + Cutting board + MEAT + Cutting board + Oven + Salt + Pepper + Microwave",
       },
       {
         id: "meat-stew",
         name: "Meat stew",
         steps:
-          "1) MEAT box → plate → Kitchen 2: Blender (~3s) → empty pot scoops cold meat puree\n2) Chopped potatoes + combine on counter\n3) Chopped carrots + combine on counter\n4) Kitchen 1: Salt + Pepper on counter\n5) Kitchen 2: Microwave → hot Meat stew",
+          "MEAT + Blender + Potatoes + Cutting board + Carrots + Cutting board + Salt + Pepper + Microwave",
       },
     ];
+
+    function countRecipeSteps(steps) {
+      return steps.split(" + ").filter(Boolean).length;
+    }
+
+    const RECIPE_STEP_COUNTS = Object.fromEntries(
+      RECIPE_BOOK.map((r) => [r.id, countRecipeSteps(r.steps)])
+    );
+
+    function cashierCatalogItemStepCount(item) {
+      if (item.kind === "drink") {
+        if (item.drink.startsWith("juice-")) {
+          return RECIPE_STEP_COUNTS[item.drink] ?? 2;
+        }
+        return 1;
+      }
+      if (item.kind === "soup") {
+        const recipeId = {
+          carrot: "carrot-soup",
+          cucumber: "cucumber-soup",
+          potato: "potato-soup",
+          tomato: "tomato-soup",
+          "meat-potato": "meat-potato-stew",
+          "meat-stew": "meat-stew",
+        }[item.recipe];
+        return RECIPE_STEP_COUNTS[recipeId] ?? 5;
+      }
+      if (item.kind === "food") {
+        if (item.crop === "steak-sandwich") {
+          return RECIPE_STEP_COUNTS["steak-sandwich"];
+        }
+        if (item.crop === "bread") return RECIPE_STEP_COUNTS.bread;
+        if (item.crop === "meat") {
+          if (item.salted && item.peppered) {
+            return RECIPE_STEP_COUNTS["seasoned-steak"];
+          }
+          if (item.wasCut) return RECIPE_STEP_COUNTS["chopped-cooked-meat"];
+          return RECIPE_STEP_COUNTS["cooked-meat"];
+        }
+        if (item.state === "baked" && item.wasCut) {
+          return RECIPE_STEP_COUNTS["baked-pineapple"];
+        }
+        const recipeId =
+          (item.state === "cut" ? "cut-" : "baked-") + item.crop;
+        return RECIPE_STEP_COUNTS[recipeId] ?? 2;
+      }
+      return 2;
+    }
+
+    function cashierCatalogItemWeight(item) {
+      return 1 / cashierCatalogItemStepCount(item);
+    }
 
     const DRINK_LABELS = {
       water: "Water",
@@ -9500,9 +9839,17 @@ Restaurant Rush
       const pool = catalog.slice();
       const picked = [];
       for (let n = 0; n < count && pool.length; n++) {
-        const i = Math.floor(Math.random() * pool.length);
-        picked.push({ ...pool[i] });
-        pool.splice(i, 1);
+        const weights = pool.map(cashierCatalogItemWeight);
+        const total = weights.reduce((sum, w) => sum + w, 0);
+        let roll = Math.random() * total;
+        let idx = 0;
+        for (; idx < pool.length; idx++) {
+          roll -= weights[idx];
+          if (roll <= 0) break;
+        }
+        idx = Math.min(idx, pool.length - 1);
+        picked.push({ ...pool[idx] });
+        pool.splice(idx, 1);
       }
       return picked;
     }
@@ -12802,6 +13149,111 @@ Restaurant Rush
         navigateToScreen(Number(btn.dataset.go));
       });
     });
+
+    const startScreen = document.getElementById("startScreen");
+    const startBtn = document.getElementById("startBtn");
+    const startFlash = document.getElementById("startFlash");
+    const nameScreen = document.getElementById("nameScreen");
+    const restaurantNameInput = document.getElementById("restaurantNameInput");
+    const nameContinueBtn = document.getElementById("nameContinueBtn");
+    const storefrontSign = document.getElementById("storefrontSign");
+    let introStarted = false;
+    let gameStarted = false;
+    let restaurantName = "";
+
+    function updateStorefrontSign() {
+      if (!storefrontSign) return;
+      const name = restaurantName.trim();
+      storefrontSign.textContent = name ? name + " Diner" : "";
+    }
+
+    const START_WHITE_MS = 1800;
+    const NAME_FADE_MS = 1800;
+    const RESTAURANT_NAME_MAX = 10;
+    let namingFinishing = false;
+
+    function updateNameContinueBtn() {
+      if (!nameContinueBtn || !restaurantNameInput) return;
+      const hasName = restaurantNameInput.value.trim().length > 0;
+      nameContinueBtn.disabled = !hasName;
+    }
+
+    function showNameScreen() {
+      if (!nameScreen) return;
+      nameScreen.classList.remove("is-hidden", "is-fading-out");
+      if (restaurantNameInput) {
+        restaurantNameInput.disabled = false;
+        restaurantNameInput.value = "";
+        updateNameContinueBtn();
+        restaurantNameInput.focus();
+      }
+    }
+
+    function beginGame() {
+      if (introStarted) return;
+      introStarted = true;
+      startBtn.disabled = true;
+      startFlash.classList.add("show");
+      window.setTimeout(() => {
+        startScreen.classList.add("is-hidden");
+        showNameScreen();
+        window.setTimeout(() => {
+          startFlash.classList.remove("show");
+        }, 200);
+      }, START_WHITE_MS);
+    }
+
+    function finishNaming() {
+      if (
+        namingFinishing ||
+        !restaurantNameInput ||
+        !nameContinueBtn ||
+        nameContinueBtn.disabled
+      ) {
+        return;
+      }
+      restaurantName = restaurantNameInput.value.trim().slice(0, RESTAURANT_NAME_MAX);
+      if (!restaurantName) return;
+      updateStorefrontSign();
+      namingFinishing = true;
+      gameStarted = true;
+      nameContinueBtn.disabled = true;
+      restaurantNameInput.disabled = true;
+      document.body.classList.add("game-started");
+      navigateToScreen(5);
+      nameScreen.classList.add("is-fading-out");
+      window.setTimeout(() => {
+        nameScreen.classList.add("is-hidden");
+        nameScreen.classList.remove("is-fading-out");
+        namingFinishing = false;
+      }, NAME_FADE_MS);
+    }
+
+    if (startBtn) {
+      startBtn.addEventListener("click", beginGame);
+    }
+
+    if (restaurantNameInput) {
+      restaurantNameInput.addEventListener("input", () => {
+        if (restaurantNameInput.value.length > RESTAURANT_NAME_MAX) {
+          restaurantNameInput.value = restaurantNameInput.value.slice(
+            0,
+            RESTAURANT_NAME_MAX
+          );
+        }
+        updateNameContinueBtn();
+      });
+      restaurantNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && nameContinueBtn && !nameContinueBtn.disabled) {
+          e.preventDefault();
+          finishNaming();
+        }
+      });
+    }
+
+    if (nameContinueBtn) {
+      nameContinueBtn.addEventListener("click", finishNaming);
+    }
 
     if (cashierTraySpot) {
       cashierTraySpot.addEventListener("click", (e) => {

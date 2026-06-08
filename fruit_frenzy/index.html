@@ -1,0 +1,425 @@
+<!--
+Fruit Frenzy — random starter game for you to change!
+
+HOW TO PLAY: Match the big target fruit. Click the same fruit bouncing around.
+Wrong fruit = lose a heart. Beat the timer to level up (gets faster).
+
+CHANGE ME IDEAS:
+- FRUITS array — swap emojis or add new ones
+- COLORS — background and UI colors
+- START_LIVES, START_TIME — easier or harder
+- levelSpeed() — how fast it ramps up
+- Add power-ups, sounds, or a high score
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Frenzy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(160deg, #ff6b6b 0%, #feca57 40%, #48dbfb 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            color: #2d3436;
+            user-select: none;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            text-shadow: 2px 2px 0 #fff;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            margin-bottom: 12px;
+        }
+
+        .hud {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .hearts { color: #e74c3c; letter-spacing: 2px; }
+
+        .timer-wrap {
+            width: 280px;
+            height: 14px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 2px solid #2d3436;
+        }
+
+        #timerBar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00b894, #55efc4);
+            transition: width 0.05s linear;
+        }
+
+        .target-box {
+            background: rgba(255,255,255,0.92);
+            border: 4px solid #2d3436;
+            border-radius: 20px;
+            padding: 10px 28px;
+            margin-bottom: 14px;
+            text-align: center;
+            box-shadow: 0 6px 0 #636e72;
+        }
+
+        .target-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #636e72;
+        }
+
+        #targetFruit {
+            font-size: 4rem;
+            line-height: 1.1;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        canvas {
+            display: block;
+            background: rgba(255,255,255,0.35);
+            border: 4px solid #2d3436;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            cursor: crosshair;
+            max-width: 100%;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 52, 54, 0.88);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .overlay.hidden { display: none; }
+
+        .overlay h2 {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            color: #feca57;
+        }
+
+        .overlay p {
+            max-width: 340px;
+            text-align: center;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: #dfe6e9;
+        }
+
+        button {
+            font-size: 1.2rem;
+            padding: 14px 32px;
+            background: #00b894;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #00896f;
+            font-weight: 700;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #00896f;
+        }
+
+        .flash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 5;
+        }
+
+        .flash.good { background: rgba(0, 184, 148, 0.35); opacity: 1; }
+        .flash.bad { background: rgba(231, 76, 60, 0.4); opacity: 1; }
+    </style>
+</head>
+<body>
+    <h1>🍉 Fruit Frenzy</h1>
+    <p class="subtitle">Click the matching fruit — change anything you want!</p>
+
+    <div class="hud">
+        <span>Score: <span id="score">0</span></span>
+        <span>Level: <span id="level">1</span></span>
+        <span class="hearts" id="hearts">❤️❤️❤️</span>
+        <div class="timer-wrap"><div id="timerBar"></div></div>
+    </div>
+
+    <div class="target-box">
+        <div class="target-label">Find this fruit</div>
+        <div id="targetFruit">🍎</div>
+    </div>
+
+    <canvas id="game" width="480" height="360"></canvas>
+
+    <div class="overlay" id="startScreen">
+        <h2>Fruit Frenzy</h2>
+        <p>Match the big fruit at the top. Click the same one bouncing in the box. Wrong pick = lose a heart. Beat the timer to level up!</p>
+        <button id="startBtn">Play</button>
+    </div>
+
+    <div class="overlay hidden" id="gameOverScreen">
+        <h2>Game Over!</h2>
+        <p>Score: <span id="finalScore">0</span> · Level <span id="finalLevel">1</span></p>
+        <button id="restartBtn">Try Again</button>
+    </div>
+
+    <div class="flash" id="flash"></div>
+
+    <script>
+        // === CHANGE ME: fruit list ===
+        const FRUITS = ['🍎', '🍌', '🍇', '🍊', '🍉', '🍓', '🥝', '🍑'];
+        const START_LIVES = 3;
+        const START_TIME = 8;
+        const CANVAS_W = 480;
+        const CANVAS_H = 360;
+        const FRUIT_COUNT = 6;
+
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const heartsEl = document.getElementById('hearts');
+        const timerBar = document.getElementById('timerBar');
+        const targetFruitEl = document.getElementById('targetFruit');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const flash = document.getElementById('flash');
+
+        let state = 'menu';
+        let score = 0;
+        let level = 1;
+        let lives = START_LIVES;
+        let timeLeft = START_TIME;
+        let maxTime = START_TIME;
+        let target = FRUITS[0];
+        let fruits = [];
+        let lastTime = 0;
+        let rafId = null;
+
+        function levelSpeed() {
+            return 1 + (level - 1) * 0.18;
+        }
+
+        function pickTarget() {
+            target = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+            targetFruitEl.textContent = target;
+        }
+
+        function spawnFruits() {
+            fruits = [];
+            const speed = levelSpeed();
+            const pool = [...FRUITS];
+            const mustHave = target;
+            const chosen = [mustHave];
+
+            while (chosen.length < FRUIT_COUNT) {
+                const f = pool[Math.floor(Math.random() * pool.length)];
+                if (!chosen.includes(f) || chosen.length >= pool.length) chosen.push(f);
+                else if (Math.random() > 0.3) chosen.push(f);
+            }
+
+            while (chosen.length < FRUIT_COUNT) {
+                chosen.push(pool[Math.floor(Math.random() * pool.length)]);
+            }
+
+            for (let i = 0; i < FRUIT_COUNT; i++) {
+                const size = 44 + Math.random() * 10;
+                fruits.push({
+                    emoji: chosen[i],
+                    x: size + Math.random() * (CANVAS_W - size * 2),
+                    y: size + Math.random() * (CANVAS_H - size * 2),
+                    vx: (Math.random() - 0.5) * 140 * speed,
+                    vy: (Math.random() - 0.5) * 140 * speed,
+                    size
+                });
+            }
+        }
+
+        function updateHearts() {
+            heartsEl.textContent = '❤️'.repeat(lives) + '🖤'.repeat(Math.max(0, START_LIVES - lives));
+        }
+
+        function flashScreen(kind) {
+            flash.className = 'flash ' + kind;
+            setTimeout(() => { flash.className = 'flash'; }, 150);
+        }
+
+        function resetRoundTimer() {
+            maxTime = Math.max(3.5, START_TIME - (level - 1) * 0.35);
+            timeLeft = maxTime;
+            timerBar.style.width = '100%';
+        }
+
+        function startGame() {
+            state = 'play';
+            score = 0;
+            level = 1;
+            lives = START_LIVES;
+            scoreEl.textContent = '0';
+            levelEl.textContent = '1';
+            updateHearts();
+            pickTarget();
+            spawnFruits();
+            resetRoundTimer();
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            lastTime = performance.now();
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(loop);
+        }
+
+        function gameOver() {
+            state = 'dead';
+            cancelAnimationFrame(rafId);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLevel').textContent = level;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function levelUp() {
+            level++;
+            levelEl.textContent = level;
+            pickTarget();
+            spawnFruits();
+            resetRoundTimer();
+            flashScreen('good');
+        }
+
+        function loop(now) {
+            if (state !== 'play') return;
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+
+            timeLeft -= dt;
+            timerBar.style.width = Math.max(0, (timeLeft / maxTime) * 100) + '%';
+
+            if (timeLeft <= 0) {
+                levelUp();
+            }
+
+            for (const f of fruits) {
+                f.x += f.vx * dt;
+                f.y += f.vy * dt;
+                const r = f.size / 2;
+                if (f.x - r < 0) { f.x = r; f.vx *= -1; }
+                if (f.x + r > CANVAS_W) { f.x = CANVAS_W - r; f.vx *= -1; }
+                if (f.y - r < 0) { f.y = r; f.vy *= -1; }
+                if (f.y + r > CANVAS_H) { f.y = CANVAS_H - r; f.vy *= -1; }
+            }
+
+            for (let i = 0; i < fruits.length; i++) {
+                for (let j = i + 1; j < fruits.length; j++) {
+                    bouncePair(fruits[i], fruits[j]);
+                }
+            }
+
+            draw();
+            rafId = requestAnimationFrame(loop);
+        }
+
+        function bouncePair(a, b) {
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const minDist = (a.size + b.size) / 2;
+            if (dist >= minDist) return;
+
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const overlap = minDist - dist;
+            a.x -= nx * overlap * 0.5;
+            a.y -= ny * overlap * 0.5;
+            b.x += nx * overlap * 0.5;
+            b.y += ny * overlap * 0.5;
+
+            const dvx = a.vx - b.vx;
+            const dvy = a.vy - b.vy;
+            const dot = dvx * nx + dvy * ny;
+            if (dot > 0) return;
+            a.vx -= dot * nx;
+            a.vy -= dot * ny;
+            b.vx += dot * nx;
+            b.vy += dot * ny;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+            for (const f of fruits) {
+                ctx.font = f.size + 'px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(f.emoji, f.x, f.y);
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (state !== 'play') return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = CANVAS_W / rect.width;
+            const scaleY = CANVAS_H / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const my = (e.clientY - rect.top) * scaleY;
+
+            for (const f of fruits) {
+                const hit = Math.hypot(mx - f.x, my - f.y) < f.size * 0.55;
+                if (!hit) continue;
+
+                if (f.emoji === target) {
+                    score += 10 * level;
+                    scoreEl.textContent = score;
+                    flashScreen('good');
+                    pickTarget();
+                    spawnFruits();
+                    resetRoundTimer();
+                } else {
+                    lives--;
+                    updateHearts();
+                    flashScreen('bad');
+                    if (lives <= 0) gameOver();
+                }
+                return;
+            }
+        });
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+    </script>
+</body>
+</html>

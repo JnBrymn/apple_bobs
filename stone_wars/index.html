@@ -12,239 +12,445 @@ STONE WARS GAME
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ars</title>
+    <title>stone wars</title>
     <style>
+        :root {
+            --sw-bright: 100%;
+        }
+
+        html[data-anim="off"] .warrior.selected,
+        html[data-anim="off"] .warrior.attacking {
+            animation: none !important;
+        }
+
+        html[data-pixel="off"] body,
+        html[data-pixel="off"] .battlefield,
+        html[data-pixel="off"] .warrior {
+            image-rendering: auto;
+        }
+
         body {
             margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            font-family: Arial, sans-serif;
-            color: white;
+            padding: 12px;
+            background: #ff00ff repeating-linear-gradient(
+                45deg,
+                #ffff00 0,
+                #ffff00 12px,
+                #00ff00 12px,
+                #00ff00 24px
+            );
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
+            color: #000080;
             text-align: center;
             overflow-x: auto;
+            image-rendering: pixelated;
         }
-        
+
+        h1 {
+            font-size: 28px;
+            text-shadow: 3px 3px 0 #ff0000, -2px 0 #00ffff;
+            letter-spacing: 4px;
+            transform: rotate(-2deg);
+        }
+
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 8px;
         }
-        
+
         .hud {
             display: flex;
             justify-content: space-between;
             width: 100%;
             max-width: 1200px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            background: #c0c0c0;
+            padding: 8px;
+            border: 5px ridge #808080;
+            margin-bottom: 8px;
         }
-        
+
         .stats {
             display: flex;
-            gap: 30px;
+            gap: 6px;
+            flex-wrap: wrap;
         }
-        
+
         .stat {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 8px;
+            background: #ffffff;
+            padding: 4px 8px;
+            border: 3px solid #000;
             font-weight: bold;
+            font-size: 12px;
         }
-        
-        .money {
-            color: #FFD700;
-        }
-        
-        .health {
-            color: #FF6B6B;
-        }
-        
+
+        .money { color: #ff0000; }
+        .health { color: #800080; }
+
         .controls {
             display: flex;
-            gap: 15px;
+            gap: 4px;
             align-items: center;
+            flex-wrap: wrap;
         }
-        
+
         .control-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            background: #00ffff;
+            color: #ff00ff;
+            border: 4px outset #ffffff;
+            padding: 6px 10px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s;
+            font-size: 11px;
+            font-family: "Times New Roman", serif;
         }
-        
+
         .control-btn:hover {
-            background: #2980b9;
+            background: #ff0000;
+            color: #ffff00;
         }
-        
+
         .control-btn:disabled {
-            background: #666;
+            background: #808080;
+            color: #404040;
             cursor: not-allowed;
         }
-        
+
         .battlefield {
             position: relative;
-            background: linear-gradient(90deg, #8B4513 0%, #A0522D 50%, #8B4513 100%);
-            border: 3px solid #654321;
-            border-radius: 10px;
+            background: #8b4513;
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 8px, #654321 8px, #654321 9px),
+                repeating-linear-gradient(90deg, transparent, transparent 8px, #5a3a1a 8px, #5a3a1a 9px);
+            border: 7px double #000;
             overflow: hidden;
             min-height: 400px;
             width: 100%;
             max-width: 1200px;
+            image-rendering: pixelated;
         }
-        
+
         .stone {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+            width: 54px;
+            height: 48px;
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2em;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            font-size: 11px;
+            border: 4px solid #000;
+            font-family: Impact, sans-serif;
         }
-        
+
         .stone.player {
-            background: linear-gradient(145deg, #4CAF50, #45a049);
-            left: 20px;
+            background: #00ff00;
+            left: 12px;
             top: 50%;
-            transform: translateY(-50%);
+            transform: translateY(-50%) rotate(7deg);
+            color: #000;
         }
-        
+
         .stone.enemy {
-            background: linear-gradient(145deg, #f44336, #d32f2f);
-            right: 20px;
+            background: #ff0000;
+            right: 12px;
             top: 50%;
-            transform: translateY(-50%);
+            transform: translateY(-50%) rotate(-11deg);
+            color: #ffff00;
         }
-        
+
+        .stone::after {
+            content: "ROCK";
+            position: absolute;
+            bottom: -14px;
+            left: 0;
+            font-size: 9px;
+            color: #000;
+            font-family: "Comic Sans MS", cursive;
+        }
+
         .warrior {
             position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 36px;
+            height: 44px;
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 3px solid #000;
             user-select: none;
+            font-size: 10px;
+            font-family: "Courier New", monospace;
+            image-rendering: pixelated;
         }
-        
+
         .warrior.selected {
-            border: 3px solid #FFD700;
-            box-shadow: 0 0 15px #FFD700;
+            outline: 4px dashed #ff00ff;
+            outline-offset: 2px;
+            animation: wobble 0.15s steps(2) infinite;
         }
-        
+
         .warrior.player {
-            background: linear-gradient(145deg, #2196F3, #1976D2);
-            color: white;
+            background: #0000ff;
+            color: #ffff00;
         }
-        
+
         .warrior.enemy {
-            background: linear-gradient(145deg, #FF5722, #E64A19);
-            color: white;
+            background: #ff6600;
+            color: #000;
         }
-        
+
         .warrior:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            filter: contrast(200%) hue-rotate(90deg);
         }
-        
+
         .warrior.attacking {
-            animation: attack 0.5s ease-in-out;
+            animation: bad-attack 0.2s steps(3);
         }
-        
-        @keyframes attack {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+
+        @keyframes wobble {
+            0% { transform: rotate(-4deg); }
+            100% { transform: rotate(4deg); }
         }
-        
+
+        @keyframes bad-attack {
+            0% { transform: scaleX(1) skewX(0deg); }
+            50% { transform: scaleX(1.4) skewX(20deg); }
+            100% { transform: scaleX(0.7) skewX(-15deg); }
+        }
+
         .warrior.dead {
-            opacity: 0.3;
-            transform: scale(0.8);
+            opacity: 0.5;
+            transform: rotate(90deg) scale(0.6);
+            background: #808080 !important;
         }
-        
+
         .projectile {
             position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #FFD700;
-            box-shadow: 0 0 10px #FFD700;
+            width: 18px;
+            height: 6px;
+            border-radius: 0;
+            background: #8b4513;
+            border: 2px solid #000;
+            box-shadow: none;
         }
-        
+
         .message {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            font-size: 1.5em;
+            transform: translate(-50%, -50%) rotate(3deg);
+            background: #ffff00;
+            color: #ff0000;
+            padding: 20px;
+            border: 6px solid #000;
+            font-size: 18px;
             font-weight: bold;
             z-index: 1000;
             display: none;
+            font-family: "Comic Sans MS", cursive;
         }
-        
+
         .grid-position {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+            border: 2px dotted #ff00ff;
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            background: rgba(255, 255, 0, 0.15);
+            font-size: 9px;
+            color: #000;
         }
-        
+
         .grid-position:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.6);
+            background: #00ffff;
+            border-style: solid;
         }
-        
+
         .grid-position.occupied {
             border-color: transparent;
             cursor: not-allowed;
-        }
-        
-        .grid-position.occupied:hover {
             background: transparent;
+        }
+
+        /* —— theme: clean —— */
+        html[data-theme="clean"] body {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        html[data-theme="clean"] h1 {
+            text-shadow: none;
+            transform: none;
+            letter-spacing: normal;
+        }
+        html[data-theme="clean"] .hud {
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 10px;
+        }
+        html[data-theme="clean"] .stat {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+        }
+        html[data-theme="clean"] .control-btn {
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+        }
+        html[data-theme="clean"] .battlefield {
+            background: linear-gradient(90deg, #8B4513, #A0522D, #8B4513);
+            background-image: none;
+            border: 3px solid #654321;
+            border-radius: 10px;
+        }
+        html[data-theme="clean"] .stone { border-radius: 50%; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        html[data-theme="clean"] .stone::after { content: none; }
+        html[data-theme="clean"] .stone.player { background: linear-gradient(145deg, #4CAF50, #45a049); }
+        html[data-theme="clean"] .stone.enemy { background: linear-gradient(145deg, #f44336, #d32f2f); }
+        html[data-theme="clean"] .warrior { border-radius: 50%; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        html[data-theme="clean"] .warrior.player { background: linear-gradient(145deg, #2196F3, #1976D2); color: #fff; }
+        html[data-theme="clean"] .warrior.enemy { background: linear-gradient(145deg, #FF5722, #E64A19); color: #fff; }
+        html[data-theme="clean"] .warrior.selected { outline: none; box-shadow: 0 0 15px #FFD700; border: 3px solid #FFD700; }
+        html[data-theme="clean"] .projectile { border-radius: 50%; background: #FFD700; box-shadow: 0 0 10px #FFD700; width: 8px; height: 8px; border: none; }
+        html[data-theme="clean"] .grid-position { border: 2px dashed rgba(255,255,255,0.3); border-radius: 8px; }
+        html[data-theme="clean"] .message { background: rgba(0,0,0,0.9); color: #fff; border-radius: 15px; transform: translate(-50%, -50%); border: none; }
+
+        /* —— theme: dark —— */
+        html[data-theme="dark"] body {
+            background: #0d1117;
+            color: #c9d1d9;
+        }
+        html[data-theme="dark"] h1 { color: #58a6ff; text-shadow: none; transform: none; }
+        html[data-theme="dark"] .hud { background: #161b22; border: 1px solid #30363d; }
+        html[data-theme="dark"] .stat { background: #21262d; border: 1px solid #30363d; }
+        html[data-theme="dark"] .control-btn { background: #238636; color: #fff; border: 1px solid #2ea043; font-family: inherit; }
+        html[data-theme="dark"] .battlefield { background: #1c1410; background-image: none; border: 2px solid #484f58; }
+        html[data-theme="dark"] .stone.player { background: #3fb950; color: #000; }
+        html[data-theme="dark"] .stone.enemy { background: #f85149; }
+        html[data-theme="dark"] .warrior.player { background: #1f6feb; color: #fff; }
+        html[data-theme="dark"] .warrior.enemy { background: #da3633; color: #fff; }
+        html[data-theme="dark"] .grid-position { border-color: #484f58; color: #8b949e; }
+
+        /* —— theme: neon —— */
+        html[data-theme="neon"] body {
+            background: #0a0014;
+            color: #0ff;
+            font-family: "Courier New", monospace;
+        }
+        html[data-theme="neon"] h1 {
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f, 0 0 20px #0ff;
+            transform: none;
+        }
+        html[data-theme="neon"] .hud { background: rgba(20,0,40,0.9); border: 2px solid #f0f; box-shadow: 0 0 12px #f0f; }
+        html[data-theme="neon"] .stat { background: #120020; border: 1px solid #0ff; color: #0ff; }
+        html[data-theme="neon"] .control-btn { background: #120020; color: #0ff; border: 2px solid #0ff; box-shadow: 0 0 8px #0ff; }
+        html[data-theme="neon"] .battlefield {
+            background: #050010;
+            border: 2px solid #f0f;
+            box-shadow: inset 0 0 30px rgba(255,0,255,0.3);
+            background-image: none;
+        }
+        html[data-theme="neon"] .stone.player { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+        html[data-theme="neon"] .stone.enemy { background: #f0f; color: #000; box-shadow: 0 0 15px #f0f; }
+        html[data-theme="neon"] .warrior.player { background: #00f; box-shadow: 0 0 10px #0ff; color: #fff; }
+        html[data-theme="neon"] .warrior.enemy { background: #f80; box-shadow: 0 0 10px #f80; }
+        html[data-theme="neon"] .projectile { background: #0ff; box-shadow: 0 0 8px #0ff; }
+
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .settings-overlay.open { display: flex; }
+        .settings-panel {
+            background: #fff;
+            color: #222;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 4px solid #000;
+            padding: 16px 20px;
+            text-align: left;
+            font-family: Arial, sans-serif;
+            border-radius: 8px;
+        }
+        html[data-theme="dark"] .settings-panel,
+        html[data-theme="neon"] .settings-panel {
+            background: #161b22;
+            color: #c9d1d9;
+            border-color: #484f58;
+        }
+        .settings-panel h2 { margin: 0 0 12px; text-align: center; }
+        .settings-panel h3 {
+            margin: 16px 0 8px;
+            font-size: 14px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+        }
+        .setting-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        .setting-row label { flex: 1; min-width: 140px; }
+        .setting-row input[type="range"] { width: 120px; }
+        .setting-row select,
+        .setting-row input[type="text"],
+        .setting-row input[type="number"] {
+            min-width: 140px;
+            padding: 4px 8px;
+        }
+        .settings-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .settings-actions button {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>⚔️ STONE WARS ⚔️</h1>
+        <h1>STONE WARS (bad graphics)</h1>
         
         <div class="hud">
             <div class="stats">
-                <div class="stat money">💰 Money: <span id="money">100</span></div>
-                <div class="stat health">❤️ Stone Health: <span id="playerHealth">100</span></div>
-                <div class="stat">🗡️ Warriors: <span id="playerWarriors">0</span></div>
-                <div class="stat">👹 Enemies: <span id="enemyWarriors">1</span></div>
-                <div class="stat">🎯 Wave: <span id="wave">1</span></div>
+                <div class="stat money">$ mony: <span id="money">100</span></div>
+                <div class="stat health">rock hp: <span id="playerHealth">100</span></div>
+                <div class="stat">guys: <span id="playerWarriors">0</span></div>
+                <div class="stat">bad guys: <span id="enemyWarriors">1</span></div>
+                <div class="stat">wav: <span id="wave">1</span></div>
             </div>
             
             <div class="controls">
-                <button class="control-btn" onclick="buyWarrior()">🗡️ Buy Warrior ($50)</button>
-                <button class="control-btn" onclick="expandBattlefield()">🏗️ Expand Field ($200)</button>
-                <button class="control-btn" onclick="startWave()" id="startBtn">⚔️ Start Wave</button>
+                <button class="control-btn" onclick="buyWarrior()">buy guy ($50)</button>
+                <button class="control-btn" onclick="expandBattlefield()">make field bigger ($200)</button>
+                <button class="control-btn" onclick="startWave()" id="startBtn">FIGHT!!!</button>
+                <button class="control-btn" type="button" id="settingsBtn">⚙ Settings</button>
             </div>
         </div>
         
@@ -260,7 +466,324 @@ STONE WARS GAME
     
     <div class="message" id="message"></div>
 
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel">
+            <h2>⚙ Settings</h2>
+            <h3>Look &amp; style</h3>
+            <div class="setting-row">
+                <label for="setTheme">Theme</label>
+                <select id="setTheme">
+                    <option value="bad">Bad (ugly)</option>
+                    <option value="clean">Clean</option>
+                    <option value="dark">Dark</option>
+                    <option value="neon">Neon</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label for="setBrightness">Brightness <span id="brightVal">100</span>%</label>
+                <input type="range" id="setBrightness" min="40" max="150" value="100">
+            </div>
+            <div class="setting-row">
+                <label for="setPixel">Pixelated graphics</label>
+                <input type="checkbox" id="setPixel" checked>
+            </div>
+            <div class="setting-row">
+                <label for="setAnim">Animations</label>
+                <input type="checkbox" id="setAnim" checked>
+            </div>
+            <div class="setting-row">
+                <label for="setPlayerLabel">Your warrior label</label>
+                <input type="text" id="setPlayerLabel" maxlength="8" value="guy">
+            </div>
+            <div class="setting-row">
+                <label for="setEnemyLabel">Enemy label</label>
+                <input type="text" id="setEnemyLabel" maxlength="8" value="BAD">
+            </div>
+
+            <h3>How you move</h3>
+            <div class="setting-row">
+                <label for="setMoveMode">Movement</label>
+                <select id="setMoveMode">
+                    <option value="both">Click + keyboard</option>
+                    <option value="click">Click battlefield only</option>
+                    <option value="keyboard">Keyboard only</option>
+                    <option value="grid">Grid place only (no free move)</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label for="setKeys">Keys</label>
+                <select id="setKeys">
+                    <option value="arrows">Arrow keys</option>
+                    <option value="wasd">W A S D</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label for="setMoveSpeed">Move speed <span id="speedVal">20</span></label>
+                <input type="range" id="setMoveSpeed" min="8" max="60" value="20">
+            </div>
+
+            <h3>Sound</h3>
+            <div class="setting-row">
+                <label for="setSound">Sound on</label>
+                <input type="checkbox" id="setSound" checked>
+            </div>
+            <div class="setting-row">
+                <label for="setVolume">Volume <span id="volVal">50</span>%</label>
+                <input type="range" id="setVolume" min="0" max="100" value="50">
+            </div>
+
+            <h3>Gameplay</h3>
+            <div class="setting-row">
+                <label for="setStartMoney">Starting money</label>
+                <input type="number" id="setStartMoney" min="0" max="9999" value="100">
+            </div>
+            <div class="setting-row">
+                <label for="setEnemyDelay">Enemy spawn delay (ms)</label>
+                <input type="number" id="setEnemyDelay" min="200" max="5000" step="100" value="1000">
+            </div>
+            <div class="setting-row">
+                <label for="setKillReward">Money per kill</label>
+                <input type="number" id="setKillReward" min="1" max="500" value="25">
+            </div>
+            <div class="setting-row">
+                <label for="setWaveBonus">Wave clear bonus</label>
+                <input type="number" id="setWaveBonus" min="0" max="9999" value="100">
+            </div>
+
+            <div class="settings-actions">
+                <button type="button" id="settingsApplyBtn">Save &amp; apply</button>
+                <button type="button" id="settingsResetBtn">Reset defaults</button>
+                <button type="button" id="settingsCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const SETTINGS_KEY = "stoneWarsSettings";
+        const DEFAULT_SETTINGS = {
+            theme: "bad",
+            brightness: 100,
+            pixelated: true,
+            animations: true,
+            playerLabel: "guy",
+            enemyLabel: "BAD",
+            moveMode: "both",
+            keyScheme: "arrows",
+            moveSpeed: 20,
+            soundEnabled: true,
+            soundVolume: 0.5,
+            startMoney: 100,
+            enemySpawnDelay: 1000,
+            killReward: 25,
+            waveBonus: 100,
+        };
+
+        let settings = { ...DEFAULT_SETTINGS };
+        let audioCtx = null;
+
+        function swBool(v, def) {
+            if (v === true || v === false) return v;
+            if (v === 'true') return true;
+            if (v === 'false') return false;
+            return def;
+        }
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                if (raw) settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+            } catch (e) {
+                settings = { ...DEFAULT_SETTINGS };
+            }
+            settings.pixelated = swBool(settings.pixelated, true);
+            settings.animations = swBool(settings.animations, true);
+            settings.soundEnabled = swBool(settings.soundEnabled, true);
+            const n = (v, def, min, max) => {
+                const x = Number(v);
+                if (!Number.isFinite(x)) return def;
+                return Math.min(max, Math.max(min, x));
+            };
+            settings.brightness = n(settings.brightness, 100, 50, 150);
+            settings.moveSpeed = n(settings.moveSpeed, 20, 8, 60);
+            settings.soundVolume = n(settings.soundVolume, 0.5, 0, 1);
+            settings.startMoney = n(settings.startMoney, 100, 0, 9999);
+            settings.enemySpawnDelay = n(settings.enemySpawnDelay, 1000, 200, 5000);
+            settings.killReward = n(settings.killReward, 25, 1, 500);
+            settings.waveBonus = n(settings.waveBonus, 100, 0, 9999);
+            if (!['bad', 'clean', 'dark', 'neon'].includes(settings.theme)) settings.theme = 'bad';
+            if (!['click', 'keyboard', 'both', 'grid'].includes(settings.moveMode)) settings.moveMode = 'both';
+            if (!['arrows', 'wasd'].includes(settings.keyScheme)) settings.keyScheme = 'arrows';
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        }
+
+        function readSettingsFromForm() {
+            settings.theme = document.getElementById("setTheme").value;
+            settings.brightness = Number(document.getElementById("setBrightness").value);
+            settings.pixelated = document.getElementById("setPixel").checked;
+            settings.animations = document.getElementById("setAnim").checked;
+            settings.playerLabel = document.getElementById("setPlayerLabel").value.trim() || "guy";
+            settings.enemyLabel = document.getElementById("setEnemyLabel").value.trim() || "BAD";
+            settings.moveMode = document.getElementById("setMoveMode").value;
+            settings.keyScheme = document.getElementById("setKeys").value;
+            settings.moveSpeed = Number(document.getElementById("setMoveSpeed").value);
+            settings.soundEnabled = document.getElementById("setSound").checked;
+            settings.soundVolume = Number(document.getElementById("setVolume").value) / 100;
+            settings.startMoney = Number(document.getElementById("setStartMoney").value);
+            settings.enemySpawnDelay = Number(document.getElementById("setEnemyDelay").value);
+            settings.killReward = Number(document.getElementById("setKillReward").value);
+            settings.waveBonus = Number(document.getElementById("setWaveBonus").value);
+        }
+
+        function fillSettingsForm() {
+            document.getElementById("setTheme").value = settings.theme;
+            document.getElementById("setBrightness").value = settings.brightness;
+            document.getElementById("brightVal").textContent = settings.brightness;
+            document.getElementById("setPixel").checked = settings.pixelated;
+            document.getElementById("setAnim").checked = settings.animations;
+            document.getElementById("setPlayerLabel").value = settings.playerLabel;
+            document.getElementById("setEnemyLabel").value = settings.enemyLabel;
+            document.getElementById("setMoveMode").value = settings.moveMode;
+            document.getElementById("setKeys").value = settings.keyScheme;
+            document.getElementById("setMoveSpeed").value = settings.moveSpeed;
+            document.getElementById("speedVal").textContent = settings.moveSpeed;
+            document.getElementById("setSound").checked = settings.soundEnabled;
+            document.getElementById("setVolume").value = Math.round(settings.soundVolume * 100);
+            document.getElementById("volVal").textContent = Math.round(settings.soundVolume * 100);
+            document.getElementById("setStartMoney").value = settings.startMoney;
+            document.getElementById("setEnemyDelay").value = settings.enemySpawnDelay;
+            document.getElementById("setKillReward").value = settings.killReward;
+            document.getElementById("setWaveBonus").value = settings.waveBonus;
+        }
+
+        function applySettings() {
+            const html = document.documentElement;
+            html.dataset.theme = settings.theme;
+            html.dataset.anim = settings.animations ? "on" : "off";
+            html.dataset.pixel = settings.pixelated ? "on" : "off";
+            document.body.style.filter = "";
+            const container = document.querySelector(".game-container");
+            if (container) container.style.filter = `brightness(${settings.brightness}%)`;
+
+            const title = document.querySelector("h1");
+            if (title) {
+                title.textContent =
+                    settings.theme === "bad"
+                        ? "STONE WARS (bad graphics)"
+                        : "STONE WARS";
+            }
+
+            if (!gameState || !gameState.playerWarriors) return;
+            gameState.playerWarriors.forEach((w) => {
+                if (w.element) w.element.textContent = settings.playerLabel;
+            });
+            gameState.enemyWarriors.forEach((w) => {
+                if (w.element) w.element.textContent = settings.enemyLabel;
+            });
+        }
+
+        function ensureAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === "suspended") audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!settings.soundEnabled || settings.soundVolume <= 0) return;
+            ensureAudio();
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const freqs = { move: 220, attack: 440, buy: 330, wave: 550, win: 660, hurt: 150 };
+            osc.type = type === "hurt" ? "sawtooth" : "square";
+            osc.frequency.value = freqs[type] || 300;
+            gain.gain.value = settings.soundVolume * 0.15;
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.12);
+        }
+
+        function openSettings() {
+            fillSettingsForm();
+            document.getElementById("settingsOverlay").classList.add("open");
+        }
+
+        function closeSettings() {
+            document.getElementById("settingsOverlay").classList.remove("open");
+        }
+
+        function canClickMove() {
+            return settings.moveMode === "click" || settings.moveMode === "both";
+        }
+
+        function canKeyboardMove() {
+            return settings.moveMode === "keyboard" || settings.moveMode === "both";
+        }
+
+        function handleMoveKey(e) {
+            const w = gameState.selectedWarrior;
+            if (!w) return false;
+            const k = e.key.toLowerCase();
+            if (k === " " || k === "space") {
+                e.preventDefault();
+                w.attack();
+                return true;
+            }
+            if (!canKeyboardMove()) return false;
+            const d = settings.moveSpeed;
+            const keys = settings.keyScheme === "wasd"
+                ? { up: ["w"], down: ["s"], left: ["a"], right: ["d"] }
+                : { up: ["arrowup"], down: ["arrowdown"], left: ["arrowleft"], right: ["arrowright"] };
+            if (keys.up.includes(k)) { e.preventDefault(); w.moveTo(w.x, w.y - d); return true; }
+            if (keys.down.includes(k)) { e.preventDefault(); w.moveTo(w.x, w.y + d); return true; }
+            if (keys.left.includes(k)) { e.preventDefault(); w.moveTo(w.x - d, w.y); return true; }
+            if (keys.right.includes(k)) { e.preventDefault(); w.moveTo(w.x + d, w.y); return true; }
+            return false;
+        }
+
+        function setupSettingsUI() {
+            loadSettings();
+            applySettings();
+            fillSettingsForm();
+            closeSettings();
+
+            document.getElementById("settingsBtn").addEventListener("click", openSettings);
+            document.getElementById("settingsCloseBtn").addEventListener("click", closeSettings);
+            document.getElementById("settingsOverlay").addEventListener("click", (e) => {
+                if (e.target.id === "settingsOverlay") closeSettings();
+            });
+
+            document.getElementById("setBrightness").addEventListener("input", (e) => {
+                document.getElementById("brightVal").textContent = e.target.value;
+            });
+            document.getElementById("setMoveSpeed").addEventListener("input", (e) => {
+                document.getElementById("speedVal").textContent = e.target.value;
+            });
+            document.getElementById("setVolume").addEventListener("input", (e) => {
+                document.getElementById("volVal").textContent = e.target.value;
+            });
+
+            document.getElementById("settingsApplyBtn").addEventListener("click", () => {
+                readSettingsFromForm();
+                saveSettings();
+                applySettings();
+                closeSettings();
+                showMessage("Settings saved!");
+                playSound("buy");
+            });
+
+            document.getElementById("settingsResetBtn").addEventListener("click", () => {
+                settings = { ...DEFAULT_SETTINGS };
+                fillSettingsForm();
+                saveSettings();
+                applySettings();
+                showMessage("Reset to defaults (Save to keep)");
+            });
+        }
+
         // Game state
         let gameState = {
             money: 100,
@@ -272,7 +795,6 @@ STONE WARS GAME
             wave: 1,
             isWaveActive: false,
             gridPositions: [],
-            projectiles: [],
             selectedWarrior: null
         };
         
@@ -294,9 +816,10 @@ STONE WARS GAME
             createElement() {
                 const warrior = document.createElement('div');
                 warrior.className = `warrior ${this.isPlayer ? 'player' : 'enemy'}`;
-                warrior.textContent = this.isPlayer ? '🗡️' : '👹';
+                warrior.textContent = this.isPlayer ? settings.playerLabel : settings.enemyLabel;
                 warrior.style.left = this.x + 'px';
                 warrior.style.top = this.y + 'px';
+                warrior.style.transform = `rotate(${(Math.random() * 24 - 12).toFixed(0)}deg)`;
                 warrior.dataset.id = this.id;
                 
                 if (this.isPlayer) {
@@ -323,6 +846,10 @@ STONE WARS GAME
             
             moveTo(x, y) {
                 if (!this.isPlayer) return;
+                if (settings.moveMode === "grid") {
+                    showMessage("Movement is grid-only — turn it off in Settings.");
+                    return;
+                }
                 
                 // Check if position is valid (not too close to stones)
                 const playerStoneX = 50;
@@ -348,6 +875,7 @@ STONE WARS GAME
                 this.y = y;
                 this.element.style.left = x + 'px';
                 this.element.style.top = y + 'px';
+                playSound("move");
             }
             
             attack() {
@@ -379,6 +907,7 @@ STONE WARS GAME
             
             performAttack() {
                 if (!this.target || this.target.health <= 0) return;
+                playSound("attack");
                 
                 // Visual attack animation
                 this.element.classList.add('attacking');
@@ -451,7 +980,8 @@ STONE WARS GAME
                     gameState.enemyWarriors = gameState.enemyWarriors.filter(w => w.id !== this.id);
                     
                     // Give money for killing enemy
-                    gameState.money += 25;
+                    gameState.money += settings.killReward;
+                    playSound("win");
                     updateHUD();
                 }
                 
@@ -475,6 +1005,7 @@ STONE WARS GAME
         
         // Initialize game
         function initGame() {
+            gameState.money = settings.startMoney;
             createGrid();
             updateHUD();
         }
@@ -552,12 +1083,14 @@ STONE WARS GAME
             
             // Deduct money
             gameState.money -= 50;
+            playSound("buy");
             updateHUD();
         }
         
         // Buy warrior
         function buyWarrior() {
             if (gameState.money >= 50) {
+                playSound("buy");
                 showMessage('Click on a grid position to place your warrior!');
             } else {
                 showMessage('Not enough money!');
@@ -570,6 +1103,7 @@ STONE WARS GAME
                 gameState.money -= 200;
                 gameState.battlefieldSize++;
                 createGrid();
+                playSound("buy");
                 updateHUD();
                 showMessage('Battlefield expanded!');
             } else {
@@ -583,6 +1117,7 @@ STONE WARS GAME
             
             gameState.isWaveActive = true;
             document.getElementById('startBtn').disabled = true;
+            playSound("wave");
             
             // Spawn enemy warriors
             spawnEnemyWarriors();
@@ -607,7 +1142,7 @@ STONE WARS GAME
                     gameState.enemyWarriors.push(enemy);
                     
                     updateHUD();
-                }, i * 1000);
+                }, i * settings.enemySpawnDelay);
             }
         }
         
@@ -635,13 +1170,14 @@ STONE WARS GAME
                 // Wave completed
                 gameState.isWaveActive = false;
                 gameState.wave++;
-                gameState.money += 100; // Bonus for completing wave
+                gameState.money += settings.waveBonus;
+                playSound("win");
                 
                 // Clear dead warriors
                 gameState.enemyWarriors = [];
                 
                 updateHUD();
-                showMessage(`Wave ${gameState.wave - 1} completed! +$100 bonus`);
+                showMessage(`Wave ${gameState.wave - 1} completed! +$${settings.waveBonus} bonus`);
                 
                 document.getElementById('startBtn').disabled = false;
                 return;
@@ -686,43 +1222,32 @@ STONE WARS GAME
         
         // Handle battlefield clicks for movement
         document.getElementById('battlefield').addEventListener('click', (e) => {
+            if (!canClickMove()) return;
+            if (e.target.closest(".grid-position")) return;
             if (gameState.selectedWarrior && gameState.selectedWarrior.isPlayer) {
                 const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left - 20; // Center the warrior
+                const x = e.clientX - rect.left - 20;
                 const y = e.clientY - rect.top - 20;
                 gameState.selectedWarrior.moveTo(x, y);
             }
         });
         
-        // Handle keyboard controls
         document.addEventListener('keydown', (e) => {
-            if (!gameState.selectedWarrior) return;
-            
-            const warrior = gameState.selectedWarrior;
-            const moveDistance = 20;
-            
-            switch(e.key) {
-                case 'ArrowUp':
-                    warrior.moveTo(warrior.x, warrior.y - moveDistance);
-                    break;
-                case 'ArrowDown':
-                    warrior.moveTo(warrior.x, warrior.y + moveDistance);
-                    break;
-                case 'ArrowLeft':
-                    warrior.moveTo(warrior.x - moveDistance, warrior.y);
-                    break;
-                case 'ArrowRight':
-                    warrior.moveTo(warrior.x + moveDistance, warrior.y);
-                    break;
-                case ' ':
-                    e.preventDefault();
-                    warrior.attack();
-                    break;
+            if (e.key === "Escape") {
+                closeSettings();
+                return;
             }
+            if (document.getElementById("settingsOverlay").classList.contains("open")) return;
+            const k = e.key.toLowerCase();
+            const isMove = k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright"
+                || k === "w" || k === "a" || k === "s" || k === "d" || k === " " || k === "space";
+            if (isMove) handleMoveKey(e);
         });
         
-        // Initialize when page loads
-        window.addEventListener('load', initGame);
+        window.addEventListener("load", () => {
+            setupSettingsUI();
+            initGame();
+        });
     </script>
 </body>
 </html>

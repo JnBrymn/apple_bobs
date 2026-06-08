@@ -1,0 +1,41 @@
+---
+description: Split totally different game parts into new files in the same folder
+globs: */index.html,*/**/*.{js,css},modern/**
+alwaysApply: false
+---
+
+# Split distinct game parts into files
+
+When you start a **totally different part** of a game (new screen/area, new mechanic, new system, big feature that is mostly its own thing):
+
+1. **Same game folder** — do not make a new game folder or subfolder.
+2. **New file** — create another file in that folder with a clear name (e.g. `garden.js`, `cashier.js`, `enemies.js`).
+3. **Wire from `index.html`** — add `<script src="that-file.js"></script>` (or `<link>` for CSS). Order matters if files depend on each other.
+4. **Repeat every time** — each new distinct part gets its own file. Do not pile unrelated systems back into one giant file.
+
+## What stays in `index.html`
+
+- HTML shell and layout
+- Shared CSS (or a shared `style.css` if you already split styles)
+- Glue: loading scripts, shared globals, wiring parts together
+- Plan comment at the top (update as ideas change)
+
+## When to split vs keep together
+
+| Split into a new file | Keep in the current file |
+|-----------------------|--------------------------|
+| New screen or area | Small tweak to existing part |
+| New game mode or mechanic | Shared helper used everywhere |
+| Big standalone system | Bug fix in code already there |
+
+## Examples
+
+```
+Restaurant Rush/
+  index.html      ← shell + loads the parts
+  garden.js       ← garden screen
+  kitchen.js      ← kitchen screens
+  cashier.js      ← cashier / money
+```
+
+If `garden.js` later needs a **totally different** mini-game inside it, add `garden-minigame.js` in the same folder and load it after `garden.js`.
