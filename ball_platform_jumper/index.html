@@ -133,6 +133,54 @@
         // Platforms array
         let platforms = [];
         
+        // Reachable platform generation (not fully random — each step is jumpable)
+        const PLATFORM_COLORS = ['#FF9800', '#9C27B0', '#2196F3', '#FF5722', '#795548', '#E91E63'];
+        const MIN_PLATFORM_GAP = 70;
+        const MAX_PLATFORM_GAP = 115;
+        const MIN_PLATFORM_WIDTH = 90;
+        const MAX_PLATFORM_WIDTH = 170;
+        const MAX_HORIZONTAL_REACH = 240;
+        const PLATFORMS_TO_KEEP_AHEAD = 10;
+        
+        function pickPlatformColor() {
+            return PLATFORM_COLORS[Math.floor(Math.random() * PLATFORM_COLORS.length)];
+        }
+        
+        function getTopPlatform() {
+            return platforms.reduce((top, p) => (p.y < top.y ? p : top), platforms[0]);
+        }
+        
+        function countPlatformsAboveBall() {
+            return platforms.filter(p => p.y < ball.y - ball.radius).length;
+        }
+        
+        // Build one platform that is always reachable from the previous one
+        function generateNextPlatform(fromPlatform) {
+            const progress = Math.min(1, platforms.length / 40);
+            const minGap = MIN_PLATFORM_GAP;
+            const maxGap = MIN_PLATFORM_GAP + (MAX_PLATFORM_GAP - MIN_PLATFORM_GAP) * (0.4 + progress * 0.6);
+            const gap = minGap + Math.random() * (maxGap - minGap);
+            const y = fromPlatform.y - gap;
+            
+            const width = Math.max(
+                MIN_PLATFORM_WIDTH,
+                MAX_PLATFORM_WIDTH - progress * 35 + Math.random() * 25
+            );
+            const height = 15 + Math.random() * 8;
+            
+            const jumpFromX = fromPlatform.x + ball.radius +
+                Math.random() * Math.max(1, fromPlatform.width - ball.radius * 2);
+            const maxOffset = MAX_HORIZONTAL_REACH * (0.75 + progress * 0.2);
+            const offsetX = (Math.random() - 0.5) * 2 * maxOffset;
+            let landX = jumpFromX + offsetX;
+            landX = Math.max(ball.radius, Math.min(canvas.width - ball.radius, landX));
+            
+            let x = landX - width / 2;
+            x = Math.max(0, Math.min(canvas.width - width, x));
+            
+            return new Platform(x, y, width, height, pickPlatformColor());
+        }
+        
         // Platform class
         class Platform {
             constructor(x, y, width, height, color) {
@@ -161,38 +209,23 @@
             }
         }
         
-        // Generate initial platforms
+        // Start with the ground platform, then a short reachable chain
         function generateInitialPlatforms() {
-            // Starting platform
-            platforms.push(new Platform(canvas.width / 2 - 100, canvas.height - 50, 200, 20, '#4CAF50'));
+            platforms = [];
+            let current = new Platform(canvas.width / 2 - 100, canvas.height - 50, 200, 20, '#4CAF50');
+            platforms.push(current);
             
-            // Generate some random platforms
-            for (let i = 0; i < 15; i++) {
-                const x = Math.random() * (canvas.width - 150);
-                const y = canvas.height - 100 - (i + 1) * 120;
-                const width = 100 + Math.random() * 100;
-                const height = 15 + Math.random() * 10;
-                const colors = ['#FF9800', '#9C27B0', '#2196F3', '#FF5722', '#795548'];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                platforms.push(new Platform(x, y, width, height, color));
+            for (let i = 0; i < 6; i++) {
+                current = generateNextPlatform(current);
+                platforms.push(current);
             }
         }
         
-        // Generate new platforms
+        // Add platforms one at a time as you climb — only when running low ahead
         function generateNewPlatforms() {
-            const lastPlatform = platforms[platforms.length - 1];
-            if (lastPlatform.y - cameraY < canvas.height + 200) {
-                for (let i = 0; i < 3; i++) {
-                    const x = Math.random() * (canvas.width - 150);
-                    const y = lastPlatform.y - 120 - (i * 120);
-                    const width = 100 + Math.random() * 100;
-                    const height = 15 + Math.random() * 10;
-                    const colors = ['#FF9800', '#9C27B0', '#2196F3', '#FF5722', '#795548', '#E91E63'];
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-                    
-                    platforms.push(new Platform(x, y, width, height, color));
-                }
+            while (countPlatformsAboveBall() < PLATFORMS_TO_KEEP_AHEAD) {
+                const top = getTopPlatform();
+                platforms.push(generateNextPlatform(top));
             }
         }
         
@@ -325,24 +358,38 @@
             ctx.fill();
         }
         
-        // Draw decorative clouds
+        // Fixed cloud layout — sizes were random every frame and made clouds flicker
+        const clouds = [
+            { baseX: 80,  y: 70,  size: 72 },
+            { baseX: 340, y: 140, size: 58 },
+            { baseX: 620, y: 55,  size: 85 },
+            { baseX: 180, y: 210, size: 64 },
+            { baseX: 500, y: 175, size: 78 },
+            { baseX: 760, y: 120, size: 66 }
+        ];
+        
         function drawClouds() {
             ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            for (let i = 0; i < 5; i++) {
-                const x = (i * 300 + Date.now() * 0.01) % (canvas.width + 200) - 100;
-                const y = (i * 150) % 200 + 50;
-                drawCloud(x, y, 60 + Math.random() * 40);
+            const drift = Date.now() * 0.01;
+            for (const cloud of clouds) {
+                const x = (cloud.baseX + drift) % (canvas.width + 200) - 100;
+                drawCloud(x, cloud.y, cloud.size);
             }
         }
         
         function drawCloud(x, y, size) {
-            ctx.beginPath();
-            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
-            ctx.arc(x + size * 0.4, y, size * 0.6, 0, Math.PI * 2);
-            ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
-            ctx.arc(x + size * 0.6, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
-            ctx.arc(x + size * 0.2, y - size * 0.3, size * 0.5, 0, Math.PI * 2);
-            ctx.fill();
+            const puffs = [
+                [x, y, size * 0.5],
+                [x + size * 0.4, y, size * 0.6],
+                [x + size * 0.8, y, size * 0.5],
+                [x + size * 0.6, y - size * 0.2, size * 0.4],
+                [x + size * 0.2, y - size * 0.3, size * 0.5]
+            ];
+            for (const [cx, cy, r] of puffs) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         
         // Game over

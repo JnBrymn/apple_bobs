@@ -52,6 +52,12 @@ header h1 {
     font-weight: bold;
 }
 
+.playtime-status {
+    font-size: 0.9rem;
+    color: #d6e8d6;
+    margin: 0.35rem 0 0.5rem;
+}
+
 nav ul {
     list-style: none;
     display: flex;

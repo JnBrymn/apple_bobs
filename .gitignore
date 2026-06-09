@@ -25,3 +25,4 @@ ENV/
 # Project specific
 .cursorindexingignore
 .specstory/history/
+.cursor/skills/no-poki/.owner-override

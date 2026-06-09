@@ -14,6 +14,65 @@ HIDDEN_GAMES = {
     "fire_feild/progress_quest",
 }
 
+# Optional manual cost overrides (AppleBucks). Bigger number = more effort.
+GAME_COST_OVERRIDES = {
+    "Restaurant Rush": 10,
+    "perfect mine": 10,
+    "TEMPLE OF DOOOOOM": 8,
+    "grandmapocalypse": 7,
+    "bee_tycoon": 6,
+    "pizza_tycoon": 6,
+    "tycoon_game": 6,
+    "monopoly": 6,
+    "minecraft": 6,
+    "super_mario": 5,
+    "geometry_dash": 5,
+    "little_alchemy": 5,
+    "incredibox": 5,
+    "bean_blast": 4,
+    "frame_flipper": 4,
+    "stone_wars": 4,
+    "gamble_count": 2,
+    "click_50": 1,
+    "tic-tac-toe": 1,
+    "2048": 2,
+}
+
+
+def effort_cost_from_lines(line_count):
+    """Guess effort from game file size. More lines usually means more work."""
+    if line_count < 400:
+        return 1
+    if line_count < 1000:
+        return 2
+    if line_count < 2500:
+        return 3
+    if line_count < 5000:
+        return 5
+    if line_count < 8000:
+        return 7
+    return 10
+
+
+def get_game_cost(clean_path):
+    """AppleBucks cost for a game based on effort."""
+    if clean_path in GAME_COST_OVERRIDES:
+        return GAME_COST_OVERRIDES[clean_path]
+
+    html_file = os.path.join(*clean_path.split("/"), "index.html")
+    try:
+        with open(html_file, encoding="utf-8", errors="ignore") as handle:
+            line_count = sum(1 for _ in handle)
+    except OSError:
+        line_count = 400
+
+    return effort_cost_from_lines(line_count)
+
+
+def cost_label(cost):
+    word = "AppleBuck" if cost == 1 else "AppleBucks"
+    return f"({cost} {word})"
+
 # WARNING: cursor, llm, openai, anthropic, etc. should not change this function. Do not remove this warning.
 def find_game_pages():
     """Find all index.html files except the root one."""
@@ -40,7 +99,10 @@ def create_menu_html(pages):
         if os.path.exists(qr_filename):
             qr_link = f" (<a href=\"{qr_filename}\">QR code</a>)"
         
-        menu_lines.append(f"                <li><a href=\"#\" onclick=\"playGame('{clean_path}/')\" class=\"game-link\">🍎 {display_name}</a> <span class=\"cost\">(1 AppleBuck)</span>{qr_link}</li>")
+        cost = get_game_cost(clean_path)
+        menu_lines.append(
+            f"                <li data-cost=\"{cost}\"><a href=\"#\" onclick=\"playGame('{clean_path}/', {cost})\" class=\"game-link\" data-cost=\"{cost}\">🍎 {display_name}</a> <span class=\"cost\">{cost_label(cost)}</span>{qr_link}</li>"
+        )
     
     menu_lines.append("            </ul>")
     return "\n".join(menu_lines)
@@ -105,6 +167,7 @@ def generate_index_html(menu_html):
             <span class="applebucks-icon">🍎</span>
             <span id="applebucks-balance">5</span> AppleBucks
         </div>
+        <p class="playtime-status" id="playtimeStatus">Play time earns 10 AppleBucks per hour</p>
         <nav>
             <ul>
                 <li><a href="#about">About</a></li>
@@ -118,7 +181,7 @@ def generate_index_html(menu_html):
         <section id="about">
             <h2>About Apple Bobs</h2>
             <p>Apple Bobs is a collection of browser-based games created by Bo Berryman using vibe coding techniques. Each game is crafted with vanilla HTML, CSS, and JavaScript for maximum compatibility and instant playability.</p>
-            <p><strong>🎮 How to Play:</strong> You start with 5 AppleBucks! Each game costs 1 AppleBuck to play. Win games to earn more AppleBucks and keep playing!</p>
+            <p><strong>🎮 How to Play:</strong> You start with 5 AppleBucks! Each game costs AppleBucks based on how much effort went into it — small games cost less, big games cost more. You also earn <strong>10 AppleBucks for every hour</strong> you spend playing on Apple Bobs!</p>
             <div class="site-notice">
                 <p><strong>💻 Computer required:</strong> You need a computer to play Apple Bobs games. A keyboard and mouse work best. Games may not work correctly on phones or tablets.</p>
                 <p><strong>🐛 Found a bug?</strong> Please report it so Bo can fix it! Click <strong>Report Bugs</strong> at the top of the page and describe what went wrong.</p>
@@ -207,7 +270,7 @@ def main():
         f.write(index_content)
     
     print(f"Apple Bobs menu generated with {len(pages)} game(s)")
-    print("📝 Updated index.html with game links")
+    print("Updated index.html with game links")
     
     # QR code status
     if qr_created:
@@ -216,10 +279,10 @@ def main():
             print(f"   - qr_codes/{game}.png")
     
     if qr_existing:
-        print(f"✅ {len(qr_existing)} QR code(s) already exist")
+        print(f"{len(qr_existing)} QR code(s) already exist")
     
     # List the found games
-    print("🎮 Found games:")
+    print("Found games:")
     for page in pages:
         clean_path = page.replace("/index.html", "")
         qr_status = "new" if clean_path in qr_created else "ok"

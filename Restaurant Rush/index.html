@@ -20,7 +20,7 @@ Restaurant Rush
 - Screens: Garden, Kitchen 1, Kitchen 2, Storefront, Cashier, Cafeteria (2×3 grid; corners + arrows show room name)
 - Storefront (screen 4): beige building, grey sidewalk, parking lot with separate spots, closed sliding glass doors (same look as cashier)
 - Cafeteria (screen 6): tables on gray floor; random diners each visit; bus cart on left — dirty trays land here after cashier handoff (home stack 3); blue dotted top shelf = pick up dirty tray; mop on right — pick up / put down like a plate (no food)
-- Start screen: checkered floor, tomato splat, yellow “Restaurant” + blue “RUSH”, start button → white fade → name screen (beige, “NAME YOUR RESTAURANT!”, 10-char input, Continue) → game (cashier, screen 5)
+- Start screen: checkered floor, tomato splat, yellow “Restaurant” + blue “RUSH”, start button → white fade → name screen (beige, “NAME YOUR RESTAURANT!”, 10-char input, Continue) → menu screen (fade in: Start new game + Tutorial) → either fades out → cashier doors (1s) → first customer enters; Tutorial = Gary intro, then 1st customer + Gary names their order, then customers in order: 1 food, 2 drink, 3 soup (1 item each, then repeats); full six screens
 - Cashier (screen 5): random orders (2–4 items): at least 1 drink + food or soup; max 2 per kind (drink / soup / food); tray spot; correct order → customer slides off screen right with tray, doors open, next customer enters then shows order
 - Recipes button (top-left, all screens): list + how-to steps for bread, baked foods, chopped fruit/veg, fruit juices, soups — steps use food names + appliances only (no sink, dishwasher, plates, cups, bowls, pots, trays)
 - Layout:
@@ -110,6 +110,110 @@ Restaurant Rush
       background: #ddd;
     }
 
+    .nav-arrow.tutorial-glow {
+      animation: tutorial-rainbow-nav 2.4s linear infinite;
+    }
+
+    .nav-arrow.tutorial-glow .dest {
+      color: inherit;
+      opacity: 0.9;
+    }
+
+    .plant.tutorial-glow .plant-body,
+    #basket.tutorial-glow,
+    #plate.tutorial-glow,
+    #cup.tutorial-glow,
+    #pot.tutorial-glow,
+    #bowl.tutorial-glow,
+    #tray.tutorial-glow,
+    #cashierTraySpot.tutorial-glow,
+    #trayMenuPlaceFood.tutorial-glow,
+    #trayCloseupDone.tutorial-glow,
+    .tray-source.tutorial-glow,
+    #saltShaker.tutorial-glow,
+    #pepperShaker.tutorial-glow,
+    .kitchen-sink.tutorial-glow,
+    .kitchen-blender.tutorial-glow,
+    .kitchen-oven.tutorial-glow,
+    .kitchen-cooler.tutorial-glow,
+    .kitchen-cutting-board.tutorial-glow,
+    .kitchen-microwave.tutorial-glow,
+    #meatBox.tutorial-glow,
+    .cooler-drink.tutorial-glow,
+    .counter-rest-spot.tutorial-glow {
+      animation: tutorial-rainbow-glow 2.4s linear infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes tutorial-rainbow-glow {
+      0%, 100% {
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.75), 0 0 18px rgba(229, 57, 53, 0.55);
+      }
+      16% {
+        box-shadow: 0 0 0 4px rgba(251, 140, 0, 0.8), 0 0 20px rgba(251, 140, 0, 0.6);
+      }
+      33% {
+        box-shadow: 0 0 0 4px rgba(251, 192, 45, 0.85), 0 0 20px rgba(251, 192, 45, 0.65);
+      }
+      50% {
+        box-shadow: 0 0 0 4px rgba(67, 160, 71, 0.8), 0 0 20px rgba(67, 160, 71, 0.6);
+      }
+      66% {
+        box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.8), 0 0 20px rgba(30, 136, 229, 0.6);
+      }
+      83% {
+        box-shadow: 0 0 0 4px rgba(142, 36, 170, 0.8), 0 0 20px rgba(142, 36, 170, 0.6);
+      }
+    }
+
+    @keyframes tutorial-rainbow-nav {
+      0%, 100% {
+        border-color: #e53935;
+        background: #ffcdd2;
+        color: #b71c1c;
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.55), 0 0 16px rgba(229, 57, 53, 0.5);
+      }
+      16% {
+        border-color: #fb8c00;
+        background: #ffe0b2;
+        color: #e65100;
+        box-shadow: 0 0 0 3px rgba(251, 140, 0, 0.55), 0 0 16px rgba(251, 140, 0, 0.5);
+      }
+      33% {
+        border-color: #f9a825;
+        background: #fff9c4;
+        color: #f57f17;
+        box-shadow: 0 0 0 3px rgba(251, 192, 45, 0.55), 0 0 16px rgba(251, 192, 45, 0.5);
+      }
+      50% {
+        border-color: #43a047;
+        background: #c8e6c9;
+        color: #1b5e20;
+        box-shadow: 0 0 0 3px rgba(67, 160, 71, 0.55), 0 0 16px rgba(67, 160, 71, 0.5);
+      }
+      66% {
+        border-color: #1e88e5;
+        background: #bbdefb;
+        color: #0d47a1;
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.55), 0 0 16px rgba(30, 136, 229, 0.5);
+      }
+      83% {
+        border-color: #8e24aa;
+        background: #e1bee7;
+        color: #4a148c;
+        box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.55), 0 0 16px rgba(142, 36, 170, 0.5);
+      }
+    }
+
+    .sink-zone,
+    .dishwasher-zone,
+    .microwave-zone,
+    .oven-zone,
+    .blender-zone,
+    .cutting-board-zone {
+      pointer-events: none;
+    }
+
     .nav-arrow .dest {
       font-size: 0.5rem;
       font-weight: 600;
@@ -131,7 +235,13 @@ Restaurant Rush
       z-index: 10;
     }
 
-    body:not(.game-started) .recipe-book {
+    body:not(.game-started) .recipe-book,
+    body:not(.game-started) .basket-home,
+    body:not(.game-started) .plate-home,
+    body:not(.game-started) .cup-home,
+    body:not(.game-started) .pot-home,
+    body:not(.game-started) .bowl-home,
+    body:not(.game-started) .tray-home {
       visibility: hidden;
       pointer-events: none;
     }
@@ -356,6 +466,102 @@ Restaurant Rush
       box-shadow: 0 1px 0 #1565c0;
     }
 
+    .menu-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 15000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3ece0;
+      opacity: 1;
+      transition: opacity 1.8s ease-in;
+    }
+
+    .menu-screen.is-fading-in {
+      opacity: 0;
+    }
+
+    .menu-screen.is-fading-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .menu-screen.is-hidden {
+      display: none;
+    }
+
+    .menu-screen-panel {
+      width: min(92vw, 560px);
+      text-align: center;
+    }
+
+    .menu-screen-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem 1.25rem;
+    }
+
+    .menu-screen-btn {
+      min-width: 168px;
+      padding: 0.55rem 1.4rem;
+      border: 3px solid #0d47a1;
+      border-radius: 4px;
+      background: #42a5f5;
+      color: #0d1b2a;
+      font-size: clamp(1.05rem, 3.5vw, 1.45rem);
+      font-weight: 800;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #1565c0;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s, box-shadow 0.12s, transform 0.12s;
+    }
+
+    .menu-screen-btn:hover {
+      background: #64b5f6;
+    }
+
+    .menu-screen-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1565c0;
+    }
+
+    .menu-screen-btn-secondary {
+      border-color: #6a1b9a;
+      background: #ce93d8;
+      color: #4a148c;
+      box-shadow: 0 4px 0 #8e24aa;
+    }
+
+    .menu-screen-btn-secondary:hover {
+      background: #e1bee7;
+    }
+
+    .menu-screen-btn-secondary:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #8e24aa;
+    }
+
+    .menu-screen-btn-secondary:disabled {
+      border-color: #888;
+      background: #b0b0b0;
+      color: #555;
+      box-shadow: 0 4px 0 #777;
+      cursor: not-allowed;
+      opacity: 0.85;
+    }
+
+    .menu-screen-btn-secondary:disabled:hover {
+      background: #b0b0b0;
+    }
+
+    .menu-screen-btn-secondary:disabled:active {
+      transform: none;
+      box-shadow: 0 4px 0 #777;
+    }
+
     /* Recipe book — all screens */
     .recipe-book {
       position: fixed;
@@ -364,6 +570,94 @@ Restaurant Rush
       z-index: 35;
       font-family: inherit;
       max-width: min(280px, calc(100vw - 100px));
+    }
+
+    body.tutorial-mode .recipe-book {
+      top: 148px;
+    }
+
+    .tutorial-gary {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 45;
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      max-width: min(94vw, 540px);
+      pointer-events: none;
+    }
+
+    body.tutorial-mode .tutorial-gary {
+      display: flex;
+    }
+
+    .tutorial-gary-box {
+      flex-shrink: 0;
+      width: 104px;
+      height: 104px;
+      padding: 8px;
+      border: 3px solid #1565c0;
+      border-radius: 12px;
+      background: #42a5f5;
+      box-shadow: 0 4px 0 #1565c0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .tutorial-gary-graphic {
+      display: block;
+      width: 100%;
+      height: 100%;
+      transform-origin: center bottom;
+      animation: gary-dance 0.85s ease-in-out infinite;
+    }
+
+    @keyframes gary-dance {
+      0%, 100% {
+        transform: translateY(0) rotate(0deg) scale(1, 1);
+      }
+      25% {
+        transform: translateY(-7px) rotate(-4deg) scale(1.03, 0.97);
+      }
+      50% {
+        transform: translateY(0) rotate(0deg) scale(0.97, 1.03);
+      }
+      75% {
+        transform: translateY(-5px) rotate(4deg) scale(1.02, 0.98);
+      }
+    }
+
+    .tutorial-gary-bubble {
+      display: none;
+      margin-top: 2px;
+      max-width: min(74vw, 380px);
+      padding: 12px 14px;
+      border: 2px solid #bbb;
+      border-radius: 14px;
+      background: #fff;
+      color: #222;
+      font-size: clamp(0.85rem, 2.2vw, 1.02rem);
+      line-height: 1.45;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      pointer-events: none;
+    }
+
+    .tutorial-gary-bubble.is-visible {
+      display: block;
+    }
+
+    .tutorial-gary-bubble.is-typing::after {
+      content: "▋";
+      display: inline-block;
+      margin-left: 1px;
+      animation: gary-blink 0.85s step-end infinite;
+    }
+
+    @keyframes gary-blink {
+      50% { opacity: 0; }
     }
 
     .recipe-book-toggle {
@@ -477,6 +771,148 @@ Restaurant Rush
     /* Screen 1 — outside */
     .screen-outside {
       background: #87ceeb;
+      transition: background 1.4s ease;
+    }
+
+    .outside-sky,
+    .outside-sun,
+    .outside-cloud,
+    .fluoro-tube,
+    .kitchen-glow,
+    .cafeteria-glow,
+    .screen-kitchen,
+    .screen-cafeteria,
+    .screen-storefront,
+    .kitchen-ceiling,
+    .cafeteria-ceiling {
+      transition:
+        background 1.4s ease,
+        box-shadow 1.4s ease,
+        opacity 1.4s ease,
+        filter 1.4s ease;
+    }
+
+    body.nighttime .screen-outside,
+    body.nighttime .screen-storefront {
+      background: #0c1024;
+    }
+
+    body.nighttime .outside-sky {
+      background: linear-gradient(to bottom, #06091a 0%, #101632 45%, #1a2048 100%);
+    }
+
+    body.nighttime .outside-sky::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 18%, rgba(255, 255, 255, 0.9), transparent),
+        radial-gradient(1px 1px at 28% 32%, rgba(255, 255, 255, 0.75), transparent),
+        radial-gradient(1.5px 1.5px at 44% 12%, rgba(255, 255, 255, 0.85), transparent),
+        radial-gradient(1px 1px at 62% 26%, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(1.5px 1.5px at 78% 14%, rgba(255, 255, 255, 0.8), transparent),
+        radial-gradient(1px 1px at 88% 36%, rgba(255, 255, 255, 0.65), transparent),
+        radial-gradient(1px 1px at 18% 48%, rgba(255, 255, 255, 0.55), transparent),
+        radial-gradient(1.5px 1.5px at 52% 42%, rgba(255, 255, 255, 0.7), transparent),
+        radial-gradient(1px 1px at 72% 52%, rgba(255, 255, 255, 0.6), transparent);
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    body.nighttime .outside-sky::after {
+      content: "";
+      position: absolute;
+      top: 11%;
+      right: 17%;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 38%, #faf8ef, #d8d6c8 55%, #9a9888);
+      box-shadow: 0 0 28px rgba(230, 228, 210, 0.35);
+      pointer-events: none;
+    }
+
+    body.nighttime .outside-sun {
+      opacity: 0;
+      transform: scale(0.2);
+    }
+
+    body.nighttime .outside-cloud {
+      opacity: 0.18;
+      filter: brightness(0.35);
+    }
+
+    body.nighttime .screen-kitchen,
+    body.nighttime .screen-cafeteria {
+      background: #24242e;
+    }
+
+    body.nighttime .kitchen-ceiling,
+    body.nighttime .cafeteria-ceiling {
+      filter: brightness(0.38);
+    }
+
+    body.nighttime .kitchen-walls,
+    body.nighttime .cafeteria .kitchen-walls {
+      filter: brightness(0.42);
+    }
+
+    body.nighttime .fluoro-tube {
+      background: linear-gradient(to bottom, #2e2e38 0%, #1c1c24 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    body.nighttime .fluoro-tube::after {
+      opacity: 0;
+    }
+
+    body.nighttime .kitchen-glow,
+    body.nighttime .cafeteria-glow {
+      opacity: 0;
+    }
+
+    .night-banner {
+      position: fixed;
+      inset: 0;
+      z-index: 50000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      background: rgba(8, 4, 22, 0.62);
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+
+    .night-banner.is-visible {
+      opacity: 1;
+    }
+
+    .night-banner-text {
+      font-family: "Arial Black", "Arial Narrow", Impact, sans-serif;
+      font-size: clamp(4.5rem, 22vw, 11rem);
+      font-weight: 900;
+      letter-spacing: 0.42em;
+      text-indent: 0.42em;
+      color: #4a1f6e;
+      text-shadow:
+        0 0 36px rgba(140, 70, 200, 0.85),
+        0 0 72px rgba(90, 40, 150, 0.55),
+        0 4px 0 #1a0828,
+        0 8px 24px rgba(0, 0, 0, 0.55);
+      transform: scale(0.92);
+      animation: night-title-pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes night-title-pulse {
+      0%, 100% {
+        transform: scale(0.92);
+        filter: brightness(1);
+      }
+      50% {
+        transform: scale(1);
+        filter: brightness(1.15);
+      }
     }
 
     .outside {
@@ -3994,7 +4430,8 @@ Restaurant Rush
       color: inherit;
     }
 
-    .kitchen-sink.can-drop .sink-zone {
+    .kitchen-sink.can-drop,
+    .kitchen-sink.can-take-plate {
       cursor: pointer;
     }
 
@@ -4002,10 +4439,6 @@ Restaurant Rush
       outline: 2px dashed rgba(80, 150, 220, 0.65);
       outline-offset: -2px;
       background: linear-gradient(to bottom, #b8d4e8, #7a9cb0);
-    }
-
-    .kitchen-sink.can-take-plate .sink-zone {
-      cursor: pointer;
     }
 
     .kitchen-sink.can-take-plate .sink-cabinet {
@@ -4232,6 +4665,13 @@ Restaurant Rush
 
     .kitchen-dishwasher.open .dishwasher-door {
       transform: rotateX(-68deg);
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    .kitchen-dishwasher:not(.washing) {
+      cursor: pointer;
     }
 
     .kitchen-dishwasher.open.can-drop-dish .dishwasher-interior {
@@ -4770,8 +5210,7 @@ Restaurant Rush
     }
 
     .kitchen-fridge.open .fridge-slot.blocked-take {
-      outline: 2px dashed rgba(180, 120, 120, 0.45);
-      outline-offset: -2px;
+      box-shadow: inset 0 0 0 2px rgba(180, 120, 120, 0.45);
     }
 
     .fridge-slot-item {
@@ -4807,7 +5246,9 @@ Restaurant Rush
     .kitchen-fridge.open .fridge-door,
     .kitchen-fridge.opening .fridge-door {
       transform: perspective(900px) rotateY(-78deg);
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 6;
     }
 
     .kitchen-fridge.closing .fridge-door {
@@ -5401,7 +5842,9 @@ Restaurant Rush
     .kitchen-microwave.open .microwave-door,
     .kitchen-microwave.opening .microwave-door {
       transform: rotateY(-72deg);
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 5;
     }
 
     .microwave-zone {
@@ -5602,7 +6045,7 @@ Restaurant Rush
       color: inherit;
     }
 
-    .kitchen-cutting-board.can-cut .cutting-board-zone {
+    .kitchen-cutting-board.can-cut {
       cursor: pointer;
     }
 
@@ -5730,6 +6173,13 @@ Restaurant Rush
     .kitchen-blender.can-fill-cup .blender-zone,
     .kitchen-blender.can-fill-pot .blender-zone,
     .kitchen-blender.can-fill-bowl .blender-zone {
+      cursor: pointer;
+    }
+
+    .kitchen-blender.can-drop-food,
+    .kitchen-blender.can-fill-cup,
+    .kitchen-blender.can-fill-pot,
+    .kitchen-blender.can-fill-bowl {
       cursor: pointer;
     }
 
@@ -6002,23 +6452,7 @@ Restaurant Rush
     }
 
     .cooler-close-hit {
-      position: absolute;
-      inset: 0;
-      z-index: 3;
       display: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      background: transparent;
-      cursor: pointer;
-    }
-
-    .kitchen-cooler.open .cooler-close-hit {
-      display: block;
-    }
-
-    .kitchen-cooler.open.has-fillable-drinks .cooler-close-hit {
-      pointer-events: none;
     }
 
     .cooler-drinks {
@@ -6093,7 +6527,9 @@ Restaurant Rush
 
     .kitchen-cooler.open .cooler-door {
       transform: perspective(900px) rotateY(-78deg);
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 5;
     }
 
     .kitchen-cooler.closing .cooler-door {
@@ -6246,7 +6682,9 @@ Restaurant Rush
 
     .kitchen-oven.open .oven-door,
     .kitchen-oven.opening .oven-door {
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 5;
     }
 
     .oven-zone {
@@ -6957,6 +7395,10 @@ Restaurant Rush
       transition: none;
     }
 
+    .cashier-customer-area.is-intro-waiting {
+      opacity: 0;
+    }
+
     .cashier-customer-area .customer {
       position: absolute;
       left: 50%;
@@ -7384,6 +7826,19 @@ Restaurant Rush
         Continue
       </button>
     </div>
+  </div>
+
+  <div class="menu-screen is-hidden is-fading-in" id="menuScreen">
+    <div class="menu-screen-panel">
+      <div class="menu-screen-actions">
+        <button type="button" class="menu-screen-btn" id="startNewGameBtn">Start new game</button>
+        <button type="button" class="menu-screen-btn menu-screen-btn-secondary" id="tutorialBtn">Tutorial</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="night-banner" id="nightBanner" hidden aria-hidden="true">
+    <span class="night-banner-text">NIGHT</span>
   </div>
 
   <!-- Screen 1: Garden -->
@@ -8143,6 +8598,60 @@ Restaurant Rush
     </div>
   </div>
 
+  <div class="tutorial-gary" id="tutorialGary" aria-live="polite">
+    <div class="tutorial-gary-box" aria-hidden="true">
+      <svg class="tutorial-gary-graphic" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gary, your tutorial guide">
+        <!-- Toque: flat band + three puffy lobes on top -->
+        <path
+          d="M 22 102
+             L 22 76
+             C 16 76, 12 64, 16 52
+             C 20 40, 26 34, 32 36
+             C 38 31, 44 28, 50 28
+             C 56 28, 62 31, 68 36
+             C 74 34, 80 40, 84 52
+             C 90 64, 84 76, 78 76
+             L 78 102
+             Q 78 106, 74 106
+             L 26 106
+             Q 22 106, 22 102 Z"
+          fill="#ffffff"
+          stroke="#1a1a1a"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+        <path
+          d="M 34 76 C 38 58, 42 44, 50 38 C 58 44, 62 58, 66 76"
+          fill="none"
+          stroke="#ececec"
+          stroke-width="1.1"
+          stroke-linecap="round"
+        />
+        <path
+          d="M 42 76 C 44 62, 47 50, 50 46 C 53 50, 56 62, 58 76"
+          fill="none"
+          stroke="#ececec"
+          stroke-width="1"
+          stroke-linecap="round"
+        />
+        <circle cx="38" cy="90" r="4.2" fill="#111"/>
+        <circle cx="62" cy="90" r="4.2" fill="#111"/>
+        <path
+          d="M 32 99
+             C 40 108, 50 109, 58 105
+             C 64 102, 69 98, 70 95
+             C 71 93, 66 95, 62 99
+             C 52 105, 38 104, 32 99 Z"
+          fill="#111"
+        />
+      </svg>
+    </div>
+    <div class="tutorial-gary-bubble" id="tutorialGaryBubble" hidden>
+      <p class="tutorial-gary-text" id="tutorialGaryText"></p>
+    </div>
+  </div>
+
   <div class="recipe-book" id="recipeBook">
     <button type="button" class="recipe-book-toggle" id="recipeBookToggle" aria-expanded="false">
       Recipes
@@ -8424,7 +8933,7 @@ Restaurant Rush
       {
         id: "baked-pineapple",
         name: "Baked pineapple",
-        steps: "Pineapple + Cutting board + Oven",
+        steps: "(Pineapple + Cutting board) + Oven",
       },
       {
         id: "baked-tomatoes",
@@ -8504,12 +9013,14 @@ Restaurant Rush
       {
         id: "potato-soup",
         name: "Potato Soup",
-        steps: "Potatoes + Blender + Carrots + Cutting board + Salt + Pepper + Microwave",
+        steps:
+          "Potatoes + Blender + (Carrots + Cutting board) + Salt + Pepper + Microwave",
       },
       {
         id: "tomato-soup",
         name: "Tomato Soup",
-        steps: "Tomatoes + Blender + Cutting board + Salt + Pepper + Microwave",
+        steps:
+          "Tomatoes + Blender + (Tomatoes + Cutting board) + Salt + Pepper + Microwave",
       },
       {
         id: "cooked-meat",
@@ -8519,35 +9030,36 @@ Restaurant Rush
       {
         id: "chopped-cooked-meat",
         name: "Chopped & cooked meat",
-        steps: "MEAT + Cutting board + Oven",
+        steps: "(MEAT + Cutting board) + Oven",
       },
       {
         id: "seasoned-steak",
         name: "Seasoned steak",
-        steps: "MEAT + Salt + Pepper + Oven",
+        steps: "(MEAT + Salt + Pepper) + Oven",
       },
       {
         id: "steak-sandwich",
         name: "Steak sandwich",
         steps:
-          "Wheat + Blender + Water + Oven + MEAT + Oven + Tomatoes + Cutting board",
+          "(Wheat + Blender + Water + Oven) + (MEAT + Oven) + (Tomatoes + Cutting board)",
       },
       {
         id: "meat-potato-stew",
         name: "Meat & potato stew",
         steps:
-          "Potatoes + Blender + Carrots + Cutting board + MEAT + Cutting board + Oven + Salt + Pepper + Microwave",
+          "Potatoes + Blender + (Carrots + Cutting board) + (MEAT + Cutting board) + Oven + Salt + Pepper + Microwave",
       },
       {
         id: "meat-stew",
         name: "Meat stew",
         steps:
-          "MEAT + Blender + Potatoes + Cutting board + Carrots + Cutting board + Salt + Pepper + Microwave",
+          "MEAT + Blender + (Potatoes + Cutting board) + (Carrots + Cutting board) + Salt + Pepper + Microwave",
       },
     ];
 
     function countRecipeSteps(steps) {
-      return steps.split(" + ").filter(Boolean).length;
+      const flat = steps.replace(/[()]/g, "");
+      return flat.split(" + ").map((part) => part.trim()).filter(Boolean).length;
     }
 
     const RECIPE_STEP_COUNTS = Object.fromEntries(
@@ -8653,6 +9165,10 @@ Restaurant Rush
       label: CASHIER_DRINK_LABELS[drink],
     }));
 
+    const TUTORIAL_COOLER_DRINKS = CASHIER_ORDER_DRINKS.filter(
+      (item) => !item.drink.startsWith("juice-")
+    );
+
     const CASHIER_ORDER_SOUPS = [
       { kind: "soup", recipe: "carrot", label: "Carrot soup" },
       { kind: "soup", recipe: "cucumber", label: "Cucumber soup" },
@@ -8722,6 +9238,20 @@ Restaurant Rush
     let cashierSequenceBusy = false;
     let cashierLastOrderSig = "";
     let cashierToastTimer = null;
+    let tutorialMode = false;
+    let tutorialCustomerIndex = 0;
+    let garyIntroComplete = false;
+    let garyTypeTimer = null;
+    let tutorialGuideSteps = [];
+    let tutorialGuideIndex = 0;
+    let tutorialGuideActive = false;
+
+    const TUTORIAL_ORDER_SEQUENCE = ["food", "drink", "soup"];
+
+    const GARY_INTRO_TEXT =
+      "Hi! I'm Gary. I will be showing you how to maintain your restaurant!";
+    const GARY_TYPE_MS = 34;
+    const GARY_READ_MS = 1400;
 
     function miniCupHtml(drinkId) {
       return (
@@ -9601,20 +10131,33 @@ Restaurant Rush
       return active === screen6;
     }
 
+    function getTrayFilledEntries() {
+      return TRAY_SLOTS.map((slot) => trayContents[slot]).filter(Boolean);
+    }
+
+    function getTrayFilledData() {
+      return getTrayFilledEntries().map((entry) => entry.data);
+    }
+
     function trayHasDrink() {
-      return !!trayContents.drink;
+      return getTrayFilledEntries().some((entry) => isCupDrink(entry.data));
     }
 
     function trayHasFoodOrSoup() {
-      return !!trayContents.food || !!trayContents.soup;
+      return getTrayFilledEntries().some(
+        (entry) => isPlateFood(entry.data) || isPotSoup(entry.data)
+      );
     }
 
     function trayMeetsCashierMinimum() {
+      if (tutorialMode) {
+        return trayHasLoad();
+      }
       return trayHasDrink() && trayHasFoodOrSoup();
     }
 
     function trayFilledCount() {
-      return TRAY_SLOTS.filter((slot) => !!trayContents[slot]).length;
+      return getTrayFilledEntries().length;
     }
 
     function trayHasLoad() {
@@ -9768,9 +10311,7 @@ Restaurant Rush
 
     function trayMatchesCashierOrder(order) {
       if (!order) return false;
-      const filled = TRAY_SLOTS.map((slot) => trayContents[slot])
-        .filter(Boolean)
-        .map((entry) => entry.data);
+      const filled = getTrayFilledData();
       if (filled.length !== order.items.length) return false;
       const used = new Set();
       return order.items.every((req) => {
@@ -9871,7 +10412,553 @@ Restaurant Rush
         .join("|");
     }
 
+    function foodOrderNeedsKitchen2(item) {
+      if (!item || item.kind !== "food") return false;
+      if (item.crop === "bread" || item.crop === "steak-sandwich") return true;
+      if (item.state === "cut" || item.state === "baked") return true;
+      if (item.crop === "meat") return true;
+      return false;
+    }
+
+    function tutorialNavStep(from, to) {
+      return { type: "nav", from, to };
+    }
+
+    function tutorialReturnToCashier(fromKitchen) {
+      if (fromKitchen === 3) {
+        return [tutorialNavStep(3, 2), tutorialNavStep(2, 5)];
+      }
+      return [tutorialNavStep(2, 5)];
+    }
+
+    function getTutorialDeliverCarrier(orderItem) {
+      if (!orderItem) return "plate";
+      if (orderItem.kind === "drink") return "cup";
+      if (orderItem.kind === "soup") return "pot";
+      return "plate";
+    }
+
+    function tutorialServeSteps(orderItem, fromKitchen) {
+      const loadCarrier = getTutorialDeliverCarrier(orderItem);
+      return [
+        { type: "carrier", carrier: "tray", action: "pickup" },
+        { type: "counter-place", carrier: "tray" },
+        { type: "tray", action: "place-food" },
+        { type: "tray-load", carrier: loadCarrier },
+        { type: "tray", action: "done" },
+        { type: "carrier", carrier: "tray", action: "pickup" },
+        ...tutorialReturnToCashier(fromKitchen),
+        { type: "cashier-tray", action: "place" },
+      ];
+    }
+
+    function tutorialGardenHarvestSteps(crop) {
+      return [
+        tutorialNavStep(5, 2),
+        tutorialNavStep(2, 1),
+        { type: "carrier", carrier: "basket", action: "pickup" },
+        { type: "crop", crop },
+        tutorialNavStep(1, 2),
+      ];
+    }
+
+    function tutorialWashFoodSteps() {
+      return [
+        { type: "sink", action: "drop" },
+        { type: "wait", until: "sink-ready" },
+        { type: "carrier", carrier: "plate", action: "pickup" },
+        { type: "sink", action: "take" },
+      ];
+    }
+
+    function tutorialOvenBakeSteps() {
+      return [
+        { type: "oven", action: "open" },
+        { type: "oven", action: "drop" },
+        { type: "wait", until: "oven-done" },
+        { type: "carrier", carrier: "plate", action: "pickup" },
+        { type: "oven", action: "take" },
+      ];
+    }
+
+    function tutorialMicrowaveHeatSteps() {
+      return [
+        { type: "microwave", action: "open" },
+        { type: "microwave", action: "drop" },
+        { type: "wait", until: "microwave-done" },
+        { type: "carrier", carrier: "pot", action: "pickup" },
+        { type: "microwave", action: "take" },
+      ];
+    }
+
+    function tutorialSeasonPotSteps() {
+      return [
+        { type: "counter-place", carrier: "pot" },
+        { type: "shaker", which: "salt", action: "pickup" },
+        { type: "season", seasoning: "salt" },
+        { type: "shaker", which: "pepper", action: "pickup" },
+        { type: "season", seasoning: "pepper" },
+        { type: "carrier", carrier: "pot", action: "pickup" },
+      ];
+    }
+
+    function getTutorialGuideSteps(orderItem) {
+      if (!orderItem) return [];
+
+      if (orderItem.kind === "drink") {
+        const drink = orderItem.drink;
+        if (drink.startsWith("juice-")) {
+          const crop = drink.slice("juice-".length);
+          return [
+            ...tutorialGardenHarvestSteps(crop),
+            ...tutorialWashFoodSteps(),
+            tutorialNavStep(2, 3),
+            { type: "carrier", carrier: "cup", action: "pickup" },
+            { type: "blender", action: "drop" },
+            { type: "wait", until: "blender-done" },
+            { type: "blender", action: "take-juice" },
+            ...tutorialServeSteps(orderItem, 3),
+          ];
+        }
+        return [
+          tutorialNavStep(5, 3),
+          { type: "carrier", carrier: "cup", action: "pickup" },
+          { type: "cooler", action: "open" },
+          { type: "cooler-fill", drink },
+          ...tutorialServeSteps(orderItem, 3),
+        ];
+      }
+
+      if (orderItem.kind === "soup") {
+        const recipe = orderItem.recipe;
+        if (recipe === "meat-potato" || recipe === "meat-stew") {
+          return [
+            tutorialNavStep(5, 2),
+            tutorialNavStep(2, 3),
+            tutorialNavStep(3, 2),
+            tutorialNavStep(2, 5),
+          ];
+        }
+        const cropByRecipe = {
+          carrot: "carrots",
+          cucumber: "cucumbers",
+          potato: "potatoes",
+          tomato: "tomatoes",
+        };
+        const crop = cropByRecipe[recipe];
+        if (!crop) return [];
+        const steps = [
+          ...tutorialGardenHarvestSteps(crop),
+          ...tutorialWashFoodSteps(),
+          tutorialNavStep(2, 3),
+          { type: "carrier", carrier: "pot", action: "pickup" },
+          { type: "blender", action: "drop" },
+          { type: "wait", until: "blender-done" },
+          { type: "blender", action: "take-soup" },
+          tutorialNavStep(3, 2),
+          ...tutorialSeasonPotSteps(),
+          tutorialNavStep(2, 3),
+          ...tutorialMicrowaveHeatSteps(),
+          ...tutorialServeSteps(orderItem, 3),
+        ];
+        return steps;
+      }
+
+      if (orderItem.kind !== "food") return [];
+
+      if (orderItem.crop === "bread") {
+        return [
+          ...tutorialGardenHarvestSteps("wheat"),
+          ...tutorialWashFoodSteps(),
+          tutorialNavStep(2, 3),
+          { type: "carrier", carrier: "bowl", action: "pickup" },
+          { type: "blender", action: "drop" },
+          { type: "wait", until: "blender-done" },
+          { type: "blender", action: "take-flour" },
+          { type: "carrier", carrier: "cup", action: "pickup" },
+          { type: "cooler", action: "open" },
+          { type: "cooler-fill", drink: "water" },
+          { type: "counter-place", carrier: "bowl" },
+          { type: "counter-combine" },
+          { type: "carrier", carrier: "bowl", action: "pickup" },
+          { type: "oven", action: "open" },
+          { type: "oven", action: "drop" },
+          { type: "wait", until: "oven-done" },
+          { type: "carrier", carrier: "plate", action: "pickup" },
+          { type: "oven", action: "take" },
+          ...tutorialServeSteps(orderItem, 3),
+        ];
+      }
+
+      if (orderItem.crop === "steak-sandwich") {
+        return [
+          tutorialNavStep(5, 2),
+          tutorialNavStep(2, 1),
+          tutorialNavStep(1, 2),
+          tutorialNavStep(2, 3),
+          tutorialNavStep(3, 2),
+          ...tutorialServeSteps(orderItem, 2),
+        ];
+      }
+
+      if (orderItem.crop === "meat") {
+        const steps = [
+          tutorialNavStep(5, 2),
+          { type: "carrier", carrier: "plate", action: "pickup" },
+          { type: "meat-box", action: "take" },
+        ];
+        if (orderItem.wasCut) {
+          steps.push(
+            tutorialNavStep(2, 3),
+            { type: "cutting-board", action: "use" },
+            { type: "wait", until: "cutting-done" }
+          );
+        }
+        if (orderItem.salted && orderItem.peppered) {
+          steps.push(
+            { type: "counter-place", carrier: "plate" },
+            { type: "shaker", which: "salt", action: "pickup" },
+            { type: "season", seasoning: "salt" },
+            { type: "shaker", which: "pepper", action: "pickup" },
+            { type: "season", seasoning: "pepper" },
+            { type: "carrier", carrier: "plate", action: "pickup" }
+          );
+        }
+        if (!steps.some((s) => s.type === "nav" && s.to === 3)) {
+          steps.push(tutorialNavStep(2, 3));
+        }
+        steps.push(...tutorialOvenBakeSteps());
+        steps.push(...tutorialServeSteps(orderItem, 3));
+        return steps;
+      }
+
+      const crop = orderItem.crop;
+      const needsCut =
+        orderItem.state === "cut" ||
+        (orderItem.state === "baked" && orderItem.wasCut);
+      const needsOven = orderItem.state === "baked";
+      const needsK2 = needsCut || needsOven;
+
+      const steps = [...tutorialGardenHarvestSteps(crop), ...tutorialWashFoodSteps()];
+      if (needsK2) steps.push(tutorialNavStep(2, 3));
+      if (needsCut) {
+        steps.push(
+          { type: "cutting-board", action: "use" },
+          { type: "wait", until: "cutting-done" }
+        );
+      }
+      if (needsOven) {
+        steps.push(...tutorialOvenBakeSteps());
+      }
+      steps.push(...tutorialServeSteps(orderItem, needsK2 ? 3 : 2));
+      return steps;
+    }
+
+    function findTutorialNavArrow(fromScreen, toScreen) {
+      const section = document.getElementById("screen-" + fromScreen);
+      if (!section) return null;
+      return section.querySelector('.nav-arrow[data-go="' + toScreen + '"]');
+    }
+
+    function isCarrierHeld(carrier) {
+      if (carrier === "basket") return basketFollowing;
+      if (carrier === "plate") return plateFollowing;
+      if (carrier === "cup") return cupFollowing;
+      if (carrier === "pot") return potFollowing;
+      if (carrier === "bowl") return bowlFollowing;
+      if (carrier === "tray") return trayFollowing;
+      return false;
+    }
+
+    function tutorialTrayHasLoadedCarrier(carrier) {
+      const slot = getTrayPreferredSlot(carrier);
+      if (!slot) return false;
+      const entry = trayContents[slot];
+      if (!entry) return false;
+      return entry.carrier === carrier;
+    }
+
+    function getCurrentTutorialStep() {
+      if (!tutorialGuideActive || tutorialGuideIndex >= tutorialGuideSteps.length) {
+        return null;
+      }
+      return tutorialGuideSteps[tutorialGuideIndex];
+    }
+
+    function clearTutorialGlows() {
+      document.querySelectorAll(".tutorial-glow").forEach((el) => {
+        el.classList.remove("tutorial-glow");
+      });
+    }
+
+    function checkTutorialWaitComplete(step) {
+      if (step.until === "sink-ready") {
+        return !!sinkContents && !sinkWashing && sinkContents.state === "washed";
+      }
+      if (step.until === "blender-done") {
+        return !!blenderResult && !blenderBlending;
+      }
+      if (step.until === "oven-done") {
+        return !!ovenResult && !ovenBaking;
+      }
+      if (step.until === "microwave-done") {
+        return !!microwaveResult && !microwaveHeating;
+      }
+      if (step.until === "cutting-done") {
+        return (
+          !cuttingInProgress &&
+          plateFollowing &&
+          plateContents &&
+          plateContents.state === "cut"
+        );
+      }
+      return false;
+    }
+
+    function shouldAutoSkipTutorialStep(step) {
+      if (!step) return false;
+      if (step.type === "wait") return checkTutorialWaitComplete(step);
+      if (step.type === "carrier" && step.action === "pickup") {
+        return isCarrierHeld(step.carrier);
+      }
+      if (step.type === "nav") {
+        const active = document.querySelector(".screen.active");
+        const current = active ? Number(active.dataset.screen) : null;
+        return current === step.to;
+      }
+      if (step.type === "cooler" && step.action === "open") {
+        return kitchenCooler.classList.contains("open");
+      }
+      if (step.type === "oven" && step.action === "open") {
+        return kitchenOven.classList.contains("open");
+      }
+      if (step.type === "microwave" && step.action === "open") {
+        return kitchenMicrowave.classList.contains("open");
+      }
+      if (step.type === "tray-load") {
+        return tutorialTrayHasLoadedCarrier(step.carrier);
+      }
+      if (step.type === "tray" && step.action === "done") {
+        return trayHasLoad() && !isTrayCloseupOpen();
+      }
+      if (step.type === "cashier-tray" && step.action === "place") {
+        return trayAtCashier;
+      }
+      return false;
+    }
+
+    function applyTutorialGlowForStep(step) {
+      if (!step) return;
+      if (step.type === "nav") {
+        const btn = findTutorialNavArrow(step.from, step.to);
+        if (btn) btn.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "carrier") {
+        const el = document.getElementById(step.carrier);
+        if (el && step.action === "pickup" && !isCarrierHeld(step.carrier)) {
+          el.classList.add("tutorial-glow");
+        }
+        return;
+      }
+      if (step.type === "crop") {
+        document.querySelectorAll('.plant[data-crop="' + step.crop + '"]').forEach((plant) => {
+          plant.classList.add("tutorial-glow");
+        });
+        return;
+      }
+      if (step.type === "sink") {
+        kitchenSink.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "blender") {
+        kitchenBlender.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "oven") {
+        kitchenOven.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "cooler" && step.action === "open") {
+        kitchenCooler.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "cooler-fill") {
+        const drinkBtn = document.querySelector(
+          '.cooler-drink[data-drink="' + step.drink + '"]'
+        );
+        if (drinkBtn) drinkBtn.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "cutting-board") {
+        kitchenCuttingBoard.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "microwave") {
+        kitchenMicrowave.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "meat-box") {
+        if (meatBox) meatBox.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "counter-place" || step.type === "counter-combine") {
+        document.querySelectorAll(".counter-rest-spot").forEach((spot) => {
+          if (step.type === "counter-place" && spot.classList.contains("can-place")) {
+            spot.classList.add("tutorial-glow");
+          }
+          if (step.type === "counter-combine" && spot.classList.contains("can-combine")) {
+            spot.classList.add("tutorial-glow");
+          }
+        });
+        return;
+      }
+      if (step.type === "shaker") {
+        const shaker = step.which === "salt" ? saltShaker : pepperShaker;
+        if (shaker && step.action === "pickup") shaker.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "season") {
+        document.querySelectorAll(".counter-rest-spot.can-season").forEach((spot) => {
+          spot.classList.add("tutorial-glow");
+        });
+        return;
+      }
+      if (step.type === "tray" && step.action === "place-food") {
+        if (trayActionMenu?.classList.contains("open") && trayMenuPlaceFood) {
+          trayMenuPlaceFood.classList.add("tutorial-glow");
+        } else if (isTrayOnCounter() && tray) {
+          tray.classList.add("tutorial-glow");
+        }
+        return;
+      }
+      if (step.type === "tray" && step.action === "done") {
+        if (trayCloseupDone) trayCloseupDone.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "tray-load") {
+        const source = trayCloseupSources?.querySelector(
+          '.tray-source[data-carrier="' + step.carrier + '"]'
+        );
+        if (source) source.classList.add("tutorial-glow");
+        return;
+      }
+      if (step.type === "cashier-tray" && step.action === "place") {
+        if (cashierTraySpot) cashierTraySpot.classList.add("tutorial-glow");
+      }
+    }
+
+    function refreshTutorialGlow() {
+      clearTutorialGlows();
+      if (!tutorialMode || !tutorialGuideActive) return;
+
+      while (tutorialGuideIndex < tutorialGuideSteps.length) {
+        const step = getCurrentTutorialStep();
+        if (!step) break;
+        if (shouldAutoSkipTutorialStep(step)) {
+          tutorialGuideIndex += 1;
+          continue;
+        }
+        if (step.type === "wait") {
+          if (checkTutorialWaitComplete(step)) {
+            tutorialGuideIndex += 1;
+            continue;
+          }
+          return;
+        }
+        applyTutorialGlowForStep(step);
+        return;
+      }
+
+      stopTutorialGuide();
+    }
+
+    function tutorialStepMatches(action, step) {
+      if (!step || action.type !== step.type) return false;
+      if (step.type === "nav") {
+        return action.from === step.from && action.to === step.to;
+      }
+      if (step.type === "carrier") {
+        return action.carrier === step.carrier && action.action === step.action;
+      }
+      if (step.type === "crop") return action.crop === step.crop;
+      if (step.type === "sink") return action.action === step.action;
+      if (step.type === "blender") return action.action === step.action;
+      if (step.type === "oven") return action.action === step.action;
+      if (step.type === "cooler") return action.action === step.action;
+      if (step.type === "microwave") return action.action === step.action;
+      if (step.type === "cutting-board") return action.action === step.action;
+      if (step.type === "meat-box") return action.action === step.action;
+      if (step.type === "cooler-fill") return action.drink === step.drink;
+      if (step.type === "counter-place") return action.carrier === step.carrier;
+      if (step.type === "counter-combine") return true;
+      if (step.type === "shaker") {
+        return action.which === step.which && action.action === step.action;
+      }
+      if (step.type === "season") return action.seasoning === step.seasoning;
+      if (step.type === "tray") return action.action === step.action;
+      if (step.type === "tray-load") return action.carrier === step.carrier;
+      if (step.type === "cashier-tray") return action.action === step.action;
+      return false;
+    }
+
+    function advanceTutorialGuide() {
+      if (!tutorialGuideActive) return;
+      tutorialGuideIndex += 1;
+      refreshTutorialGlow();
+    }
+
+    function maybeAdvanceTutorialGuide(action) {
+      if (!tutorialGuideActive || !tutorialMode) return;
+      const step = getCurrentTutorialStep();
+      if (!step || step.type === "wait") return;
+      if (!tutorialStepMatches(action, step)) return;
+      advanceTutorialGuide();
+    }
+
+    function handleTutorialNavPress(btn, destScreen) {
+      const step = getCurrentTutorialStep();
+      if (!step || step.type !== "nav") return false;
+      if (!btn.classList.contains("tutorial-glow")) return false;
+      const active = document.querySelector(".screen.active");
+      const fromScreen = active ? Number(active.dataset.screen) : null;
+      if (fromScreen !== step.from || destScreen !== step.to) return false;
+      maybeAdvanceTutorialGuide({ type: "nav", from: step.from, to: step.to });
+      return true;
+    }
+
+    function startTutorialGuide(steps) {
+      if (!steps || !steps.length) return;
+      tutorialGuideSteps = steps;
+      tutorialGuideIndex = 0;
+      tutorialGuideActive = true;
+      refreshTutorialGlow();
+    }
+
+    function stopTutorialGuide() {
+      tutorialGuideActive = false;
+      tutorialGuideSteps = [];
+      tutorialGuideIndex = 0;
+      clearTutorialGlows();
+    }
+
+    function buildTutorialCashierOrder() {
+      const kind =
+        TUTORIAL_ORDER_SEQUENCE[
+          tutorialCustomerIndex % TUTORIAL_ORDER_SEQUENCE.length
+        ];
+      tutorialCustomerIndex += 1;
+      let catalog = CASHIER_ORDER_FOODS;
+      if (kind === "drink") catalog = TUTORIAL_COOLER_DRINKS;
+      else if (kind === "soup") catalog = CASHIER_ORDER_SOUPS;
+      const item = catalog[Math.floor(Math.random() * catalog.length)];
+      return { items: [{ ...item }] };
+    }
+
     function buildCashierOrder() {
+      if (tutorialMode) {
+        return buildTutorialCashierOrder();
+      }
       const counts =
         CASHIER_ORDER_COUNT_OPTIONS[
           Math.floor(Math.random() * CASHIER_ORDER_COUNT_OPTIONS.length)
@@ -9889,6 +10976,13 @@ Restaurant Rush
     }
 
     function pickCashierOrder() {
+      if (tutorialMode) {
+        const order = buildTutorialCashierOrder();
+        cashierLastOrderSig = cashierOrderSignature(order);
+        return {
+          items: order.items.map((item) => ({ ...item })),
+        };
+      }
       for (let attempt = 0; attempt < 16; attempt++) {
         const order = buildCashierOrder();
         const sig = cashierOrderSignature(order);
@@ -9907,6 +11001,7 @@ Restaurant Rush
     }
 
     function ensureCashierCustomer() {
+      if (tutorialMode && !garyIntroComplete) return;
       const listEmpty =
         !cashierOrderList || cashierOrderList.children.length === 0;
       if (
@@ -9928,6 +11023,13 @@ Restaurant Rush
     const CASHIER_DOOR_MS = 560;
     const CASHIER_WALK_MS = 1000;
     const CASHIER_EXIT_MS = 1100;
+    const CUSTOMERS_PER_NIGHT = 1;
+    const NIGHT_BANNER_HOLD_MS = 2400;
+
+    let customersServed = 0;
+    let isNighttime = false;
+    const nightBanner = document.getElementById("nightBanner");
+    const CASHIER_INTRO_HOLD_MS = 1000;
 
     function setCashierDoorsOpen(open) {
       if (!cashierGlassDoors) return;
@@ -9999,13 +11101,30 @@ Restaurant Rush
         cashierCustomerOrder.classList.add("order-hidden");
       }
       if (cashierCustomerArea) {
-        cashierCustomerArea.classList.remove("is-exiting-right");
+        cashierCustomerArea.classList.remove("is-exiting-right", "is-intro-waiting");
       }
       setCustomerMotionState("is-behind-doors", { instant: true });
       setCashierDoorsOpen(false);
     }
 
+    function prepareCashierIntroHold() {
+      cashierCurrentOrder = null;
+      if (cashierOrderList) cashierOrderList.innerHTML = "";
+      clearCustomerCarryTray();
+      setCashierDoorsOpen(false);
+      setCashierBusy(false);
+      if (cashierCustomerOrder) {
+        cashierCustomerOrder.classList.add("order-hidden");
+      }
+      if (cashierCustomerArea) {
+        cashierCustomerArea.classList.remove("is-exiting-right");
+        cashierCustomerArea.classList.add("is-intro-waiting");
+      }
+      setCustomerMotionState("is-behind-doors", { instant: true });
+    }
+
     async function runCashierCustomerEnterSequence(alreadyBusy) {
+      if (tutorialMode && !garyIntroComplete) return;
       if (!cashierCustomerArea || !cashierGlassDoors) {
         spawnCashierCustomerInstant();
         return;
@@ -10028,6 +11147,17 @@ Restaurant Rush
           cashierCustomerOrder.classList.remove("order-hidden");
         }
         updateCashierUI();
+        if (tutorialMode) {
+          if (tutorialCustomerIndex === 1) {
+            await playGaryFirstCustomerMessage();
+          } else if (tutorialCustomerIndex === 2) {
+            await playGaryDrinkCustomerMessage();
+          }
+          const orderItem = cashierCurrentOrder?.items?.[0];
+          if (orderItem) {
+            startTutorialGuide(getTutorialGuideSteps(orderItem));
+          }
+        }
       } finally {
         setCashierBusy(false);
       }
@@ -10095,6 +11225,57 @@ Restaurant Rush
       }
     }
 
+    function resetNightState() {
+      customersServed = 0;
+      isNighttime = false;
+      document.body.classList.remove("nighttime");
+      if (nightBanner) {
+        nightBanner.classList.remove("is-visible");
+        nightBanner.hidden = true;
+        nightBanner.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    function shouldTriggerNight() {
+      return (
+        !tutorialMode &&
+        customersServed > 0 &&
+        customersServed % CUSTOMERS_PER_NIGHT === 0 &&
+        !isNighttime
+      );
+    }
+
+    async function playNightTransition() {
+      if (isNighttime) return;
+      isNighttime = true;
+      document.body.classList.add("nighttime");
+
+      if (nightBanner) {
+        nightBanner.hidden = false;
+        nightBanner.removeAttribute("hidden");
+        nightBanner.setAttribute("aria-hidden", "false");
+        await waitMs(40);
+        nightBanner.classList.add("is-visible");
+      }
+
+      await waitMs(NIGHT_BANNER_HOLD_MS);
+
+      if (nightBanner) {
+        nightBanner.classList.remove("is-visible");
+        await waitMs(700);
+        nightBanner.hidden = true;
+        nightBanner.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    async function afterCustomerServed() {
+      if (tutorialMode) return;
+      customersServed += 1;
+      if (shouldTriggerNight()) {
+        await playNightTransition();
+      }
+    }
+
     async function runCashierCustomerExitSequence() {
       if (!cashierCustomerArea || !cashierGlassDoors) {
         buildCustomerCarryTray();
@@ -10103,6 +11284,7 @@ Restaurant Rush
         trayAtCashier = false;
         tray.classList.remove("cashier-away");
         sendTrayToCafeteriaCart();
+        await afterCustomerServed();
         spawnCashierCustomerInstant();
         updateCarrierUI();
         return;
@@ -10128,6 +11310,13 @@ Restaurant Rush
         cashierCustomerArea.classList.add("is-exiting-right");
         await waitCustomerAreaTransition(CASHIER_EXIT_MS);
         clearCustomerCarryTray();
+        if (tutorialMode) {
+          stopTutorialGuide();
+          if (tutorialCustomerIndex === 1) {
+            await playGaryWellDoneMessage();
+          }
+        }
+        await afterCustomerServed();
         await runCashierCustomerEnterSequence(true);
       } finally {
         setCashierBusy(false);
@@ -10170,7 +11359,12 @@ Restaurant Rush
         return;
       }
       if (!trayMeetsCashierMinimum()) {
-        showCashierToast("error", "Need a drink AND food or soup!");
+        showCashierToast(
+          "error",
+          tutorialMode
+            ? "Put at least one item on the tray first!"
+            : "Need a drink AND food or soup!"
+        );
         return;
       }
       trayFollowing = false;
@@ -10184,6 +11378,7 @@ Restaurant Rush
       } else {
         showCashierToast("error", "Wrong order — check what they asked for!");
       }
+      maybeAdvanceTutorialGuide({ type: "cashier-tray", action: "place" });
       updateCashierUI();
       updateCarrierUI();
     }
@@ -10221,7 +11416,9 @@ Restaurant Rush
           : canPlace
             ? "Place tray here"
             : trayFollowing
-              ? "Tray needs a drink AND food or soup"
+              ? tutorialMode
+                ? "Tray needs at least one item"
+                : "Tray needs a drink AND food or soup"
               : "Pick up a loaded tray to place here"
       );
     }
@@ -10332,6 +11529,7 @@ Restaurant Rush
         saltShaker.getBoundingClientRect().top
       );
       updateCounterRestSpots();
+      maybeAdvanceTutorialGuide({ type: "shaker", which: "salt", action: "pickup" });
     }
 
     function pickUpPepper() {
@@ -10348,6 +11546,7 @@ Restaurant Rush
         pepperShaker.getBoundingClientRect().top
       );
       updateCounterRestSpots();
+      maybeAdvanceTutorialGuide({ type: "shaker", which: "pepper", action: "pickup" });
     }
 
     function playShakerShake(shakerEl) {
@@ -10379,6 +11578,7 @@ Restaurant Rush
       playShakerShake(shakerEl);
       flashSeasoningOnCarrier(carrierEl, seasoning);
       applySeasoningToCarrier(carrier, seasoning);
+      maybeAdvanceTutorialGuide({ type: "season", seasoning });
       return true;
     }
 
@@ -10412,6 +11612,7 @@ Restaurant Rush
       updateTrayStackUI();
       updateCafeteriaCartUI();
       returnShakersIfNotOnScreen2();
+      refreshTutorialGlow();
     }
 
     function getCarrierRestSpotId(carrier) {
@@ -10645,6 +11846,7 @@ Restaurant Rush
 
       flashCounterCombo(spotEl);
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "counter-combine" });
       return true;
     }
 
@@ -10678,6 +11880,7 @@ Restaurant Rush
         positionCarrierOnCounterSpot(carrier, spotEl);
         updateCarrierUI();
       });
+      maybeAdvanceTutorialGuide({ type: "counter-place", carrier });
     }
 
     function tryPlaceOnCounterSpot(spotEl) {
@@ -10795,6 +11998,7 @@ Restaurant Rush
       trayMenuPlaceFood.hidden = trayDirty;
       trayActionMenu.hidden = false;
       trayActionMenu.classList.add("open");
+      refreshTutorialGlow();
     }
 
     function renderTrayEntryIcon(el, entry) {
@@ -10871,6 +12075,7 @@ Restaurant Rush
       clearCarrierPayload(carrier);
       dockCarrierAfterTrayPlace(carrier);
       updateTrayVisual();
+      maybeAdvanceTutorialGuide({ type: "tray-load", carrier });
       return true;
     }
 
@@ -11038,6 +12243,7 @@ Restaurant Rush
       try {
         buildTrayCloseupSources();
         renderTrayCloseupSlots();
+        maybeAdvanceTutorialGuide({ type: "tray", action: "place-food" });
       } catch (err) {
         console.error("tray closeup", err);
         closeTrayCloseup();
@@ -11068,6 +12274,9 @@ Restaurant Rush
       clearTrayDragHighlight();
       updateTrayVisual();
       updateCarrierUI();
+      if (trayHasLoad()) {
+        maybeAdvanceTutorialGuide({ type: "tray", action: "done" });
+      }
     }
 
     function moveTrayWithCursor(clientX, clientY) {
@@ -11091,6 +12300,7 @@ Restaurant Rush
       );
       moveTrayWithCursor(tray.getBoundingClientRect().left, tray.getBoundingClientRect().top);
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "tray", action: "pickup" });
     }
 
     function putDownTray() {
@@ -11437,6 +12647,7 @@ Restaurant Rush
         basket.getBoundingClientRect().top
       );
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "basket", action: "pickup" });
     }
 
     function putDownBasket() {
@@ -11497,6 +12708,7 @@ Restaurant Rush
         plate.getBoundingClientRect().top
       );
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "plate", action: "pickup" });
     }
 
     function putDownPlate() {
@@ -11571,6 +12783,7 @@ Restaurant Rush
         cup.getBoundingClientRect().top
       );
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "cup", action: "pickup" });
     }
 
     function putDownCup() {
@@ -11603,6 +12816,10 @@ Restaurant Rush
       if (!kitchenCooler.classList.contains("open")) return;
       if (!cupFollowing || cupContents || cupDirty) return;
       setCupDrink(makeDrink(drinkEl.dataset.drink));
+      maybeAdvanceTutorialGuide({
+        type: "cooler-fill",
+        drink: drinkEl.dataset.drink,
+      });
     }
 
     function pickUpPot() {
@@ -11639,6 +12856,7 @@ Restaurant Rush
       }
       movePotWithCursor(pot.getBoundingClientRect().left, pot.getBoundingClientRect().top);
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "pot", action: "pickup" });
     }
 
     function putDownPot() {
@@ -11690,6 +12908,7 @@ Restaurant Rush
       }
       moveBowlWithCursor(bowl.getBoundingClientRect().left, bowl.getBoundingClientRect().top);
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "carrier", carrier: "bowl", action: "pickup" });
     }
 
     function putDownBowl() {
@@ -11742,6 +12961,7 @@ Restaurant Rush
 
     function setBasketCrop(crop) {
       setBasketFood(makeFood(crop, "raw"));
+      maybeAdvanceTutorialGuide({ type: "crop", crop });
     }
 
     function updateSinkUI() {
@@ -11829,6 +13049,7 @@ Restaurant Rush
       sinkWashing = true;
       updateCarrierUI();
       startSinkWashTimer();
+      maybeAdvanceTutorialGuide({ type: "sink", action: "drop" });
     }
 
     function takeFromSink() {
@@ -11837,6 +13058,7 @@ Restaurant Rush
       setPlateFood({ ...sinkContents });
       sinkContents = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "sink", action: "take" });
     }
 
     function updateMeatBoxUI() {
@@ -11858,6 +13080,7 @@ Restaurant Rush
       if (!plateFollowing || plateContents || plateDirty) return;
       setPlateFood(makeFood("meat", "raw"));
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "meat-box", action: "take" });
     }
 
     function clearSinkInstant() {
@@ -11911,23 +13134,6 @@ Restaurant Rush
       if (bowlFollowing && bowlDirty && !bowlContents) return true;
       if (isDirtyTrayReadyForDishwasher()) return true;
       return false;
-    }
-
-    function openKitchenDishwasher() {
-      if (
-        !kitchenDishwasher ||
-        kitchenDishwasher.classList.contains("open") ||
-        kitchenDishwasher.classList.contains("opening") ||
-        kitchenDishwasher.classList.contains("closing")
-      ) {
-        return;
-      }
-      kitchenDishwasher.classList.add("opening", "open");
-      kitchenDishwasher.setAttribute("aria-label", "Close dishwasher");
-      setTimeout(() => {
-        kitchenDishwasher.classList.remove("opening");
-      }, APPLIANCE_ANIM_MS);
-      updateCarrierUI();
     }
 
     function updateDishwasherUI() {
@@ -12135,6 +13341,7 @@ Restaurant Rush
       cuttingInProgress = true;
       updateCarrierUI();
       startCuttingTimer();
+      maybeAdvanceTutorialGuide({ type: "cutting-board", action: "use" });
     }
 
     function clearCuttingInstant() {
@@ -12183,6 +13390,7 @@ Restaurant Rush
         ovenBaking = true;
         updateCarrierUI();
         startOvenTimer();
+        maybeAdvanceTutorialGuide({ type: "oven", action: "drop" });
         return;
       }
       if (plateFollowing && isOvenPlateInput(plateContents) && !plateDirty) {
@@ -12191,6 +13399,7 @@ Restaurant Rush
         ovenBaking = true;
         updateCarrierUI();
         startOvenTimer();
+        maybeAdvanceTutorialGuide({ type: "oven", action: "drop" });
       }
     }
 
@@ -12200,6 +13409,7 @@ Restaurant Rush
       setPlateFood({ ...ovenResult });
       ovenResult = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "oven", action: "take" });
     }
 
     function clearOvenInstant() {
@@ -12252,6 +13462,7 @@ Restaurant Rush
       microwaveHeating = true;
       updateCarrierUI();
       startMicrowaveTimer();
+      maybeAdvanceTutorialGuide({ type: "microwave", action: "drop" });
     }
 
     function takeFromMicrowave() {
@@ -12260,6 +13471,7 @@ Restaurant Rush
       setPotSoup({ ...microwaveResult });
       microwaveResult = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "microwave", action: "take" });
     }
 
     function clearMicrowaveInstant() {
@@ -12332,6 +13544,7 @@ Restaurant Rush
       blenderBlending = true;
       updateCarrierUI();
       startBlenderTimer();
+      maybeAdvanceTutorialGuide({ type: "blender", action: "drop" });
     }
 
     function takeJuiceFromBlender() {
@@ -12348,6 +13561,7 @@ Restaurant Rush
       setCupDrink(makeDrink(blenderResult.drink));
       blenderResult = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "blender", action: "take-juice" });
     }
 
     function takeSoupFromBlender() {
@@ -12364,6 +13578,7 @@ Restaurant Rush
       setPotSoup(makePotSoup(blenderResult.crop, true));
       blenderResult = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "blender", action: "take-soup" });
     }
 
     function takeFlourFromBlender() {
@@ -12380,6 +13595,7 @@ Restaurant Rush
       setBowlFlour(makeBowlFlour());
       blenderResult = null;
       updateCarrierUI();
+      maybeAdvanceTutorialGuide({ type: "blender", action: "take-flour" });
     }
 
     function clearBlenderInstant() {
@@ -12851,8 +14067,9 @@ Restaurant Rush
       if (pepperFollowing && isScreen2Active()) moveShakerWithCursor(pepperShaker, e.clientX, e.clientY);
     });
 
-    sinkBasin.addEventListener("click", (e) => {
+    kitchenSink.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (kitchenSink.classList.contains("washing")) return;
       if (kitchenSink.classList.contains("can-drop")) {
         placeInSink();
       } else if (kitchenSink.classList.contains("can-take-plate")) {
@@ -12867,41 +14084,14 @@ Restaurant Rush
       }
     });
 
-    dishwasherZone.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (kitchenDishwasher.classList.contains("can-drop-dish")) {
-        placeInDishwasher();
-      } else if (!kitchenDishwasher.classList.contains("open")) {
-        openKitchenDishwasher();
-      }
-    });
-
-    cuttingBoardZone.addEventListener("click", (e) => {
+    kitchenCuttingBoard.addEventListener("click", (e) => {
       e.stopPropagation();
       if (kitchenCuttingBoard.classList.contains("can-cut")) {
         placeOnCuttingBoard();
       }
     });
 
-    ovenZone.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (kitchenOven.classList.contains("can-drop")) {
-        placeInOven();
-      } else if (kitchenOven.classList.contains("can-take")) {
-        takeFromOven();
-      }
-    });
-
-    microwaveZone.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (kitchenMicrowave.classList.contains("can-drop")) {
-        placeInMicrowave();
-      } else if (kitchenMicrowave.classList.contains("can-take")) {
-        takeFromMicrowave();
-      }
-    });
-
-    blenderZone.addEventListener("click", (e) => {
+    kitchenBlender.addEventListener("click", (e) => {
       e.stopPropagation();
       if (kitchenBlender.classList.contains("can-drop-food")) {
         placeInBlender();
@@ -12965,16 +14155,7 @@ Restaurant Rush
 
     fridgeSlots.forEach((slot) => {
       slot.addEventListener("click", (e) => {
-        if (handleFridgeShelfClick(Number(slot.dataset.shelf), e)) return;
-        if (!kitchenFridge.classList.contains("open")) return;
-        if (
-          kitchenFridge.classList.contains("opening") ||
-          kitchenFridge.classList.contains("closing")
-        ) {
-          return;
-        }
-        e.stopPropagation();
-        toggleFridge();
+        handleFridgeShelfClick(Number(slot.dataset.shelf), e);
       });
     });
 
@@ -13003,45 +14184,94 @@ Restaurant Rush
     updateCarrierUI();
     window.addEventListener("pageshow", releaseStuckUI);
 
+    function fridgeIsAnimating() {
+      return (
+        kitchenFridge.classList.contains("opening") ||
+        kitchenFridge.classList.contains("closing")
+      );
+    }
+
+    function closeFridge() {
+      if (!kitchenFridge.classList.contains("open") || fridgeIsAnimating()) return;
+      kitchenFridge.classList.add("closing");
+      kitchenFridge.classList.remove("open");
+      updateFridgeSlots();
+      kitchenFridge.setAttribute("aria-label", "Open refrigerator");
+      setTimeout(() => {
+        kitchenFridge.classList.remove("closing");
+      }, FRIDGE_ANIM_MS);
+      updateCarrierUI();
+    }
+
+    function openFridge() {
+      if (kitchenFridge.classList.contains("open") || fridgeIsAnimating()) return;
+      kitchenFridge.classList.add("opening", "open");
+      updateFridgeSlots();
+      kitchenFridge.setAttribute("aria-label", "Close refrigerator");
+      setTimeout(() => {
+        kitchenFridge.classList.remove("opening");
+      }, FRIDGE_ANIM_MS);
+      updateCarrierUI();
+    }
+
     kitchenFridge.addEventListener("click", (e) => {
       e.stopPropagation();
       if (e.target.closest(".fridge-slot")) return;
-      if (kitchenFridge.classList.contains("opening") || kitchenFridge.classList.contains("closing")) {
+      if (fridgeIsAnimating()) return;
+
+      const isOpen = kitchenFridge.classList.contains("open");
+      const doorHit = e.target.closest(".fridge-door");
+
+      if (isOpen && doorHit) {
+        closeFridge();
         return;
       }
-      toggleFridge();
+
+      if (!isOpen) {
+        openFridge();
+      }
     });
 
     kitchenFridge.addEventListener("keydown", (e) => {
       if (e.target.closest(".fridge-slot")) return;
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        if (kitchenFridge.classList.contains("opening") || kitchenFridge.classList.contains("closing")) {
-          return;
-        }
-        toggleFridge();
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      if (fridgeIsAnimating()) return;
+
+      if (kitchenFridge.classList.contains("open")) {
+        closeFridge();
+      } else {
+        openFridge();
       }
     });
 
-    function bindApplianceToggle(el, labels, clickIgnore) {
-      function isAnimating() {
-        return el.classList.contains("opening") || el.classList.contains("closing");
-      }
+    function applianceIsAnimating(el) {
+      return el.classList.contains("opening") || el.classList.contains("closing");
+    }
 
-      function toggle() {
-        if (isAnimating()) return;
-        if (el.classList.contains("open")) {
-          el.classList.add("closing");
-          el.classList.remove("open");
-          el.setAttribute("aria-label", labels.closed);
-          setTimeout(() => el.classList.remove("closing"), APPLIANCE_ANIM_MS);
-        } else {
-          el.classList.add("opening", "open");
-          el.setAttribute("aria-label", labels.open);
-          setTimeout(() => el.classList.remove("opening"), APPLIANCE_ANIM_MS);
+    function setApplianceOpen(el, labels, open, tutorialGuideType) {
+      if (open) {
+        el.classList.add("opening", "open");
+        el.setAttribute("aria-label", labels.open);
+        setTimeout(() => el.classList.remove("opening"), APPLIANCE_ANIM_MS);
+        if (tutorialGuideType) {
+          maybeAdvanceTutorialGuide({ type: tutorialGuideType, action: "open" });
         }
-        updateCarrierUI();
+      } else {
+        el.classList.add("closing");
+        el.classList.remove("open");
+        el.setAttribute("aria-label", labels.closed);
+        setTimeout(() => el.classList.remove("closing"), APPLIANCE_ANIM_MS);
       }
+      updateCarrierUI();
+    }
+
+    function bindApplianceInteraction(el, labels, options) {
+      const doorSelector = options.doorSelector || null;
+      const ignoreSelector = options.ignoreSelector || null;
+      const tryUse = options.tryUse || (() => false);
+      const canOpen = options.canOpen || (() => true);
+      const isBlocked = options.isBlocked || (() => false);
 
       function closeInstant() {
         if (
@@ -13056,38 +14286,113 @@ Restaurant Rush
         updateCarrierUI();
       }
 
+      function onInteract(e) {
+        if (ignoreSelector && e.target.closest(ignoreSelector)) return;
+        if (applianceIsAnimating(el) || isBlocked()) return;
+
+        const isOpen = el.classList.contains("open");
+        const doorHit = doorSelector && e.target.closest(doorSelector);
+
+        if (isOpen && doorHit) {
+          setApplianceOpen(el, labels, false, null);
+          return;
+        }
+
+        if (isOpen && tryUse()) {
+          return;
+        }
+
+        if (!isOpen && canOpen()) {
+          setApplianceOpen(el, labels, true, options.tutorialGuide || null);
+        }
+      }
+
       el.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (clickIgnore && e.target.closest(clickIgnore)) return;
-        toggle();
+        onInteract(e);
       });
 
       el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          toggle();
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        if (ignoreSelector && e.target.closest(ignoreSelector)) return;
+        if (applianceIsAnimating(el) || isBlocked()) return;
+
+        const isOpen = el.classList.contains("open");
+        if (isOpen) {
+          if (tryUse()) return;
+          setApplianceOpen(el, labels, false, null);
+        } else if (canOpen()) {
+          setApplianceOpen(el, labels, true, options.tutorialGuide || null);
         }
       });
 
       applianceCloseFns.push(closeInstant);
     }
 
-    bindApplianceToggle(kitchenDishwasher, {
+    bindApplianceInteraction(kitchenDishwasher, {
       closed: "Open dishwasher",
       open: "Close dishwasher",
-    }, ".dishwasher-zone");
-    bindApplianceToggle(kitchenMicrowave, {
+    }, {
+      doorSelector: ".dishwasher-door",
+      isBlocked: () => kitchenDishwasher.classList.contains("washing"),
+      canOpen: () => !kitchenDishwasher.classList.contains("washing"),
+      tryUse: () => {
+        if (kitchenDishwasher.classList.contains("can-drop-dish")) {
+          placeInDishwasher();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    bindApplianceInteraction(kitchenMicrowave, {
       closed: "Open microwave",
       open: "Close microwave",
-    }, ".microwave-zone");
-    bindApplianceToggle(kitchenCooler, {
-      closed: "Open cooler",
-      open: "Close cooler",
-    }, ".cooler-drink.can-fill");
-    bindApplianceToggle(kitchenOven, {
+    }, {
+      doorSelector: ".microwave-door",
+      tutorialGuide: "microwave",
+      tryUse: () => {
+        if (kitchenMicrowave.classList.contains("can-drop")) {
+          placeInMicrowave();
+          return true;
+        }
+        if (kitchenMicrowave.classList.contains("can-take")) {
+          takeFromMicrowave();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    bindApplianceInteraction(kitchenOven, {
       closed: "Open oven",
       open: "Close oven",
-    }, ".oven-zone");
+    }, {
+      doorSelector: ".oven-door",
+      tutorialGuide: "oven",
+      tryUse: () => {
+        if (kitchenOven.classList.contains("can-drop")) {
+          placeInOven();
+          return true;
+        }
+        if (kitchenOven.classList.contains("can-take")) {
+          takeFromOven();
+          return true;
+        }
+        return false;
+      },
+    });
+
+    bindApplianceInteraction(kitchenCooler, {
+      closed: "Open cooler",
+      open: "Close cooler",
+    }, {
+      doorSelector: ".cooler-door",
+      ignoreSelector: ".cooler-drink",
+      tutorialGuide: "cooler",
+      tryUse: () => false,
+    });
 
     function closeAllAppliancesInstant() {
       closeFridgeInstant();
@@ -13112,33 +14417,15 @@ Restaurant Rush
       updateFridgeSlots();
     }
 
-    function toggleFridge() {
-      if (kitchenFridge.classList.contains("open")) {
-        kitchenFridge.classList.add("closing");
-        kitchenFridge.classList.remove("open");
-        updateFridgeSlots();
-        kitchenFridge.setAttribute("aria-label", "Open refrigerator");
-        setTimeout(() => {
-          kitchenFridge.classList.remove("closing");
-        }, FRIDGE_ANIM_MS);
-      } else {
-        kitchenFridge.classList.add("opening", "open");
-        updateFridgeSlots();
-        kitchenFridge.setAttribute("aria-label", "Close refrigerator");
-        setTimeout(() => {
-          kitchenFridge.classList.remove("opening");
-        }, FRIDGE_ANIM_MS);
-      }
-    }
-
-    function navigateToScreen(num) {
+    function navigateToScreen(num, options) {
+      const opts = options || {};
       const active = document.querySelector(".screen.active");
       if (active && Number(active.dataset.screen) !== num) {
         closeAllAppliancesInstant();
         releaseStuckUI();
       }
       showScreen(num);
-      if (num === 5) {
+      if (num === 5 && !opts.skipCashierSpawn) {
         ensureCashierCustomer();
       }
       updateCarrierUI();
@@ -13146,7 +14433,9 @@ Restaurant Rush
 
     document.querySelectorAll(".nav-arrow[data-go]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        navigateToScreen(Number(btn.dataset.go));
+        const dest = Number(btn.dataset.go);
+        handleTutorialNavPress(btn, dest);
+        navigateToScreen(dest);
       });
     });
 
@@ -13154,8 +14443,14 @@ Restaurant Rush
     const startBtn = document.getElementById("startBtn");
     const startFlash = document.getElementById("startFlash");
     const nameScreen = document.getElementById("nameScreen");
+    const menuScreen = document.getElementById("menuScreen");
     const restaurantNameInput = document.getElementById("restaurantNameInput");
     const nameContinueBtn = document.getElementById("nameContinueBtn");
+    const startNewGameBtn = document.getElementById("startNewGameBtn");
+    const tutorialBtn = document.getElementById("tutorialBtn");
+    const tutorialGary = document.getElementById("tutorialGary");
+    const tutorialGaryBubble = document.getElementById("tutorialGaryBubble");
+    const tutorialGaryText = document.getElementById("tutorialGaryText");
     const storefrontSign = document.getElementById("storefrontSign");
     let introStarted = false;
     let gameStarted = false;
@@ -13172,6 +14467,14 @@ Restaurant Rush
     const RESTAURANT_NAME_MAX = 10;
     let namingFinishing = false;
 
+    function formatRestaurantName(value) {
+      if (!value) return "";
+      return value
+        .slice(0, RESTAURANT_NAME_MAX)
+        .toLowerCase()
+        .replace(/(?:^|\s)\S/g, (ch) => ch.toUpperCase());
+    }
+
     function updateNameContinueBtn() {
       if (!nameContinueBtn || !restaurantNameInput) return;
       const hasName = restaurantNameInput.value.trim().length > 0;
@@ -13187,6 +14490,17 @@ Restaurant Rush
         updateNameContinueBtn();
         restaurantNameInput.focus();
       }
+    }
+
+    function showMenuScreen() {
+      if (!menuScreen) return;
+      menuScreen.classList.remove("is-hidden", "is-fading-out");
+      menuScreen.classList.add("is-fading-in");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          menuScreen.classList.remove("is-fading-in");
+        });
+      });
     }
 
     function beginGame() {
@@ -13212,21 +14526,139 @@ Restaurant Rush
       ) {
         return;
       }
-      restaurantName = restaurantNameInput.value.trim().slice(0, RESTAURANT_NAME_MAX);
+      restaurantName = formatRestaurantName(restaurantNameInput.value.trim());
       if (!restaurantName) return;
       updateStorefrontSign();
       namingFinishing = true;
-      gameStarted = true;
       nameContinueBtn.disabled = true;
       restaurantNameInput.disabled = true;
-      document.body.classList.add("game-started");
-      navigateToScreen(5);
       nameScreen.classList.add("is-fading-out");
       window.setTimeout(() => {
         nameScreen.classList.add("is-hidden");
         nameScreen.classList.remove("is-fading-out");
         namingFinishing = false;
+        showMenuScreen();
       }, NAME_FADE_MS);
+    }
+
+    function hideGaryBubble() {
+      if (garyTypeTimer) {
+        clearTimeout(garyTypeTimer);
+        garyTypeTimer = null;
+      }
+      if (tutorialGaryBubble) {
+        tutorialGaryBubble.classList.remove("is-visible", "is-typing");
+        tutorialGaryBubble.hidden = true;
+      }
+      if (tutorialGaryText) tutorialGaryText.textContent = "";
+    }
+
+    function typeGaryMessage(text) {
+      return new Promise((resolve) => {
+        if (!tutorialGaryText || !tutorialGaryBubble) {
+          resolve();
+          return;
+        }
+        tutorialGaryText.textContent = "";
+        tutorialGaryBubble.hidden = false;
+        tutorialGaryBubble.classList.add("is-visible", "is-typing");
+        let i = 0;
+        const step = () => {
+          if (i >= text.length) {
+            tutorialGaryBubble.classList.remove("is-typing");
+            garyTypeTimer = null;
+            resolve();
+            return;
+          }
+          tutorialGaryText.textContent += text.charAt(i);
+          i += 1;
+          garyTypeTimer = window.setTimeout(step, GARY_TYPE_MS);
+        };
+        step();
+      });
+    }
+
+    async function playGaryIntro() {
+      garyIntroComplete = false;
+      await typeGaryMessage(GARY_INTRO_TEXT);
+      await waitMs(GARY_READ_MS);
+      hideGaryBubble();
+      garyIntroComplete = true;
+    }
+
+    function buildGaryFirstCustomerText() {
+      const item = cashierCurrentOrder?.items?.[0];
+      const want = item?.label ? item.label : "something";
+      return (
+        "Here's your first customer! Looks like they want " +
+        want +
+        ". I'll show you how to make it!"
+      );
+    }
+
+    async function playGaryFirstCustomerMessage() {
+      await typeGaryMessage(buildGaryFirstCustomerText());
+      await waitMs(GARY_READ_MS);
+      hideGaryBubble();
+    }
+
+    async function playGaryWellDoneMessage() {
+      await typeGaryMessage("Well done! Here comes the next customer!");
+      await waitMs(GARY_READ_MS);
+      hideGaryBubble();
+    }
+
+    async function playGaryDrinkCustomerMessage() {
+      await typeGaryMessage(
+        "Looks like this customer wants a drink. I'll show you where to get that!"
+      );
+      await waitMs(GARY_READ_MS);
+      hideGaryBubble();
+    }
+
+    function beginCustomerAfterIntro() {
+      window.setTimeout(() => {
+        runCashierCustomerEnterSequence();
+      }, CASHIER_INTRO_HOLD_MS);
+    }
+
+    function beginPlaySession(options) {
+      const opts = options || {};
+      if (gameStarted || !menuScreen) return;
+      gameStarted = true;
+      tutorialMode = !!opts.tutorial;
+      tutorialCustomerIndex = 0;
+      resetNightState();
+      stopTutorialGuide();
+      garyIntroComplete = !tutorialMode;
+      if (startNewGameBtn) startNewGameBtn.disabled = true;
+      if (tutorialBtn) tutorialBtn.disabled = true;
+      document.body.classList.add("game-started");
+      if (tutorialMode) {
+        document.body.classList.add("tutorial-mode");
+      } else {
+        hideGaryBubble();
+      }
+      prepareCashierIntroHold();
+      navigateToScreen(5, { skipCashierSpawn: true });
+      menuScreen.classList.add("is-fading-out");
+      window.setTimeout(() => {
+        menuScreen.classList.add("is-hidden");
+        menuScreen.classList.remove("is-fading-out");
+        if (tutorialMode) {
+          playGaryIntro().then(beginCustomerAfterIntro);
+        } else {
+          beginCustomerAfterIntro();
+        }
+      }, NAME_FADE_MS);
+    }
+
+    function startNewGame() {
+      beginPlaySession({ tutorial: false });
+    }
+
+    function startTutorial() {
+      beginPlaySession({ tutorial: true });
     }
 
     if (startBtn) {
@@ -13235,11 +14667,14 @@ Restaurant Rush
 
     if (restaurantNameInput) {
       restaurantNameInput.addEventListener("input", () => {
-        if (restaurantNameInput.value.length > RESTAURANT_NAME_MAX) {
-          restaurantNameInput.value = restaurantNameInput.value.slice(
-            0,
-            RESTAURANT_NAME_MAX
-          );
+        const el = restaurantNameInput;
+        const pos = el.selectionStart;
+        const before = el.value;
+        const formatted = formatRestaurantName(before);
+        if (formatted !== before) {
+          el.value = formatted;
+          const newPos = Math.min(pos, formatted.length);
+          el.setSelectionRange(newPos, newPos);
         }
         updateNameContinueBtn();
       });
@@ -13253,6 +14688,14 @@ Restaurant Rush
 
     if (nameContinueBtn) {
       nameContinueBtn.addEventListener("click", finishNaming);
+    }
+
+    if (startNewGameBtn) {
+      startNewGameBtn.addEventListener("click", startNewGame);
+    }
+
+    if (tutorialBtn) {
+      tutorialBtn.addEventListener("click", startTutorial);
     }
 
     if (cashierTraySpot) {

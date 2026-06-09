@@ -1,4 +1,4 @@
-<!-- Minecraft 3D Game - Simple and Reliable Version -->
+<!-- Minecraft 3D — chunk world: loads nearby chunks, unloads ones you leave behind -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -230,8 +230,10 @@
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
         let loadedChunks = new Set();
+        let chunkEdits = {}; // saved block breaks/placements per chunk
         let chunkSize = 16;
-        let renderDistance = 4; // Increased from 3 for faster world loading
+        let renderDistance = 4;
+        let unloadDistance = 6; // unload chunks farther than this from player
 
         // Block textures
         const blockTextures = {
@@ -303,6 +305,24 @@
             console.log('Initial world generated!');
         }
 
+        function seededRandom(x, z, salt = 0) {
+            const n = Math.sin(x * 12.9898 + z * 78.233 + salt * 43.758) * 43758.5453;
+            return n - Math.floor(n);
+        }
+
+        function getChunkKey(x, z) {
+            const chunkX = Math.floor(x / chunkSize);
+            const chunkZ = Math.floor(z / chunkSize);
+            return `${chunkX},${chunkZ}`;
+        }
+
+        function ensureChunkEdits(chunkKey) {
+            if (!chunkEdits[chunkKey]) {
+                chunkEdits[chunkKey] = { removed: new Set(), placed: {} };
+            }
+            return chunkEdits[chunkKey];
+        }
+
         function generateChunk(chunkX, chunkZ) {
             const chunkKey = `${chunkX},${chunkZ}`;
             if (loadedChunks.has(chunkKey)) return;
@@ -311,33 +331,65 @@
             
             const startX = chunkX * chunkSize;
             const startZ = chunkZ * chunkSize;
+            const edits = chunkEdits[chunkKey];
             
-            // Generate terrain for this chunk
             for (let x = startX; x < startX + chunkSize; x++) {
                 for (let z = startZ; z < startZ + chunkSize; z++) {
                     const height = getTerrainHeight(x, z);
                     
                     for (let y = 0; y < height; y++) {
-                        let blockType = getBlockType(x, y, z, height);
+                        const key = `${x},${y},${z}`;
+                        if (edits && edits.removed.has(key)) continue;
+                        const blockType = getBlockType(x, y, z, height);
                         createBlock(x, y, z, blockType);
                     }
                 }
             }
             
-            // Add structures to this chunk
             addStructuresToChunk(chunkX, chunkZ);
+
+            if (edits) {
+                for (const [key, type] of Object.entries(edits.placed)) {
+                    const [x, y, z] = key.split(',').map(Number);
+                    if (x >= startX && x < startX + chunkSize && z >= startZ && z < startZ + chunkSize) {
+                        createBlock(x, y, z, type);
+                    }
+                }
+            }
+        }
+
+        function unloadChunk(chunkX, chunkZ) {
+            const chunkKey = `${chunkX},${chunkZ}`;
+            if (!loadedChunks.has(chunkKey)) return;
+
+            const startX = chunkX * chunkSize;
+            const startZ = chunkZ * chunkSize;
+
+            for (let x = startX; x < startX + chunkSize; x++) {
+                for (let z = startZ; z < startZ + chunkSize; z++) {
+                    for (let y = 0; y < 50; y++) {
+                        const key = `${x},${y},${z}`;
+                        const block = world[key];
+                        if (!block) continue;
+                        scene.remove(block);
+                        block.geometry.dispose();
+                        block.material.dispose();
+                        delete world[key];
+                    }
+                }
+            }
+
+            loadedChunks.delete(chunkKey);
         }
 
         function getTerrainHeight(x, z) {
-            // Faster terrain generation (simplified)
             const noise1 = Math.sin(x * 0.15) * Math.cos(z * 0.15) * 8;
             const noise2 = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 12;
             
             let height = Math.floor(noise1 + noise2 + 15);
             
-            // Less random variation for speed
-            if (Math.random() < 0.05) {
-                height += Math.floor(Math.random() * 3);
+            if (seededRandom(x, z, 1) < 0.05) {
+                height += Math.floor(seededRandom(x, z, 2) * 3);
             }
             
             return Math.max(5, Math.min(30, height));
@@ -345,18 +397,15 @@
 
         function getBlockType(x, y, z, surfaceHeight) {
             if (y === surfaceHeight - 1) {
-                // Surface blocks
                 if (surfaceHeight < 8) return 'sand';
                 if (surfaceHeight > 20) return 'stone';
                 return 'grass';
             } else if (y > surfaceHeight - 4) {
-                // Subsurface blocks
                 if (surfaceHeight < 8) return 'sand';
                 return 'dirt';
             } else {
-                // Deep blocks
                 if (y < 5) return 'stone';
-                if (Math.random() < 0.1) return 'stone';
+                if (seededRandom(x, z, y + 10) < 0.1) return 'stone';
                 return 'dirt';
             }
         }
@@ -364,55 +413,67 @@
         function addStructuresToChunk(chunkX, chunkZ) {
             const startX = chunkX * chunkSize;
             const startZ = chunkZ * chunkSize;
+            const edits = chunkEdits[`${chunkX},${chunkZ}`];
             
-            // Add trees (fewer for speed)
             for (let i = 0; i < 2; i++) {
-                const x = startX + Math.floor(Math.random() * chunkSize);
-                const z = startZ + Math.floor(Math.random() * chunkSize);
+                const x = startX + Math.floor(seededRandom(chunkX, chunkZ, i * 3) * chunkSize);
+                const z = startZ + Math.floor(seededRandom(chunkX, chunkZ, i * 3 + 1) * chunkSize);
                 const y = getHeightAt(x, z);
                 
-                if (y > 0 && Math.random() < 0.2) {
-                    createTree(x, y, z);
+                if (y > 0 && seededRandom(x, z, i * 5) < 0.2) {
+                    createTree(x, y, z, edits);
                 }
             }
             
-            // Add small hills (fewer for speed)
-            for (let i = 0; i < 1; i++) {
-                const x = startX + Math.floor(Math.random() * chunkSize);
-                const z = startZ + Math.floor(Math.random() * chunkSize);
-                const y = getHeightAt(x, z);
-                
-                if (y > 0 && Math.random() < 0.15) {
-                    createSmallHill(x, y, z);
-                }
+            const hillX = startX + Math.floor(seededRandom(chunkX, chunkZ, 20) * chunkSize);
+            const hillZ = startZ + Math.floor(seededRandom(chunkX, chunkZ, 21) * chunkSize);
+            const hillY = getHeightAt(hillX, hillZ);
+            
+            if (hillY > 0 && seededRandom(hillX, hillZ, 22) < 0.15) {
+                createSmallHill(hillX, hillY, hillZ, edits);
             }
         }
 
-        function createSmallHill(x, y, z) {
-            const height = 2 + Math.floor(Math.random() * 3);
+        function shouldPlaceBlock(x, y, z, edits) {
+            const key = `${x},${y},${z}`;
+            return !edits || !edits.removed.has(key);
+        }
+
+        function createSmallHill(x, y, z, edits) {
+            const height = 2 + Math.floor(seededRandom(x, z, 30) * 3);
             for (let dy = 0; dy < height; dy++) {
                 for (let dx = -1; dx <= 1; dx++) {
                     for (let dz = -1; dz <= 1; dz++) {
                         if (Math.abs(dx) + Math.abs(dz) + dy < height + 1) {
-                            createBlock(x + dx, y + dy, z + dz, 'grass');
+                            const bx = x + dx;
+                            const by = y + dy;
+                            const bz = z + dz;
+                            if (shouldPlaceBlock(bx, by, bz, edits)) {
+                                createBlock(bx, by, bz, 'grass');
+                            }
                         }
                     }
                 }
             }
         }
 
-        function createTree(x, y, z) {
-            // Tree trunk
+        function createTree(x, y, z, edits) {
             for (let i = 0; i < 3; i++) {
-                createBlock(x, y + i, z, 'wood');
+                if (shouldPlaceBlock(x, y + i, z, edits)) {
+                    createBlock(x, y + i, z, 'wood');
+                }
             }
             
-            // Tree leaves
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dz = -1; dz <= 1; dz++) {
                     for (let dy = 0; dy < 2; dy++) {
                         if (Math.abs(dx) + Math.abs(dz) + dy < 3) {
-                            createBlock(x + dx, y + 3 + dy, z + dz, 'grass');
+                            const bx = x + dx;
+                            const by = y + 3 + dy;
+                            const bz = z + dz;
+                            if (shouldPlaceBlock(bx, by, bz, edits)) {
+                                createBlock(bx, by, bz, 'grass');
+                            }
                         }
                     }
                 }
@@ -548,9 +609,19 @@
         function breakBlock(block) {
             if (block.userData && block.userData.type) {
                 const type = block.userData.type;
+                const x = block.position.x;
+                const y = block.position.y;
+                const z = block.position.z;
+                const key = `${x},${y},${z}`;
+                const chunkKey = getChunkKey(x, z);
+                const edits = ensureChunkEdits(chunkKey);
+                edits.removed.add(key);
+                delete edits.placed[key];
                 inventory[type]++;
                 scene.remove(block);
-                delete world[`${block.position.x},${block.position.y},${block.position.z}`];
+                block.geometry.dispose();
+                block.material.dispose();
+                delete world[key];
                 updateInventory();
             }
         }
@@ -573,6 +644,10 @@
                 if (face.normal.z < 0) z--;
                 
                 createBlock(x, y, z, selectedBlock);
+                const chunkKey = getChunkKey(x, z);
+                const edits = ensureChunkEdits(chunkKey);
+                edits.placed[`${x},${y},${z}`] = selectedBlock;
+                edits.removed.delete(`${x},${y},${z}`);
                 inventory[selectedBlock]--;
                 updateInventory();
             }
@@ -650,27 +725,33 @@
             camera.rotation.x = player.rotationX;
             camera.rotation.y = player.rotationY;
 
-            // Check for new chunks to load
-            checkAndLoadChunks();
+            updateChunks();
 
-            // Update UI
             document.getElementById('position').textContent = 
                 `${Math.round(player.x)}, ${Math.round(player.y)}, ${Math.round(player.z)}`;
+            document.getElementById('blockCount').textContent = Object.keys(world).length;
         }
 
-        function checkAndLoadChunks() {
+        function updateChunks() {
             const playerChunkX = Math.floor(player.x / chunkSize);
             const playerChunkZ = Math.floor(player.z / chunkSize);
             
-            // Check all chunks within render distance
             for (let chunkX = playerChunkX - renderDistance; chunkX <= playerChunkX + renderDistance; chunkX++) {
                 for (let chunkZ = playerChunkZ - renderDistance; chunkZ <= playerChunkZ + renderDistance; chunkZ++) {
-                    const chunkKey = `${chunkX},${chunkZ}`;
-                    if (!loadedChunks.has(chunkKey)) {
-                        generateChunk(chunkX, chunkZ);
-                    }
+                    generateChunk(chunkX, chunkZ);
                 }
             }
+
+            const toUnload = [];
+            for (const chunkKey of loadedChunks) {
+                const [chunkX, chunkZ] = chunkKey.split(',').map(Number);
+                const distX = Math.abs(chunkX - playerChunkX);
+                const distZ = Math.abs(chunkZ - playerChunkZ);
+                if (distX > unloadDistance || distZ > unloadDistance) {
+                    toUnload.push([chunkX, chunkZ]);
+                }
+            }
+            toUnload.forEach(([chunkX, chunkZ]) => unloadChunk(chunkX, chunkZ));
         }
 
         function animate() {

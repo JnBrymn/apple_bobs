@@ -3,6 +3,12 @@
 
 // Initialize AppleBucks system
 let appleBucks = 5; // Start with 5 AppleBucks
+const PLAY_TIME_KEY = 'appleBobs_totalPlayMs';
+const REWARDED_HOURS_KEY = 'appleBobs_rewardedHours';
+const HOUR_MS = 60 * 60 * 1000;
+const BUCKS_PER_HOUR = 10;
+let lastPlayTick = Date.now();
+let playTickInterval = null;
 
 // Load AppleBucks from localStorage if available
 function loadAppleBucks() {
@@ -33,11 +39,18 @@ function updateAppleBucksDisplay() {
     updateGameLinkStates();
 }
 
+function getGameCost(link) {
+    const raw = link.dataset.cost || link.closest('li')?.dataset.cost || '1';
+    const cost = parseInt(raw, 10);
+    return Number.isFinite(cost) && cost > 0 ? cost : 1;
+}
+
 // Update game link states (enabled/disabled based on AppleBucks)
 function updateGameLinkStates() {
     const gameLinks = document.querySelectorAll('.game-link');
     gameLinks.forEach(link => {
-        if (appleBucks >= 1) {
+        const cost = getGameCost(link);
+        if (appleBucks >= cost) {
             link.classList.remove('disabled');
         } else {
             link.classList.add('disabled');
@@ -48,6 +61,81 @@ function updateGameLinkStates() {
     if (appleBucks <= 0) {
         giveFreeAppleBuck();
     }
+}
+
+function loadPlayTimeState() {
+    return {
+        totalPlayMs: parseInt(localStorage.getItem(PLAY_TIME_KEY) || '0', 10),
+        rewardedHours: parseInt(localStorage.getItem(REWARDED_HOURS_KEY) || '0', 10)
+    };
+}
+
+function savePlayTimeState(totalPlayMs, rewardedHours) {
+    localStorage.setItem(PLAY_TIME_KEY, totalPlayMs.toString());
+    localStorage.setItem(REWARDED_HOURS_KEY, rewardedHours.toString());
+}
+
+function updatePlayTimeDisplay() {
+    const el = document.getElementById('playtimeStatus');
+    if (!el) return;
+
+    const state = loadPlayTimeState();
+    const hours = Math.floor(state.totalPlayMs / HOUR_MS);
+    const mins = Math.floor((state.totalPlayMs % HOUR_MS) / 60000);
+    const progressMins = mins % 60;
+    const minsToNext = progressMins === 0 && state.totalPlayMs > 0 ? 60 : 60 - progressMins;
+
+    el.textContent = `Played ${hours}h ${mins}m total — ${minsToNext}m until +10 AppleBucks`;
+}
+
+function addPlayTime(ms) {
+    if (!Number.isFinite(ms) || ms <= 0) return;
+
+    const state = loadPlayTimeState();
+    state.totalPlayMs += ms;
+
+    const totalHours = Math.floor(state.totalPlayMs / HOUR_MS);
+    if (totalHours > state.rewardedHours) {
+        const newHours = totalHours - state.rewardedHours;
+        appleBucks += newHours * BUCKS_PER_HOUR;
+        state.rewardedHours = totalHours;
+        saveAppleBucks();
+        updateAppleBucksDisplay();
+        showMessage(`+${newHours * BUCKS_PER_HOUR} AppleBucks for playing ${newHours} hour${newHours > 1 ? 's' : ''}!`, 'success');
+    }
+
+    savePlayTimeState(state.totalPlayMs, state.rewardedHours);
+    updatePlayTimeDisplay();
+}
+
+function tickPlayTime() {
+    if (document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    addPlayTime(now - lastPlayTick);
+    lastPlayTick = now;
+}
+
+function initPlayTimeTracker() {
+    const gameStart = sessionStorage.getItem('appleBobs_gameStart');
+    if (gameStart) {
+        addPlayTime(Date.now() - parseInt(gameStart, 10));
+        sessionStorage.removeItem('appleBobs_gameStart');
+    }
+
+    lastPlayTick = Date.now();
+    if (playTickInterval) clearInterval(playTickInterval);
+    playTickInterval = setInterval(tickPlayTime, 30000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            tickPlayTime();
+        } else {
+            lastPlayTick = Date.now();
+        }
+    });
+
+    window.addEventListener('beforeunload', tickPlayTime);
+    updatePlayTimeDisplay();
 }
 
 // Give a free AppleBuck when player runs out
@@ -70,23 +158,27 @@ function giveFreeAppleBuck() {
     }
 }
 
-// Function to play a game (costs 1 AppleBuck)
-function playGame(gamePath) {
-    if (appleBucks >= 1) {
-        // Deduct 1 AppleBuck
-        appleBucks -= 1;
+// Function to play a game (cost depends on game effort)
+function playGame(gamePath, cost = 1) {
+    const gameCost = parseInt(cost, 10) || 1;
+
+    if (appleBucks >= gameCost) {
+        tickPlayTime();
+        sessionStorage.setItem('appleBobs_gameStart', Date.now().toString());
+
+        appleBucks -= gameCost;
         saveAppleBucks();
         updateAppleBucksDisplay();
-        
-        // Show confirmation message
-        showMessage(`🎮 Playing game! -1 AppleBuck (${appleBucks} remaining)`, 'success');
-        
-        // Navigate to the game after a short delay
+
+        const costWord = gameCost === 1 ? 'AppleBuck' : 'AppleBucks';
+        showMessage(`Playing game! -${gameCost} ${costWord} (${appleBucks} remaining)`, 'success');
+
         setTimeout(() => {
             window.location.href = gamePath;
         }, 1000);
     } else {
-        showMessage('❌ Not enough AppleBucks! You need 1 AppleBuck to play.', 'error');
+        const costWord = gameCost === 1 ? 'AppleBuck' : 'AppleBucks';
+        showMessage(`Not enough AppleBucks! This game costs ${gameCost} ${costWord}.`, 'error');
     }
 }
 
@@ -390,50 +482,9 @@ function initBugReports() {
 // Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🍎 AppleBucks script loaded!');
-    
-    // Add a big test button to the page
-    const testDiv = document.createElement('div');
-    testDiv.innerHTML = `
-        <div style="
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #4CAF50;
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 9999;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        ">
-            <h2>🍎 AppleBucks Test</h2>
-            <p>If you see this, the script is working!</p>
-            <button onclick="window.appleBobs.earnAppleBucks(10)" style="
-                background: white;
-                color: #4CAF50;
-                border: none;
-                padding: 1rem 2rem;
-                border-radius: 6px;
-                font-size: 1.2rem;
-                cursor: pointer;
-                margin: 0.5rem;
-            ">Give Me 10 AppleBucks!</button>
-            <button onclick="this.parentElement.remove()" style="
-                background: #f44336;
-                color: white;
-                border: none;
-                padding: 1rem 2rem;
-                border-radius: 6px;
-                font-size: 1.2rem;
-                cursor: pointer;
-                margin: 0.5rem;
-            ">Close</button>
-        </div>
-    `;
-    document.body.appendChild(testDiv);
-    
+
     loadAppleBucks();
+    initPlayTimeTracker();
     checkGameReturn();
     addResetButton();
     initBugReports();
